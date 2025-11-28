@@ -3,5 +3,5 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="ForiverEngine/ForiverEngine.vcxproj" />
+  <Project Path="ForiverEngine/ForiverEngine.vcxproj" Id="5f4ecfd2-7f27-4fee-8240-f68b5339d0c7" />
 </Solution>
