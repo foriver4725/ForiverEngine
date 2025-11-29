@@ -133,6 +133,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="sources\D3D12ObjectFactory.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="headers\D3D12ObjectFactory.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

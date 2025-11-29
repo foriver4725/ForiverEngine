@@ -1,130 +1,91 @@
-#include <Windows.h>
-#include <vector>
-#include <string>
+ï»¿#include <Windows.h>
 #include <d3d12.h>
 #include <dxgi1_6.h>
 
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
 
-// ƒEƒBƒ“ƒhƒEƒvƒƒV[ƒWƒƒ
-LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
-{
-	// ƒEƒBƒ“ƒhƒE‚ª”jŠü‚³‚ê‚½‚çŒÄ‚Î‚ê‚é
-	if (msg == WM_DESTROY)
-	{
-		PostQuitMessage(0); // OS‚É‘Î‚µ‚Äu‚à‚¤‚±‚ÌƒAƒvƒŠ‚ÍI‚í‚év‚Æ“`‚¦‚é
-		return 0;
-	}
+#include "./headers/D3D12ObjectFactory.h"
 
-	return DefWindowProc(hwnd, msg, wparam, lparam); // ƒfƒtƒHƒ‹ƒg‚Ìˆ—‚ğs‚¤
-}
+constexpr int WindowWidth = 960;
+constexpr int WindowHeight = 540;
 
-#define window_width 960
-#define window_height 540
+const wchar_t* WindowClassName = L"DX12Sample";
+const wchar_t* WindowTitle = L"DX12 ãƒ†ã‚¹ãƒˆ";
+
+LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
+#undef CreateWindow
+void CreateWindow(const wchar_t* className, const wchar_t* title, int width, int height);
+void PopupErrorDialog(const wchar_t* message);
+
+// WinMain() å†…ã§ä½¿ã†
+// ã‚¨ãƒ©ãƒ¼ãƒãƒƒãƒ—ã‚¢ãƒƒãƒ—ã‚’å‡ºã—ã¦ã‹ã‚‰ -1 ã‚’è¿”ã™
+#define ThrowAsDialogPopup(message) \
+	do \
+	{ \
+		PopupErrorDialog(message); \
+		return -1; \
+	} while (0)
 
 int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nCmdShow)
 {
+	using namespace ForiverEngine;
+
 	WNDCLASSW w = { };
 	w.hInstance = hInstance;
-	w.lpszClassName = L"DX12Sample";
+	w.lpszClassName = WindowClassName;
 	w.lpfnWndProc = WindowProcedure;
 
-	// ƒEƒBƒ“ƒhƒEƒNƒ‰ƒX‚Ì“o˜^
+	// ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã‚¯ãƒ©ã‚¹ã®ç™»éŒ²
 	if (!RegisterClassW(&w))
 		return -1;
 
-	// ƒEƒBƒ“ƒhƒE‚Ìì¬
-	CreateWindowW(w.lpszClassName, L"DX12 ƒeƒXƒg", WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-		CW_USEDEFAULT, CW_USEDEFAULT, window_width, window_height, nullptr, nullptr, nullptr, nullptr);
+	// ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã®ä½œæˆ
+	CreateWindow(WindowClassName, WindowTitle, WindowWidth, WindowHeight);
 
-	// Šî–{ƒIƒuƒWƒFƒNƒg‚Ì¶¬
-	ID3D12Device* _dev = nullptr;
-	IDXGIFactory6* _dxgiFactory = nullptr;
+	// åŸºæœ¬ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®ç”Ÿæˆ
 	IDXGISwapChain4* _swapchain = nullptr;
 
-	// DXGIFactory ‚ğì¬
-	if (CreateDXGIFactory1(IID_PPV_ARGS(&_dxgiFactory)) != S_OK)
-	{
-		MessageBox(nullptr, L"DXGIFactory ‚Ìì¬‚É¸”s‚µ‚Ü‚µ‚½", L"error", MB_OK | MB_ICONERROR);
-		return -1;
-	}
+	IDXGIFactory6* _dxgiFactory = D3D12ObjectFactory::CreateDXGIFactory();
+	if (!_dxgiFactory)
+		ThrowAsDialogPopup(L"DXGIFactory ã®ä½œæˆã«å¤±æ•—ã—ã¾ã—ãŸ");
 
-	// —˜—p‰Â”\‚ÈƒAƒ_ƒvƒ^[‚ğæ“¾ (ƒOƒ‰ƒ{‚ª•¡”h‚³‚Á‚Ä‚¢‚éê‡)
-	std::vector<IDXGIAdapter*> adapters;
-	{
-		IDXGIAdapter* tmpAdapter = nullptr;
-		for (int i = 0; _dxgiFactory->EnumAdapters(i, &tmpAdapter) != DXGI_ERROR_NOT_FOUND; ++i)
-		{
-			adapters.push_back(tmpAdapter);
-		}
-	}
-	IDXGIAdapter* availableAdapter = nullptr;
-	for (auto adapter : adapters)
-	{
-		DXGI_ADAPTER_DESC desc = {};
-		adapter->GetDesc(&desc);
-		std::wstring strDesc = desc.Description;
-
-		if (strDesc.find(L"NVIDIA") != std::string::npos)
-		{
-			availableAdapter = adapter;
-			break;
-		}
-	}
-
-	// ID3D12Device ‚ğì¬
-	D3D_FEATURE_LEVEL levels[] =
-	{
-		D3D_FEATURE_LEVEL_12_2,
-		D3D_FEATURE_LEVEL_12_1,
-		D3D_FEATURE_LEVEL_12_0,
-		D3D_FEATURE_LEVEL_11_1,
-		D3D_FEATURE_LEVEL_11_0,
-	};
 	D3D_FEATURE_LEVEL featureLevel;
-	for (auto level : levels)
-	{
-		if (D3D12CreateDevice(availableAdapter, D3D_FEATURE_LEVEL_12_2, IID_PPV_ARGS(&_dev)) == S_OK)
-		{
-			featureLevel = level;
-			break;
-		}
-	}
+	ID3D12Device* _dev = D3D12ObjectFactory::CreateD3D12Device(_dxgiFactory, featureLevel);
+	if (!_dev)
+		ThrowAsDialogPopup(L"D3D12Device ã®ä½œæˆã«å¤±æ•—ã—ã¾ã—ãŸ");
 
-	// ƒRƒ}ƒ“ƒhƒAƒƒP[ƒ^[EƒRƒ}ƒ“ƒhƒŠƒXƒg‚ğì¬
+	// ã‚³ãƒãƒ³ãƒ‰ã‚¢ãƒ­ã‚±ãƒ¼ã‚¿ãƒ¼ãƒ»ã‚³ãƒãƒ³ãƒ‰ãƒªã‚¹ãƒˆã‚’ä½œæˆ
 	ID3D12CommandAllocator* _commandAllocater = nullptr;
 	ID3D12GraphicsCommandList* _commandList = nullptr;
 	if (_dev->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&_commandAllocater)) != S_OK)
 	{
-		MessageBox(nullptr, L"CommandAllocater ‚Ìì¬‚É¸”s‚µ‚Ü‚µ‚½", L"error", MB_OK | MB_ICONERROR);
-		return -1;
+		ThrowAsDialogPopup(L"CommandAllocater ã®ä½œæˆã«å¤±æ•—ã—ã¾ã—ãŸ");
 	}
 	if (_dev->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, _commandAllocater, nullptr, IID_PPV_ARGS(&_commandList)) != S_OK)
 	{
-		MessageBox(nullptr, L"CommandList ‚Ìì¬‚É¸”s‚µ‚Ü‚µ‚½", L"error", MB_OK | MB_ICONERROR);
-		return -1;
+		ThrowAsDialogPopup(L"CommandList ã®ä½œæˆã«å¤±æ•—ã—ã¾ã—ãŸ");
 	}
 
-	// ƒRƒ}ƒ“ƒhƒLƒ…[‚ğì¬
+	// ã‚³ãƒãƒ³ãƒ‰ã‚­ãƒ¥ãƒ¼ã‚’ä½œæˆ
 	ID3D12CommandQueue* _commandQueue = nullptr;
 	{
 		D3D12_COMMAND_QUEUE_DESC desc
 		{
-			.Type = D3D12_COMMAND_LIST_TYPE_DIRECT, // ƒRƒ}ƒ“ƒhƒŠƒXƒg‚Æ‡‚í‚¹‚é
-			.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL, // —Dæ“x‚Í’Êí
-			.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE, // Šù’è
-			.NodeMask = 0, // ƒAƒ_ƒvƒ^[‚ª1‚Â‚È‚Ì‚Å...
+			.Type = D3D12_COMMAND_LIST_TYPE_DIRECT, // ã‚³ãƒãƒ³ãƒ‰ãƒªã‚¹ãƒˆã¨åˆã‚ã›ã‚‹
+			.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL, // å„ªå…ˆåº¦ã¯é€šå¸¸
+			.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE, // æ—¢å®š
+			.NodeMask = 0, // ã‚¢ãƒ€ãƒ—ã‚¿ãƒ¼ãŒ1ã¤ãªã®ã§...
 		};
 
 		if (_dev->CreateCommandQueue(&desc, IID_PPV_ARGS(&_commandQueue)) != S_OK)
 		{
-			MessageBox(nullptr, L"CommandQueue ‚Ìì¬‚É¸”s‚µ‚Ü‚µ‚½", L"error", MB_OK | MB_ICONERROR);
+			PopupErrorDialog(L"CommandQueue ã®ä½œæˆã«å¤±æ•—ã—ã¾ã—ãŸ");
 			return -1;
 		}
 	}
 
-	// ƒƒbƒZ[ƒWƒ‹[ƒv
+	// ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ãƒ«ãƒ¼ãƒ—
 	MSG msg = { };
 	while (GetMessage(&msg, nullptr, 0, 0)) {
 		TranslateMessage(&msg);
@@ -132,4 +93,31 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	}
 
 	return 0;
+}
+
+// --------------------------------------------------
+
+// ã‚¨ãƒ©ãƒ¼ãƒãƒƒãƒ—ã‚¢ãƒƒãƒ—ã‚’å‡ºã™
+void PopupErrorDialog(const wchar_t* message)
+{
+	MessageBox(nullptr, message, L"error", MB_OK | MB_ICONERROR);
+}
+
+void CreateWindow(const wchar_t* className, const wchar_t* title, int width, int height)
+{
+	CreateWindowW(className, title, WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+		CW_USEDEFAULT, CW_USEDEFAULT, width, height, nullptr, nullptr, nullptr, nullptr);
+}
+
+// ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ãƒ—ãƒ­ã‚·ãƒ¼ã‚¸ãƒ£
+LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
+{
+	// ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ãŒç ´æ£„ã•ã‚ŒãŸã‚‰å‘¼ã°ã‚Œã‚‹
+	if (msg == WM_DESTROY)
+	{
+		PostQuitMessage(0); // OSã«å¯¾ã—ã¦ã€Œã‚‚ã†ã“ã®ã‚¢ãƒ—ãƒªã¯çµ‚ã‚ã‚‹ã€ã¨ä¼ãˆã‚‹
+		return 0;
+	}
+
+	return DefWindowProc(hwnd, msg, wparam, lparam); // ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã®å‡¦ç†ã‚’è¡Œã†
 }
