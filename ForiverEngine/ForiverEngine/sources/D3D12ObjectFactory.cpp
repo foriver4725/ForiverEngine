@@ -118,17 +118,18 @@ namespace ForiverEngine
 			.Height = static_cast<UINT>(windowHeight),
 			.Format = DXGI_FORMAT_R8G8B8A8_UNORM,
 			.Stereo = false,
-			.SampleDesc = {.Count = 1, .Quality = 0 },
-			.BufferUsage = DXGI_USAGE_BACK_BUFFER,
-			.BufferCount = 2,
-			.Scaling = DXGI_SCALING_STRETCH,
-			.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD,
-			.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED,
-			.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH,
+			.SampleDesc = {.Count = 1, .Quality = 0 }, // マルチサンプルの指定
+			.BufferUsage = DXGI_USAGE_BACK_BUFFER, // これでOK
+			.BufferCount = 2, // ダブルバッファリングなので、2
+			.Scaling = DXGI_SCALING_STRETCH, // 画面に合わせて伸縮
+			.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD, // フリップ後、速やかに破棄
+			.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED, // 特に指定なし
+			.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH, // ウィンドウ<->フルスクリーンの切り替えを許可
 		};
 
 		IDXGISwapChainLatest* ptr = nullptr;
 
+		// 本来は QueryInterface などを使うが、ここでは簡単なのでこれで行く
 		IDXGISwapChain1** ptrAs1 = reinterpret_cast<IDXGISwapChain1**>(&ptr);
 		if (!ptrAs1)
 		{
@@ -136,11 +137,11 @@ namespace ForiverEngine
 		}
 
 		if (factory.Ptr->CreateSwapChainForHwnd(
-			commandQueue.Ptr,
+			commandQueue.Ptr, // 注意 : コマンドキュー
 			hwnd,
 			&desc,
-			nullptr,
-			nullptr,
+			nullptr, // ひとまずnullptrでOK
+			nullptr, // ひとまずnullptrでOK
 			ptrAs1
 		) == S_OK)
 		{
@@ -148,6 +149,25 @@ namespace ForiverEngine
 		}
 
 		return SwapChain::Nullptr();
+	}
+
+	DescriptorHeap D3D12ObjectFactory::CreateDescriptorHeap(const Device& device)
+	{
+		D3D12_DESCRIPTOR_HEAP_DESC desc
+		{
+			.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV, // レンダーターゲットビュー用
+			.NumDescriptors = 2, // ダブルバッファリングなので、2
+			.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE, // シェーダー側には見せない
+			.NodeMask = 0, // アダプターが1つなので...
+		};
+
+		ID3D12DescriptorHeap* ptr = nullptr;
+		if (device.Ptr->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&ptr)) == S_OK)
+		{
+			return DescriptorHeap(ptr);
+		}
+
+		return DescriptorHeap::Nullptr();
 	}
 
 	GraphicAdapter FindAvailableGraphicAdapter(const Factory& factory, std::function<bool(const std::wstring&)> descriptionComparer)

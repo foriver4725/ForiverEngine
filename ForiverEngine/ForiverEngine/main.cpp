@@ -48,6 +48,9 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	SwapChain swapChain = D3D12ObjectFactory::CreateSwapChain(factory, commandQueue, hwnd, WindowWidth, WindowHeight);
 	if (!swapChain) { PopupErrorDialog(L"SwapChain の作成に失敗しました。"); return -1; }
 
+	DescriptorHeap descriptorHeap = D3D12ObjectFactory::CreateDescriptorHeap(device);
+	if (!descriptorHeap) { PopupErrorDialog(L"DescriptorHeap の作成に失敗しました。"); return -1; }
+
 	// メッセージループ
 	MSG msg = {};
 	while (GetMessage(&msg, nullptr, 0, 0)) {

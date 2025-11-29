@@ -6,6 +6,7 @@ struct IDXGISwapChain4;
 struct ID3D12CommandAllocator;
 struct ID3D12GraphicsCommandList;
 struct ID3D12CommandQueue;
+struct ID3D12DescriptorHeap;
 struct IDXGIAdapter;
 struct HWND__; typedef HWND__* HWND;
 
@@ -33,6 +34,7 @@ public: \
 	DEFINE_WRAPPER_CLASS(CommandAllocator, ID3D12CommandAllocator);
 	DEFINE_WRAPPER_CLASS(CommandList, ID3D12GraphicsCommandList);
 	DEFINE_WRAPPER_CLASS(CommandQueue, ID3D12CommandQueue);
+	DEFINE_WRAPPER_CLASS(DescriptorHeap, ID3D12DescriptorHeap);
 
 	DEFINE_WRAPPER_CLASS(GraphicAdapter, IDXGIAdapter);
 
@@ -74,5 +76,10 @@ public: \
 		/// DXGISwapChain を作成して返す (失敗したら nullptr)
 		/// </summary>
 		static SwapChain CreateSwapChain(const Factory& factory, const CommandQueue& commandQueue, HWND hwnd, int windowWidth, int windowHeight);
+
+		/// <summary>
+		/// DescriptorHeap を作成して返す (失敗したら nullptr)
+		/// </summary>
+		static DescriptorHeap CreateDescriptorHeap(const Device& device);
 	};
 }
