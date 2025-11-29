@@ -31,22 +31,22 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	HWND hwnd = CreateWindow(WindowClassName, WindowTitle, WindowWidth, WindowHeight);
 
 	Factory factory = D3D12ObjectFactory::CreateFactory();
-	if (!factory.IsValid()) { PopupErrorDialog(L"Factory の作成に失敗しました。"); return -1; }
+	if (!factory) { PopupErrorDialog(L"Factory の作成に失敗しました。"); return -1; }
 
 	Device device = D3D12ObjectFactory::CreateDevice(factory);
-	if (!device.IsValid()) { PopupErrorDialog(L"Device の作成に失敗しました。"); return -1; }
+	if (!device) { PopupErrorDialog(L"Device の作成に失敗しました。"); return -1; }
 
 	CommandAllocator commandAllocater = D3D12ObjectFactory::CreateCommandAllocator(device);
-	if (!commandAllocater.IsValid()) { PopupErrorDialog(L"CommandAllocator の作成に失敗しました。"); return -1; }
+	if (!commandAllocater) { PopupErrorDialog(L"CommandAllocator の作成に失敗しました。"); return -1; }
 
 	CommandList commandList = D3D12ObjectFactory::CreateCommandList(device, commandAllocater);
-	if (!commandList.IsValid()) { PopupErrorDialog(L"CommandList の作成に失敗しました。"); return -1; }
+	if (!commandList) { PopupErrorDialog(L"CommandList の作成に失敗しました。"); return -1; }
 
 	CommandQueue commandQueue = D3D12ObjectFactory::CreateCommandQueue(device);
-	if (!commandQueue.IsValid()) { PopupErrorDialog(L"CommandQueue の作成に失敗しました。"); return -1; }
+	if (!commandQueue) { PopupErrorDialog(L"CommandQueue の作成に失敗しました。"); return -1; }
 
 	SwapChain swapChain = D3D12ObjectFactory::CreateSwapChain(factory, commandQueue, hwnd, WindowWidth, WindowHeight);
-	if (!swapChain.IsValid()) { PopupErrorDialog(L"SwapChain の作成に失敗しました。"); return -1; }
+	if (!swapChain) { PopupErrorDialog(L"SwapChain の作成に失敗しました。"); return -1; }
 
 	// メッセージループ
 	MSG msg = {};

@@ -23,8 +23,8 @@ struct WrapperStructName \
 public: \
 	OriginalPointerType* Ptr = nullptr; \
 	explicit WrapperStructName(OriginalPointerType* ptr) : Ptr(ptr) {} \
-    inline bool IsValid() const { return Ptr != nullptr; } \
     inline static WrapperStructName Nullptr() { return WrapperStructName(nullptr); } \
+    explicit operator bool() const { return Ptr != nullptr; } \
 };
 
 	DEFINE_WRAPPER_CLASS(Factory, IDXGIFactoryLatest);
