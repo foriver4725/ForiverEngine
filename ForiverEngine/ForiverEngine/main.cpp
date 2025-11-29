@@ -15,38 +15,27 @@ int WindowMain(hInstance)
 {
 	using namespace ForiverEngine;
 
-	if (!WindowHelper::InitializeWindowFromHInstance(hInstance, WindowProcedure, WindowClassName))
-	{
-		WindowHelper::PopupErrorDialog(L"ウィンドウの初期化に失敗しました。");
-		return -1;
-	}
+#define Throw(Message) \
+{ \
+    WindowHelper::PopupErrorDialog(Message); \
+    return -1; \
+}
 
+#define CheckAndThrow(Pointer) if (!(Pointer)) Throw(L#Pointer L" が nullptr です");
+
+
+
+	if (!WindowHelper::InitializeWindowFromHInstance(hInstance, WindowProcedure, WindowClassName))
+		Throw(L"ウィンドウの初期化に失敗しました");
 	HWND hwnd = WindowHelper::CreateTheWindow(WindowClassName, WindowTitle, WindowWidth, WindowHeight);
 
-
-
-	Factory factory = D3D12ObjectFactory::CreateFactory();
-	if (!factory) { WindowHelper::PopupErrorDialog(L"Factory の作成に失敗しました。"); return -1; }
-
-	Device device = D3D12ObjectFactory::CreateDevice(factory);
-	if (!device) { WindowHelper::PopupErrorDialog(L"Device の作成に失敗しました。"); return -1; }
-
-	CommandAllocator commandAllocater = D3D12ObjectFactory::CreateCommandAllocator(device);
-	if (!commandAllocater) { WindowHelper::PopupErrorDialog(L"CommandAllocator の作成に失敗しました。"); return -1; }
-
-	CommandList commandList = D3D12ObjectFactory::CreateCommandList(device, commandAllocater);
-	if (!commandList) { WindowHelper::PopupErrorDialog(L"CommandList の作成に失敗しました。"); return -1; }
-
-	CommandQueue commandQueue = D3D12ObjectFactory::CreateCommandQueue(device);
-	if (!commandQueue) { WindowHelper::PopupErrorDialog(L"CommandQueue の作成に失敗しました。"); return -1; }
-
-	SwapChain swapChain = D3D12ObjectFactory::CreateSwapChain(factory, commandQueue, hwnd, WindowWidth, WindowHeight);
-	if (!swapChain) { WindowHelper::PopupErrorDialog(L"SwapChain の作成に失敗しました。"); return -1; }
-
-	DescriptorHeap descriptorHeap = D3D12ObjectFactory::CreateDescriptorHeap(device);
-	if (!descriptorHeap) { WindowHelper::PopupErrorDialog(L"DescriptorHeap の作成に失敗しました。"); return -1; }
-
-
+	Factory factory = D3D12ObjectFactory::CreateFactory();	CheckAndThrow(factory);
+	Device device = D3D12ObjectFactory::CreateDevice(factory);	CheckAndThrow(device);
+	CommandAllocator commandAllocater = D3D12ObjectFactory::CreateCommandAllocator(device);	CheckAndThrow(commandAllocater);
+	CommandList commandList = D3D12ObjectFactory::CreateCommandList(device, commandAllocater);	CheckAndThrow(commandList);
+	CommandQueue commandQueue = D3D12ObjectFactory::CreateCommandQueue(device);	CheckAndThrow(commandQueue);
+	SwapChain swapChain = D3D12ObjectFactory::CreateSwapChain(factory, commandQueue, hwnd, WindowWidth, WindowHeight);	CheckAndThrow(swapChain);
+	DescriptorHeap descriptorHeap = D3D12ObjectFactory::CreateDescriptorHeap(device);	CheckAndThrow(descriptorHeap);
 
 	// メッセージループ
 	MSG msg = {};
