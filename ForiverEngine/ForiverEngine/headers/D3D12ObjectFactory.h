@@ -141,5 +141,13 @@ public: \
 		/// 成功したら true, 失敗したら false を返す
 		/// </summary>
 		static bool Present(const SwapChain& swapChain);
+
+#ifdef _DEBUG
+		/// <summary>
+		/// <para>DebugLayer を有効化する</para>
+		/// 成功したら true, 失敗したら false を返す (失敗した瞬間に処理を中断する)
+		/// </summary>
+		static bool EnableDebugLayer();
+#endif
 	};
 }

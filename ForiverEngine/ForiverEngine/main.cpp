@@ -39,6 +39,11 @@ int WindowMain(hInstance)
 		Throw(L"ウィンドウの初期化に失敗しました");
 	HWND hwnd = WindowHelper::CreateTheWindow(WindowClassName, WindowTitle, WindowWidth, WindowHeight);
 
+#ifdef _DEBUG
+	if (!D3D12ObjectFactory::EnableDebugLayer())
+		Throw(L"DebugLayer の有効化に失敗しました");
+#endif
+
 	Factory factory = D3D12ObjectFactory::CreateFactory();
 	if (!factory) Throw(L"Factory の作成に失敗しました");
 	Device device = D3D12ObjectFactory::CreateDevice(factory);

@@ -24,7 +24,11 @@ namespace ForiverEngine
 	Factory D3D12ObjectFactory::CreateFactory()
 	{
 		IDXGIFactoryLatest* ptr = nullptr;
+#ifdef _DEBUG
+		if (CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(&ptr)) == S_OK)
+#else
 		if (CreateDXGIFactory1(IID_PPV_ARGS(&ptr)) == S_OK)
+#endif
 			return Factory(ptr);
 
 		return Factory::Nullptr();
@@ -249,6 +253,22 @@ namespace ForiverEngine
 		// 第2引数は、特殊用途での指定が多い (今は必要ないので 0)
 		return swapChain->Present(1, 0) == S_OK;
 	}
+
+#ifdef _DEBUG
+	bool D3D12ObjectFactory::EnableDebugLayer()
+	{
+		ID3D12Debug* debugLayer = nullptr;
+		if (D3D12GetDebugInterface(IID_PPV_ARGS(&debugLayer)) == S_OK)
+		{
+			debugLayer->EnableDebugLayer();
+			debugLayer->Release();
+
+			return true;
+		}
+
+		return false;
+	}
+#endif
 
 	GraphicAdapter FindAvailableGraphicAdapter(const Factory& factory, std::function<bool(const std::wstring&)> descriptionComparer)
 	{
