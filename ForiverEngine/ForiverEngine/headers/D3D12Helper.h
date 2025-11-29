@@ -12,14 +12,12 @@ struct IDXGIAdapter;
 struct ID3D12Resource;
 struct HWND__; typedef HWND__* HWND;
 
-namespace ForiverEngine
-{
-	// 最新バージョンを指定
-	using IDXGIFactoryLatest = IDXGIFactory7;
-	using ID3D12DeviceLatest = ID3D12Device14;
-	using IDXGISwapChainLatest = IDXGISwapChain4;
+// 最新バージョンを指定
+using IDXGIFactoryLatest = IDXGIFactory7;
+using ID3D12DeviceLatest = ID3D12Device14;
+using IDXGISwapChainLatest = IDXGISwapChain4;
 
-	// ラッパークラスを定義
+// ラッパークラスを定義
 #define DEFINE_POINTER_WRAPPER_STRUCT(WrapperStructName, OriginalPointerType) \
 struct WrapperStructName \
 { \
@@ -32,28 +30,30 @@ public: \
     explicit operator bool() const { return Ptr != nullptr; } \
 };
 
-	DEFINE_POINTER_WRAPPER_STRUCT(Factory, IDXGIFactoryLatest);
-	DEFINE_POINTER_WRAPPER_STRUCT(Device, ID3D12DeviceLatest);
-	DEFINE_POINTER_WRAPPER_STRUCT(SwapChain, IDXGISwapChainLatest);
-	DEFINE_POINTER_WRAPPER_STRUCT(CommandAllocator, ID3D12CommandAllocator);
-	DEFINE_POINTER_WRAPPER_STRUCT(CommandList, ID3D12GraphicsCommandList);
-	DEFINE_POINTER_WRAPPER_STRUCT(CommandQueue, ID3D12CommandQueue);
-	DEFINE_POINTER_WRAPPER_STRUCT(DescriptorHeap, ID3D12DescriptorHeap);
-	DEFINE_POINTER_WRAPPER_STRUCT(Fence, ID3D12Fence);
+DEFINE_POINTER_WRAPPER_STRUCT(Factory, IDXGIFactoryLatest);
+DEFINE_POINTER_WRAPPER_STRUCT(Device, ID3D12DeviceLatest);
+DEFINE_POINTER_WRAPPER_STRUCT(SwapChain, IDXGISwapChainLatest);
+DEFINE_POINTER_WRAPPER_STRUCT(CommandAllocator, ID3D12CommandAllocator);
+DEFINE_POINTER_WRAPPER_STRUCT(CommandList, ID3D12GraphicsCommandList);
+DEFINE_POINTER_WRAPPER_STRUCT(CommandQueue, ID3D12CommandQueue);
+DEFINE_POINTER_WRAPPER_STRUCT(DescriptorHeap, ID3D12DescriptorHeap);
+DEFINE_POINTER_WRAPPER_STRUCT(Fence, ID3D12Fence);
 
-	DEFINE_POINTER_WRAPPER_STRUCT(GraphicAdapter, IDXGIAdapter);
-	DEFINE_POINTER_WRAPPER_STRUCT(GraphicBuffer, ID3D12Resource);
+DEFINE_POINTER_WRAPPER_STRUCT(GraphicAdapter, IDXGIAdapter);
+DEFINE_POINTER_WRAPPER_STRUCT(GraphicBuffer, ID3D12Resource);
 
 #undef DEFINE_POINTER_WRAPPER_STRUCT
 
-	// D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE をメモリ配置そのままに自作したもの
-	// reinterpret_cast で相互キャストし、外部翻訳単位にはこちらを公開するようにする
-	typedef unsigned __int64 UINT64;
-	typedef unsigned __int64 ULONG_PTR;
-	typedef ULONG_PTR SIZE_T;
-	struct DescriptorHeapHandleAtCPU { SIZE_T ptr; };
-	struct DescriptorHeapHandleAtGPU { UINT64 ptr; };
+// D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE をメモリ配置そのままに自作したもの
+// reinterpret_cast で相互キャストし、外部翻訳単位にはこちらを公開するようにする
+typedef unsigned __int64 UINT64;
+typedef unsigned __int64 ULONG_PTR;
+typedef ULONG_PTR SIZE_T;
+struct DescriptorHeapHandleAtCPU { SIZE_T ptr; };
+struct DescriptorHeapHandleAtGPU { UINT64 ptr; };
 
+namespace ForiverEngine
+{
 	class D3D12Helper final
 	{
 	public:

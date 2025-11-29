@@ -6,18 +6,9 @@
 constexpr int WindowWidth = 960;
 constexpr int WindowHeight = 540;
 
-const wchar_t* WindowClassName = L"DX12Sample";
-const wchar_t* WindowTitle = L"DX12 テスト";
-
-DEFINE_DEFAULT_WINDOW_PROCEDURE(WindowProcedure)
-
-int WindowMain(hInstance)
+BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeight);
 {
 	using namespace ForiverEngine;
-
-	if (!WindowHelper::InitializeWindowFromHInstance(hInstance, WindowProcedure, WindowClassName))
-		Throw(L"ウィンドウの初期化に失敗しました");
-	HWND hwnd = WindowHelper::CreateTheWindow(WindowClassName, WindowTitle, WindowWidth, WindowHeight);
 
 #ifdef _DEBUG
 	if (!D3D12Helper::EnableDebugLayer())
@@ -43,14 +34,8 @@ int WindowMain(hInstance)
 	if (!D3D12Helper::LinkDescriptorHeapRTVToSwapChain(device, descriptorHeapRTV, swapChain))
 		Throw(L"DescriptorHeap (RTV) を SwapChain に関連付けることに失敗しました");
 
-
-
-	// メッセージループ
-	MSG msg = {};
-	while (GetMessage(&msg, nullptr, 0, 0)) {
-		TranslateMessage(&msg);
-		DispatchMessage(&msg);
-
+	BEGIN_MESSAGE_LOOP;
+	{
 		// 現在バックバッファにある RenderTarget を取得する
 		const int currentBackBufferIndex = D3D12Helper::GetCurrentBackBufferIndex(swapChain);
 		GraphicBuffer currentBackBuffer = D3D12Helper::GetGraphicBufferByIndex(swapChain, currentBackBufferIndex);
@@ -59,18 +44,14 @@ int WindowMain(hInstance)
 			device, descriptorHeapRTV, currentBackBufferIndex);
 
 		D3D12Helper::InvokeResourceBarrierAsTransitionFromPresentToRenderTarget(commandList, currentBackBuffer);
-
 		D3D12Helper::CommandSetRTAsOutputStage(commandList, backBufferRTV);
 		float clearColor[4] = { 1, 1, 0, 1 };
 		D3D12Helper::CommandClearRT(commandList, backBufferRTV, clearColor);
-
 		D3D12Helper::InvokeResourceBarrierAsTransitionFromRenderTargetToPresent(commandList, currentBackBuffer);
-
 		D3D12Helper::CommandClose(commandList);
 		D3D12Helper::ExecuteCommands(commandQueue, commandList);
 
-		Fence fence = D3D12Helper::CreateFence(device);
-		D3D12Helper::WaitForGPUEventCompletion(fence, commandQueue);
+		D3D12Helper::WaitForGPUEventCompletion(D3D12Helper::CreateFence(device), commandQueue);
 
 		if (!D3D12Helper::ClearCommandAllocatorAndList(commandAllocater, commandList))
 			Throw(L"CommandAllocator, CommandList のクリアに失敗しました");
@@ -78,6 +59,6 @@ int WindowMain(hInstance)
 		if (!D3D12Helper::Present(swapChain))
 			Throw(L"画面のフリップに失敗しました");
 	}
-
-	return 0;
+	END_MESSAGE_LOOP;
 }
+END_INITIALIZE;
