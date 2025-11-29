@@ -113,6 +113,11 @@ public: \
 		/// </summary>
 		static bool ClearCommandAllocatorAndList(const CommandAllocator& commandAllocator, const CommandList& commandList);
 
+		/// <summary>
+		/// SwapChain から指定インデックスの GraphicBuffer を取得する (失敗したら nullptr)
+		/// </summary>
+		static GraphicBuffer GetGraphicBufferByIndex(const SwapChain& swapChain, int index);
+
 		// DescriptorHeap のハンドルを作成し、index 番目の Descriptor を指し示すように内部ポインタを進めて返す
 		// CPU 用
 		static DescriptorHeapHandle CreateDescriptorHeapHandleIndicatingDescriptorByIndexAtCPU(

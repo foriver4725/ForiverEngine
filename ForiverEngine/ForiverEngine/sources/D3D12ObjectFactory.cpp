@@ -21,9 +21,6 @@ namespace ForiverEngine
 	// SwapChain からバッファ数を取得する (失敗したら -1)
 	static int GetBufferCountFromSwapChain(const SwapChain& swapChain);
 
-	// SwapChain から指定インデックスのバッファを取得する (失敗したら nullptr)
-	static GraphicBuffer GetBufferFromSwapChainByIndex(const SwapChain& swapChain, int index);
-
 	Factory D3D12ObjectFactory::CreateFactory()
 	{
 		IDXGIFactoryLatest* ptr = nullptr;
@@ -203,7 +200,7 @@ namespace ForiverEngine
 	{
 		for (int i = 0; i < GetBufferCountFromSwapChain(swapChain); ++i)
 		{
-			GraphicBuffer graphicsBuffer = GetBufferFromSwapChainByIndex(swapChain, i);
+			GraphicBuffer graphicsBuffer = GetGraphicBufferByIndex(swapChain, i);
 			if (!graphicsBuffer)
 				return false;
 
@@ -225,6 +222,17 @@ namespace ForiverEngine
 		if (commandAllocator->Reset() != S_OK) return false;
 		if (commandList->Reset(commandAllocator.Ptr, nullptr) != S_OK) return false;
 		return true;
+	}
+
+	GraphicBuffer D3D12ObjectFactory::GetGraphicBufferByIndex(const SwapChain& swapChain, int index)
+	{
+		ID3D12Resource* ptr = nullptr;
+		if (swapChain->GetBuffer(index, IID_PPV_ARGS(&ptr)) == S_OK)
+		{
+			return GraphicBuffer(ptr);
+		}
+
+		return GraphicBuffer::Nullptr();
 	}
 
 	DescriptorHeapHandle D3D12ObjectFactory::CreateDescriptorHeapHandleIndicatingDescriptorByIndexAtCPU(
@@ -335,16 +343,5 @@ namespace ForiverEngine
 		}
 
 		return -1;
-	}
-
-	GraphicBuffer GetBufferFromSwapChainByIndex(const SwapChain& swapChain, int index)
-	{
-		ID3D12Resource* ptr = nullptr;
-		if (swapChain->GetBuffer(index, IID_PPV_ARGS(&ptr)) == S_OK)
-		{
-			return GraphicBuffer(ptr);
-		}
-
-		return GraphicBuffer::Nullptr();
 	}
 }
