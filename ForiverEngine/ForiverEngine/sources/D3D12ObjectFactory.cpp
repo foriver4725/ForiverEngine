@@ -15,6 +15,12 @@ namespace ForiverEngine
 	// 見つからなかった場合は nullptr を返す
 	static GraphicAdapter FindAvailableGraphicAdapter(const Factory& factory, std::function<bool(const std::wstring&)> descriptionComparer);
 
+	// SwapChain からバッファ数を取得する (失敗したら -1)
+	static int GetBufferCountFromSwapChain(const SwapChain& swapChain);
+
+	// SwapChain から指定インデックスのバッファを取得する (失敗したら nullptr)
+	static GraphicBuffer GetBufferFromSwapChainByIndex(const SwapChain& swapChain, int index);
+
 	Factory D3D12ObjectFactory::CreateFactory()
 	{
 		IDXGIFactoryLatest* ptr = nullptr;
@@ -63,7 +69,7 @@ namespace ForiverEngine
 	CommandAllocator D3D12ObjectFactory::CreateCommandAllocator(const Device& device)
 	{
 		ID3D12CommandAllocator* ptr = nullptr;
-		if (device.Ptr->CreateCommandAllocator(
+		if (device->CreateCommandAllocator(
 			D3D12_COMMAND_LIST_TYPE_DIRECT,
 			IID_PPV_ARGS(&ptr)
 		) == S_OK)
@@ -77,7 +83,7 @@ namespace ForiverEngine
 	CommandList D3D12ObjectFactory::CreateCommandList(const Device& device, const CommandAllocator& commandAllocator)
 	{
 		ID3D12GraphicsCommandList* ptr = nullptr;
-		if (device.Ptr->CreateCommandList(
+		if (device->CreateCommandList(
 			0,
 			D3D12_COMMAND_LIST_TYPE_DIRECT,
 			commandAllocator.Ptr,
@@ -102,7 +108,7 @@ namespace ForiverEngine
 		};
 
 		ID3D12CommandQueue* ptr = nullptr;
-		if (device.Ptr->CreateCommandQueue(&desc, IID_PPV_ARGS(&ptr)) == S_OK)
+		if (device->CreateCommandQueue(&desc, IID_PPV_ARGS(&ptr)) == S_OK)
 		{
 			return CommandQueue(ptr);
 		}
@@ -136,7 +142,7 @@ namespace ForiverEngine
 			return SwapChain::Nullptr();
 		}
 
-		if (factory.Ptr->CreateSwapChainForHwnd(
+		if (factory->CreateSwapChainForHwnd(
 			commandQueue.Ptr, // 注意 : コマンドキュー
 			hwnd,
 			&desc,
@@ -151,7 +157,7 @@ namespace ForiverEngine
 		return SwapChain::Nullptr();
 	}
 
-	DescriptorHeap D3D12ObjectFactory::CreateDescriptorHeap(const Device& device)
+	DescriptorHeap D3D12ObjectFactory::CreateDescriptorHeapRTV(const Device& device)
 	{
 		D3D12_DESCRIPTOR_HEAP_DESC desc
 		{
@@ -162,7 +168,7 @@ namespace ForiverEngine
 		};
 
 		ID3D12DescriptorHeap* ptr = nullptr;
-		if (device.Ptr->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&ptr)) == S_OK)
+		if (device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&ptr)) == S_OK)
 		{
 			return DescriptorHeap(ptr);
 		}
@@ -170,10 +176,84 @@ namespace ForiverEngine
 		return DescriptorHeap::Nullptr();
 	}
 
+	bool D3D12ObjectFactory::LinkDescriptorHeapRTVToSwapChain(
+		const Device& device, const DescriptorHeap& descriptorHeapRTV, const SwapChain& swapChain)
+	{
+		for (int i = 0; i < GetBufferCountFromSwapChain(swapChain); ++i)
+		{
+			GraphicBuffer graphicsBuffer = GetBufferFromSwapChainByIndex(swapChain, i);
+			if (!graphicsBuffer)
+				return false;
+
+			D3D12_CPU_DESCRIPTOR_HANDLE handleRTV = CreateDescriptorHeapHandleIndicatingDescriptorByIndexAtCPU(
+				device, descriptorHeapRTV, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, i);
+
+			device->CreateRenderTargetView(
+				graphicsBuffer.Ptr,
+				nullptr, // 今回は nullptr でOK (ミップマップに関係したりする)
+				handleRTV // i 番目の Descriptor (RTV) を指し示すハンドル
+			);
+		}
+
+		return true;
+	}
+
+	bool D3D12ObjectFactory::ClearCommandAllocatorAndList(const CommandAllocator& commandAllocator, const CommandList& commandList)
+	{
+		if (commandAllocator->Reset() != S_OK) return false;
+		if (commandList->Reset(commandAllocator.Ptr, nullptr) != S_OK) return false;
+		return true;
+	}
+
+	DescriptorHeapHandle D3D12ObjectFactory::CreateDescriptorHeapHandleIndicatingDescriptorByIndexAtCPU(
+		const Device& device, const DescriptorHeap& descriptorHeap, DescriptorHeapType descriptorHeapType, int index)
+	{
+		D3D12_CPU_DESCRIPTOR_HANDLE handle = descriptorHeap->GetCPUDescriptorHandleForHeapStart();
+		handle.ptr += index * device->GetDescriptorHandleIncrementSize(descriptorHeapType);
+		return handle;
+	}
+
+	void D3D12ObjectFactory::CommandSetRTAsOutputStage(const CommandList& commandList, const DescriptorHeapHandle& handleRTV)
+	{
+		commandList->OMSetRenderTargets(
+			1, // 今のところ、一回の描画における RT は1つのみ
+			&handleRTV, // Descriptor (RTV) を指し示すハンドル
+			true, // Descriptor (RTV) 達はメモリで連続している
+			nullptr // Descriptor (DSV) を指し示すハンドル (今のところは nullptr でOK)
+		);
+	}
+
+	void D3D12ObjectFactory::CommandClearRT(const CommandList& commandList, const DescriptorHeapHandle& handleRTV, float clearColor4[])
+	{
+		// 第3,4引数は、クリアする範囲を指定する
+		// 今回は画面全体をクリアするので、指定する必要はない
+		commandList->ClearRenderTargetView(handleRTV, clearColor4, 0, nullptr);
+	}
+
+	void D3D12ObjectFactory::CommandClose(const CommandList& commandList)
+	{
+		commandList->Close();
+	}
+
+	void D3D12ObjectFactory::ExecuteCommands(const CommandQueue& commandQueue, const CommandList& commandList)
+	{
+		// コマンドリストは1つのみ
+		ID3D12CommandList* commandListPointers[] = { commandList.Ptr };
+		commandQueue->ExecuteCommandLists(1, commandListPointers);
+	}
+
+	bool D3D12ObjectFactory::Present(const SwapChain& swapChain)
+	{
+		// 第1引数は、フリップまでの待機フレーム数 (= 待つべき垂直同期の数)
+		// バックバッファーが2枚のみなので、今は1で良い (フルスクリーン or ウィンドウ によっても変わる)
+		// 第2引数は、特殊用途での指定が多い (今は必要ないので 0)
+		return swapChain->Present(1, 0) == S_OK;
+	}
+
 	GraphicAdapter FindAvailableGraphicAdapter(const Factory& factory, std::function<bool(const std::wstring&)> descriptionComparer)
 	{
 		IDXGIAdapter* ptr = nullptr;
-		for (int i = 0; factory.Ptr->EnumAdapters(i, &ptr) != DXGI_ERROR_NOT_FOUND; ++i)
+		for (int i = 0; factory->EnumAdapters(i, &ptr) != DXGI_ERROR_NOT_FOUND; ++i)
 		{
 			DXGI_ADAPTER_DESC desc;
 			ptr->GetDesc(&desc);
@@ -183,5 +263,27 @@ namespace ForiverEngine
 		}
 
 		return GraphicAdapter::Nullptr();
+	}
+
+	int GetBufferCountFromSwapChain(const SwapChain& swapChain)
+	{
+		DXGI_SWAP_CHAIN_DESC desc = {};
+		if (swapChain->GetDesc(&desc) == S_OK)
+		{
+			return desc.BufferCount;
+		}
+
+		return -1;
+	}
+
+	GraphicBuffer GetBufferFromSwapChainByIndex(const SwapChain& swapChain, int index)
+	{
+		ID3D12Resource* ptr = nullptr;
+		if (swapChain->GetBuffer(index, IID_PPV_ARGS(&ptr)) == S_OK)
+		{
+			return GraphicBuffer(ptr);
+		}
+
+		return GraphicBuffer::Nullptr();
 	}
 }

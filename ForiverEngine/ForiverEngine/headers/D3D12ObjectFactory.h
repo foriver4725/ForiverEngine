@@ -8,6 +8,9 @@ struct ID3D12GraphicsCommandList;
 struct ID3D12CommandQueue;
 struct ID3D12DescriptorHeap;
 struct IDXGIAdapter;
+struct ID3D12Resource;
+struct D3D12_CPU_DESCRIPTOR_HANDLE;
+enum D3D12_DESCRIPTOR_HEAP_TYPE;
 struct HWND__; typedef HWND__* HWND;
 
 namespace ForiverEngine
@@ -17,6 +20,9 @@ namespace ForiverEngine
 	using ID3D12DeviceLatest = ID3D12Device14;
 	using IDXGISwapChainLatest = IDXGISwapChain4;
 
+	using DescriptorHeapType = D3D12_DESCRIPTOR_HEAP_TYPE;
+	using DescriptorHeapHandle = D3D12_CPU_DESCRIPTOR_HANDLE;
+
 	// ラッパークラスを定義
 #define DEFINE_WRAPPER_CLASS(WrapperStructName, OriginalPointerType) \
 struct WrapperStructName \
@@ -25,6 +31,8 @@ public: \
 	OriginalPointerType* Ptr = nullptr; \
 	explicit WrapperStructName(OriginalPointerType* ptr) : Ptr(ptr) {} \
     inline static WrapperStructName Nullptr() { return WrapperStructName(nullptr); } \
+\
+	OriginalPointerType* operator->() const { return Ptr; } \
     explicit operator bool() const { return Ptr != nullptr; } \
 };
 
@@ -37,6 +45,7 @@ public: \
 	DEFINE_WRAPPER_CLASS(DescriptorHeap, ID3D12DescriptorHeap);
 
 	DEFINE_WRAPPER_CLASS(GraphicAdapter, IDXGIAdapter);
+	DEFINE_WRAPPER_CLASS(GraphicBuffer, ID3D12Resource);
 
 #undef DEFINE_WRAPPER_CLASS
 
@@ -78,8 +87,59 @@ public: \
 		static SwapChain CreateSwapChain(const Factory& factory, const CommandQueue& commandQueue, HWND hwnd, int windowWidth, int windowHeight);
 
 		/// <summary>
-		/// DescriptorHeap を作成して返す (失敗したら nullptr)
+		/// <para>DescriptorHeap を作成して返す (失敗したら nullptr)</para>
+		/// RenderTargetView 用
 		/// </summary>
-		static DescriptorHeap CreateDescriptorHeap(const Device& device);
+		static DescriptorHeap CreateDescriptorHeapRTV(const Device& device);
+
+		/// <summary>
+		/// <para>DescriptorHeap(RTV) と SwapChain を関連付ける</para>
+		/// <para>Descriptorの数 = GraphicBufferの数だけ、繰り返し処理を行う</para>
+		/// 全て成功したら true, 1つでも失敗したら false を返す (失敗した瞬間に処理を中断する)
+		/// </summary>
+		static bool LinkDescriptorHeapRTVToSwapChain(
+			const Device& device, const DescriptorHeap& descriptorHeapRTV, const SwapChain& swapChain);
+
+		/// <summary>
+		/// <para>CommandAllocator と CommandList をクリアする</para>
+		/// 全て成功したら true, 1つでも失敗したら false を返す (失敗した瞬間に処理を中断する)
+		/// </summary>
+		static bool ClearCommandAllocatorAndList(const CommandAllocator& commandAllocator, const CommandList& commandList);
+
+		// DescriptorHeap のハンドルを作成し、index 番目の Descriptor を指し示すように内部ポインタを進めて返す
+		// CPU 用
+		static DescriptorHeapHandle CreateDescriptorHeapHandleIndicatingDescriptorByIndexAtCPU(
+			const Device& device, const DescriptorHeap& descriptorHeap, DescriptorHeapType descriptorHeapType, int index);
+
+		/// <summary>
+		/// <para>[Command]</para>
+		/// <para>ハンドルが指し示す RenderTarget について、以下の処理を行う</para>
+		/// 出力ステージとして設定する
+		/// </summary>
+		static void CommandSetRTAsOutputStage(const CommandList& commandList, const DescriptorHeapHandle& handleRTV);
+
+		/// <summary>
+		/// <para>[Command]</para>
+		/// <para>ハンドルが指し示す RenderTarget について、以下の処理を行う</para>
+		/// 全体を1色でクリアする
+		/// </summary>
+		static void CommandClearRT(const CommandList& commandList, const DescriptorHeapHandle& handleRTV, float clearColor4[]);
+
+		/// <summary>
+		/// <para>[Command]</para>
+		/// CommandList を閉じる
+		/// </summary>
+		static void CommandClose(const CommandList& commandList);
+
+		/// <summary>
+		/// CommandList を実行する
+		/// </summary>
+		static void ExecuteCommands(const CommandQueue& commandQueue, const CommandList& commandList);
+
+		/// <summary>
+		/// <para>スワップ(フリップ) を実行させる</para>
+		/// 成功したら true, 失敗したら false を返す
+		/// </summary>
+		static bool Present(const SwapChain& swapChain);
 	};
 }
