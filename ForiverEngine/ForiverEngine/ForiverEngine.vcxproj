@@ -134,9 +134,11 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="sources\D3D12ObjectFactory.cpp" />
+    <ClCompile Include="sources\WindowHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="headers\D3D12ObjectFactory.h" />
+    <ClInclude Include="headers\WindowHelper.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

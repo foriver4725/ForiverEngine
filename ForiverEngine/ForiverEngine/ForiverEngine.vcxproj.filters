@@ -5,6 +5,9 @@
     <ClCompile Include="sources\D3D12ObjectFactory.cpp">
       <Filter>sources</Filter>
     </ClCompile>
+    <ClCompile Include="sources\WindowHelper.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="headers">
@@ -16,6 +19,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="headers\D3D12ObjectFactory.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="headers\WindowHelper.h">
       <Filter>headers</Filter>
     </ClInclude>
   </ItemGroup>

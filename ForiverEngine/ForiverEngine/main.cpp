@@ -1,6 +1,7 @@
-﻿#include <Windows.h>
-
+﻿#include "./headers/WindowHelper.h"
 #include "./headers/D3D12ObjectFactory.h"
+
+#include <Windows.h>
 
 constexpr int WindowWidth = 960;
 constexpr int WindowHeight = 540;
@@ -8,48 +9,44 @@ constexpr int WindowHeight = 540;
 const wchar_t* WindowClassName = L"DX12Sample";
 const wchar_t* WindowTitle = L"DX12 テスト";
 
-LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
-#undef CreateWindow
-HWND CreateWindow(const wchar_t* className, const wchar_t* title, int width, int height);
-void PopupErrorDialog(const wchar_t* message);
+DEFINE_DEFAULT_WINDOW_PROCEDURE(WindowProcedure)
 
-
-int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nCmdShow)
+int WindowMain(hInstance)
 {
 	using namespace ForiverEngine;
 
-	WNDCLASSW w = {};
-	w.hInstance = hInstance;
-	w.lpszClassName = WindowClassName;
-	w.lpfnWndProc = WindowProcedure;
-
-	// ウィンドウクラスの登録
-	if (!RegisterClassW(&w))
+	if (!WindowHelper::InitializeWindowFromHInstance(hInstance, WindowProcedure, WindowClassName))
+	{
+		WindowHelper::PopupErrorDialog(L"ウィンドウの初期化に失敗しました。");
 		return -1;
+	}
 
-	// ウィンドウの作成
-	HWND hwnd = CreateWindow(WindowClassName, WindowTitle, WindowWidth, WindowHeight);
+	HWND hwnd = WindowHelper::CreateTheWindow(WindowClassName, WindowTitle, WindowWidth, WindowHeight);
+
+
 
 	Factory factory = D3D12ObjectFactory::CreateFactory();
-	if (!factory) { PopupErrorDialog(L"Factory の作成に失敗しました。"); return -1; }
+	if (!factory) { WindowHelper::PopupErrorDialog(L"Factory の作成に失敗しました。"); return -1; }
 
 	Device device = D3D12ObjectFactory::CreateDevice(factory);
-	if (!device) { PopupErrorDialog(L"Device の作成に失敗しました。"); return -1; }
+	if (!device) { WindowHelper::PopupErrorDialog(L"Device の作成に失敗しました。"); return -1; }
 
 	CommandAllocator commandAllocater = D3D12ObjectFactory::CreateCommandAllocator(device);
-	if (!commandAllocater) { PopupErrorDialog(L"CommandAllocator の作成に失敗しました。"); return -1; }
+	if (!commandAllocater) { WindowHelper::PopupErrorDialog(L"CommandAllocator の作成に失敗しました。"); return -1; }
 
 	CommandList commandList = D3D12ObjectFactory::CreateCommandList(device, commandAllocater);
-	if (!commandList) { PopupErrorDialog(L"CommandList の作成に失敗しました。"); return -1; }
+	if (!commandList) { WindowHelper::PopupErrorDialog(L"CommandList の作成に失敗しました。"); return -1; }
 
 	CommandQueue commandQueue = D3D12ObjectFactory::CreateCommandQueue(device);
-	if (!commandQueue) { PopupErrorDialog(L"CommandQueue の作成に失敗しました。"); return -1; }
+	if (!commandQueue) { WindowHelper::PopupErrorDialog(L"CommandQueue の作成に失敗しました。"); return -1; }
 
 	SwapChain swapChain = D3D12ObjectFactory::CreateSwapChain(factory, commandQueue, hwnd, WindowWidth, WindowHeight);
-	if (!swapChain) { PopupErrorDialog(L"SwapChain の作成に失敗しました。"); return -1; }
+	if (!swapChain) { WindowHelper::PopupErrorDialog(L"SwapChain の作成に失敗しました。"); return -1; }
 
 	DescriptorHeap descriptorHeap = D3D12ObjectFactory::CreateDescriptorHeap(device);
-	if (!descriptorHeap) { PopupErrorDialog(L"DescriptorHeap の作成に失敗しました。"); return -1; }
+	if (!descriptorHeap) { WindowHelper::PopupErrorDialog(L"DescriptorHeap の作成に失敗しました。"); return -1; }
+
+
 
 	// メッセージループ
 	MSG msg = {};
@@ -59,31 +56,4 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	}
 
 	return 0;
-}
-
-// --------------------------------------------------
-
-// エラーポップアップを出す
-void PopupErrorDialog(const wchar_t* message)
-{
-	MessageBox(nullptr, message, L"error", MB_OK | MB_ICONERROR);
-}
-
-HWND CreateWindow(const wchar_t* className, const wchar_t* title, int width, int height)
-{
-	return CreateWindowW(className, title, WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-		CW_USEDEFAULT, CW_USEDEFAULT, width, height, nullptr, nullptr, nullptr, nullptr);
-}
-
-// ウィンドウプロシージャ
-LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
-{
-	// ウィンドウが破棄されたら呼ばれる
-	if (msg == WM_DESTROY)
-	{
-		PostQuitMessage(0); // OSに対して「もうこのアプリは終わる」と伝える
-		return 0;
-	}
-
-	return DefWindowProc(hwnd, msg, wparam, lparam); // デフォルトの処理を行う
 }
