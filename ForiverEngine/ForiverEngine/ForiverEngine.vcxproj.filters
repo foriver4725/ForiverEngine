@@ -2,7 +2,7 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="sources\D3D12ObjectFactory.cpp">
+    <ClCompile Include="sources\D3D12Helper.cpp">
       <Filter>sources</Filter>
     </ClCompile>
     <ClCompile Include="sources\WindowHelper.cpp">
@@ -18,7 +18,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="headers\D3D12ObjectFactory.h">
+    <ClInclude Include="headers\D3D12Helper.h">
       <Filter>headers</Filter>
     </ClInclude>
     <ClInclude Include="headers\WindowHelper.h">

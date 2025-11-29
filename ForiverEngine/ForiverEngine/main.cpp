@@ -1,5 +1,5 @@
 ﻿#include "./headers/WindowHelper.h"
-#include "./headers/D3D12ObjectFactory.h"
+#include "./headers/D3D12Helper.h"
 
 #include <Windows.h>
 
@@ -20,27 +20,27 @@ int WindowMain(hInstance)
 	HWND hwnd = WindowHelper::CreateTheWindow(WindowClassName, WindowTitle, WindowWidth, WindowHeight);
 
 #ifdef _DEBUG
-	if (!D3D12ObjectFactory::EnableDebugLayer())
+	if (!D3D12Helper::EnableDebugLayer())
 		Throw(L"DebugLayer の有効化に失敗しました");
 #endif
 
-	Factory factory = D3D12ObjectFactory::CreateFactory();
+	Factory factory = D3D12Helper::CreateFactory();
 	if (!factory) Throw(L"Factory の作成に失敗しました");
-	Device device = D3D12ObjectFactory::CreateDevice(factory);
+	Device device = D3D12Helper::CreateDevice(factory);
 	if (!device) Throw(L"Device の作成に失敗しました");
 
-	CommandAllocator commandAllocater = D3D12ObjectFactory::CreateCommandAllocator(device);
+	CommandAllocator commandAllocater = D3D12Helper::CreateCommandAllocator(device);
 	if (!commandAllocater) Throw(L"CommandAllocater の作成に失敗しました");
-	CommandList commandList = D3D12ObjectFactory::CreateCommandList(device, commandAllocater);
+	CommandList commandList = D3D12Helper::CreateCommandList(device, commandAllocater);
 	if (!commandList) Throw(L"CommandList の作成に失敗しました");
-	CommandQueue commandQueue = D3D12ObjectFactory::CreateCommandQueue(device);
+	CommandQueue commandQueue = D3D12Helper::CreateCommandQueue(device);
 	if (!commandQueue) Throw(L"CommandQueue の作成に失敗しました");
 
-	SwapChain swapChain = D3D12ObjectFactory::CreateSwapChain(factory, commandQueue, hwnd, WindowWidth, WindowHeight);
+	SwapChain swapChain = D3D12Helper::CreateSwapChain(factory, commandQueue, hwnd, WindowWidth, WindowHeight);
 	if (!swapChain) Throw(L"SwapChain の作成に失敗しました");
-	DescriptorHeap descriptorHeapRTV = D3D12ObjectFactory::CreateDescriptorHeapRTV(device);
+	DescriptorHeap descriptorHeapRTV = D3D12Helper::CreateDescriptorHeapRTV(device);
 	if (!descriptorHeapRTV) Throw(L"DescriptorHeap (RTV) の作成に失敗しました");
-	if (!D3D12ObjectFactory::LinkDescriptorHeapRTVToSwapChain(device, descriptorHeapRTV, swapChain))
+	if (!D3D12Helper::LinkDescriptorHeapRTVToSwapChain(device, descriptorHeapRTV, swapChain))
 		Throw(L"DescriptorHeap (RTV) を SwapChain に関連付けることに失敗しました");
 
 
@@ -52,30 +52,30 @@ int WindowMain(hInstance)
 		DispatchMessage(&msg);
 
 		// 現在バックバッファにある RenderTarget を取得する
-		const int currentBackBufferIndex = D3D12ObjectFactory::GetCurrentBackBufferIndex(swapChain);
-		GraphicBuffer currentBackBuffer = D3D12ObjectFactory::GetGraphicBufferByIndex(swapChain, currentBackBufferIndex);
+		const int currentBackBufferIndex = D3D12Helper::GetCurrentBackBufferIndex(swapChain);
+		GraphicBuffer currentBackBuffer = D3D12Helper::GetGraphicBufferByIndex(swapChain, currentBackBufferIndex);
 		if (!currentBackBuffer) Throw(L"現在バックにある GraphicBuffer を取得することに失敗しました");
-		DescriptorHeapHandleAtCPU backBufferRTV = D3D12ObjectFactory::CreateDescriptorRTVHandleByIndex(
+		DescriptorHeapHandleAtCPU backBufferRTV = D3D12Helper::CreateDescriptorRTVHandleByIndex(
 			device, descriptorHeapRTV, currentBackBufferIndex);
 
-		D3D12ObjectFactory::InvokeResourceBarrierAsTransitionFromPresentToRenderTarget(commandList, currentBackBuffer);
+		D3D12Helper::InvokeResourceBarrierAsTransitionFromPresentToRenderTarget(commandList, currentBackBuffer);
 
-		D3D12ObjectFactory::CommandSetRTAsOutputStage(commandList, backBufferRTV);
+		D3D12Helper::CommandSetRTAsOutputStage(commandList, backBufferRTV);
 		float clearColor[4] = { 1, 1, 0, 1 };
-		D3D12ObjectFactory::CommandClearRT(commandList, backBufferRTV, clearColor);
+		D3D12Helper::CommandClearRT(commandList, backBufferRTV, clearColor);
 
-		D3D12ObjectFactory::InvokeResourceBarrierAsTransitionFromRenderTargetToPresent(commandList, currentBackBuffer);
+		D3D12Helper::InvokeResourceBarrierAsTransitionFromRenderTargetToPresent(commandList, currentBackBuffer);
 
-		D3D12ObjectFactory::CommandClose(commandList);
-		D3D12ObjectFactory::ExecuteCommands(commandQueue, commandList);
+		D3D12Helper::CommandClose(commandList);
+		D3D12Helper::ExecuteCommands(commandQueue, commandList);
 
-		Fence fence = D3D12ObjectFactory::CreateFence(device);
-		D3D12ObjectFactory::WaitForGPUEventCompletion(fence, commandQueue);
+		Fence fence = D3D12Helper::CreateFence(device);
+		D3D12Helper::WaitForGPUEventCompletion(fence, commandQueue);
 
-		if (!D3D12ObjectFactory::ClearCommandAllocatorAndList(commandAllocater, commandList))
+		if (!D3D12Helper::ClearCommandAllocatorAndList(commandAllocater, commandList))
 			Throw(L"CommandAllocator, CommandList のクリアに失敗しました");
 
-		if (!D3D12ObjectFactory::Present(swapChain))
+		if (!D3D12Helper::Present(swapChain))
 			Throw(L"画面のフリップに失敗しました");
 	}
 

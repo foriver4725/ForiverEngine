@@ -54,11 +54,11 @@ public: \
 	struct DescriptorHeapHandleAtCPU { SIZE_T ptr; };
 	struct DescriptorHeapHandleAtGPU { UINT64 ptr; };
 
-	class D3D12ObjectFactory final
+	class D3D12Helper final
 	{
 	public:
-		D3D12ObjectFactory() = delete;
-		~D3D12ObjectFactory() = delete;
+		D3D12Helper() = delete;
+		~D3D12Helper() = delete;
 
 		/// <summary>
 		/// DXGIFactory を作成して返す (失敗したら nullptr)

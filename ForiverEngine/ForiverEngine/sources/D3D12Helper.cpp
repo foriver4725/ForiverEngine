@@ -1,4 +1,4 @@
-﻿#include "../headers/D3D12ObjectFactory.h"
+﻿#include "../headers/D3D12Helper.h"
 
 #include <string>
 #include <functional>
@@ -34,7 +34,7 @@ namespace ForiverEngine
 		const CommandList& commandList, const GraphicBuffer& graphicBuffer,
 		D3D12_RESOURCE_STATES beforeState, D3D12_RESOURCE_STATES afterState);
 
-	Factory D3D12ObjectFactory::CreateFactory()
+	Factory D3D12Helper::CreateFactory()
 	{
 		IDXGIFactoryLatest* ptr = nullptr;
 #ifdef _DEBUG
@@ -47,7 +47,7 @@ namespace ForiverEngine
 		return Factory::Nullptr();
 	}
 
-	Device D3D12ObjectFactory::CreateDevice(const Factory& factory)
+	Device D3D12Helper::CreateDevice(const Factory& factory)
 	{
 		// 上から順に、対応している機能レベルを探して行く
 		constexpr D3D_FEATURE_LEVEL featureLevels[] =
@@ -83,7 +83,7 @@ namespace ForiverEngine
 		return Device::Nullptr();
 	}
 
-	CommandAllocator D3D12ObjectFactory::CreateCommandAllocator(const Device& device)
+	CommandAllocator D3D12Helper::CreateCommandAllocator(const Device& device)
 	{
 		ID3D12CommandAllocator* ptr = nullptr;
 		if (device->CreateCommandAllocator(
@@ -97,7 +97,7 @@ namespace ForiverEngine
 		return CommandAllocator::Nullptr();
 	}
 
-	CommandList D3D12ObjectFactory::CreateCommandList(const Device& device, const CommandAllocator& commandAllocator)
+	CommandList D3D12Helper::CreateCommandList(const Device& device, const CommandAllocator& commandAllocator)
 	{
 		ID3D12GraphicsCommandList* ptr = nullptr;
 		if (device->CreateCommandList(
@@ -114,7 +114,7 @@ namespace ForiverEngine
 		return CommandList::Nullptr();
 	}
 
-	CommandQueue D3D12ObjectFactory::CreateCommandQueue(const Device& device)
+	CommandQueue D3D12Helper::CreateCommandQueue(const Device& device)
 	{
 		D3D12_COMMAND_QUEUE_DESC desc
 		{
@@ -133,7 +133,7 @@ namespace ForiverEngine
 		return CommandQueue::Nullptr();
 	}
 
-	SwapChain D3D12ObjectFactory::CreateSwapChain(const Factory& factory, const CommandQueue& commandQueue, HWND hwnd, int windowWidth, int windowHeight)
+	SwapChain D3D12Helper::CreateSwapChain(const Factory& factory, const CommandQueue& commandQueue, HWND hwnd, int windowWidth, int windowHeight)
 	{
 		DXGI_SWAP_CHAIN_DESC1 desc
 		{
@@ -174,7 +174,7 @@ namespace ForiverEngine
 		return SwapChain::Nullptr();
 	}
 
-	DescriptorHeap D3D12ObjectFactory::CreateDescriptorHeapRTV(const Device& device)
+	DescriptorHeap D3D12Helper::CreateDescriptorHeapRTV(const Device& device)
 	{
 		D3D12_DESCRIPTOR_HEAP_DESC desc
 		{
@@ -193,7 +193,7 @@ namespace ForiverEngine
 		return DescriptorHeap::Nullptr();
 	}
 
-	Fence D3D12ObjectFactory::CreateFence(const Device& device)
+	Fence D3D12Helper::CreateFence(const Device& device)
 	{
 		ID3D12Fence* ptr = nullptr;
 		if (device->CreateFence(
@@ -208,7 +208,7 @@ namespace ForiverEngine
 		return Fence::Nullptr();
 	}
 
-	bool D3D12ObjectFactory::LinkDescriptorHeapRTVToSwapChain(
+	bool D3D12Helper::LinkDescriptorHeapRTVToSwapChain(
 		const Device& device, const DescriptorHeap& descriptorHeapRTV, const SwapChain& swapChain)
 	{
 		for (int i = 0; i < GetBufferCountFromSwapChain(swapChain); ++i)
@@ -230,19 +230,19 @@ namespace ForiverEngine
 		return true;
 	}
 
-	bool D3D12ObjectFactory::ClearCommandAllocatorAndList(const CommandAllocator& commandAllocator, const CommandList& commandList)
+	bool D3D12Helper::ClearCommandAllocatorAndList(const CommandAllocator& commandAllocator, const CommandList& commandList)
 	{
 		if (commandAllocator->Reset() != S_OK) return false;
 		if (commandList->Reset(commandAllocator.Ptr, nullptr) != S_OK) return false;
 		return true;
 	}
 
-	int D3D12ObjectFactory::GetCurrentBackBufferIndex(const SwapChain& swapChain)
+	int D3D12Helper::GetCurrentBackBufferIndex(const SwapChain& swapChain)
 	{
 		return swapChain->GetCurrentBackBufferIndex();
 	}
 
-	GraphicBuffer D3D12ObjectFactory::GetGraphicBufferByIndex(const SwapChain& swapChain, int index)
+	GraphicBuffer D3D12Helper::GetGraphicBufferByIndex(const SwapChain& swapChain, int index)
 	{
 		ID3D12Resource* ptr = nullptr;
 		if (swapChain->GetBuffer(index, IID_PPV_ARGS(&ptr)) == S_OK)
@@ -253,14 +253,14 @@ namespace ForiverEngine
 		return GraphicBuffer::Nullptr();
 	}
 
-	DescriptorHeapHandleAtCPU D3D12ObjectFactory::CreateDescriptorRTVHandleByIndex(
+	DescriptorHeapHandleAtCPU D3D12Helper::CreateDescriptorRTVHandleByIndex(
 		const Device& device, const DescriptorHeap& descriptorHeapRTV, int index)
 	{
 		return CreateDescriptorHeapHandleIndicatingDescriptorByIndexAtCPU(
 			device, descriptorHeapRTV, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, index);
 	}
 
-	void D3D12ObjectFactory::InvokeResourceBarrierAsTransitionFromPresentToRenderTarget(
+	void D3D12Helper::InvokeResourceBarrierAsTransitionFromPresentToRenderTarget(
 		const CommandList& commandList, const GraphicBuffer& graphicBuffer)
 	{
 		InvokeResourceBarrierAsTransition(
@@ -269,7 +269,7 @@ namespace ForiverEngine
 		);
 	}
 
-	void D3D12ObjectFactory::InvokeResourceBarrierAsTransitionFromRenderTargetToPresent(
+	void D3D12Helper::InvokeResourceBarrierAsTransitionFromRenderTargetToPresent(
 		const CommandList& commandList, const GraphicBuffer& graphicBuffer)
 	{
 		InvokeResourceBarrierAsTransition(
@@ -278,7 +278,7 @@ namespace ForiverEngine
 		);
 	}
 
-	void D3D12ObjectFactory::CommandSetRTAsOutputStage(const CommandList& commandList, const DescriptorHeapHandleAtCPU& handleRTV)
+	void D3D12Helper::CommandSetRTAsOutputStage(const CommandList& commandList, const DescriptorHeapHandleAtCPU& handleRTV)
 	{
 		commandList->OMSetRenderTargets(
 			1, // 今のところ、一回の描画における RT は1つのみ
@@ -288,26 +288,26 @@ namespace ForiverEngine
 		);
 	}
 
-	void D3D12ObjectFactory::CommandClearRT(const CommandList& commandList, const DescriptorHeapHandleAtCPU& handleRTV, float clearColor4[])
+	void D3D12Helper::CommandClearRT(const CommandList& commandList, const DescriptorHeapHandleAtCPU& handleRTV, float clearColor4[])
 	{
 		// 第3,4引数は、クリアする範囲を指定する
 		// 今回は画面全体をクリアするので、指定する必要はない
 		commandList->ClearRenderTargetView(*Reinterpret(const_cast<DescriptorHeapHandleAtCPU*>(&handleRTV)), clearColor4, 0, nullptr);
 	}
 
-	void D3D12ObjectFactory::CommandClose(const CommandList& commandList)
+	void D3D12Helper::CommandClose(const CommandList& commandList)
 	{
 		commandList->Close();
 	}
 
-	void D3D12ObjectFactory::ExecuteCommands(const CommandQueue& commandQueue, const CommandList& commandList)
+	void D3D12Helper::ExecuteCommands(const CommandQueue& commandQueue, const CommandList& commandList)
 	{
 		// コマンドリストは1つのみ
 		ID3D12CommandList* commandListPointers[] = { commandList.Ptr };
 		commandQueue->ExecuteCommandLists(1, commandListPointers);
 	}
 
-	bool D3D12ObjectFactory::WaitForGPUEventCompletion(const Fence& fence, const CommandQueue& commandQueue)
+	bool D3D12Helper::WaitForGPUEventCompletion(const Fence& fence, const CommandQueue& commandQueue)
 	{
 		// CPU側で、GPU側の処理終了時に期待されるフェンス値を渡す
 		// GetCompletedValue() は GPU からのフェンス値を返すので、この等価比較で同期をとる
@@ -330,7 +330,7 @@ namespace ForiverEngine
 		return true;
 	}
 
-	bool D3D12ObjectFactory::Present(const SwapChain& swapChain)
+	bool D3D12Helper::Present(const SwapChain& swapChain)
 	{
 		// 第1引数は、フリップまでの待機フレーム数 (= 待つべき垂直同期の数)
 		// バックバッファーが2枚のみなので、今は1で良い (フルスクリーン or ウィンドウ によっても変わる)
@@ -339,7 +339,7 @@ namespace ForiverEngine
 	}
 
 #ifdef _DEBUG
-	bool D3D12ObjectFactory::EnableDebugLayer()
+	bool D3D12Helper::EnableDebugLayer()
 	{
 		ID3D12Debug* debugLayer = nullptr;
 		if (D3D12GetDebugInterface(IID_PPV_ARGS(&debugLayer)) == S_OK)
