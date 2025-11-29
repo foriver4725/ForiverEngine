@@ -15,14 +15,6 @@ int WindowMain(hInstance)
 {
 	using namespace ForiverEngine;
 
-#define Throw(Message) \
-{ \
-    WindowHelper::PopupErrorDialog(Message); \
-    return -1; \
-}
-
-
-
 	if (!WindowHelper::InitializeWindowFromHInstance(hInstance, WindowProcedure, WindowClassName))
 		Throw(L"ウィンドウの初期化に失敗しました");
 	HWND hwnd = WindowHelper::CreateTheWindow(WindowClassName, WindowTitle, WindowWidth, WindowHeight);

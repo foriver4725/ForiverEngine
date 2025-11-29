@@ -33,6 +33,13 @@ static LRESULT CALLBACK FunctionName(HWND hwnd, UINT msg, WPARAM wparam, LPARAM 
 	return DefWindowProc(hwnd, msg, wparam, lparam); \
 }
 
+		// エラーのメッセージボックスを出し、-1 を return するマクロ
+#define Throw(Message) \
+{ \
+    WindowHelper::PopupErrorDialog(Message); \
+    return -1; \
+}
+
 	public:
 		WindowHelper() = delete;
 		~WindowHelper() = delete;
