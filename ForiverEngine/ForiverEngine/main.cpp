@@ -3,18 +3,6 @@
 
 #include <Windows.h>
 
-#if true
-// テスト用
-#include <string>
-#include <functional>
-
-#include <d3d12.h>
-#include <dxgi1_6.h>
-
-#pragma comment(lib, "d3d12.lib")
-#pragma comment(lib, "dxgi.lib")
-#endif
-
 constexpr int WindowWidth = 960;
 constexpr int WindowHeight = 540;
 
@@ -72,33 +60,19 @@ int WindowMain(hInstance)
 		DispatchMessage(&msg);
 
 		// 現在バックバッファにある RenderTarget を取得する
-		const int currentBackBufferIndex = swapChain->GetCurrentBackBufferIndex();
+		const int currentBackBufferIndex = D3D12ObjectFactory::GetCurrentBackBufferIndex(swapChain);
 		GraphicBuffer currentBackBuffer = D3D12ObjectFactory::GetGraphicBufferByIndex(swapChain, currentBackBufferIndex);
 		if (!currentBackBuffer) Throw(L"現在バックにある GraphicBuffer を取得することに失敗しました");
-		DescriptorHeapHandle backBufferRTV = D3D12ObjectFactory::CreateDescriptorHeapHandleIndicatingDescriptorByIndexAtCPU(
-			device, descriptorHeapRTV, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, currentBackBufferIndex);
+		DescriptorHeapHandleAtCPU backBufferRTV = D3D12ObjectFactory::CreateDescriptorRTVHandleByIndex(
+			device, descriptorHeapRTV, currentBackBufferIndex);
 
-		D3D12_RESOURCE_BARRIER desc =
-		{
-			.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION,
-			.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE,
-			.Transition =
-			{
-				.pResource = currentBackBuffer.Ptr,
-				.Subresource = 0,
-				.StateBefore = D3D12_RESOURCE_STATE_PRESENT,
-				.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET,
-			},
-		};
-		commandList->ResourceBarrier(1, &desc);
+		D3D12ObjectFactory::InvokeResourceBarrierAsTransitionFromPresentToRenderTarget(commandList, currentBackBuffer);
 
 		D3D12ObjectFactory::CommandSetRTAsOutputStage(commandList, backBufferRTV);
 		float clearColor[4] = { 1, 1, 0, 1 };
 		D3D12ObjectFactory::CommandClearRT(commandList, backBufferRTV, clearColor);
 
-		desc.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-		desc.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
-		commandList->ResourceBarrier(1, &desc);
+		D3D12ObjectFactory::InvokeResourceBarrierAsTransitionFromRenderTargetToPresent(commandList, currentBackBuffer);
 
 		D3D12ObjectFactory::CommandClose(commandList);
 		D3D12ObjectFactory::ExecuteCommands(commandQueue, commandList);

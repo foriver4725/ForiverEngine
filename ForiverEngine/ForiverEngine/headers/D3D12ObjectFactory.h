@@ -10,8 +10,6 @@ struct ID3D12DescriptorHeap;
 struct ID3D12Fence;
 struct IDXGIAdapter;
 struct ID3D12Resource;
-struct D3D12_CPU_DESCRIPTOR_HANDLE;
-enum D3D12_DESCRIPTOR_HEAP_TYPE;
 struct HWND__; typedef HWND__* HWND;
 
 namespace ForiverEngine
@@ -21,11 +19,8 @@ namespace ForiverEngine
 	using ID3D12DeviceLatest = ID3D12Device14;
 	using IDXGISwapChainLatest = IDXGISwapChain4;
 
-	using DescriptorHeapType = D3D12_DESCRIPTOR_HEAP_TYPE;
-	using DescriptorHeapHandle = D3D12_CPU_DESCRIPTOR_HANDLE;
-
 	// ラッパークラスを定義
-#define DEFINE_WRAPPER_CLASS(WrapperStructName, OriginalPointerType) \
+#define DEFINE_POINTER_WRAPPER_STRUCT(WrapperStructName, OriginalPointerType) \
 struct WrapperStructName \
 { \
 public: \
@@ -37,19 +32,27 @@ public: \
     explicit operator bool() const { return Ptr != nullptr; } \
 };
 
-	DEFINE_WRAPPER_CLASS(Factory, IDXGIFactoryLatest);
-	DEFINE_WRAPPER_CLASS(Device, ID3D12DeviceLatest);
-	DEFINE_WRAPPER_CLASS(SwapChain, IDXGISwapChainLatest);
-	DEFINE_WRAPPER_CLASS(CommandAllocator, ID3D12CommandAllocator);
-	DEFINE_WRAPPER_CLASS(CommandList, ID3D12GraphicsCommandList);
-	DEFINE_WRAPPER_CLASS(CommandQueue, ID3D12CommandQueue);
-	DEFINE_WRAPPER_CLASS(DescriptorHeap, ID3D12DescriptorHeap);
-	DEFINE_WRAPPER_CLASS(Fence, ID3D12Fence);
+	DEFINE_POINTER_WRAPPER_STRUCT(Factory, IDXGIFactoryLatest);
+	DEFINE_POINTER_WRAPPER_STRUCT(Device, ID3D12DeviceLatest);
+	DEFINE_POINTER_WRAPPER_STRUCT(SwapChain, IDXGISwapChainLatest);
+	DEFINE_POINTER_WRAPPER_STRUCT(CommandAllocator, ID3D12CommandAllocator);
+	DEFINE_POINTER_WRAPPER_STRUCT(CommandList, ID3D12GraphicsCommandList);
+	DEFINE_POINTER_WRAPPER_STRUCT(CommandQueue, ID3D12CommandQueue);
+	DEFINE_POINTER_WRAPPER_STRUCT(DescriptorHeap, ID3D12DescriptorHeap);
+	DEFINE_POINTER_WRAPPER_STRUCT(Fence, ID3D12Fence);
 
-	DEFINE_WRAPPER_CLASS(GraphicAdapter, IDXGIAdapter);
-	DEFINE_WRAPPER_CLASS(GraphicBuffer, ID3D12Resource);
+	DEFINE_POINTER_WRAPPER_STRUCT(GraphicAdapter, IDXGIAdapter);
+	DEFINE_POINTER_WRAPPER_STRUCT(GraphicBuffer, ID3D12Resource);
 
-#undef DEFINE_WRAPPER_CLASS
+#undef DEFINE_POINTER_WRAPPER_STRUCT
+
+	// D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE をメモリ配置そのままに自作したもの
+	// reinterpret_cast で相互キャストし、外部翻訳単位にはこちらを公開するようにする
+	typedef unsigned __int64 UINT64;
+	typedef unsigned __int64 ULONG_PTR;
+	typedef ULONG_PTR SIZE_T;
+	struct DescriptorHeapHandleAtCPU { SIZE_T ptr; };
+	struct DescriptorHeapHandleAtGPU { UINT64 ptr; };
 
 	class D3D12ObjectFactory final
 	{
@@ -114,28 +117,49 @@ public: \
 		static bool ClearCommandAllocatorAndList(const CommandAllocator& commandAllocator, const CommandList& commandList);
 
 		/// <summary>
+		/// <para>SwapChain から現在バックバッファである GraphicBuffer のインデックスを取得する</para>
+		/// 常に、必ず1つの GraphicBuffer がバックバッファである想定
+		/// </summary>
+		static int GetCurrentBackBufferIndex(const SwapChain& swapChain);
+
+		/// <summary>
 		/// SwapChain から指定インデックスの GraphicBuffer を取得する (失敗したら nullptr)
 		/// </summary>
 		static GraphicBuffer GetGraphicBufferByIndex(const SwapChain& swapChain, int index);
 
-		// DescriptorHeap のハンドルを作成し、index 番目の Descriptor を指し示すように内部ポインタを進めて返す
-		// CPU 用
-		static DescriptorHeapHandle CreateDescriptorHeapHandleIndicatingDescriptorByIndexAtCPU(
-			const Device& device, const DescriptorHeap& descriptorHeap, DescriptorHeapType descriptorHeapType, int index);
+		/// <summary>
+		/// DescriptorHeap (RTV) のハンドルを作成し、index 番目の Descriptor (RTV) を指し示すように内部ポインタを進めて返す
+		/// </summary>
+		static DescriptorHeapHandleAtCPU CreateDescriptorRTVHandleByIndex(
+			const Device& device, const DescriptorHeap& descriptorHeapRTV, int index);
+
+		/// <summary>
+		/// <para>ResourceBarrier() を実行し、GraphicBuffer がどう状態遷移するかをGPUに教える</para>
+		/// Present -> RenderTarget
+		/// </summary>
+		static void InvokeResourceBarrierAsTransitionFromPresentToRenderTarget(
+			const CommandList& commandList, const GraphicBuffer& graphicBuffer);
+
+		/// <summary>
+		/// <para>ResourceBarrier() を実行し、GraphicBuffer がどう状態遷移するかをGPUに教える</para>
+		/// RenderTarget -> Present
+		/// </summary>
+		static void InvokeResourceBarrierAsTransitionFromRenderTargetToPresent(
+			const CommandList& commandList, const GraphicBuffer& graphicBuffer);
 
 		/// <summary>
 		/// <para>[Command]</para>
 		/// <para>ハンドルが指し示す RenderTarget について、以下の処理を行う</para>
 		/// 出力ステージとして設定する
 		/// </summary>
-		static void CommandSetRTAsOutputStage(const CommandList& commandList, const DescriptorHeapHandle& handleRTV);
+		static void CommandSetRTAsOutputStage(const CommandList& commandList, const DescriptorHeapHandleAtCPU& handleRTV);
 
 		/// <summary>
 		/// <para>[Command]</para>
 		/// <para>ハンドルが指し示す RenderTarget について、以下の処理を行う</para>
 		/// 全体を1色でクリアする
 		/// </summary>
-		static void CommandClearRT(const CommandList& commandList, const DescriptorHeapHandle& handleRTV, float clearColor4[]);
+		static void CommandClearRT(const CommandList& commandList, const DescriptorHeapHandleAtCPU& handleRTV, float clearColor4[]);
 
 		/// <summary>
 		/// <para>[Command]</para>

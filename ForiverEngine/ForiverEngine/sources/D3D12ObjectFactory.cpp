@@ -14,12 +14,25 @@ namespace ForiverEngine
 	constexpr int FenceValueBeforeGPUEvent = 0;
 	constexpr int FenceValueAfterGPUEvent = 1;
 
+	static D3D12_CPU_DESCRIPTOR_HANDLE* Reinterpret(DescriptorHeapHandleAtCPU* value);
+	static DescriptorHeapHandleAtCPU* Reinterpret(D3D12_CPU_DESCRIPTOR_HANDLE* value);
+
 	// グラフィックアダプターを順に列挙していき、その Description が最初に Comparer にマッチしたものを返す
 	// 見つからなかった場合は nullptr を返す
 	static GraphicAdapter FindAvailableGraphicAdapter(const Factory& factory, std::function<bool(const std::wstring&)> descriptionComparer);
 
 	// SwapChain からバッファ数を取得する (失敗したら -1)
 	static int GetBufferCountFromSwapChain(const SwapChain& swapChain);
+
+	// DescriptorHeap のハンドルを作成し、index 番目の Descriptor を指し示すように内部ポインタを進めて返す
+	// CPU 用
+	static DescriptorHeapHandleAtCPU CreateDescriptorHeapHandleIndicatingDescriptorByIndexAtCPU(
+		const Device& device, const DescriptorHeap& descriptorHeap, D3D12_DESCRIPTOR_HEAP_TYPE descriptorHeapType, int index);
+
+	// ResourceBarrier() を実行し、GraphicBuffer がどう状態遷移するかをGPUに教える
+	static void InvokeResourceBarrierAsTransition(
+		const CommandList& commandList, const GraphicBuffer& graphicBuffer,
+		D3D12_RESOURCE_STATES beforeState, D3D12_RESOURCE_STATES afterState);
 
 	Factory D3D12ObjectFactory::CreateFactory()
 	{
@@ -204,13 +217,13 @@ namespace ForiverEngine
 			if (!graphicsBuffer)
 				return false;
 
-			D3D12_CPU_DESCRIPTOR_HANDLE handleRTV = CreateDescriptorHeapHandleIndicatingDescriptorByIndexAtCPU(
+			DescriptorHeapHandleAtCPU handleRTV = CreateDescriptorHeapHandleIndicatingDescriptorByIndexAtCPU(
 				device, descriptorHeapRTV, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, i);
 
 			device->CreateRenderTargetView(
 				graphicsBuffer.Ptr,
 				nullptr, // 今回は nullptr でOK (ミップマップに関係したりする)
-				handleRTV // i 番目の Descriptor (RTV) を指し示すハンドル
+				*Reinterpret(&handleRTV) // i 番目の Descriptor (RTV) を指し示すハンドル
 			);
 		}
 
@@ -224,6 +237,11 @@ namespace ForiverEngine
 		return true;
 	}
 
+	int D3D12ObjectFactory::GetCurrentBackBufferIndex(const SwapChain& swapChain)
+	{
+		return swapChain->GetCurrentBackBufferIndex();
+	}
+
 	GraphicBuffer D3D12ObjectFactory::GetGraphicBufferByIndex(const SwapChain& swapChain, int index)
 	{
 		ID3D12Resource* ptr = nullptr;
@@ -235,29 +253,46 @@ namespace ForiverEngine
 		return GraphicBuffer::Nullptr();
 	}
 
-	DescriptorHeapHandle D3D12ObjectFactory::CreateDescriptorHeapHandleIndicatingDescriptorByIndexAtCPU(
-		const Device& device, const DescriptorHeap& descriptorHeap, DescriptorHeapType descriptorHeapType, int index)
+	DescriptorHeapHandleAtCPU D3D12ObjectFactory::CreateDescriptorRTVHandleByIndex(
+		const Device& device, const DescriptorHeap& descriptorHeapRTV, int index)
 	{
-		D3D12_CPU_DESCRIPTOR_HANDLE handle = descriptorHeap->GetCPUDescriptorHandleForHeapStart();
-		handle.ptr += index * device->GetDescriptorHandleIncrementSize(descriptorHeapType);
-		return handle;
+		return CreateDescriptorHeapHandleIndicatingDescriptorByIndexAtCPU(
+			device, descriptorHeapRTV, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, index);
 	}
 
-	void D3D12ObjectFactory::CommandSetRTAsOutputStage(const CommandList& commandList, const DescriptorHeapHandle& handleRTV)
+	void D3D12ObjectFactory::InvokeResourceBarrierAsTransitionFromPresentToRenderTarget(
+		const CommandList& commandList, const GraphicBuffer& graphicBuffer)
+	{
+		InvokeResourceBarrierAsTransition(
+			commandList, graphicBuffer,
+			D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET
+		);
+	}
+
+	void D3D12ObjectFactory::InvokeResourceBarrierAsTransitionFromRenderTargetToPresent(
+		const CommandList& commandList, const GraphicBuffer& graphicBuffer)
+	{
+		InvokeResourceBarrierAsTransition(
+			commandList, graphicBuffer,
+			D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT
+		);
+	}
+
+	void D3D12ObjectFactory::CommandSetRTAsOutputStage(const CommandList& commandList, const DescriptorHeapHandleAtCPU& handleRTV)
 	{
 		commandList->OMSetRenderTargets(
 			1, // 今のところ、一回の描画における RT は1つのみ
-			&handleRTV, // Descriptor (RTV) を指し示すハンドル
+			Reinterpret(const_cast<DescriptorHeapHandleAtCPU*>(&handleRTV)), // Descriptor (RTV) を指し示すハンドル
 			true, // Descriptor (RTV) 達はメモリで連続している
 			nullptr // Descriptor (DSV) を指し示すハンドル (今のところは nullptr でOK)
 		);
 	}
 
-	void D3D12ObjectFactory::CommandClearRT(const CommandList& commandList, const DescriptorHeapHandle& handleRTV, float clearColor4[])
+	void D3D12ObjectFactory::CommandClearRT(const CommandList& commandList, const DescriptorHeapHandleAtCPU& handleRTV, float clearColor4[])
 	{
 		// 第3,4引数は、クリアする範囲を指定する
 		// 今回は画面全体をクリアするので、指定する必要はない
-		commandList->ClearRenderTargetView(handleRTV, clearColor4, 0, nullptr);
+		commandList->ClearRenderTargetView(*Reinterpret(const_cast<DescriptorHeapHandleAtCPU*>(&handleRTV)), clearColor4, 0, nullptr);
 	}
 
 	void D3D12ObjectFactory::CommandClose(const CommandList& commandList)
@@ -318,6 +353,16 @@ namespace ForiverEngine
 		return false;
 	}
 #endif
+	static D3D12_CPU_DESCRIPTOR_HANDLE* Reinterpret(DescriptorHeapHandleAtCPU* value)
+	{
+		return reinterpret_cast<D3D12_CPU_DESCRIPTOR_HANDLE*>(value);
+	}
+
+	static DescriptorHeapHandleAtCPU* Reinterpret(D3D12_CPU_DESCRIPTOR_HANDLE* value)
+	{
+		return reinterpret_cast<DescriptorHeapHandleAtCPU*>(value);
+	}
+
 
 	GraphicAdapter FindAvailableGraphicAdapter(const Factory& factory, std::function<bool(const std::wstring&)> descriptionComparer)
 	{
@@ -343,5 +388,34 @@ namespace ForiverEngine
 		}
 
 		return -1;
+	}
+
+	DescriptorHeapHandleAtCPU CreateDescriptorHeapHandleIndicatingDescriptorByIndexAtCPU(
+		const Device& device, const DescriptorHeap& descriptorHeap, D3D12_DESCRIPTOR_HEAP_TYPE descriptorHeapType, int index)
+	{
+		D3D12_CPU_DESCRIPTOR_HANDLE handle = descriptorHeap->GetCPUDescriptorHandleForHeapStart();
+		handle.ptr += index * device->GetDescriptorHandleIncrementSize(descriptorHeapType);
+		return *Reinterpret(&handle);
+	}
+
+	void InvokeResourceBarrierAsTransition(
+		const CommandList& commandList, const GraphicBuffer& graphicBuffer,
+		D3D12_RESOURCE_STATES beforeState, D3D12_RESOURCE_STATES afterState)
+	{
+		D3D12_RESOURCE_BARRIER desc =
+		{
+			.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION, // 状態遷移
+			.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE, // 特別なことはしないので、指定しない
+			.Transition = // union なので、これじゃないメンバは触らないこと!
+			{
+				.pResource = graphicBuffer.Ptr, // GraphicBuffer のアドレスをそのまま渡せば良い
+				.Subresource = 0, // 今回はバックバッファーが1つしかないので、まとめて指定するなどは必要ない
+				.StateBefore = beforeState,
+				.StateAfter = afterState,
+			},
+		};
+
+		// 配列で渡せるが、今回はバリアは1つだけ
+		commandList->ResourceBarrier(1, &desc);
 	}
 }
