@@ -11,6 +11,9 @@
 
 namespace ForiverEngine
 {
+	constexpr int FenceValueBeforeGPUEvent = 0;
+	constexpr int FenceValueAfterGPUEvent = 1;
+
 	// グラフィックアダプターを順に列挙していき、その Description が最初に Comparer にマッチしたものを返す
 	// 見つからなかった場合は nullptr を返す
 	static GraphicAdapter FindAvailableGraphicAdapter(const Factory& factory, std::function<bool(const std::wstring&)> descriptionComparer);
@@ -180,6 +183,21 @@ namespace ForiverEngine
 		return DescriptorHeap::Nullptr();
 	}
 
+	Fence D3D12ObjectFactory::CreateFence(const Device& device)
+	{
+		ID3D12Fence* ptr = nullptr;
+		if (device->CreateFence(
+			FenceValueBeforeGPUEvent, // 初期化値
+			D3D12_FENCE_FLAG_NONE, // 取り合えず NONE
+			IID_PPV_ARGS(&ptr)
+		) == S_OK)
+		{
+			return Fence(ptr);
+		}
+
+		return Fence::Nullptr();
+	}
+
 	bool D3D12ObjectFactory::LinkDescriptorHeapRTVToSwapChain(
 		const Device& device, const DescriptorHeap& descriptorHeapRTV, const SwapChain& swapChain)
 	{
@@ -244,6 +262,29 @@ namespace ForiverEngine
 		// コマンドリストは1つのみ
 		ID3D12CommandList* commandListPointers[] = { commandList.Ptr };
 		commandQueue->ExecuteCommandLists(1, commandListPointers);
+	}
+
+	bool D3D12ObjectFactory::WaitForGPUEventCompletion(const Fence& fence, const CommandQueue& commandQueue)
+	{
+		// CPU側で、GPU側の処理終了時に期待されるフェンス値を渡す
+		// GetCompletedValue() は GPU からのフェンス値を返すので、この等価比較で同期をとる
+		if (commandQueue->Signal(fence.Ptr, FenceValueAfterGPUEvent) != S_OK)
+			return false;
+
+		if (fence->GetCompletedValue() != FenceValueAfterGPUEvent)
+		{
+			HANDLE event = CreateEvent(nullptr, false, false, nullptr);
+			if (event)
+			{
+				fence->SetEventOnCompletion(FenceValueAfterGPUEvent, event);
+				WaitForSingleObject(event, INFINITE);
+				CloseHandle(event);
+			}
+			else
+				return false;
+		}
+
+		return true;
 	}
 
 	bool D3D12ObjectFactory::Present(const SwapChain& swapChain)

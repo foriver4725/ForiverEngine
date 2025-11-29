@@ -84,6 +84,9 @@ int WindowMain(hInstance)
 		D3D12ObjectFactory::CommandClose(commandList);
 		D3D12ObjectFactory::ExecuteCommands(commandQueue, commandList);
 
+		Fence fence = D3D12ObjectFactory::CreateFence(device);
+		D3D12ObjectFactory::WaitForGPUEventCompletion(fence, commandQueue);
+
 		if (!D3D12ObjectFactory::ClearCommandAllocatorAndList(commandAllocater, commandList))
 			Throw(L"CommandAllocator, CommandList のクリアに失敗しました");
 

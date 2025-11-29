@@ -7,6 +7,7 @@ struct ID3D12CommandAllocator;
 struct ID3D12GraphicsCommandList;
 struct ID3D12CommandQueue;
 struct ID3D12DescriptorHeap;
+struct ID3D12Fence;
 struct IDXGIAdapter;
 struct ID3D12Resource;
 struct D3D12_CPU_DESCRIPTOR_HANDLE;
@@ -43,6 +44,7 @@ public: \
 	DEFINE_WRAPPER_CLASS(CommandList, ID3D12GraphicsCommandList);
 	DEFINE_WRAPPER_CLASS(CommandQueue, ID3D12CommandQueue);
 	DEFINE_WRAPPER_CLASS(DescriptorHeap, ID3D12DescriptorHeap);
+	DEFINE_WRAPPER_CLASS(Fence, ID3D12Fence);
 
 	DEFINE_WRAPPER_CLASS(GraphicAdapter, IDXGIAdapter);
 	DEFINE_WRAPPER_CLASS(GraphicBuffer, ID3D12Resource);
@@ -93,6 +95,11 @@ public: \
 		static DescriptorHeap CreateDescriptorHeapRTV(const Device& device);
 
 		/// <summary>
+		/// Fence を作成して返す (失敗したら nullptr)
+		/// </summary>
+		static Fence CreateFence(const Device& device);
+
+		/// <summary>
 		/// <para>DescriptorHeap(RTV) と SwapChain を関連付ける</para>
 		/// <para>Descriptorの数 = GraphicBufferの数だけ、繰り返し処理を行う</para>
 		/// 全て成功したら true, 1つでも失敗したら false を返す (失敗した瞬間に処理を中断する)
@@ -135,6 +142,12 @@ public: \
 		/// CommandList を実行する
 		/// </summary>
 		static void ExecuteCommands(const CommandQueue& commandQueue, const CommandList& commandList);
+
+		/// <summary>
+		/// <para>GPU側の処理が終わるまで、無限に同期待機する</para>
+		/// エラーが起きて中断されたら false を, 正常に完了したら true を返す (失敗した瞬間に処理を中断する)
+		/// </summary>
+		static bool WaitForGPUEventCompletion(const Fence& fence, const CommandQueue& commandQueue);
 
 		/// <summary>
 		/// <para>スワップ(フリップ) を実行させる</para>
