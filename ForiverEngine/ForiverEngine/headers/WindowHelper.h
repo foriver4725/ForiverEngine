@@ -3,12 +3,10 @@
 struct HINSTANCE__; typedef HINSTANCE__* HINSTANCE;
 struct HWND__; typedef HWND__* HWND;
 
+typedef __int64 LRESULT;
 typedef unsigned int UINT;
-typedef __int64 LONG_PTR;
-typedef unsigned __int64 UINT_PTR;
-typedef LONG_PTR LRESULT;
-typedef UINT_PTR WPARAM;
-typedef LONG_PTR LPARAM;
+typedef unsigned __int64 WPARAM;
+typedef __int64 LPARAM;
 typedef LRESULT(__stdcall* WNDPROC)(HWND, UINT, WPARAM, LPARAM);
 
 // WinMain() のマクロ

@@ -46,9 +46,8 @@ DEFINE_POINTER_WRAPPER_STRUCT(GraphicBuffer, ID3D12Resource); // GPUメモリを
 
 // D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE をメモリ配置そのままに自作したもの
 // reinterpret_cast で相互キャストし、外部翻訳単位にはこちらを公開するようにする
+typedef __int64 SIZE_T;
 typedef unsigned __int64 UINT64;
-typedef unsigned __int64 ULONG_PTR;
-typedef ULONG_PTR SIZE_T;
 struct DescriptorHeapHandleAtCPU { SIZE_T ptr; };
 struct DescriptorHeapHandleAtGPU { UINT64 ptr; };
 
@@ -101,6 +100,19 @@ namespace ForiverEngine
 		/// Fence を作成して返す (失敗したら nullptr)
 		/// </summary>
 		static Fence CreateFence(const Device& device);
+
+		/// <summary>
+		/// <para>GPU側のメモリ領域を確保し、その GraphicBuffer を返す (失敗したら nullptr)</para>
+		/// 1次元配列用
+		/// </summary>
+		static GraphicBuffer CreateGraphicBuffer1D(const Device& device, int size, bool canMapFromCPU);
+
+		/// <summary>
+		/// <para>GraphicBuffer の Map() を使って、CPUのバッファをGPU側にコピーする</para>
+		/// <para>バッファのサイズは、GraphicBuffer 作成時に指定したサイズと同じであること! (一部のバッファのみコピー、などには未対応)</para>
+		/// 成功したら true, 失敗したら false を返す (失敗した瞬間に処理を中断する)
+		/// </summary>
+		static bool CopyDataFromCPUToGPUThroughGraphicBuffer(const GraphicBuffer& graphicBuffer, void* dataBegin, void* dataEnd);
 
 		/// <summary>
 		/// <para>DescriptorHeap(RTV) と SwapChain を関連付ける</para>

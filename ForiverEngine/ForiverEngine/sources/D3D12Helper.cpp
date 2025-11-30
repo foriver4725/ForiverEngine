@@ -208,6 +208,64 @@ namespace ForiverEngine
 		return Fence::Nullptr();
 	}
 
+	GraphicBuffer D3D12Helper::CreateGraphicBuffer1D(const Device& device, int size, bool canMapFromCPU)
+	{
+		D3D12_HEAP_PROPERTIES heapProperties =
+		{
+			.Type = canMapFromCPU ? D3D12_HEAP_TYPE_UPLOAD : D3D12_HEAP_TYPE_DEFAULT,
+			.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN, // 難しい設定だが、とりあえずデフォルトで
+			.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN, // 難しい設定だが、とりあえずデフォルトで
+			.CreationNodeMask = 0, // アダプターが1つなので...
+			.VisibleNodeMask = 0, // アダプターが1つなので...
+		};
+
+		D3D12_RESOURCE_DESC resourceDesc =
+		{
+			.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER,
+			.Alignment = 0, // 既定値でOK
+			.Width = size, // 1Dなので...
+			.Height = 1, // 1Dなので...
+			.DepthOrArraySize = 1, // 1でOK
+			.MipLevels = 1, // 1でOK
+			.Format = DXGI_FORMAT_UNKNOWN, // 画像ではないので、指定しなくてOK
+			.SampleDesc = {.Count = 1, .Quality = 0 }, // アンチエイリアシングはしない. でも Count = 0 だとデータが無いことになってしまうので、1にする
+			.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR, // テクスチャではないので、メモリの連続を示すこの列挙型を使う
+			.Flags = D3D12_RESOURCE_FLAG_NONE, // 指定なし
+		};
+
+		ID3D12Resource* ptr = nullptr;
+		if (device->CreateCommittedResource(
+			&heapProperties,
+			D3D12_HEAP_FLAG_NONE, // 指定なし
+			&resourceDesc,
+			D3D12_RESOURCE_STATE_GENERIC_READ, // GPUからは読み取り専用
+			nullptr, // 使わない
+			IID_PPV_ARGS(&ptr)
+		) == S_OK)
+		{
+			return GraphicBuffer(ptr);
+		}
+
+		return GraphicBuffer::Nullptr();
+	}
+
+	bool D3D12Helper::CopyDataFromCPUToGPUThroughGraphicBuffer(const GraphicBuffer& graphicBuffer, void* dataBegin, void* dataEnd)
+	{
+		void* bufferVirtualPtr = nullptr;
+		if (graphicBuffer->Map(
+			0, // リソース配列やミップマップなどではないので、0でOK
+			nullptr, // GraphicBuffer の全範囲を対象にしたい
+			&bufferVirtualPtr
+		) != S_OK)
+		{
+			return false;
+		}
+
+		std::copy(dataBegin, dataEnd, bufferVirtualPtr);
+		graphicBuffer->Unmap(0, nullptr);
+		return true;
+	}
+
 	bool D3D12Helper::LinkDescriptorHeapRTVToSwapChain(
 		const Device& device, const DescriptorHeap& descriptorHeapRTV, const SwapChain& swapChain)
 	{
