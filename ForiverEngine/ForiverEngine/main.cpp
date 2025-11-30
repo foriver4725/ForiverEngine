@@ -2,6 +2,7 @@
 #include "./headers/D3D12Helper.h"
 
 #include <Windows.h>
+#include <DirectXMath.h>
 
 constexpr int WindowWidth = 960;
 constexpr int WindowHeight = 540;
@@ -9,6 +10,7 @@ constexpr int WindowHeight = 540;
 BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeight);
 {
 	using namespace ForiverEngine;
+	using namespace DirectX;
 
 #ifdef _DEBUG
 	if (!D3D12Helper::EnableDebugLayer())
@@ -34,11 +36,19 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	if (!D3D12Helper::LinkDescriptorHeapRTVToSwapChain(device, descriptorHeapRTV, swapChain))
 		Throw(L"DescriptorHeap (RTV) を SwapChain に関連付けることに失敗しました");
 
+	// 頂点は時計回り！！
+	XMFLOAT3 vertices[] =
+	{
+		{ -1, -1, 0 }, // 左下
+		{ -1, 1, 0 }, // 左上
+		{ 1, -1, 0 }, // 右下
+	};
+
 	BEGIN_MESSAGE_LOOP;
 	{
 		// 現在バックバッファにある RenderTarget を取得する
 		const int currentBackBufferIndex = D3D12Helper::GetCurrentBackBufferIndex(swapChain);
-		GraphicBuffer currentBackBuffer = D3D12Helper::GetGraphicBufferByIndex(swapChain, currentBackBufferIndex);
+		GraphicBuffer currentBackBuffer = D3D12Helper::GetBufferByIndex(swapChain, currentBackBufferIndex);
 		if (!currentBackBuffer) Throw(L"現在バックにある GraphicBuffer を取得することに失敗しました");
 		DescriptorHeapHandleAtCPU backBufferRTV = D3D12Helper::CreateDescriptorRTVHandleByIndex(
 			device, descriptorHeapRTV, currentBackBufferIndex);

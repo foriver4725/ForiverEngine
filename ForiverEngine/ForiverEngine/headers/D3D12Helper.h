@@ -40,7 +40,7 @@ DEFINE_POINTER_WRAPPER_STRUCT(DescriptorHeap, ID3D12DescriptorHeap);
 DEFINE_POINTER_WRAPPER_STRUCT(Fence, ID3D12Fence);
 
 DEFINE_POINTER_WRAPPER_STRUCT(GraphicAdapter, IDXGIAdapter);
-DEFINE_POINTER_WRAPPER_STRUCT(GraphicBuffer, ID3D12Resource);
+DEFINE_POINTER_WRAPPER_STRUCT(GraphicBuffer, ID3D12Resource); // GPUメモリを指し示す (フレームバッファとかもそう)
 
 #undef DEFINE_POINTER_WRAPPER_STRUCT
 
@@ -104,7 +104,7 @@ namespace ForiverEngine
 
 		/// <summary>
 		/// <para>DescriptorHeap(RTV) と SwapChain を関連付ける</para>
-		/// <para>Descriptorの数 = GraphicBufferの数だけ、繰り返し処理を行う</para>
+		/// <para>Descriptorの数 = バッファの数だけ、繰り返し処理を行う</para>
 		/// 全て成功したら true, 1つでも失敗したら false を返す (失敗した瞬間に処理を中断する)
 		/// </summary>
 		static bool LinkDescriptorHeapRTVToSwapChain(
@@ -117,15 +117,15 @@ namespace ForiverEngine
 		static bool ClearCommandAllocatorAndList(const CommandAllocator& commandAllocator, const CommandList& commandList);
 
 		/// <summary>
-		/// <para>SwapChain から現在バックバッファである GraphicBuffer のインデックスを取得する</para>
-		/// 常に、必ず1つの GraphicBuffer がバックバッファである想定
+		/// <para>SwapChain から現在のバックバッファのインデックスを取得する</para>
+		/// 常に、必ず1つのバックバッファが存在する想定
 		/// </summary>
 		static int GetCurrentBackBufferIndex(const SwapChain& swapChain);
 
 		/// <summary>
-		/// SwapChain から指定インデックスの GraphicBuffer を取得する (失敗したら nullptr)
+		/// SwapChain から指定インデックスのバッファを取得する (失敗したら nullptr)
 		/// </summary>
-		static GraphicBuffer GetGraphicBufferByIndex(const SwapChain& swapChain, int index);
+		static GraphicBuffer GetBufferByIndex(const SwapChain& swapChain, int index);
 
 		/// <summary>
 		/// DescriptorHeap (RTV) のハンドルを作成し、index 番目の Descriptor (RTV) を指し示すように内部ポインタを進めて返す

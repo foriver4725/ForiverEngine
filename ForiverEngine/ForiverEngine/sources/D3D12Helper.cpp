@@ -213,7 +213,7 @@ namespace ForiverEngine
 	{
 		for (int i = 0; i < GetBufferCountFromSwapChain(swapChain); ++i)
 		{
-			GraphicBuffer graphicsBuffer = GetGraphicBufferByIndex(swapChain, i);
+			GraphicBuffer graphicsBuffer = GetBufferByIndex(swapChain, i);
 			if (!graphicsBuffer)
 				return false;
 
@@ -242,7 +242,7 @@ namespace ForiverEngine
 		return swapChain->GetCurrentBackBufferIndex();
 	}
 
-	GraphicBuffer D3D12Helper::GetGraphicBufferByIndex(const SwapChain& swapChain, int index)
+	GraphicBuffer D3D12Helper::GetBufferByIndex(const SwapChain& swapChain, int index)
 	{
 		ID3D12Resource* ptr = nullptr;
 		if (swapChain->GetBuffer(index, IID_PPV_ARGS(&ptr)) == S_OK)
