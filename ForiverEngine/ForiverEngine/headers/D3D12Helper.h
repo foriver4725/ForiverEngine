@@ -44,10 +44,13 @@ DEFINE_POINTER_WRAPPER_STRUCT(GraphicBuffer, ID3D12Resource); // GPUメモリを
 
 #undef DEFINE_POINTER_WRAPPER_STRUCT
 
+typedef unsigned __int64 size_t;
+typedef unsigned __int64 UINT64;
+typedef unsigned __int64 ULONG_PTR;
+typedef ULONG_PTR SIZE_T;
+
 // D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE をメモリ配置そのままに自作したもの
 // reinterpret_cast で相互キャストし、外部翻訳単位にはこちらを公開するようにする
-typedef __int64 SIZE_T;
-typedef unsigned __int64 UINT64;
 struct DescriptorHeapHandleAtCPU { SIZE_T ptr; };
 struct DescriptorHeapHandleAtGPU { UINT64 ptr; };
 
@@ -112,7 +115,7 @@ namespace ForiverEngine
 		/// <para>バッファのサイズは、GraphicBuffer 作成時に指定したサイズと同じであること! (一部のバッファのみコピー、などには未対応)</para>
 		/// 成功したら true, 失敗したら false を返す (失敗した瞬間に処理を中断する)
 		/// </summary>
-		static bool CopyDataFromCPUToGPUThroughGraphicBuffer(const GraphicBuffer& graphicBuffer, void* dataBegin, void* dataEnd);
+		static bool CopyDataFromCPUToGPUThroughGraphicBuffer(const GraphicBuffer& graphicBuffer, void* dataBegin, size_t dataSize);
 
 		/// <summary>
 		/// <para>DescriptorHeap(RTV) と SwapChain を関連付ける</para>

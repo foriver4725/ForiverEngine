@@ -47,7 +47,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 
 	// 頂点バッファーを作成し、アップロード
 	GraphicBuffer vertexBuffer = D3D12Helper::CreateGraphicBuffer1D(device, sizeof(vertices), true);
-	D3D12Helper::CopyDataFromCPUToGPUThroughGraphicBuffer(vertexBuffer, std::begin(vertices), std::end(vertices));
+	D3D12Helper::CopyDataFromCPUToGPUThroughGraphicBuffer(vertexBuffer, vertices, sizeof(vertices));
 
 	BEGIN_MESSAGE_LOOP;
 	{

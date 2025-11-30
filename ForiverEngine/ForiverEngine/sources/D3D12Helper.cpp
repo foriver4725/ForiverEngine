@@ -223,7 +223,7 @@ namespace ForiverEngine
 		{
 			.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER,
 			.Alignment = 0, // 既定値でOK
-			.Width = size, // 1Dなので...
+			.Width = static_cast<UINT64>(size), // 1Dなので...
 			.Height = 1, // 1Dなので...
 			.DepthOrArraySize = 1, // 1でOK
 			.MipLevels = 1, // 1でOK
@@ -249,7 +249,7 @@ namespace ForiverEngine
 		return GraphicBuffer::Nullptr();
 	}
 
-	bool D3D12Helper::CopyDataFromCPUToGPUThroughGraphicBuffer(const GraphicBuffer& graphicBuffer, void* dataBegin, void* dataEnd)
+	bool D3D12Helper::CopyDataFromCPUToGPUThroughGraphicBuffer(const GraphicBuffer& graphicBuffer, void* dataBegin, std::size_t dataSize)
 	{
 		void* bufferVirtualPtr = nullptr;
 		if (graphicBuffer->Map(
@@ -261,7 +261,7 @@ namespace ForiverEngine
 			return false;
 		}
 
-		std::copy(dataBegin, dataEnd, bufferVirtualPtr);
+		std::memcpy(bufferVirtualPtr, dataBegin, dataSize);
 		graphicBuffer->Unmap(0, nullptr);
 		return true;
 	}
