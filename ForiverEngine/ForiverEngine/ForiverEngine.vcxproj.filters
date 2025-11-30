@@ -16,6 +16,9 @@
     <Filter Include="sources">
       <UniqueIdentifier>{81efffeb-5c03-41be-ad7d-27a97a70cd16}</UniqueIdentifier>
     </Filter>
+    <Filter Include="shaders">
+      <UniqueIdentifier>{6cee4819-d17a-41d9-aacc-5747a2ef1f2a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="headers\D3D12Helper.h">
@@ -24,5 +27,13 @@
     <ClInclude Include="headers\WindowHelper.h">
       <Filter>headers</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="BasicVS.hlsl">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\BasicPS.hlsl">
+      <Filter>shaders</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>
