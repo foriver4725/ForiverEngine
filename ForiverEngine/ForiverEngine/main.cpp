@@ -1,7 +1,6 @@
 ﻿#include "./headers/WindowHelper.h"
 #include "./headers/D3D12Helper.h"
 
-#include <iterator>
 #include <Windows.h>
 #include <DirectXMath.h>
 
