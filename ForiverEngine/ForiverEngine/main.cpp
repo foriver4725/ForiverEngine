@@ -1,4 +1,6 @@
-﻿#include "./headers/WindowHelper.h"
+﻿//#define ENABLE_CUI_CONSOLE
+
+#include "./headers/WindowHelper.h"
 #include "./headers/D3D12Helper.h"
 #include "./headers/Math.h"
 
@@ -76,4 +78,4 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	}
 	END_MESSAGE_LOOP;
 }
-END_INITIALIZE;
+END_INITIALIZE(0);

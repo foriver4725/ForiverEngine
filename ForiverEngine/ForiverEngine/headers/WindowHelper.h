@@ -11,6 +11,11 @@ typedef UINT_PTR WPARAM;
 typedef LONG_PTR LPARAM;
 typedef LRESULT(__stdcall* WNDPROC)(HWND, UINT, WPARAM, LPARAM);
 
+#ifdef ENABLE_CUI_CONSOLE
+#include <Windows.h>
+#include <iostream>
+#endif
+
 // WinMain() のマクロ
 // 既存マクロと重複しない命名にしている
 #define WindowMain(hInstance) \
@@ -39,6 +44,8 @@ static LRESULT CALLBACK FunctionName(HWND hwnd, UINT msg, WPARAM wparam, LPARAM 
     return -1; \
 }
 
+#ifdef ENABLE_CUI_CONSOLE
+
 	// 初期化のマクロ 開始
 #define BEGIN_INITIALIZE(WindowClassName, WindowTitle, HwndName, WindowWidth, WindowHeight) \
 DEFINE_DEFAULT_WINDOW_PROCEDURE(WindowProcedure) \
@@ -49,11 +56,40 @@ int WindowMain(hInstance) \
 		Throw(L"ウィンドウの初期化に失敗しました"); \
 \
 	HWND HwndName = ForiverEngine::WindowHelper::CreateTheWindow((WindowClassName), (WindowTitle), (WindowWidth), (WindowHeight)); \
+\
+	ForiverEngine::WindowHelper::CreateConsoleInGUIApplication();
+
+#else
+
+	// 初期化のマクロ 開始
+#define BEGIN_INITIALIZE(WindowClassName, WindowTitle, HwndName, WindowWidth, WindowHeight) \
+DEFINE_DEFAULT_WINDOW_PROCEDURE(WindowProcedure) \
+\
+int WindowMain(hInstance) \
+{ \
+	if (!ForiverEngine::WindowHelper::InitializeWindowFromHInstance(hInstance, WindowProcedure, (WindowClassName))) \
+		Throw(L"ウィンドウの初期化に失敗しました"); \
+\
+	HWND HwndName = ForiverEngine::WindowHelper::CreateTheWindow((WindowClassName), (WindowTitle), (WindowWidth), (WindowHeight));
+
+#endif
+
+#ifdef ENABLE_CUI_CONSOLE
 
 	// 初期化のマクロ 終了
-#define END_INITIALIZE \
-    return 0; \
+#define END_INITIALIZE(ReturnIntValue) \
+	ForiverEngine::WindowHelper::CloseConsoleInGUIApplication(); \
+    return ReturnIntValue; \
 }
+
+#else
+
+	// 初期化のマクロ 終了
+#define END_INITIALIZE(ReturnIntValue) \
+    return ReturnIntValue; \
+}
+
+#endif
 
 	// メッセージループのマクロ 開始
 #define BEGIN_MESSAGE_LOOP \
@@ -92,5 +128,32 @@ namespace ForiverEngine
 		/// エラーのメッセージボックスを出す
 		/// </summary>
 		static void PopupErrorDialog(const wchar_t* message);
+
+#ifdef ENABLE_CUI_CONSOLE
+		/// <summary>
+		/// GUIアプリケーションでコンソールウィンドウを作成する
+		/// </summary>
+		inline static void CreateConsoleInGUIApplication()
+		{
+			FILE* fp;
+			AllocConsole();
+			freopen_s(&fp, "CONOUT$", "w", stdout); // 標準出力の割り当て (stdout)
+		}
+
+		/// <summary>
+		/// GUIアプリケーションで作成したコンソールウィンドウを閉じる
+		/// </summary>
+		inline static void CloseConsoleInGUIApplication()
+		{
+			FreeConsole();
+		}
+#endif
 	};
+
+#ifdef ENABLE_CUI_CONSOLE
+	template <class... Types>
+	inline void Print(const std::format_string<Types...> format, Types&&... args) {
+		std::print(std::cout, format, std::forward<Types>(args)...);
+	}
+#endif
 }
