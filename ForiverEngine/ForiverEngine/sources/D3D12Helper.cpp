@@ -28,9 +28,9 @@ namespace ForiverEngine
 	static DescriptorHeapHandleAtCPU CreateDescriptorHeapHandleIndicatingDescriptorByIndexAtCPU(
 		const Device& device, const DescriptorHeap& descriptorHeap, D3D12_DESCRIPTOR_HEAP_TYPE descriptorHeapType, int index);
 
-	// ResourceBarrier() を実行し、GraphicBuffer がどう状態遷移するかをGPUに教える
+	// ResourceBarrier() を実行し、GraphicsBuffer がどう状態遷移するかをGPUに教える
 	static void InvokeResourceBarrierAsTransition(
-		const CommandList& commandList, const GraphicBuffer& graphicBuffer,
+		const CommandList& commandList, const GraphicsBuffer& GraphicsBuffer,
 		D3D12_RESOURCE_STATES beforeState, D3D12_RESOURCE_STATES afterState);
 
 	Factory D3D12Helper::CreateFactory()
@@ -207,7 +207,7 @@ namespace ForiverEngine
 		return Fence();
 	}
 
-	GraphicBuffer D3D12Helper::CreateGraphicBuffer1D(const Device& device, int size, bool canMapFromCPU)
+	GraphicsBuffer D3D12Helper::CreateGraphicsBuffer1D(const Device& device, int size, bool canMapFromCPU)
 	{
 		D3D12_HEAP_PROPERTIES heapProperties =
 		{
@@ -242,18 +242,32 @@ namespace ForiverEngine
 			IID_PPV_ARGS(&ptr)
 		) == S_OK)
 		{
-			return GraphicBuffer(ptr);
+			return GraphicsBuffer(ptr);
 		}
 
-		return GraphicBuffer();
+		return GraphicsBuffer();
 	}
 
-	bool D3D12Helper::CopyDataFromCPUToGPUThroughGraphicBuffer(const GraphicBuffer& graphicBuffer, void* dataBegin, std::size_t dataSize)
+	PipelineState D3D12Helper::CreateGraphicsPipelineState(const Device& device)
+	{
+		ID3D12PipelineState* ptr = nullptr;
+		if (device->CreateGraphicsPipelineState(
+			nullptr,
+			IID_PPV_ARGS(&ptr)
+		) == S_OK)
+		{
+			return PipelineState(ptr);
+		}
+
+		return PipelineState();
+	}
+
+	bool D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer(const GraphicsBuffer& GraphicsBuffer, void* dataBegin, std::size_t dataSize)
 	{
 		void* bufferVirtualPtr = nullptr;
-		if (graphicBuffer->Map(
+		if (GraphicsBuffer->Map(
 			0, // リソース配列やミップマップなどではないので、0でOK
-			nullptr, // GraphicBuffer の全範囲を対象にしたい
+			nullptr, // GraphicsBuffer の全範囲を対象にしたい
 			&bufferVirtualPtr
 		) != S_OK)
 		{
@@ -261,7 +275,7 @@ namespace ForiverEngine
 		}
 
 		std::memcpy(bufferVirtualPtr, dataBegin, dataSize);
-		graphicBuffer->Unmap(0, nullptr);
+		GraphicsBuffer->Unmap(0, nullptr);
 		return true;
 	}
 
@@ -270,7 +284,7 @@ namespace ForiverEngine
 	{
 		for (int i = 0; i < GetBufferCountFromSwapChain(swapChain); ++i)
 		{
-			GraphicBuffer graphicsBuffer = GetBufferByIndex(swapChain, i);
+			GraphicsBuffer graphicsBuffer = GetBufferByIndex(swapChain, i);
 			if (!graphicsBuffer)
 				return false;
 
@@ -299,15 +313,15 @@ namespace ForiverEngine
 		return swapChain->GetCurrentBackBufferIndex();
 	}
 
-	GraphicBuffer D3D12Helper::GetBufferByIndex(const SwapChain& swapChain, int index)
+	GraphicsBuffer D3D12Helper::GetBufferByIndex(const SwapChain& swapChain, int index)
 	{
 		ID3D12Resource* ptr = nullptr;
 		if (swapChain->GetBuffer(index, IID_PPV_ARGS(&ptr)) == S_OK)
 		{
-			return GraphicBuffer(ptr);
+			return GraphicsBuffer(ptr);
 		}
 
-		return GraphicBuffer();
+		return GraphicsBuffer();
 	}
 
 	DescriptorHeapHandleAtCPU D3D12Helper::CreateDescriptorRTVHandleByIndex(
@@ -318,19 +332,19 @@ namespace ForiverEngine
 	}
 
 	void D3D12Helper::InvokeResourceBarrierAsTransitionFromPresentToRenderTarget(
-		const CommandList& commandList, const GraphicBuffer& graphicBuffer)
+		const CommandList& commandList, const GraphicsBuffer& GraphicsBuffer)
 	{
 		InvokeResourceBarrierAsTransition(
-			commandList, graphicBuffer,
+			commandList, GraphicsBuffer,
 			D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET
 		);
 	}
 
 	void D3D12Helper::InvokeResourceBarrierAsTransitionFromRenderTargetToPresent(
-		const CommandList& commandList, const GraphicBuffer& graphicBuffer)
+		const CommandList& commandList, const GraphicsBuffer& GraphicsBuffer)
 	{
 		InvokeResourceBarrierAsTransition(
-			commandList, graphicBuffer,
+			commandList, GraphicsBuffer,
 			D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT
 		);
 	}
@@ -501,7 +515,7 @@ namespace ForiverEngine
 	}
 
 	void InvokeResourceBarrierAsTransition(
-		const CommandList& commandList, const GraphicBuffer& graphicBuffer,
+		const CommandList& commandList, const GraphicsBuffer& GraphicsBuffer,
 		D3D12_RESOURCE_STATES beforeState, D3D12_RESOURCE_STATES afterState)
 	{
 		D3D12_RESOURCE_BARRIER desc =
@@ -510,7 +524,7 @@ namespace ForiverEngine
 			.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE, // 特別なことはしないので、指定しない
 			.Transition = // union なので、これじゃないメンバは触らないこと!
 			{
-				.pResource = graphicBuffer.Ptr, // GraphicBuffer のアドレスをそのまま渡せば良い
+				.pResource = GraphicsBuffer.Ptr, // GraphicsBuffer のアドレスをそのまま渡せば良い
 				.Subresource = 0, // 今回はバックバッファーが1つしかないので、まとめて指定するなどは必要ない
 				.StateBefore = beforeState,
 				.StateAfter = afterState,

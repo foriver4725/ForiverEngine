@@ -8,6 +8,7 @@
 struct IDXGIFactory7;
 struct ID3D12Device14;
 struct IDXGISwapChain4;
+struct ID3D12PipelineState;
 struct ID3D12CommandAllocator;
 struct ID3D12GraphicsCommandList;
 struct ID3D12CommandQueue;
@@ -44,6 +45,7 @@ public: \
 DEFINE_POINTER_WRAPPER_STRUCT(Factory, IDXGIFactoryLatest);
 DEFINE_POINTER_WRAPPER_STRUCT(Device, ID3D12DeviceLatest);
 DEFINE_POINTER_WRAPPER_STRUCT(SwapChain, IDXGISwapChainLatest);
+DEFINE_POINTER_WRAPPER_STRUCT(PipelineState, ID3D12PipelineState);
 DEFINE_POINTER_WRAPPER_STRUCT(CommandAllocator, ID3D12CommandAllocator);
 DEFINE_POINTER_WRAPPER_STRUCT(CommandList, ID3D12GraphicsCommandList);
 DEFINE_POINTER_WRAPPER_STRUCT(CommandQueue, ID3D12CommandQueue);
@@ -51,7 +53,7 @@ DEFINE_POINTER_WRAPPER_STRUCT(DescriptorHeap, ID3D12DescriptorHeap);
 DEFINE_POINTER_WRAPPER_STRUCT(Fence, ID3D12Fence);
 
 DEFINE_POINTER_WRAPPER_STRUCT(GraphicAdapter, IDXGIAdapter);
-DEFINE_POINTER_WRAPPER_STRUCT(GraphicBuffer, ID3D12Resource); // GPUメモリを指し示す (フレームバッファとかもそう)
+DEFINE_POINTER_WRAPPER_STRUCT(GraphicsBuffer, ID3D12Resource); // GPUメモリを指し示す (フレームバッファとかもそう)
 DEFINE_POINTER_WRAPPER_STRUCT(CompiledShaderObject, ID3DBlob);
 
 #undef DEFINE_POINTER_WRAPPER_STRUCT
@@ -116,17 +118,19 @@ namespace ForiverEngine
 		static Fence CreateFence(const Device& device);
 
 		/// <summary>
-		/// <para>GPU側のメモリ領域を確保し、その GraphicBuffer を返す (失敗したら nullptr)</para>
+		/// <para>GPU側のメモリ領域を確保し、その GraphicsBuffer を返す (失敗したら nullptr)</para>
 		/// 1次元配列用
 		/// </summary>
-		static GraphicBuffer CreateGraphicBuffer1D(const Device& device, int size, bool canMapFromCPU);
+		static GraphicsBuffer CreateGraphicsBuffer1D(const Device& device, int size, bool canMapFromCPU);
+
+		static PipelineState CreateGraphicsPipelineState(const Device& device);
 
 		/// <summary>
-		/// <para>GraphicBuffer の Map() を使って、CPUのバッファをGPU側にコピーする</para>
-		/// <para>バッファのサイズは、GraphicBuffer 作成時に指定したサイズと同じであること! (一部のバッファのみコピー、などには未対応)</para>
+		/// <para>GraphicsBuffer の Map() を使って、CPUのバッファをGPU側にコピーする</para>
+		/// <para>バッファのサイズは、GraphicsBuffer 作成時に指定したサイズと同じであること! (一部のバッファのみコピー、などには未対応)</para>
 		/// 成功したら true, 失敗したら false を返す (失敗した瞬間に処理を中断する)
 		/// </summary>
-		static bool CopyDataFromCPUToGPUThroughGraphicBuffer(const GraphicBuffer& graphicBuffer, void* dataBegin, size_t dataSize);
+		static bool CopyDataFromCPUToGPUThroughGraphicsBuffer(const GraphicsBuffer& GraphicsBuffer, void* dataBegin, size_t dataSize);
 
 		/// <summary>
 		/// <para>DescriptorHeap(RTV) と SwapChain を関連付ける</para>
@@ -151,7 +155,7 @@ namespace ForiverEngine
 		/// <summary>
 		/// SwapChain から指定インデックスのバッファを取得する (失敗したら nullptr)
 		/// </summary>
-		static GraphicBuffer GetBufferByIndex(const SwapChain& swapChain, int index);
+		static GraphicsBuffer GetBufferByIndex(const SwapChain& swapChain, int index);
 
 		/// <summary>
 		/// DescriptorHeap (RTV) のハンドルを作成し、index 番目の Descriptor (RTV) を指し示すように内部ポインタを進めて返す
@@ -160,18 +164,18 @@ namespace ForiverEngine
 			const Device& device, const DescriptorHeap& descriptorHeapRTV, int index);
 
 		/// <summary>
-		/// <para>ResourceBarrier() を実行し、GraphicBuffer がどう状態遷移するかをGPUに教える</para>
+		/// <para>ResourceBarrier() を実行し、GraphicsBuffer がどう状態遷移するかをGPUに教える</para>
 		/// Present -> RenderTarget
 		/// </summary>
 		static void InvokeResourceBarrierAsTransitionFromPresentToRenderTarget(
-			const CommandList& commandList, const GraphicBuffer& graphicBuffer);
+			const CommandList& commandList, const GraphicsBuffer& GraphicsBuffer);
 
 		/// <summary>
-		/// <para>ResourceBarrier() を実行し、GraphicBuffer がどう状態遷移するかをGPUに教える</para>
+		/// <para>ResourceBarrier() を実行し、GraphicsBuffer がどう状態遷移するかをGPUに教える</para>
 		/// RenderTarget -> Present
 		/// </summary>
 		static void InvokeResourceBarrierAsTransitionFromRenderTargetToPresent(
-			const CommandList& commandList, const GraphicBuffer& graphicBuffer);
+			const CommandList& commandList, const GraphicsBuffer& GraphicsBuffer);
 
 		/// <summary>
 		/// <para>[Command]</para>

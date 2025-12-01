@@ -48,8 +48,8 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	};
 
 	// 頂点バッファーを作成し、アップロード
-	GraphicBuffer vertexBuffer = D3D12Helper::CreateGraphicBuffer1D(device, sizeof(vertices), true);
-	D3D12Helper::CopyDataFromCPUToGPUThroughGraphicBuffer(vertexBuffer, vertices, sizeof(vertices));
+	GraphicsBuffer vertexBuffer = D3D12Helper::CreateGraphicsBuffer1D(device, sizeof(vertices), true);
+	D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer(vertexBuffer, vertices, sizeof(vertices));
 
 	// シェーダーをロード
 	CompiledShaderObject shaderVS, shaderPS;
@@ -69,8 +69,8 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	{
 		// 現在バックバッファにある RenderTarget を取得する
 		const int currentBackBufferIndex = D3D12Helper::GetCurrentBackBufferIndex(swapChain);
-		GraphicBuffer currentBackBuffer = D3D12Helper::GetBufferByIndex(swapChain, currentBackBufferIndex);
-		if (!currentBackBuffer) Throw(L"現在バックにある GraphicBuffer を取得することに失敗しました");
+		GraphicsBuffer currentBackBuffer = D3D12Helper::GetBufferByIndex(swapChain, currentBackBufferIndex);
+		if (!currentBackBuffer) Throw(L"現在バックにある GraphicsBuffer を取得することに失敗しました");
 		DescriptorHeapHandleAtCPU backBufferRTV = D3D12Helper::CreateDescriptorRTVHandleByIndex(
 			device, descriptorHeapRTV, currentBackBufferIndex);
 
