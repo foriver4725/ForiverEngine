@@ -47,9 +47,10 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		{ 1, -1, 0 }, // 右下
 	};
 
-	// 頂点バッファーを作成し、アップロード
 	GraphicsBuffer vertexBuffer = D3D12Helper::CreateGraphicsBuffer1D(device, sizeof(vertices), true);
-	D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer(vertexBuffer, vertices, sizeof(vertices));
+	if (!vertexBuffer) Throw(L"頂点バッファーの作成に失敗しました");
+	if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer(vertexBuffer, vertices, sizeof(vertices)))
+		Throw(L"頂点バッファーを GPU 側にコピーすることに失敗しました");
 
 	// シェーダーをロード
 	CompiledShaderObject shaderVS, shaderPS;
@@ -65,7 +66,13 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 			Throw(errorMessage.c_str());
 	}
 
-	PipelineState graphicsPipelineState = D3D12Helper::CreateGraphicsPipelineState(device);
+	// 頂点レイアウトを作成
+	std::vector<VertexLayout> vertexLayouts =
+	{
+		{ "POSITION", Format::RGBA_Float32 },
+	};
+
+	PipelineState graphicsPipelineState = D3D12Helper::CreateGraphicsPipelineState(device, shaderVS, shaderPS, vertexLayouts);
 	if (!graphicsPipelineState) Throw(L"GraphicsPipelineState の作成に失敗しました");
 
 	BEGIN_MESSAGE_LOOP;

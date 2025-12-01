@@ -1,9 +1,11 @@
 ﻿#pragma once
 
-// STL はヘッダでインクルードする (必要最小限)
+// 一般的なものはヘッダでインクルードする (必要最小限)
 // DirectX12 はソースでのみインクルードする
+#include <vector>
 #include <string>
 #include <functional>
+#include "Windows.h"
 
 struct IDXGIFactory7;
 struct ID3D12Device14;
@@ -28,7 +30,27 @@ using IDXGISwapChainLatest = IDXGISwapChain4;
 #define ShaderTargetVS "vs_5_1"
 #define ShaderTargetPS "ps_5_1"
 
-// ラッパークラスを定義
+namespace ForiverEngine
+{
+	// DirectX と等価の列挙型を定義
+	enum class Format : int
+	{
+		Unknown = 0,      // DXGI_FORMAT_UNKNOWN
+		RGBA_Float32 = 2, // DXGI_FORMAT_R32G32B32A32_FLOAT
+		RGBA_Uint32 = 3,  // DXGI_FORMAT_R32G32B32A32_UINT
+		RGB_Float32 = 6,  // DXGI_FORMAT_R32G32B32_FLOAT
+		RGB_Uint32 = 7,   // DXGI_FORMAT_R32G32B32_UINT
+		RG_Float32 = 16,  // DXGI_FORMAT_R32G32_FLOAT
+		RG_Uint32 = 17,   // DXGI_FORMAT_R32G32_UINT
+		R_Float32 = 41,   // DXGI_FORMAT_R32_FLOAT
+		R_Uint32 = 42,    // DXGI_FORMAT_R32_UINT
+		RGBA_Unorm8 = 28, // DXGI_FORMAT_R8G8B8A8_UNORM
+		RGBA_Uint8 = 30,  // DXGI_FORMAT_R8G8B8A8_UINT
+
+		D_Float32 = 40,   // DXGI_FORMAT_D32_FLOAT
+	};
+
+	// ラッパークラスを定義
 #define DEFINE_POINTER_WRAPPER_STRUCT(WrapperStructName, OriginalPointerType) \
 struct WrapperStructName \
 { \
@@ -42,33 +64,34 @@ public: \
     explicit operator bool() const { return Ptr != nullptr; } \
 };
 
-DEFINE_POINTER_WRAPPER_STRUCT(Factory, IDXGIFactoryLatest);
-DEFINE_POINTER_WRAPPER_STRUCT(Device, ID3D12DeviceLatest);
-DEFINE_POINTER_WRAPPER_STRUCT(SwapChain, IDXGISwapChainLatest);
-DEFINE_POINTER_WRAPPER_STRUCT(PipelineState, ID3D12PipelineState);
-DEFINE_POINTER_WRAPPER_STRUCT(CommandAllocator, ID3D12CommandAllocator);
-DEFINE_POINTER_WRAPPER_STRUCT(CommandList, ID3D12GraphicsCommandList);
-DEFINE_POINTER_WRAPPER_STRUCT(CommandQueue, ID3D12CommandQueue);
-DEFINE_POINTER_WRAPPER_STRUCT(DescriptorHeap, ID3D12DescriptorHeap);
-DEFINE_POINTER_WRAPPER_STRUCT(Fence, ID3D12Fence);
+	DEFINE_POINTER_WRAPPER_STRUCT(Factory, IDXGIFactoryLatest);
+	DEFINE_POINTER_WRAPPER_STRUCT(Device, ID3D12DeviceLatest);
+	DEFINE_POINTER_WRAPPER_STRUCT(SwapChain, IDXGISwapChainLatest);
+	DEFINE_POINTER_WRAPPER_STRUCT(PipelineState, ID3D12PipelineState);
+	DEFINE_POINTER_WRAPPER_STRUCT(CommandAllocator, ID3D12CommandAllocator);
+	DEFINE_POINTER_WRAPPER_STRUCT(CommandList, ID3D12GraphicsCommandList);
+	DEFINE_POINTER_WRAPPER_STRUCT(CommandQueue, ID3D12CommandQueue);
+	DEFINE_POINTER_WRAPPER_STRUCT(DescriptorHeap, ID3D12DescriptorHeap);
+	DEFINE_POINTER_WRAPPER_STRUCT(Fence, ID3D12Fence);
 
-DEFINE_POINTER_WRAPPER_STRUCT(GraphicAdapter, IDXGIAdapter);
-DEFINE_POINTER_WRAPPER_STRUCT(GraphicsBuffer, ID3D12Resource); // GPUメモリを指し示す (フレームバッファとかもそう)
-DEFINE_POINTER_WRAPPER_STRUCT(CompiledShaderObject, ID3DBlob);
+	DEFINE_POINTER_WRAPPER_STRUCT(GraphicAdapter, IDXGIAdapter);
+	DEFINE_POINTER_WRAPPER_STRUCT(GraphicsBuffer, ID3D12Resource); // GPUメモリを指し示す (フレームバッファとかもそう)
+	DEFINE_POINTER_WRAPPER_STRUCT(CompiledShaderObject, ID3DBlob);
 
 #undef DEFINE_POINTER_WRAPPER_STRUCT
 
-// D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE をメモリ配置そのままに自作したもの
-// reinterpret_cast で相互キャストし、外部翻訳単位にはこちらを公開するようにする
-typedef unsigned __int64 size_t;
-typedef unsigned __int64 UINT64;
-typedef unsigned __int64 ULONG_PTR;
-typedef ULONG_PTR SIZE_T;
-struct DescriptorHeapHandleAtCPU { SIZE_T ptr; };
-struct DescriptorHeapHandleAtGPU { UINT64 ptr; };
+	// 頂点レイアウト 単品
+	struct VertexLayout
+	{
+		const char* SemanticName;
+		Format Format;
+	};
 
-namespace ForiverEngine
-{
+	// DirectX の構造体を直接外部に公開したくないので、メモリ配置を同じにした構造体に reinterpret_cast する
+	typedef ULONG_PTR SIZE_T;
+	struct DescriptorHeapHandleAtCPU { SIZE_T ptr; };
+	struct DescriptorHeapHandleAtGPU { UINT64 ptr; };
+
 	class D3D12Helper final
 	{
 	public:
@@ -123,7 +146,11 @@ namespace ForiverEngine
 		/// </summary>
 		static GraphicsBuffer CreateGraphicsBuffer1D(const Device& device, int size, bool canMapFromCPU);
 
-		static PipelineState CreateGraphicsPipelineState(const Device& device);
+		/// <summary>
+		/// GraphicsPipelineState を作成して返す (失敗したら nullptr)
+		/// </summary>
+		static PipelineState CreateGraphicsPipelineState(
+			const Device& device, const CompiledShaderObject& vs, const CompiledShaderObject& ps, const std::vector<VertexLayout>& vertexLayouts);
 
 		/// <summary>
 		/// <para>GraphicsBuffer の Map() を使って、CPUのバッファをGPU側にコピーする</para>

@@ -248,9 +248,79 @@ namespace ForiverEngine
 		return GraphicsBuffer();
 	}
 
-	PipelineState D3D12Helper::CreateGraphicsPipelineState(const Device& device)
+	PipelineState D3D12Helper::CreateGraphicsPipelineState(
+		const Device& device, const CompiledShaderObject& vs, const CompiledShaderObject& ps, const std::vector<VertexLayout>& vertexLayouts)
 	{
-		D3D12_GRAPHICS_PIPELINE_STATE_DESC desc = {};
+		std::vector< D3D12_INPUT_ELEMENT_DESC> vertexLayoutsReal = std::vector< D3D12_INPUT_ELEMENT_DESC>(vertexLayouts.size(), {});
+		for (int i = 0; i < static_cast<int>(vertexLayouts.size()); ++i)
+		{
+			vertexLayoutsReal[i] =
+			{
+				.SemanticName = vertexLayouts[i].SemanticName,
+				.SemanticIndex = 0, // 同じセマンティクス名が複数ある場合のインデックス (0でOK)
+				.Format = static_cast<DXGI_FORMAT>(vertexLayouts[i].Format),
+				.InputSlot = 0, // インターリーブ なので、0番スロットだけ使えばOK
+				.AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT, // 頂点バッファのメンバは連続しているので、それらのアドレスは自動で計算してもらう
+				.InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, // 1頂点ごとにこのレイアウトが入っている
+				.InstanceDataStepRate = 0, // インスタンシングではないので、データは使いまわさない
+			};
+		}
+
+		D3D12_GRAPHICS_PIPELINE_STATE_DESC desc =
+		{
+			.pRootSignature = nullptr, // 一旦 nullptr にする!!!
+			.VS = {.pShaderBytecode = vs->GetBufferPointer(), .BytecodeLength = vs->GetBufferSize() },
+			.PS = {.pShaderBytecode = ps->GetBufferPointer(), .BytecodeLength = ps->GetBufferSize() },
+			.DS = {}, // ドメインシェーダー (使わない)
+			.HS = {}, // ハルシェーダー (使わない)
+			.GS = {}, // ジオメトリシェーダー (使わない)
+			.StreamOutput = {}, // ストリーミング出力バッファー設定 (不要)
+			.BlendState =
+			{
+				.AlphaToCoverageEnable = false, // aテスト無効
+				.IndependentBlendEnable = false, // MRT ではないので... (RenderTarget[0] の設定が全てに適用される)
+				.RenderTarget =
+				{ // このコメントを消すと、コードの自動成形が変になる...
+					// [0]
+					{
+						.BlendEnable = false, // 今回はブレンドしない
+						.LogicOpEnable = false, // 今回はブレンドしない
+						.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL, // RGBA 全てブレンドする
+					},
+
+					// [1] ~ [7]
+				},
+			},
+			.SampleMask = D3D12_DEFAULT_SAMPLE_MASK, // デフォルト
+			.RasterizerState =
+			{
+				.FillMode = D3D12_FILL_MODE_SOLID, // 塗りつぶし
+				.CullMode = D3D12_CULL_MODE_NONE, // カリングなし
+				.DepthClipEnable = true, // 深度クリッピング有効
+				.MultisampleEnable = false, // まだアンチエイリアスは使わないので...
+			},
+			.DepthStencilState = {}, // 深度ステンシルバッファの設定 (今回は指定しない)
+			.InputLayout = // 頂点レイアウト
+			{
+				.pInputElementDescs = vertexLayoutsReal.data(),
+				.NumElements = static_cast<UINT>(vertexLayoutsReal.size()),
+			},
+			.IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED, // トライアングルリスト (トライアングルストリップ ではない) なので、無効化
+			.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE, // 三角形
+			.NumRenderTargets = 1, // MRT ではないので、1 でOK
+			.RTVFormats =
+			{
+				// [0]
+				DXGI_FORMAT_R8G8B8A8_UNORM, // RT のフォーマット. [0, 1] に正規化された RGBA. RT は1つなので、[0] のみ指定
+
+				// [1] ~ [7]
+			},
+			.DSVFormat = {}, // 深度ステンシルバッファのフォーマット (今回は指定しない)
+			.SampleDesc = {.Count = 1, .Quality = 0 }, // アンチエイリアシングはしない (1ピクセルあたり1回サンプリング)
+			.NodeMask = 0, // アダプターが1つなので...
+			.CachedPSO = {}, // 高速化出来るけど、今は使わない
+			.Flags = D3D12_PIPELINE_STATE_FLAG_NONE, // 指定なし
+		};
 
 		ID3D12PipelineState* ptr = nullptr;
 		if (device->CreateGraphicsPipelineState(
@@ -535,21 +605,5 @@ namespace ForiverEngine
 
 		// 配列で渡せるが、今回はバリアは1つだけ
 		commandList->ResourceBarrier(1, &desc);
-	}
-
-	static void A()
-	{
-		D3D12_INPUT_ELEMENT_DESC vertexLayouts[] =
-		{
-			{
-				.SemanticName = "POSITION",
-				.SemanticIndex = 0, // 同じセマンティクス名が複数ある場合のインデックス (0でOK)
-				.Format = DXGI_FORMAT_R32G32B32_FLOAT,
-				.InputSlot = 0, // インターリーブ なので、0番スロットだけ使えばOK
-				.AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT, // 頂点バッファのメンバは連続しているので、それらのアドレスは自動で計算してもらう
-				.InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, // 1頂点ごとにこのレイアウトが入っている
-				.InstanceDataStepRate = 0, // インスタンシングではないので、データは使いまわさない
-			},
-		};
 	}
 }
