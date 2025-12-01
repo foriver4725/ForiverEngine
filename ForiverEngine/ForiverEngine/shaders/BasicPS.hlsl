@@ -1,4 +1,4 @@
-﻿float4 main(float4 pos : SV_POSITION) : SV_TARGET
+float4 PSMain(float4 pos : SV_POSITION) : SV_TARGET
 {
     return 1;
 }

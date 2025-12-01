@@ -51,6 +51,20 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	GraphicBuffer vertexBuffer = D3D12Helper::CreateGraphicBuffer1D(device, sizeof(vertices), true);
 	D3D12Helper::CopyDataFromCPUToGPUThroughGraphicBuffer(vertexBuffer, vertices, sizeof(vertices));
 
+	// シェーダーをロード
+	CompiledShaderObject shaderVS, shaderPS;
+	{
+		std::wstring errorMessage;
+
+		shaderVS = D3D12Helper::CompileShaderFile(L"./shaders/BasicVS.hlsl", "VSMain", ShaderTargetVS, errorMessage);
+		if (!shaderVS)
+			Throw(errorMessage.c_str());
+
+		shaderPS = D3D12Helper::CompileShaderFile(L"./shaders/BasicPS.hlsl", "PSMain", ShaderTargetPS, errorMessage);
+		if (!shaderPS)
+			Throw(errorMessage.c_str());
+	}
+
 	BEGIN_MESSAGE_LOOP;
 	{
 		// 現在バックバッファにある RenderTarget を取得する

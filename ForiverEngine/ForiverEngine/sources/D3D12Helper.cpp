@@ -1,13 +1,12 @@
 ﻿#include "../headers/D3D12Helper.h"
 
-#include <string>
-#include <functional>
-
 #include <d3d12.h>
 #include <dxgi1_6.h>
+#include <d3dcompiler.h>
 
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
+#pragma comment(lib, "d3dcompiler.lib")
 
 namespace ForiverEngine
 {
@@ -44,7 +43,7 @@ namespace ForiverEngine
 #endif
 			return Factory(ptr);
 
-		return Factory::Nullptr();
+		return Factory();
 	}
 
 	Device D3D12Helper::CreateDevice(const Factory& factory)
@@ -80,7 +79,7 @@ namespace ForiverEngine
 			}
 		}
 
-		return Device::Nullptr();
+		return Device();
 	}
 
 	CommandAllocator D3D12Helper::CreateCommandAllocator(const Device& device)
@@ -94,7 +93,7 @@ namespace ForiverEngine
 			return CommandAllocator(ptr);
 		}
 
-		return CommandAllocator::Nullptr();
+		return CommandAllocator();
 	}
 
 	CommandList D3D12Helper::CreateCommandList(const Device& device, const CommandAllocator& commandAllocator)
@@ -111,7 +110,7 @@ namespace ForiverEngine
 			return CommandList(ptr);
 		}
 
-		return CommandList::Nullptr();
+		return CommandList();
 	}
 
 	CommandQueue D3D12Helper::CreateCommandQueue(const Device& device)
@@ -130,7 +129,7 @@ namespace ForiverEngine
 			return CommandQueue(ptr);
 		}
 
-		return CommandQueue::Nullptr();
+		return CommandQueue();
 	}
 
 	SwapChain D3D12Helper::CreateSwapChain(const Factory& factory, const CommandQueue& commandQueue, HWND hwnd, int windowWidth, int windowHeight)
@@ -156,7 +155,7 @@ namespace ForiverEngine
 		IDXGISwapChain1** ptrAs1 = reinterpret_cast<IDXGISwapChain1**>(&ptr);
 		if (!ptrAs1)
 		{
-			return SwapChain::Nullptr();
+			return SwapChain();
 		}
 
 		if (factory->CreateSwapChainForHwnd(
@@ -171,7 +170,7 @@ namespace ForiverEngine
 			return SwapChain(ptr);
 		}
 
-		return SwapChain::Nullptr();
+		return SwapChain();
 	}
 
 	DescriptorHeap D3D12Helper::CreateDescriptorHeapRTV(const Device& device)
@@ -190,7 +189,7 @@ namespace ForiverEngine
 			return DescriptorHeap(ptr);
 		}
 
-		return DescriptorHeap::Nullptr();
+		return DescriptorHeap();
 	}
 
 	Fence D3D12Helper::CreateFence(const Device& device)
@@ -205,7 +204,7 @@ namespace ForiverEngine
 			return Fence(ptr);
 		}
 
-		return Fence::Nullptr();
+		return Fence();
 	}
 
 	GraphicBuffer D3D12Helper::CreateGraphicBuffer1D(const Device& device, int size, bool canMapFromCPU)
@@ -246,7 +245,7 @@ namespace ForiverEngine
 			return GraphicBuffer(ptr);
 		}
 
-		return GraphicBuffer::Nullptr();
+		return GraphicBuffer();
 	}
 
 	bool D3D12Helper::CopyDataFromCPUToGPUThroughGraphicBuffer(const GraphicBuffer& graphicBuffer, void* dataBegin, std::size_t dataSize)
@@ -308,7 +307,7 @@ namespace ForiverEngine
 			return GraphicBuffer(ptr);
 		}
 
-		return GraphicBuffer::Nullptr();
+		return GraphicBuffer();
 	}
 
 	DescriptorHeapHandleAtCPU D3D12Helper::CreateDescriptorRTVHandleByIndex(
@@ -396,6 +395,51 @@ namespace ForiverEngine
 		return swapChain->Present(1, 0) == S_OK;
 	}
 
+	CompiledShaderObject D3D12Helper::CompileShaderFile(
+		const std::wstring& path, const std::string& entryFunc, const std::string& shaderTarget, std::wstring& outErrorMessage)
+	{
+		ID3DBlob* blob = nullptr;
+		ID3DBlob* errorBlob = nullptr;
+
+#ifdef _DEBUG
+		constexpr UINT ShaderCompileOption = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
+#else
+		constexpr UINT ShaderCompileOption = 0;
+#endif
+
+		HRESULT result = D3DCompileFromFile(
+			path.c_str(),
+			nullptr, // #define みたいなのを配列で指定
+			D3D_COMPILE_STANDARD_FILE_INCLUDE, // こうすることで、シェーダー内に #include がある場合、カレントディレクトリから探すようになる
+			entryFunc.c_str(),
+			shaderTarget.c_str(),
+			ShaderCompileOption,
+			0, // シェーダーファイルの場合、0が推奨されている
+			&blob,
+			&errorBlob
+		);
+
+		if (result == S_OK)
+		{
+			outErrorMessage = L"";
+			return CompiledShaderObject(blob);
+		}
+
+		if (FAILED(result) && result == HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND))
+		{
+			outErrorMessage = L"Shader file not found.";
+			return CompiledShaderObject();
+		}
+
+		std::wstring errorStr;
+		errorStr.resize(errorBlob->GetBufferSize());
+		std::copy_n(static_cast<char*>(errorBlob->GetBufferPointer()), errorBlob->GetBufferSize(), errorStr.begin());
+		errorStr += L"\n";
+
+		outErrorMessage = errorStr;
+		return CompiledShaderObject();
+	}
+
 #ifdef _DEBUG
 	bool D3D12Helper::EnableDebugLayer()
 	{
@@ -434,7 +478,7 @@ namespace ForiverEngine
 				return GraphicAdapter(ptr);
 		}
 
-		return GraphicAdapter::Nullptr();
+		return GraphicAdapter();
 	}
 
 	int GetBufferCountFromSwapChain(const SwapChain& swapChain)

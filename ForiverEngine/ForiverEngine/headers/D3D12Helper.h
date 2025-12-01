@@ -1,5 +1,10 @@
 ﻿#pragma once
 
+// STL はヘッダでインクルードする (必要最小限)
+// DirectX12 はソースでのみインクルードする
+#include <string>
+#include <functional>
+
 struct IDXGIFactory7;
 struct ID3D12Device14;
 struct IDXGISwapChain4;
@@ -10,6 +15,7 @@ struct ID3D12DescriptorHeap;
 struct ID3D12Fence;
 struct IDXGIAdapter;
 struct ID3D12Resource;
+struct ID3D10Blob; typedef ID3D10Blob ID3DBlob;
 struct HWND__; typedef HWND__* HWND;
 
 // 最新バージョンを指定
@@ -17,14 +23,19 @@ using IDXGIFactoryLatest = IDXGIFactory7;
 using ID3D12DeviceLatest = ID3D12Device14;
 using IDXGISwapChainLatest = IDXGISwapChain4;
 
+// シェーダーターゲットを指定
+#define ShaderTargetVS "vs_5_1"
+#define ShaderTargetPS "ps_5_1"
+
 // ラッパークラスを定義
 #define DEFINE_POINTER_WRAPPER_STRUCT(WrapperStructName, OriginalPointerType) \
 struct WrapperStructName \
 { \
 public: \
 	OriginalPointerType* Ptr = nullptr; \
+\
+	explicit WrapperStructName() : Ptr(nullptr) {} \
 	explicit WrapperStructName(OriginalPointerType* ptr) : Ptr(ptr) {} \
-    inline static WrapperStructName Nullptr() { return WrapperStructName(nullptr); } \
 \
 	OriginalPointerType* operator->() const { return Ptr; } \
     explicit operator bool() const { return Ptr != nullptr; } \
@@ -41,16 +52,16 @@ DEFINE_POINTER_WRAPPER_STRUCT(Fence, ID3D12Fence);
 
 DEFINE_POINTER_WRAPPER_STRUCT(GraphicAdapter, IDXGIAdapter);
 DEFINE_POINTER_WRAPPER_STRUCT(GraphicBuffer, ID3D12Resource); // GPUメモリを指し示す (フレームバッファとかもそう)
+DEFINE_POINTER_WRAPPER_STRUCT(CompiledShaderObject, ID3DBlob);
 
 #undef DEFINE_POINTER_WRAPPER_STRUCT
 
+// D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE をメモリ配置そのままに自作したもの
+// reinterpret_cast で相互キャストし、外部翻訳単位にはこちらを公開するようにする
 typedef unsigned __int64 size_t;
 typedef unsigned __int64 UINT64;
 typedef unsigned __int64 ULONG_PTR;
 typedef ULONG_PTR SIZE_T;
-
-// D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE をメモリ配置そのままに自作したもの
-// reinterpret_cast で相互キャストし、外部翻訳単位にはこちらを公開するようにする
 struct DescriptorHeapHandleAtCPU { SIZE_T ptr; };
 struct DescriptorHeapHandleAtGPU { UINT64 ptr; };
 
@@ -198,6 +209,13 @@ namespace ForiverEngine
 		/// 成功したら true, 失敗したら false を返す
 		/// </summary>
 		static bool Present(const SwapChain& swapChain);
+
+		/// <summary>
+		/// <para>シェーダーファイルをコンパイルして返す (失敗したら nullptr)</para>
+		/// エラーメッセージは outErrorMessage に格納される
+		/// </summary>
+		static CompiledShaderObject CompileShaderFile(
+			const std::wstring& path, const std::string& entryFunc, const std::string& shaderTarget, std::wstring& outErrorMessage);
 
 #ifdef _DEBUG
 		/// <summary>

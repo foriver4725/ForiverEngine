@@ -11,8 +11,8 @@ typedef UINT_PTR WPARAM;
 typedef LONG_PTR LPARAM;
 typedef LRESULT(__stdcall* WNDPROC)(HWND, UINT, WPARAM, LPARAM);
 
-#ifdef ENABLE_CUI_CONSOLE
 #include <Windows.h>
+#ifdef ENABLE_CUI_CONSOLE
 #include <iostream>
 #endif
 
@@ -133,7 +133,7 @@ namespace ForiverEngine
 		/// <summary>
 		/// GUIアプリケーションでコンソールウィンドウを作成する
 		/// </summary>
-		inline static void CreateConsoleInGUIApplication()
+		static void CreateConsoleInGUIApplication()
 		{
 			FILE* fp;
 			AllocConsole();
@@ -143,7 +143,7 @@ namespace ForiverEngine
 		/// <summary>
 		/// GUIアプリケーションで作成したコンソールウィンドウを閉じる
 		/// </summary>
-		inline static void CloseConsoleInGUIApplication()
+		static void CloseConsoleInGUIApplication()
 		{
 			FreeConsole();
 		}

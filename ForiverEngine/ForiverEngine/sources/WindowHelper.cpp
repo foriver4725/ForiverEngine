@@ -1,7 +1,5 @@
 ﻿#include "../headers/WindowHelper.h"
 
-#include <Windows.h>
-
 namespace ForiverEngine
 {
 	bool WindowHelper::InitializeWindowFromHInstance(HINSTANCE hInstance, WNDPROC windowProcedure, const wchar_t* className)
