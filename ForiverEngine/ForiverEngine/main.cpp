@@ -65,6 +65,9 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 			Throw(errorMessage.c_str());
 	}
 
+	PipelineState graphicsPipelineState = D3D12Helper::CreateGraphicsPipelineState(device);
+	if (!graphicsPipelineState) Throw(L"GraphicsPipelineState の作成に失敗しました");
+
 	BEGIN_MESSAGE_LOOP;
 	{
 		// 現在バックバッファにある RenderTarget を取得する

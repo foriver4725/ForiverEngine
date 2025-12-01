@@ -250,9 +250,11 @@ namespace ForiverEngine
 
 	PipelineState D3D12Helper::CreateGraphicsPipelineState(const Device& device)
 	{
+		D3D12_GRAPHICS_PIPELINE_STATE_DESC desc = {};
+
 		ID3D12PipelineState* ptr = nullptr;
 		if (device->CreateGraphicsPipelineState(
-			nullptr,
+			&desc,
 			IID_PPV_ARGS(&ptr)
 		) == S_OK)
 		{
