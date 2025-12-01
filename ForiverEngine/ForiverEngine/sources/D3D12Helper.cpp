@@ -520,4 +520,20 @@ namespace ForiverEngine
 		// 配列で渡せるが、今回はバリアは1つだけ
 		commandList->ResourceBarrier(1, &desc);
 	}
+
+	static void A()
+	{
+		D3D12_INPUT_ELEMENT_DESC vertexLayouts[] =
+		{
+			{
+				.SemanticName = "POSITION",
+				.SemanticIndex = 0, // 同じセマンティクス名が複数ある場合のインデックス (0でOK)
+				.Format = DXGI_FORMAT_R32G32B32_FLOAT,
+				.InputSlot = 0, // インターリーブ なので、0番スロットだけ使えばOK
+				.AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT, // 頂点バッファのメンバは連続しているので、それらのアドレスは自動で計算してもらう
+				.InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, // 1頂点ごとにこのレイアウトが入っている
+				.InstanceDataStepRate = 0, // インスタンシングではないので、データは使いまわさない
+			},
+		};
+	}
 }
