@@ -136,6 +136,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="oss\SimplexNoise.cpp" />
     <ClCompile Include="sources\D3D12Helper.cpp" />
     <ClCompile Include="sources\Math.cpp" />
     <ClCompile Include="sources\WindowHelper.cpp" />
@@ -144,6 +145,7 @@
     <ClInclude Include="headers\D3D12Helper.h" />
     <ClInclude Include="headers\Math.h" />
     <ClInclude Include="headers\WindowHelper.h" />
+    <ClInclude Include="oss\SimplexNoise.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shaders\BasicPS.hlsl">
