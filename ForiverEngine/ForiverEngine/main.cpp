@@ -1,5 +1,6 @@
 ﻿#include "./headers/WindowHelper.h"
 #include "./headers/D3D12Helper.h"
+#include "./headers/Math.h"
 
 #include <Windows.h>
 #include <DirectXMath.h>
