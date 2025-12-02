@@ -249,7 +249,8 @@ namespace ForiverEngine
 	}
 
 	PipelineState D3D12Helper::CreateGraphicsPipelineState(
-		const Device& device, const CompiledShaderObject& vs, const CompiledShaderObject& ps, const std::vector<VertexLayout>& vertexLayouts)
+		const Device& device, const CompiledShaderObject& vs, const CompiledShaderObject& ps,
+		const std::vector<VertexLayout>& vertexLayouts, int eFillMode, int eCullMode)
 	{
 		std::vector< D3D12_INPUT_ELEMENT_DESC> vertexLayoutsReal = std::vector< D3D12_INPUT_ELEMENT_DESC>(vertexLayouts.size(), {});
 		for (int i = 0; i < static_cast<int>(vertexLayouts.size()); ++i)
@@ -294,8 +295,8 @@ namespace ForiverEngine
 			.SampleMask = D3D12_DEFAULT_SAMPLE_MASK, // デフォルト
 			.RasterizerState =
 			{
-				.FillMode = D3D12_FILL_MODE_SOLID, // 塗りつぶし
-				.CullMode = D3D12_CULL_MODE_NONE, // カリングなし
+				.FillMode = static_cast<D3D12_FILL_MODE>(eFillMode), // 塗りつぶし or ワイヤーフレーム
+				.CullMode = static_cast<D3D12_CULL_MODE>(eCullMode), // カリング (None, Front, Back)
 				.DepthClipEnable = true, // 深度クリッピング有効
 				.MultisampleEnable = false, // まだアンチエイリアスは使わないので...
 			},

@@ -87,6 +87,21 @@ public: \
 		Format Format;
 	};
 
+	// ラスタライザの塗りつぶしモード
+	struct FillMode
+	{
+		static constexpr int Wireframe = 2; // D3D12_FILL_MODE_WIREFRAME
+		static constexpr int Solid = 3;     // D3D12_FILL_MODE_SOLID
+	};
+
+	// ラスタライザのカリングモード
+	struct CullMode
+	{
+		static constexpr int None = 1;  // D3D12_CULL_MODE_NONE
+		static constexpr int Front = 2; // D3D12_CULL_MODE_FRONT
+		static constexpr int Back = 3;  // D3D12_CULL_MODE_BACK
+	};
+
 	// DirectX の構造体を直接外部に公開したくないので、メモリ配置を同じにした構造体に reinterpret_cast する
 	typedef ULONG_PTR SIZE_T;
 	struct DescriptorHeapHandleAtCPU { SIZE_T ptr; };
@@ -150,7 +165,8 @@ public: \
 		/// GraphicsPipelineState を作成して返す (失敗したら nullptr)
 		/// </summary>
 		static PipelineState CreateGraphicsPipelineState(
-			const Device& device, const CompiledShaderObject& vs, const CompiledShaderObject& ps, const std::vector<VertexLayout>& vertexLayouts);
+			const Device& device, const CompiledShaderObject& vs, const CompiledShaderObject& ps,
+			const std::vector<VertexLayout>& vertexLayouts, int eFillMode, int eCullMode);
 
 		/// <summary>
 		/// <para>GraphicsBuffer の Map() を使って、CPUのバッファをGPU側にコピーする</para>

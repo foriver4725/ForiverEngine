@@ -72,7 +72,8 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		{ "POSITION", Format::RGBA_Float32 },
 	};
 
-	PipelineState graphicsPipelineState = D3D12Helper::CreateGraphicsPipelineState(device, shaderVS, shaderPS, vertexLayouts);
+	PipelineState graphicsPipelineState = D3D12Helper::CreateGraphicsPipelineState(
+		device, shaderVS, shaderPS, vertexLayouts, FillMode::Solid, CullMode::None);
 	if (!graphicsPipelineState) Throw(L"GraphicsPipelineState の作成に失敗しました");
 
 	BEGIN_MESSAGE_LOOP;
