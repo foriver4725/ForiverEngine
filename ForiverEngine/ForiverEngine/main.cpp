@@ -87,8 +87,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 
 		D3D12Helper::InvokeResourceBarrierAsTransitionFromPresentToRenderTarget(commandList, currentBackBuffer);
 		D3D12Helper::CommandSetRTAsOutputStage(commandList, backBufferRTV);
-		float clearColor[4] = { 1, 1, 0, 1 };
-		D3D12Helper::CommandClearRT(commandList, backBufferRTV, clearColor);
+		D3D12Helper::CommandClearRT(commandList, backBufferRTV, { 1, 1, 0, 1 });
 		D3D12Helper::InvokeResourceBarrierAsTransitionFromRenderTargetToPresent(commandList, currentBackBuffer);
 		D3D12Helper::CommandClose(commandList);
 		D3D12Helper::ExecuteCommands(commandQueue, commandList);

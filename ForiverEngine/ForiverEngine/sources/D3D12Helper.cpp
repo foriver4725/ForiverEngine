@@ -432,11 +432,12 @@ namespace ForiverEngine
 		);
 	}
 
-	void D3D12Helper::CommandClearRT(const CommandList& commandList, const DescriptorHeapHandleAtCPU& handleRTV, float clearColor4[])
+	void D3D12Helper::CommandClearRT(
+		const CommandList& commandList, const DescriptorHeapHandleAtCPU& handleRTV, const std::array<float, 4>& clearColor)
 	{
 		// 第3,4引数は、クリアする範囲を指定する
 		// 今回は画面全体をクリアするので、指定する必要はない
-		commandList->ClearRenderTargetView(*Reinterpret(const_cast<DescriptorHeapHandleAtCPU*>(&handleRTV)), clearColor4, 0, nullptr);
+		commandList->ClearRenderTargetView(*Reinterpret(const_cast<DescriptorHeapHandleAtCPU*>(&handleRTV)), clearColor.data(), 0, nullptr);
 	}
 
 	void D3D12Helper::CommandClose(const CommandList& commandList)

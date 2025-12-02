@@ -3,6 +3,7 @@
 // 一般的なものはヘッダでインクルードする (必要最小限)
 // DirectX12 はソースでのみインクルードする
 #include <vector>
+#include <array>
 #include <string>
 #include <functional>
 #include "Windows.h"
@@ -232,7 +233,8 @@ public: \
 		/// <para>ハンドルが指し示す RenderTarget について、以下の処理を行う</para>
 		/// 全体を1色でクリアする
 		/// </summary>
-		static void CommandClearRT(const CommandList& commandList, const DescriptorHeapHandleAtCPU& handleRTV, float clearColor4[]);
+		static void CommandClearRT(
+			const CommandList& commandList, const DescriptorHeapHandleAtCPU& handleRTV, const std::array<float, 4>& clearColor);
 
 		/// <summary>
 		/// <para>[Command]</para>
