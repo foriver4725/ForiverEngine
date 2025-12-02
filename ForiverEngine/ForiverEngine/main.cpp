@@ -53,7 +53,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		Throw(L"頂点バッファーを GPU 側にコピーすることに失敗しました");
 
 	// シェーダーをロード
-	CompiledShaderObject shaderVS, shaderPS;
+	Blob shaderVS, shaderPS;
 	{
 		std::wstring errorMessage;
 

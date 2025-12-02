@@ -11,6 +11,7 @@
 struct IDXGIFactory7;
 struct ID3D12Device14;
 struct IDXGISwapChain4;
+struct ID3D12RootSignature;
 struct ID3D12PipelineState;
 struct ID3D12CommandAllocator;
 struct ID3D12GraphicsCommandList;
@@ -87,6 +88,7 @@ public: \
 	DEFINE_POINTER_WRAPPER_STRUCT(Factory, IDXGIFactoryLatest);
 	DEFINE_POINTER_WRAPPER_STRUCT(Device, ID3D12DeviceLatest);
 	DEFINE_POINTER_WRAPPER_STRUCT(SwapChain, IDXGISwapChainLatest);
+	DEFINE_POINTER_WRAPPER_STRUCT(RootSignature, ID3D12RootSignature);
 	DEFINE_POINTER_WRAPPER_STRUCT(PipelineState, ID3D12PipelineState);
 	DEFINE_POINTER_WRAPPER_STRUCT(CommandAllocator, ID3D12CommandAllocator);
 	DEFINE_POINTER_WRAPPER_STRUCT(CommandList, ID3D12GraphicsCommandList);
@@ -96,7 +98,7 @@ public: \
 
 	DEFINE_POINTER_WRAPPER_STRUCT(GraphicAdapter, IDXGIAdapter);
 	DEFINE_POINTER_WRAPPER_STRUCT(GraphicsBuffer, ID3D12Resource); // GPUメモリを指し示す (フレームバッファとかもそう)
-	DEFINE_POINTER_WRAPPER_STRUCT(CompiledShaderObject, ID3DBlob);
+	DEFINE_POINTER_WRAPPER_STRUCT(Blob, ID3DBlob);
 
 #undef DEFINE_POINTER_WRAPPER_STRUCT
 
@@ -128,6 +130,18 @@ public: \
 		/// なるべく最新の FeatureLevel に対応したものを探す
 		/// </summary>
 		static Device CreateDevice(const Factory& factory);
+
+		/// <summary>
+		/// RootSignature を作成して返す (失敗したら nullptr)
+		/// </summary>
+		static RootSignature CreateRootSignature(const Device& device, std::wstring& outErrorMessage);
+
+		/// <summary>
+		/// GraphicsPipelineState を作成して返す (失敗したら nullptr)
+		/// </summary>
+		static PipelineState CreateGraphicsPipelineState(
+			const Device& device, const Blob& vs, const Blob& ps,
+			const std::vector<VertexLayout>& vertexLayouts, int eFillMode, int eCullMode);
 
 		/// <summary>
 		/// CommandAllocator を作成して返す (失敗したら nullptr)
@@ -165,13 +179,6 @@ public: \
 		/// 1次元配列用
 		/// </summary>
 		static GraphicsBuffer CreateGraphicsBuffer1D(const Device& device, int size, bool canMapFromCPU);
-
-		/// <summary>
-		/// GraphicsPipelineState を作成して返す (失敗したら nullptr)
-		/// </summary>
-		static PipelineState CreateGraphicsPipelineState(
-			const Device& device, const CompiledShaderObject& vs, const CompiledShaderObject& ps,
-			const std::vector<VertexLayout>& vertexLayouts, int eFillMode, int eCullMode);
 
 		/// <summary>
 		/// <para>GraphicsBuffer の Map() を使って、CPUのバッファをGPU側にコピーする</para>
@@ -265,9 +272,8 @@ public: \
 
 		/// <summary>
 		/// <para>シェーダーファイルをコンパイルして返す (失敗したら nullptr)</para>
-		/// エラーメッセージは outErrorMessage に格納される
 		/// </summary>
-		static CompiledShaderObject CompileShaderFile(
+		static Blob CompileShaderFile(
 			const std::wstring& path, const std::string& entryFunc, const std::string& shaderTarget, std::wstring& outErrorMessage);
 
 #ifdef _DEBUG

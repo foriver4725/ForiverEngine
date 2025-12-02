@@ -16,6 +16,9 @@ namespace ForiverEngine
 	static D3D12_CPU_DESCRIPTOR_HANDLE* Reinterpret(DescriptorHeapHandleAtCPU* value);
 	static DescriptorHeapHandleAtCPU* Reinterpret(D3D12_CPU_DESCRIPTOR_HANDLE* value);
 
+	// エラーの Blob からエラーメッセージを取得する
+	static std::wstring FetchErrorMessageFromErrorBlob(const Blob& blob);
+
 	// グラフィックアダプターを順に列挙していき、その Description が最初に Comparer にマッチしたものを返す
 	// 見つからなかった場合は nullptr を返す
 	static GraphicAdapter FindAvailableGraphicAdapter(const Factory& factory, std::function<bool(const std::wstring&)> descriptionComparer);
@@ -80,6 +83,140 @@ namespace ForiverEngine
 		}
 
 		return Device();
+	}
+
+	// TODO: 作成途中
+	RootSignature D3D12Helper::CreateRootSignature(const Device& device, std::wstring& outErrorMessage)
+	{
+		D3D12_ROOT_SIGNATURE_DESC desc
+		{
+			.NumParameters = 0, // 指定なし
+			.pParameters = nullptr, // 指定なし
+			.NumStaticSamplers = 0, // 指定なし
+			.pStaticSamplers = nullptr, // 指定なし
+			.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT, // 「頂点情報(入力アセンブラ) がある」
+		};
+
+		ID3DBlob* blob = nullptr;
+		ID3DBlob* errorBlob = nullptr;
+		if (D3D12SerializeRootSignature(
+			&desc,
+			D3D_ROOT_SIGNATURE_VERSION_1_0, // バージョン間で仕様が違ったりするので、今回は 1.0 を指定
+			&blob,
+			&errorBlob
+		) != S_OK)
+		{
+			outErrorMessage = FetchErrorMessageFromErrorBlob(Blob(errorBlob));
+			blob->Release();
+			errorBlob->Release();
+			return RootSignature();
+		}
+
+		ID3D12RootSignature* ptr = nullptr;
+		if (device->CreateRootSignature(
+			0, // ノードマスク (アダプターが1つなので...)
+			blob->GetBufferPointer(),
+			blob->GetBufferSize(),
+			IID_PPV_ARGS(&ptr)
+		) != S_OK)
+		{
+			outErrorMessage = L"RootSignature の作成に失敗しました";
+			blob->Release();
+			errorBlob->Release();
+			return RootSignature();
+		}
+
+		outErrorMessage = L"";
+		blob->Release();
+		errorBlob->Release();
+		return RootSignature(ptr);
+	}
+
+	PipelineState D3D12Helper::CreateGraphicsPipelineState(
+		const Device& device, const Blob& vs, const Blob& ps,
+		const std::vector<VertexLayout>& vertexLayouts, int eFillMode, int eCullMode)
+	{
+		std::vector< D3D12_INPUT_ELEMENT_DESC> vertexLayoutsReal = std::vector< D3D12_INPUT_ELEMENT_DESC>(vertexLayouts.size(), {});
+		for (int i = 0; i < static_cast<int>(vertexLayouts.size()); ++i)
+		{
+			vertexLayoutsReal[i] =
+			{
+				.SemanticName = vertexLayouts[i].SemanticName,
+				.SemanticIndex = 0, // 同じセマンティクス名が複数ある場合のインデックス (0でOK)
+				.Format = static_cast<DXGI_FORMAT>(vertexLayouts[i].Format),
+				.InputSlot = 0, // インターリーブ なので、0番スロットだけ使えばOK
+				.AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT, // 頂点バッファのメンバは連続しているので、それらのアドレスは自動で計算してもらう
+				.InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, // 1頂点ごとにこのレイアウトが入っている
+				.InstanceDataStepRate = 0, // インスタンシングではないので、データは使いまわさない
+			};
+		}
+
+		D3D12_GRAPHICS_PIPELINE_STATE_DESC desc =
+		{
+			.pRootSignature = nullptr, // 一旦 nullptr にする!!!
+			.VS = {.pShaderBytecode = vs->GetBufferPointer(), .BytecodeLength = vs->GetBufferSize() },
+			.PS = {.pShaderBytecode = ps->GetBufferPointer(), .BytecodeLength = ps->GetBufferSize() },
+			.DS = {}, // ドメインシェーダー (使わない)
+			.HS = {}, // ハルシェーダー (使わない)
+			.GS = {}, // ジオメトリシェーダー (使わない)
+			.StreamOutput = {}, // ストリーミング出力バッファー設定 (不要)
+			.BlendState =
+			{
+				.AlphaToCoverageEnable = false, // aテスト無効
+				.IndependentBlendEnable = false, // MRT ではないので... (RenderTarget[0] の設定が全てに適用される)
+				.RenderTarget =
+				{ // このコメントを消すと、コードの自動成形が変になる...
+					// [0]
+					{
+						.BlendEnable = false, // 今回はブレンドしない
+						.LogicOpEnable = false, // 今回はブレンドしない
+						.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL, // RGBA 全てブレンドする
+					},
+
+					// [1] ~ [7]
+				},
+			},
+			.SampleMask = D3D12_DEFAULT_SAMPLE_MASK, // デフォルト
+			.RasterizerState =
+			{
+				.FillMode = static_cast<D3D12_FILL_MODE>(eFillMode), // 塗りつぶし or ワイヤーフレーム
+				.CullMode = static_cast<D3D12_CULL_MODE>(eCullMode), // カリング (None, Front, Back)
+				.DepthClipEnable = true, // 深度クリッピング有効
+				.MultisampleEnable = false, // まだアンチエイリアスは使わないので...
+			},
+			.DepthStencilState = {}, // 深度ステンシルバッファの設定 (今回は指定しない)
+			.InputLayout = // 頂点レイアウト
+			{
+				.pInputElementDescs = vertexLayoutsReal.data(),
+				.NumElements = static_cast<UINT>(vertexLayoutsReal.size()),
+			},
+			.IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED, // トライアングルリスト (トライアングルストリップ ではない) なので、無効化
+			.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE, // 三角形
+			.NumRenderTargets = 1, // MRT ではないので、1 でOK
+			.RTVFormats =
+			{
+				// [0]
+				DXGI_FORMAT_R8G8B8A8_UNORM, // RT のフォーマット. [0, 1] に正規化された RGBA. RT は1つなので、[0] のみ指定
+
+				// [1] ~ [7]
+			},
+			.DSVFormat = {}, // 深度ステンシルバッファのフォーマット (今回は指定しない)
+			.SampleDesc = {.Count = 1, .Quality = 0 }, // アンチエイリアシングはしない (1ピクセルあたり1回サンプリング)
+			.NodeMask = 0, // アダプターが1つなので...
+			.CachedPSO = {}, // 高速化出来るけど、今は使わない
+			.Flags = D3D12_PIPELINE_STATE_FLAG_NONE, // 指定なし
+		};
+
+		ID3D12PipelineState* ptr = nullptr;
+		if (device->CreateGraphicsPipelineState(
+			&desc,
+			IID_PPV_ARGS(&ptr)
+		) == S_OK)
+		{
+			return PipelineState(ptr);
+		}
+
+		return PipelineState();
 	}
 
 	CommandAllocator D3D12Helper::CreateCommandAllocator(const Device& device)
@@ -248,93 +385,6 @@ namespace ForiverEngine
 		return GraphicsBuffer();
 	}
 
-	PipelineState D3D12Helper::CreateGraphicsPipelineState(
-		const Device& device, const CompiledShaderObject& vs, const CompiledShaderObject& ps,
-		const std::vector<VertexLayout>& vertexLayouts, int eFillMode, int eCullMode)
-	{
-		std::vector< D3D12_INPUT_ELEMENT_DESC> vertexLayoutsReal = std::vector< D3D12_INPUT_ELEMENT_DESC>(vertexLayouts.size(), {});
-		for (int i = 0; i < static_cast<int>(vertexLayouts.size()); ++i)
-		{
-			vertexLayoutsReal[i] =
-			{
-				.SemanticName = vertexLayouts[i].SemanticName,
-				.SemanticIndex = 0, // 同じセマンティクス名が複数ある場合のインデックス (0でOK)
-				.Format = static_cast<DXGI_FORMAT>(vertexLayouts[i].Format),
-				.InputSlot = 0, // インターリーブ なので、0番スロットだけ使えばOK
-				.AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT, // 頂点バッファのメンバは連続しているので、それらのアドレスは自動で計算してもらう
-				.InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, // 1頂点ごとにこのレイアウトが入っている
-				.InstanceDataStepRate = 0, // インスタンシングではないので、データは使いまわさない
-			};
-		}
-
-		D3D12_GRAPHICS_PIPELINE_STATE_DESC desc =
-		{
-			.pRootSignature = nullptr, // 一旦 nullptr にする!!!
-			.VS = {.pShaderBytecode = vs->GetBufferPointer(), .BytecodeLength = vs->GetBufferSize() },
-			.PS = {.pShaderBytecode = ps->GetBufferPointer(), .BytecodeLength = ps->GetBufferSize() },
-			.DS = {}, // ドメインシェーダー (使わない)
-			.HS = {}, // ハルシェーダー (使わない)
-			.GS = {}, // ジオメトリシェーダー (使わない)
-			.StreamOutput = {}, // ストリーミング出力バッファー設定 (不要)
-			.BlendState =
-			{
-				.AlphaToCoverageEnable = false, // aテスト無効
-				.IndependentBlendEnable = false, // MRT ではないので... (RenderTarget[0] の設定が全てに適用される)
-				.RenderTarget =
-				{ // このコメントを消すと、コードの自動成形が変になる...
-					// [0]
-					{
-						.BlendEnable = false, // 今回はブレンドしない
-						.LogicOpEnable = false, // 今回はブレンドしない
-						.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL, // RGBA 全てブレンドする
-					},
-
-					// [1] ~ [7]
-				},
-			},
-			.SampleMask = D3D12_DEFAULT_SAMPLE_MASK, // デフォルト
-			.RasterizerState =
-			{
-				.FillMode = static_cast<D3D12_FILL_MODE>(eFillMode), // 塗りつぶし or ワイヤーフレーム
-				.CullMode = static_cast<D3D12_CULL_MODE>(eCullMode), // カリング (None, Front, Back)
-				.DepthClipEnable = true, // 深度クリッピング有効
-				.MultisampleEnable = false, // まだアンチエイリアスは使わないので...
-			},
-			.DepthStencilState = {}, // 深度ステンシルバッファの設定 (今回は指定しない)
-			.InputLayout = // 頂点レイアウト
-			{
-				.pInputElementDescs = vertexLayoutsReal.data(),
-				.NumElements = static_cast<UINT>(vertexLayoutsReal.size()),
-			},
-			.IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED, // トライアングルリスト (トライアングルストリップ ではない) なので、無効化
-			.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE, // 三角形
-			.NumRenderTargets = 1, // MRT ではないので、1 でOK
-			.RTVFormats =
-			{
-				// [0]
-				DXGI_FORMAT_R8G8B8A8_UNORM, // RT のフォーマット. [0, 1] に正規化された RGBA. RT は1つなので、[0] のみ指定
-
-				// [1] ~ [7]
-			},
-			.DSVFormat = {}, // 深度ステンシルバッファのフォーマット (今回は指定しない)
-			.SampleDesc = {.Count = 1, .Quality = 0 }, // アンチエイリアシングはしない (1ピクセルあたり1回サンプリング)
-			.NodeMask = 0, // アダプターが1つなので...
-			.CachedPSO = {}, // 高速化出来るけど、今は使わない
-			.Flags = D3D12_PIPELINE_STATE_FLAG_NONE, // 指定なし
-		};
-
-		ID3D12PipelineState* ptr = nullptr;
-		if (device->CreateGraphicsPipelineState(
-			&desc,
-			IID_PPV_ARGS(&ptr)
-		) == S_OK)
-		{
-			return PipelineState(ptr);
-		}
-
-		return PipelineState();
-	}
-
 	bool D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer(const GraphicsBuffer& GraphicsBuffer, void* dataBegin, std::size_t dataSize)
 	{
 		void* bufferVirtualPtr = nullptr;
@@ -483,7 +533,7 @@ namespace ForiverEngine
 		return swapChain->Present(1, 0) == S_OK;
 	}
 
-	CompiledShaderObject D3D12Helper::CompileShaderFile(
+	Blob D3D12Helper::CompileShaderFile(
 		const std::wstring& path, const std::string& entryFunc, const std::string& shaderTarget, std::wstring& outErrorMessage)
 	{
 		ID3DBlob* blob = nullptr;
@@ -510,22 +560,17 @@ namespace ForiverEngine
 		if (result == S_OK)
 		{
 			outErrorMessage = L"";
-			return CompiledShaderObject(blob);
+			return Blob(blob);
 		}
 
 		if (FAILED(result) && result == HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND))
 		{
 			outErrorMessage = L"Shader file not found.";
-			return CompiledShaderObject();
+			return Blob();
 		}
 
-		std::wstring errorStr;
-		errorStr.resize(errorBlob->GetBufferSize());
-		std::copy_n(static_cast<char*>(errorBlob->GetBufferPointer()), errorBlob->GetBufferSize(), errorStr.begin());
-		errorStr += L"\n";
-
-		outErrorMessage = errorStr;
-		return CompiledShaderObject();
+		outErrorMessage = FetchErrorMessageFromErrorBlob(Blob(errorBlob));
+		return Blob();
 	}
 
 #ifdef _DEBUG
@@ -543,16 +588,27 @@ namespace ForiverEngine
 		return false;
 	}
 #endif
-	static D3D12_CPU_DESCRIPTOR_HANDLE* Reinterpret(DescriptorHeapHandleAtCPU* value)
+
+	D3D12_CPU_DESCRIPTOR_HANDLE* Reinterpret(DescriptorHeapHandleAtCPU* value)
 	{
 		return reinterpret_cast<D3D12_CPU_DESCRIPTOR_HANDLE*>(value);
 	}
 
-	static DescriptorHeapHandleAtCPU* Reinterpret(D3D12_CPU_DESCRIPTOR_HANDLE* value)
+	DescriptorHeapHandleAtCPU* Reinterpret(D3D12_CPU_DESCRIPTOR_HANDLE* value)
 	{
 		return reinterpret_cast<DescriptorHeapHandleAtCPU*>(value);
 	}
 
+	std::wstring FetchErrorMessageFromErrorBlob(const Blob& blob)
+	{
+		std::wstring message;
+
+		message.resize(blob->GetBufferSize());
+		std::copy_n(static_cast<char*>(blob->GetBufferPointer()), blob->GetBufferSize(), message.begin());
+		message += L"\n";
+
+		return message;
+	}
 
 	GraphicAdapter FindAvailableGraphicAdapter(const Factory& factory, std::function<bool(const std::wstring&)> descriptionComparer)
 	{
