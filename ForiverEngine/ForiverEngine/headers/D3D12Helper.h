@@ -34,21 +34,40 @@ using IDXGISwapChainLatest = IDXGISwapChain4;
 namespace ForiverEngine
 {
 	// DirectX と等価の列挙型を定義
+
+	// ピクセルフォーマット
 	enum class Format : int
 	{
-		Unknown = 0,      // DXGI_FORMAT_UNKNOWN
-		RGBA_Float32 = 2, // DXGI_FORMAT_R32G32B32A32_FLOAT
-		RGBA_Uint32 = 3,  // DXGI_FORMAT_R32G32B32A32_UINT
-		RGB_Float32 = 6,  // DXGI_FORMAT_R32G32B32_FLOAT
-		RGB_Uint32 = 7,   // DXGI_FORMAT_R32G32B32_UINT
-		RG_Float32 = 16,  // DXGI_FORMAT_R32G32_FLOAT
-		RG_Uint32 = 17,   // DXGI_FORMAT_R32G32_UINT
-		R_Float32 = 41,   // DXGI_FORMAT_R32_FLOAT
-		R_Uint32 = 42,    // DXGI_FORMAT_R32_UINT
-		RGBA_Unorm8 = 28, // DXGI_FORMAT_R8G8B8A8_UNORM
-		RGBA_Uint8 = 30,  // DXGI_FORMAT_R8G8B8A8_UINT
+		Unknown = 0,     // DXGI_FORMAT_UNKNOWN
 
-		D_Float32 = 40,   // DXGI_FORMAT_D32_FLOAT
+		RGBA_F32 = 2,    // DXGI_FORMAT_R32G32B32A32_FLOAT
+		RGBA_U32 = 3,    // DXGI_FORMAT_R32G32B32A32_UINT
+		RGB_F32 = 6,     // DXGI_FORMAT_R32G32B32_FLOAT
+		RGB_U32 = 7,     // DXGI_FORMAT_R32G32B32_UINT
+		RG_F32 = 16,     // DXGI_FORMAT_R32G32_FLOAT
+		RG_U32 = 17,     // DXGI_FORMAT_R32G32_UINT
+		R_F32 = 41,      // DXGI_FORMAT_R32_FLOAT
+		R_U32 = 42,      // DXGI_FORMAT_R32_UINT
+
+		RGBA_U8 = 30,    // DXGI_FORMAT_R8G8B8A8_UINT
+		RGBA_U8_01 = 28, // DXGI_FORMAT_R8G8B8A8_UNORM
+
+		D_F32 = 40,      // DXGI_FORMAT_D32_FLOAT
+	};
+
+	// ラスタライザの塗りつぶしモード
+	struct FillMode
+	{
+		static constexpr int Wireframe = 2; // D3D12_FILL_MODE_WIREFRAME
+		static constexpr int Solid = 3;     // D3D12_FILL_MODE_SOLID
+	};
+
+	// ラスタライザのカリングモード
+	struct CullMode
+	{
+		static constexpr int None = 1;  // D3D12_CULL_MODE_NONE
+		static constexpr int Front = 2; // D3D12_CULL_MODE_FRONT
+		static constexpr int Back = 3;  // D3D12_CULL_MODE_BACK
 	};
 
 	// ラッパークラスを定義
@@ -86,21 +105,6 @@ public: \
 	{
 		const char* SemanticName;
 		Format Format;
-	};
-
-	// ラスタライザの塗りつぶしモード
-	struct FillMode
-	{
-		static constexpr int Wireframe = 2; // D3D12_FILL_MODE_WIREFRAME
-		static constexpr int Solid = 3;     // D3D12_FILL_MODE_SOLID
-	};
-
-	// ラスタライザのカリングモード
-	struct CullMode
-	{
-		static constexpr int None = 1;  // D3D12_CULL_MODE_NONE
-		static constexpr int Front = 2; // D3D12_CULL_MODE_FRONT
-		static constexpr int Back = 3;  // D3D12_CULL_MODE_BACK
 	};
 
 	// DirectX の構造体を直接外部に公開したくないので、メモリ配置を同じにした構造体に reinterpret_cast する

@@ -69,7 +69,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	// 頂点レイアウトを作成
 	std::vector<VertexLayout> vertexLayouts =
 	{
-		{ "POSITION", Format::RGBA_Float32 },
+		{ "POSITION", Format::RGBA_F32 },
 	};
 
 	PipelineState graphicsPipelineState = D3D12Helper::CreateGraphicsPipelineState(
