@@ -15,6 +15,8 @@ namespace ForiverEngine
 
 	static D3D12_CPU_DESCRIPTOR_HANDLE* Reinterpret(DescriptorHeapHandleAtCPU* value);
 	static DescriptorHeapHandleAtCPU* Reinterpret(D3D12_CPU_DESCRIPTOR_HANDLE* value);
+	static D3D12_VERTEX_BUFFER_VIEW* Reinterpret(VertexBufferView* value);
+	static VertexBufferView* Reinterpret(D3D12_VERTEX_BUFFER_VIEW* value);
 
 	// エラーの Blob からエラーメッセージを取得する
 	static std::wstring FetchErrorMessageFromErrorBlob(const Blob& blob);
@@ -384,6 +386,18 @@ namespace ForiverEngine
 		return GraphicsBuffer();
 	}
 
+	VertexBufferView D3D12Helper::CreateVertexBufferView(const GraphicsBuffer& vertexBuffer, int verticesSize, int vertexSize)
+	{
+		D3D12_VERTEX_BUFFER_VIEW output =
+		{
+			.BufferLocation = vertexBuffer->GetGPUVirtualAddress(),
+			.SizeInBytes = static_cast<UINT>(verticesSize),
+			.StrideInBytes = static_cast<UINT>(vertexSize),
+		};
+
+		return *Reinterpret(&output);
+	}
+
 	bool D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer(const GraphicsBuffer& GraphicsBuffer, void* dataBegin, std::size_t dataSize)
 	{
 		void* bufferVirtualPtr = nullptr;
@@ -487,6 +501,67 @@ namespace ForiverEngine
 		// 第3,4引数は、クリアする範囲を指定する
 		// 今回は画面全体をクリアするので、指定する必要はない
 		commandList->ClearRenderTargetView(*Reinterpret(const_cast<DescriptorHeapHandleAtCPU*>(&handleRTV)), clearColor.data(), 0, nullptr);
+	}
+
+	void D3D12Helper::CommandSetGraphicsPipelineState(const CommandList& commandList, const PipelineState& graphicsPipelineState)
+	{
+		commandList->SetPipelineState(graphicsPipelineState.Ptr);
+	}
+
+	void D3D12Helper::CommandSetRootSignature(const CommandList& commandList, const RootSignature& rootSignature)
+	{
+		commandList->SetGraphicsRootSignature(rootSignature.Ptr);
+	}
+
+	void D3D12Helper::CommandIASetTopologyAsTriangleList(const CommandList& commandList)
+	{
+		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	}
+
+	void D3D12Helper::CommandIASetVertexBuffer(const CommandList& commandList, const std::vector<VertexBufferView>& vertexBufferViews)
+	{
+		const VertexBufferView* vertexBufferViewsPtr = vertexBufferViews.data();
+		const D3D12_VERTEX_BUFFER_VIEW* d3d12VertexBufferViewsPtr = Reinterpret(const_cast<VertexBufferView*>(vertexBufferViewsPtr));
+
+		commandList->IASetVertexBuffers(
+			0, // スロット番号 0
+			static_cast<UINT>(vertexBufferViews.size()),
+			d3d12VertexBufferViewsPtr
+		);
+	}
+
+	void D3D12Helper::CommandRSSetViewportAndScissorRect(const CommandList& commandList, const ViewportScissorRect& viewportScissorRect)
+	{
+		const D3D12_VIEWPORT viewport =
+		{
+			.TopLeftX = static_cast<FLOAT>(viewportScissorRect.minX),
+			.TopLeftY = static_cast<FLOAT>(viewportScissorRect.minY),
+			.Width = static_cast<FLOAT>(viewportScissorRect.maxX - viewportScissorRect.minX),
+			.Height = static_cast<FLOAT>(viewportScissorRect.maxY - viewportScissorRect.minY),
+			.MinDepth = 0.0f,
+			.MaxDepth = 1.0f,
+		};
+
+		const D3D12_RECT scissorRect =
+		{
+			.left = viewportScissorRect.minX,
+			.top = viewportScissorRect.minY,
+			.right = viewportScissorRect.maxX,
+			.bottom = viewportScissorRect.maxY,
+		};
+
+		commandList->RSSetViewports(1, &viewport);
+		commandList->RSSetScissorRects(1, &scissorRect);
+	}
+
+	void D3D12Helper::CommandDrawInstanced(const CommandList& commandList, int vertexCount)
+	{
+		commandList->DrawInstanced(
+			static_cast<UINT>(vertexCount),
+			1, // インスタンス数 (今回はインスタンシングしないので、1でOK)
+			0, // 頂点データのオフセット
+			0  // インスタンスのオフセット
+		);
 	}
 
 	void D3D12Helper::CommandClose(const CommandList& commandList)
@@ -599,6 +674,16 @@ namespace ForiverEngine
 	DescriptorHeapHandleAtCPU* Reinterpret(D3D12_CPU_DESCRIPTOR_HANDLE* value)
 	{
 		return reinterpret_cast<DescriptorHeapHandleAtCPU*>(value);
+	}
+
+	D3D12_VERTEX_BUFFER_VIEW* Reinterpret(VertexBufferView* value)
+	{
+		return reinterpret_cast<D3D12_VERTEX_BUFFER_VIEW*>(value);
+	}
+
+	VertexBufferView* Reinterpret(D3D12_VERTEX_BUFFER_VIEW* value)
+	{
+		return reinterpret_cast<VertexBufferView*>(value);
 	}
 
 	std::wstring FetchErrorMessageFromErrorBlob(const Blob& blob)

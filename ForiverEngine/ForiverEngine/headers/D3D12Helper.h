@@ -121,6 +121,7 @@ public: \
 	typedef ULONG_PTR SIZE_T;
 	struct DescriptorHeapHandleAtCPU { SIZE_T ptr; };
 	struct DescriptorHeapHandleAtGPU { UINT64 ptr; };
+	struct VertexBufferView { UINT64 bufferAddress; UINT verticesSize; UINT vertexSize; };
 
 	class D3D12Helper final
 	{
@@ -189,6 +190,13 @@ public: \
 		static GraphicsBuffer CreateGraphicsBuffer1D(const Device& device, int size, bool canMapFromCPU);
 
 		/// <summary>
+		/// 頂点バッファ から 頂点バッファービュー を作成して返す
+		/// </summary>
+		/// <param name="verticesSize">頂点座標配列の sizeof()</param>
+		/// <param name="vertexSize">頂点座標配列の 要素1つ分の sizeof()</param>
+		static VertexBufferView CreateVertexBufferView(const GraphicsBuffer& vertexBuffer, int verticesSize, int vertexSize);
+
+		/// <summary>
 		/// <para>GraphicsBuffer の Map() を使って、CPUのバッファをGPU側にコピーする</para>
 		/// <para>バッファのサイズは、GraphicsBuffer 作成時に指定したサイズと同じであること! (一部のバッファのみコピー、などには未対応)</para>
 		/// 成功したら true, 失敗したら false を返す (失敗した瞬間に処理を中断する)
@@ -254,6 +262,43 @@ public: \
 		/// </summary>
 		static void CommandClearRT(
 			const CommandList& commandList, const DescriptorHeapHandleAtCPU& handleRTV, const std::array<float, 4>& clearColor);
+
+		/// <summary>
+		/// <para>[Command]</para>
+		/// GraphicsPipelineState を設定する
+		/// </summary>
+		static void CommandSetGraphicsPipelineState(const CommandList& commandList, const PipelineState& graphicsPipelineState);
+
+		/// <summary>
+		/// <para>[Command]</para>
+		/// RootSignature を設定する
+		/// </summary>
+		static void CommandSetRootSignature(const CommandList& commandList, const RootSignature& rootSignature);
+
+		/// <summary>
+		/// <para>[Command]</para>
+		/// Input Assembler : トポロジーを三角形リストに設定する
+		/// </summary>
+		/// <param name="commandList"></param>
+		static void CommandIASetTopologyAsTriangleList(const CommandList& commandList);
+
+		/// <summary>
+		/// <para>[Command]</para>
+		/// Input Assembler : 頂点バッファーを設定する
+		/// </summary>
+		static void CommandIASetVertexBuffer(const CommandList& commandList, const std::vector<VertexBufferView>& vertexBufferViews);
+
+		/// <summary>
+		/// <para>[Command]</para>
+		/// Rasterizer : ビューポートとシザー矩形を設定する
+		/// </summary>
+		static void CommandRSSetViewportAndScissorRect(const CommandList& commandList, const ViewportScissorRect& viewportScissorRect);
+
+		/// <summary>
+		/// <para>[Command]</para>
+		/// 描画命令を発行する (インスタンス数 = 1)
+		/// </summary>
+		static void CommandDrawInstanced(const CommandList& commandList, int vertexCount);
 
 		/// <summary>
 		/// <para>[Command]</para>

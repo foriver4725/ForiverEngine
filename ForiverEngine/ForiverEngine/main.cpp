@@ -6,6 +6,7 @@
 
 #include <Windows.h>
 #include <DirectXMath.h>
+#include <vector>
 
 constexpr int WindowWidth = 960;
 constexpr int WindowHeight = 540;
@@ -39,14 +40,6 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	if (!D3D12Helper::LinkDescriptorHeapRTVToSwapChain(device, descriptorHeapRTV, swapChain))
 		Throw(L"DescriptorHeap (RTV) を SwapChain に関連付けることに失敗しました");
 
-	RootSignature rootSignature;
-	{
-		std::wstring errorMessage;
-		rootSignature = D3D12Helper::CreateRootSignature(device, errorMessage);
-		if (!rootSignature)
-			Throw(errorMessage.c_str());
-	}
-
 	// ビューポートとシザー矩形
 	const ViewportScissorRect viewportScissorRect =
 	{
@@ -55,7 +48,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	};
 
 	// 頂点は時計回り！！
-	XMFLOAT3 vertices[] =
+	std::vector<XMFLOAT3> vertices =
 	{
 		{ -1, -1, 0 }, // 左下
 		{ -1, 1, 0 }, // 左上
@@ -64,8 +57,9 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 
 	GraphicsBuffer vertexBuffer = D3D12Helper::CreateGraphicsBuffer1D(device, sizeof(vertices), true);
 	if (!vertexBuffer) Throw(L"頂点バッファーの作成に失敗しました");
-	if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer(vertexBuffer, vertices, sizeof(vertices)))
+	if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer(vertexBuffer, static_cast<void*>(vertices.data()), sizeof(vertices)))
 		Throw(L"頂点バッファーを GPU 側にコピーすることに失敗しました");
+	VertexBufferView vertexBufferView = D3D12Helper::CreateVertexBufferView(vertexBuffer, sizeof(vertices), sizeof(vertices[0]));
 
 	// シェーダーをロード
 	Blob shaderVS, shaderPS;
@@ -87,6 +81,13 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		{ "POSITION", Format::RGBA_F32 },
 	};
 
+	RootSignature rootSignature;
+	{
+		std::wstring errorMessage;
+		rootSignature = D3D12Helper::CreateRootSignature(device, errorMessage);
+		if (!rootSignature)
+			Throw(errorMessage.c_str());
+	}
 	PipelineState graphicsPipelineState = D3D12Helper::CreateGraphicsPipelineState(
 		device, rootSignature, shaderVS, shaderPS, vertexLayouts, FillMode::Solid, CullMode::None);
 	if (!graphicsPipelineState) Throw(L"GraphicsPipelineState の作成に失敗しました");
@@ -101,8 +102,16 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 			device, descriptorHeapRTV, currentBackBufferIndex);
 
 		D3D12Helper::InvokeResourceBarrierAsTransitionFromPresentToRenderTarget(commandList, currentBackBuffer);
-		D3D12Helper::CommandSetRTAsOutputStage(commandList, backBufferRTV);
-		D3D12Helper::CommandClearRT(commandList, backBufferRTV, { 1, 1, 0, 1 });
+		{
+			D3D12Helper::CommandSetRTAsOutputStage(commandList, backBufferRTV);
+			D3D12Helper::CommandClearRT(commandList, backBufferRTV, { 1, 1, 0, 1 });
+			D3D12Helper::CommandSetGraphicsPipelineState(commandList, graphicsPipelineState);
+			D3D12Helper::CommandSetRootSignature(commandList, rootSignature);
+			D3D12Helper::CommandRSSetViewportAndScissorRect(commandList, viewportScissorRect);
+			D3D12Helper::CommandIASetTopologyAsTriangleList(commandList);
+			D3D12Helper::CommandIASetVertexBuffer(commandList, { vertexBufferView });
+			D3D12Helper::CommandDrawInstanced(commandList, vertices.size());
+		}
 		D3D12Helper::InvokeResourceBarrierAsTransitionFromRenderTargetToPresent(commandList, currentBackBuffer);
 		D3D12Helper::CommandClose(commandList);
 		D3D12Helper::ExecuteCommands(commandQueue, commandList);
