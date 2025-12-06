@@ -50,6 +50,13 @@ namespace ForiverEngine
 		R_F32 = 41,      // DXGI_FORMAT_R32_FLOAT
 		R_U32 = 42,      // DXGI_FORMAT_R32_UINT
 
+		RGBA_F16 = 10,   // DXGI_FORMAT_R16G16B16A16_FLOAT
+		RGBA_U16 = 12,   // DXGI_FORMAT_R16G16B16A16_UINT
+		RG_F16 = 34,     // DXGI_FORMAT_R16G16_FLOAT
+		RG_U16 = 36,     // DXGI_FORMAT_R16G16_UINT
+		R_F16 = 54,      // DXGI_FORMAT_R16_FLOAT
+		R_U16 = 57,      // DXGI_FORMAT_R16_UINT
+
 		RGBA_U8 = 30,    // DXGI_FORMAT_R8G8B8A8_UINT
 		RGBA_U8_01 = 28, // DXGI_FORMAT_R8G8B8A8_UNORM
 
@@ -122,6 +129,7 @@ public: \
 	struct DescriptorHeapHandleAtCPU { SIZE_T ptr; };
 	struct DescriptorHeapHandleAtGPU { UINT64 ptr; };
 	struct VertexBufferView { UINT64 bufferAddress; UINT verticesSize; UINT vertexSize; };
+	struct IndexBufferView { UINT64 bufferAddress; UINT indicesSize; Format indexFormat; };
 
 	class D3D12Helper final
 	{
@@ -195,6 +203,14 @@ public: \
 		/// <param name="verticesSize">頂点座標配列の sizeof()</param>
 		/// <param name="vertexSize">頂点座標配列の 要素1つ分の sizeof()</param>
 		static VertexBufferView CreateVertexBufferView(const GraphicsBuffer& vertexBuffer, int verticesSize, int vertexSize);
+
+		/// <summary>
+		/// インデックスバッファ から インデックスバッファービュー を作成して返す
+		/// </summary>
+		/// <param name="indicesSize">インデックス配列の sizeof()</param>
+		/// <param name="indexFormat">インデックス配列の 要素1つ分の フォーマット</param>
+		/// <returns></returns>
+		static IndexBufferView CreateIndexBufferView(const GraphicsBuffer& indexBuffer, int indicesSize, Format indexFormat);
 
 		/// <summary>
 		/// <para>GraphicsBuffer の Map() を使って、CPUのバッファをGPU側にコピーする</para>
@@ -284,9 +300,15 @@ public: \
 
 		/// <summary>
 		/// <para>[Command]</para>
-		/// Input Assembler : 頂点バッファーを設定する
+		/// Input Assembler : 頂点バッファーを設定する (複数セット出来る)
 		/// </summary>
 		static void CommandIASetVertexBuffer(const CommandList& commandList, const std::vector<VertexBufferView>& vertexBufferViews);
+
+		/// <summary>
+		/// <para>[Command]</para>
+		/// Input Assembler : インデックスバッファーを設定する (1つのみセット出来る)
+		/// </summary>
+		static void CommandIASetIndexBuffer(const CommandList& commandList, const IndexBufferView& indexBufferView);
 
 		/// <summary>
 		/// <para>[Command]</para>
@@ -299,6 +321,12 @@ public: \
 		/// 描画命令を発行する (インスタンス数 = 1)
 		/// </summary>
 		static void CommandDrawInstanced(const CommandList& commandList, int vertexCount);
+
+		/// <summary>
+		/// <para>[Command]</para>
+		/// 描画命令を発行する (インスタンス数 = 1)
+		/// </summary>
+		static void CommandDrawIndexedInstanced(const CommandList& commandList, int indexCount);
 
 		/// <summary>
 		/// <para>[Command]</para>

@@ -17,6 +17,8 @@ namespace ForiverEngine
 	static DescriptorHeapHandleAtCPU* Reinterpret(D3D12_CPU_DESCRIPTOR_HANDLE* value);
 	static D3D12_VERTEX_BUFFER_VIEW* Reinterpret(VertexBufferView* value);
 	static VertexBufferView* Reinterpret(D3D12_VERTEX_BUFFER_VIEW* value);
+	static D3D12_INDEX_BUFFER_VIEW* Reinterpret(IndexBufferView* value);
+	static IndexBufferView* Reinterpret(D3D12_INDEX_BUFFER_VIEW* value);
 
 	// エラーの Blob からエラーメッセージを取得する
 	static std::wstring FetchErrorMessageFromErrorBlob(const Blob& blob);
@@ -398,6 +400,18 @@ namespace ForiverEngine
 		return *Reinterpret(&output);
 	}
 
+	IndexBufferView D3D12Helper::CreateIndexBufferView(const GraphicsBuffer& indexBuffer, int indicesSize, Format indexFormat)
+	{
+		D3D12_INDEX_BUFFER_VIEW output =
+		{
+			.BufferLocation = indexBuffer->GetGPUVirtualAddress(),
+			.SizeInBytes = static_cast<UINT>(indicesSize),
+			.Format = static_cast<DXGI_FORMAT>(indexFormat),
+		};
+
+		return *Reinterpret(&output);
+	}
+
 	bool D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer(const GraphicsBuffer& GraphicsBuffer, void* dataBegin, int dataSize)
 	{
 		void* bufferVirtualPtr = nullptr;
@@ -531,6 +545,13 @@ namespace ForiverEngine
 		);
 	}
 
+	void D3D12Helper::CommandIASetIndexBuffer(const CommandList& commandList, const IndexBufferView& indexBufferView)
+	{
+		const D3D12_INDEX_BUFFER_VIEW* d3d12IndexBufferViewPtr = Reinterpret(const_cast<IndexBufferView*>(&indexBufferView));
+
+		commandList->IASetIndexBuffer(d3d12IndexBufferViewPtr);
+	}
+
 	void D3D12Helper::CommandRSSetViewportAndScissorRect(const CommandList& commandList, const ViewportScissorRect& viewportScissorRect)
 	{
 		const D3D12_VIEWPORT viewport =
@@ -560,6 +581,17 @@ namespace ForiverEngine
 		commandList->DrawInstanced(
 			static_cast<UINT>(vertexCount),
 			1, // インスタンス数 (今回はインスタンシングしないので、1でOK)
+			0, // 頂点データのオフセット
+			0  // インスタンスのオフセット
+		);
+	}
+
+	void D3D12Helper::CommandDrawIndexedInstanced(const CommandList& commandList, int indexCount)
+	{
+		commandList->DrawIndexedInstanced(
+			static_cast<UINT>(indexCount),
+			1, // インスタンス数 (今回はインスタンシングしないので、1でOK)
+			0, // インデックスデータのオフセット
 			0, // 頂点データのオフセット
 			0  // インスタンスのオフセット
 		);
@@ -685,6 +717,16 @@ namespace ForiverEngine
 	VertexBufferView* Reinterpret(D3D12_VERTEX_BUFFER_VIEW* value)
 	{
 		return reinterpret_cast<VertexBufferView*>(value);
+	}
+
+	D3D12_INDEX_BUFFER_VIEW* Reinterpret(IndexBufferView* value)
+	{
+		return reinterpret_cast<D3D12_INDEX_BUFFER_VIEW*>(value);
+	}
+
+	IndexBufferView* Reinterpret(D3D12_INDEX_BUFFER_VIEW* value)
+	{
+		return reinterpret_cast<IndexBufferView*>(value);
 	}
 
 	std::wstring FetchErrorMessageFromErrorBlob(const Blob& blob)

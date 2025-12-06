@@ -49,9 +49,17 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	// 頂点は時計回り！！
 	XMFLOAT4 vertices[] =
 	{
-		{ -0.5f, -0.7f, 0, 1 },
-		{ 0.0f, 0.7f, 0, 1 },
-		{ 0.5f, -0.7f, 0, 1 },
+		{ -0.4f, -0.7f, 0, 1 },
+		{ -0.4f, 0.7f, 0, 1 },
+		{ 0.4f, -0.7f, 0, 1 },
+		{ 0.4f, 0.7f, 0, 1 },
+	};
+
+	// 頂点インデックス
+	std::uint16_t indices[] =
+	{
+		0, 1, 2,
+		2, 1, 3,
 	};
 
 	GraphicsBuffer vertexBuffer = D3D12Helper::CreateGraphicsBuffer1D(device, sizeof(vertices), true);
@@ -59,6 +67,12 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer(vertexBuffer, static_cast<void*>(vertices), sizeof(vertices)))
 		Throw(L"頂点バッファーを GPU 側にコピーすることに失敗しました");
 	VertexBufferView vertexBufferView = D3D12Helper::CreateVertexBufferView(vertexBuffer, sizeof(vertices), sizeof(vertices[0]));
+
+	GraphicsBuffer indexBuffer = D3D12Helper::CreateGraphicsBuffer1D(device, sizeof(indices), true);
+	if (!indexBuffer) Throw(L"インデックスバッファーの作成に失敗しました");
+	if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer(indexBuffer, static_cast<void*>(indices), sizeof(indices)))
+		Throw(L"インデックスバッファーを GPU 側にコピーすることに失敗しました");
+	IndexBufferView indexBufferView = D3D12Helper::CreateIndexBufferView(indexBuffer, sizeof(indices), Format::R_U16);
 
 	// シェーダーをロード
 	Blob shaderVS, shaderPS;
@@ -109,7 +123,8 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 			D3D12Helper::CommandRSSetViewportAndScissorRect(commandList, viewportScissorRect);
 			D3D12Helper::CommandIASetTopologyAsTriangleList(commandList);
 			D3D12Helper::CommandIASetVertexBuffer(commandList, { vertexBufferView });
-			D3D12Helper::CommandDrawInstanced(commandList, sizeof(vertices) / sizeof(vertices[0]));
+			D3D12Helper::CommandIASetIndexBuffer(commandList, indexBufferView);
+			D3D12Helper::CommandDrawIndexedInstanced(commandList, sizeof(indices) / sizeof(indices[0]));
 		}
 		D3D12Helper::InvokeResourceBarrierAsTransitionFromRenderTargetToPresent(commandList, currentBackBuffer);
 		D3D12Helper::CommandClose(commandList);
