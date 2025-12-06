@@ -109,6 +109,14 @@ public: \
 		Format Format;
 	};
 
+	// ビューポートとシザー矩形
+	// どちらも同じサイズで設定される
+	struct ViewportScissorRect
+	{
+		int minX, maxX;
+		int minY, maxY;
+	};
+
 	// DirectX の構造体を直接外部に公開したくないので、メモリ配置を同じにした構造体に reinterpret_cast する
 	typedef ULONG_PTR SIZE_T;
 	struct DescriptorHeapHandleAtCPU { SIZE_T ptr; };

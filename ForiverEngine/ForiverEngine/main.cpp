@@ -47,6 +47,13 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 			Throw(errorMessage.c_str());
 	}
 
+	// ビューポートとシザー矩形
+	const ViewportScissorRect viewportScissorRect =
+	{
+		.minX = 0, .maxX = WindowWidth,
+		.minY = 0, .maxY = WindowHeight,
+	};
+
 	// 頂点は時計回り！！
 	XMFLOAT3 vertices[] =
 	{
