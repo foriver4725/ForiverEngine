@@ -683,6 +683,40 @@ namespace ForiverEngine
 		return Blob();
 	}
 
+	bool D3D12Helper::CompileShaderFile_VS_PS(
+		const std::wstring& path,
+		const std::string& entryFuncVS, const std::string& entryFuncPS,
+		Blob& outVS, Blob& outPS,
+		std::wstring& outErrorMessage
+	)
+	{
+		// 一通り処理を試行
+
+		Blob shaderVS, shaderPS;
+		std::wstring errorMessage, errorMessageTmp;
+
+		shaderVS = D3D12Helper::CompileShaderFile(path, entryFuncVS, ShaderTargetVS, errorMessageTmp);
+		if (!shaderVS) errorMessage += errorMessageTmp + L"\n";
+
+		shaderPS = D3D12Helper::CompileShaderFile(path, entryFuncPS, ShaderTargetPS, errorMessageTmp);
+		if (!shaderPS) errorMessage += errorMessageTmp + L"\n";
+
+		if (!shaderVS || !shaderPS)
+		{
+			outVS = Blob();
+			outPS = Blob();
+			outErrorMessage = errorMessage;
+
+			return false;
+		}
+
+		outVS = shaderVS;
+		outPS = shaderPS;
+		outErrorMessage = L"";
+
+		return true;
+	}
+
 #ifdef _DEBUG
 	bool D3D12Helper::EnableDebugLayer()
 	{

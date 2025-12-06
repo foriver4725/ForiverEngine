@@ -357,6 +357,17 @@ public: \
 		static Blob CompileShaderFile(
 			const std::wstring& path, const std::string& entryFunc, const std::string& shaderTarget, std::wstring& outErrorMessage);
 
+		/// <summary>
+		/// <para>1つのファイルから VS, PS を順にコンパイルして返す (失敗したら nullptr)</para>
+		/// 成功したら true, 失敗したら false を返す (失敗しても処理を最後まで行い、エラーメッセージをまとめて outErrorMessage に格納する)
+		/// </summary>
+		static bool CompileShaderFile_VS_PS(
+			const std::wstring& path,
+			const std::string& entryFuncVS, const std::string& entryFuncPS,
+			Blob& outVS, Blob& outPS,
+			std::wstring& outErrorMessage
+		);
+
 #ifdef _DEBUG
 		/// <summary>
 		/// <para>DebugLayer を有効化する</para>

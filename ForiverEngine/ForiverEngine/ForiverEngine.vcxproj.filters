@@ -44,10 +44,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="shaders\BasicVS.hlsl">
-      <Filter>shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="shaders\BasicPS.hlsl">
+    <FxCompile Include="shaders\Basic.hlsl">
       <Filter>shaders</Filter>
     </FxCompile>
   </ItemGroup>

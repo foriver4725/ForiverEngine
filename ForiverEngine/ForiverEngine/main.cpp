@@ -78,13 +78,12 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	Blob shaderVS, shaderPS;
 	{
 		std::wstring errorMessage;
-
-		shaderVS = D3D12Helper::CompileShaderFile(L"./shaders/BasicVS.hlsl", "VSMain", ShaderTargetVS, errorMessage);
-		if (!shaderVS)
-			Throw(errorMessage.c_str());
-
-		shaderPS = D3D12Helper::CompileShaderFile(L"./shaders/BasicPS.hlsl", "PSMain", ShaderTargetPS, errorMessage);
-		if (!shaderPS)
+		if (!D3D12Helper::CompileShaderFile_VS_PS(
+			L"./shaders/Basic.hlsl",
+			"VSMain", "PSMain",
+			shaderVS, shaderPS,
+			errorMessage
+		))
 			Throw(errorMessage.c_str());
 	}
 
