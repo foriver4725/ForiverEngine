@@ -12,6 +12,10 @@ DirectX12 を用いてフルスクラッチで制作した、自作ゲームエ�
 
 <img width="50%" alt="image" src="https://github.com/user-attachments/assets/81d99d04-f237-4255-9228-82dd80b09300" />
 
+---
+ポリゴンを描画する
+<img width="50%" alt="image" src="https://github.com/user-attachments/assets/6eedfb76-7f27-4da0-9b56-197bb5ad51d6" />
+
 ## OSS
 | 名前 | ライセンス |
 | --- | --- |
