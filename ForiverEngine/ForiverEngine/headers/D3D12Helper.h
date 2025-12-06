@@ -140,7 +140,7 @@ public: \
 		/// GraphicsPipelineState を作成して返す (失敗したら nullptr)
 		/// </summary>
 		static PipelineState CreateGraphicsPipelineState(
-			const Device& device, const Blob& vs, const Blob& ps,
+			const Device& device, const RootSignature& rootSignature, const Blob& vs, const Blob& ps,
 			const std::vector<VertexLayout>& vertexLayouts, int eFillMode, int eCullMode);
 
 		/// <summary>

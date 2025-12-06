@@ -39,6 +39,14 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	if (!D3D12Helper::LinkDescriptorHeapRTVToSwapChain(device, descriptorHeapRTV, swapChain))
 		Throw(L"DescriptorHeap (RTV) を SwapChain に関連付けることに失敗しました");
 
+	RootSignature rootSignature;
+	{
+		std::wstring errorMessage;
+		rootSignature = D3D12Helper::CreateRootSignature(device, errorMessage);
+		if (!rootSignature)
+			Throw(errorMessage.c_str());
+	}
+
 	// 頂点は時計回り！！
 	XMFLOAT3 vertices[] =
 	{
@@ -73,7 +81,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	};
 
 	PipelineState graphicsPipelineState = D3D12Helper::CreateGraphicsPipelineState(
-		device, shaderVS, shaderPS, vertexLayouts, FillMode::Solid, CullMode::None);
+		device, rootSignature, shaderVS, shaderPS, vertexLayouts, FillMode::Solid, CullMode::None);
 	if (!graphicsPipelineState) Throw(L"GraphicsPipelineState の作成に失敗しました");
 
 	BEGIN_MESSAGE_LOOP;

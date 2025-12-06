@@ -85,7 +85,6 @@ namespace ForiverEngine
 		return Device();
 	}
 
-	// TODO: 作成途中
 	RootSignature D3D12Helper::CreateRootSignature(const Device& device, std::wstring& outErrorMessage)
 	{
 		D3D12_ROOT_SIGNATURE_DESC desc
@@ -107,8 +106,8 @@ namespace ForiverEngine
 		) != S_OK)
 		{
 			outErrorMessage = FetchErrorMessageFromErrorBlob(Blob(errorBlob));
-			blob->Release();
-			errorBlob->Release();
+			if (blob) blob->Release();
+			if (errorBlob) errorBlob->Release();
 			return RootSignature();
 		}
 
@@ -121,19 +120,19 @@ namespace ForiverEngine
 		) != S_OK)
 		{
 			outErrorMessage = L"RootSignature の作成に失敗しました";
-			blob->Release();
-			errorBlob->Release();
+			if (blob) blob->Release();
+			if (errorBlob) errorBlob->Release();
 			return RootSignature();
 		}
 
 		outErrorMessage = L"";
-		blob->Release();
-		errorBlob->Release();
+		if (blob) blob->Release();
+		if (errorBlob) errorBlob->Release();
 		return RootSignature(ptr);
 	}
 
 	PipelineState D3D12Helper::CreateGraphicsPipelineState(
-		const Device& device, const Blob& vs, const Blob& ps,
+		const Device& device, const RootSignature& rootSignature, const Blob& vs, const Blob& ps,
 		const std::vector<VertexLayout>& vertexLayouts, int eFillMode, int eCullMode)
 	{
 		std::vector< D3D12_INPUT_ELEMENT_DESC> vertexLayoutsReal = std::vector< D3D12_INPUT_ELEMENT_DESC>(vertexLayouts.size(), {});
@@ -153,7 +152,7 @@ namespace ForiverEngine
 
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC desc =
 		{
-			.pRootSignature = nullptr, // 一旦 nullptr にする!!!
+			.pRootSignature = rootSignature.Ptr,
 			.VS = {.pShaderBytecode = vs->GetBufferPointer(), .BytecodeLength = vs->GetBufferSize() },
 			.PS = {.pShaderBytecode = ps->GetBufferPointer(), .BytecodeLength = ps->GetBufferSize() },
 			.DS = {}, // ドメインシェーダー (使わない)
@@ -560,16 +559,19 @@ namespace ForiverEngine
 		if (result == S_OK)
 		{
 			outErrorMessage = L"";
+			if (errorBlob) errorBlob->Release();
 			return Blob(blob);
 		}
 
 		if (FAILED(result) && result == HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND))
 		{
 			outErrorMessage = L"Shader file not found.";
+			if (errorBlob) errorBlob->Release();
 			return Blob();
 		}
 
 		outErrorMessage = FetchErrorMessageFromErrorBlob(Blob(errorBlob));
+		if (errorBlob) errorBlob->Release();
 		return Blob();
 	}
 
