@@ -398,7 +398,7 @@ namespace ForiverEngine
 		return *Reinterpret(&output);
 	}
 
-	bool D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer(const GraphicsBuffer& GraphicsBuffer, void* dataBegin, std::size_t dataSize)
+	bool D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer(const GraphicsBuffer& GraphicsBuffer, void* dataBegin, int dataSize)
 	{
 		void* bufferVirtualPtr = nullptr;
 		if (GraphicsBuffer->Map(
@@ -407,10 +407,11 @@ namespace ForiverEngine
 			&bufferVirtualPtr
 		) != S_OK)
 		{
+			GraphicsBuffer->Unmap(0, nullptr);
 			return false;
 		}
 
-		std::memcpy(bufferVirtualPtr, dataBegin, dataSize);
+		std::memcpy(bufferVirtualPtr, dataBegin, static_cast<std::size_t>(dataSize));
 		GraphicsBuffer->Unmap(0, nullptr);
 		return true;
 	}
