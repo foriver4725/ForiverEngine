@@ -137,11 +137,13 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="oss\SimplexNoise.cpp" />
+    <ClCompile Include="sources\D3D12BasicFlow.cpp" />
     <ClCompile Include="sources\D3D12Helper.cpp" />
     <ClCompile Include="sources\Math.cpp" />
     <ClCompile Include="sources\WindowHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="headers\D3D12BasicFlow.h" />
     <ClInclude Include="headers\D3D12Helper.h" />
     <ClInclude Include="headers\Math.h" />
     <ClInclude Include="headers\WindowHelper.h" />

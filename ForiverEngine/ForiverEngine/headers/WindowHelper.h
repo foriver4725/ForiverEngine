@@ -37,12 +37,9 @@ static LRESULT CALLBACK FunctionName(HWND hwnd, UINT msg, WPARAM wparam, LPARAM 
 	return DefWindowProc(hwnd, msg, wparam, lparam); \
 }
 
-// エラーのメッセージボックスを出し、-1 を return するマクロ
-#define Throw(Message) \
-{ \
-    ForiverEngine::WindowHelper::PopupErrorDialog(Message); \
-    return -1; \
-}
+// エラーのメッセージボックスを出すマクロ
+#define ShowError(Message) \
+ForiverEngine::WindowHelper::PopupErrorDialog(Message);
 
 #ifdef ENABLE_CUI_CONSOLE
 
@@ -53,7 +50,10 @@ DEFINE_DEFAULT_WINDOW_PROCEDURE(WindowProcedure) \
 int WindowMain(hInstance) \
 { \
 	if (!ForiverEngine::WindowHelper::InitializeWindowFromHInstance(hInstance, WindowProcedure, (WindowClassName))) \
-		Throw(L"ウィンドウの初期化に失敗しました"); \
+    { \
+		ShowError(L"ウィンドウの初期化に失敗しました"); \
+		return -1; \
+	} \
 \
 	HWND HwndName = ForiverEngine::WindowHelper::CreateTheWindow((WindowClassName), (WindowTitle), (WindowWidth), (WindowHeight)); \
 \
@@ -68,7 +68,10 @@ DEFINE_DEFAULT_WINDOW_PROCEDURE(WindowProcedure) \
 int WindowMain(hInstance) \
 { \
 	if (!ForiverEngine::WindowHelper::InitializeWindowFromHInstance(hInstance, WindowProcedure, (WindowClassName))) \
-		Throw(L"ウィンドウの初期化に失敗しました"); \
+    { \
+		ShowError(L"ウィンドウの初期化に失敗しました"); \
+		return -1; \
+	} \
 \
 	HWND HwndName = ForiverEngine::WindowHelper::CreateTheWindow((WindowClassName), (WindowTitle), (WindowWidth), (WindowHeight));
 

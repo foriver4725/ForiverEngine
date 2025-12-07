@@ -14,6 +14,9 @@
     <ClCompile Include="sources\Math.cpp">
       <Filter>sources</Filter>
     </ClCompile>
+    <ClCompile Include="sources\D3D12BasicFlow.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="headers">
@@ -40,6 +43,9 @@
       <Filter>oss</Filter>
     </ClInclude>
     <ClInclude Include="headers\Math.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="headers\D3D12BasicFlow.h">
       <Filter>headers</Filter>
     </ClInclude>
   </ItemGroup>
