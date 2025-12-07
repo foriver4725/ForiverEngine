@@ -10,12 +10,6 @@
 
 namespace ForiverEngine
 {
-	/// <summary>
-	/// <para>戻り値の構造は共通化する</para>
-	/// <para> 1番目 : 成功したら true, 失敗したら false</para>
-	/// <para> 2番目 : エラーメッセージ (成功したら空文字列)</para>
-	/// 失敗した段階で処理を中断する
-	/// </summary>
 	class D3D12BasicFlow final
 	{
 	public:
@@ -35,6 +29,9 @@ namespace ForiverEngine
 			return output;
 		}
 
+		/// <summary>
+		/// DirectX12 の基本的なオブジェクト群を一括で作成する
+		/// </summary>
 		static std::tuple<Factory, Device, CommandAllocator, CommandList, CommandQueue, SwapChain, DescriptorHeap>
 			CreateStandardObjects(
 				HWND hwnd,
@@ -45,6 +42,9 @@ namespace ForiverEngine
 			return Check(CreateStandardObjects_Impl(hwnd, windowWidth, windowHeight));
 		}
 
+		/// <summary>
+		/// 頂点バッファビューとインデックスバッファビューを一括で作成する
+		/// </summary>
 		static std::tuple<VertexBufferView, IndexBufferView>
 			CreateVertexAndIndexBufferViews(
 				const Device& device,
