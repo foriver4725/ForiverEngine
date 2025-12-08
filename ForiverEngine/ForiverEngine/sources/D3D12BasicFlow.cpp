@@ -55,7 +55,7 @@ namespace ForiverEngine
 	std::tuple<bool, std::wstring, std::tuple<VertexBufferView, IndexBufferView>>
 		D3D12BasicFlow::CreateVertexAndIndexBufferViews_Impl(
 			const Device& device,
-			const std::vector<DirectX::XMFLOAT4>& vertices,
+			const std::vector<VertexData>& vertices,
 			const std::vector<std::uint16_t>& indices
 		)
 	{
@@ -67,7 +67,7 @@ namespace ForiverEngine
 #define RETURN_TRUE() \
 	return { true, L"", { vertexBufferView, indexBufferView } };
 
-		DirectX::XMFLOAT4* verticesPtr = const_cast<DirectX::XMFLOAT4*>(vertices.data()); // 先頭ポインタ
+		VertexData* verticesPtr = const_cast<VertexData*>(vertices.data()); // 先頭ポインタ
 		const int vertexSize = static_cast<int>(sizeof(vertices[0]));                     // 要素1つ分のメモリサイズ
 		const int verticesSize = static_cast<int>(vertices.size() * vertexSize);          // 全体のメモリサイズ
 

@@ -3,8 +3,6 @@
 #include "./WindowHelper.h"
 #include "./D3D12Helper.h"
 
-#include <DirectXMath.h>
-
 #include <vector>
 #include <tuple>
 
@@ -48,7 +46,7 @@ namespace ForiverEngine
 		static std::tuple<VertexBufferView, IndexBufferView>
 			CreateVertexAndIndexBufferViews(
 				const Device& device,
-				const std::vector<DirectX::XMFLOAT4>& vertices,
+				const std::vector<VertexData>& vertices,
 				const std::vector<std::uint16_t>& indices
 			)
 		{
@@ -80,7 +78,7 @@ namespace ForiverEngine
 		static std::tuple<bool, std::wstring, std::tuple<VertexBufferView, IndexBufferView>>
 			CreateVertexAndIndexBufferViews_Impl(
 				const Device& device,
-				const std::vector<DirectX::XMFLOAT4>& vertices,
+				const std::vector<VertexData>& vertices,
 				const std::vector<std::uint16_t>& indices
 			);
 

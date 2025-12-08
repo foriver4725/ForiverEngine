@@ -17,6 +17,9 @@
     <ClCompile Include="sources\D3D12BasicFlow.cpp">
       <Filter>sources</Filter>
     </ClCompile>
+    <ClCompile Include="sources\Vector.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="headers">
@@ -46,6 +49,9 @@
       <Filter>headers</Filter>
     </ClInclude>
     <ClInclude Include="headers\D3D12BasicFlow.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="headers\Vector.h">
       <Filter>headers</Filter>
     </ClInclude>
   </ItemGroup>

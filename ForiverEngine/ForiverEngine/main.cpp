@@ -26,13 +26,12 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		.minY = 0, .maxY = WindowHeight,
 	};
 
-	// 頂点は時計回り！！
-	const std::vector<XMFLOAT4> vertices =
+	const std::vector<VertexData> vertices =
 	{
-		{ -0.4f, -0.7f, 0, 1 },
-		{ -0.4f, 0.7f, 0, 1 },
-		{ 0.4f, -0.7f, 0, 1 },
-		{ 0.4f, 0.7f, 0, 1 },
+		{{ -0.4f, -0.7f, 0, 1 }, {0.0f, 1.0f}},
+		{{ -0.4f, 0.7f, 0, 1 },  {0.0f, 0.0f}},
+		{{ 0.4f, -0.7f, 0, 1 },  {1.0f, 1.0f}},
+		{{ 0.4f, 0.7f, 0, 1 },   {1.0f, 0.0f}},
 	};
 
 	// 頂点インデックス
@@ -94,7 +93,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 			D3D12Helper::CommandIASetTopologyAsTriangleList(commandList);
 			D3D12Helper::CommandIASetVertexBuffer(commandList, { vertexBufferView });
 			D3D12Helper::CommandIASetIndexBuffer(commandList, indexBufferView);
-			D3D12Helper::CommandDrawIndexedInstanced(commandList, indices.size());
+			D3D12Helper::CommandDrawIndexedInstanced(commandList, static_cast<int>(indices.size()));
 		}
 		D3D12Helper::InvokeResourceBarrierAsTransitionFromRenderTargetToPresent(commandList, currentBackBuffer);
 		D3D12Helper::CommandClose(commandList);

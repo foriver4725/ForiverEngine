@@ -2,6 +2,9 @@
 
 // 一般的なものはヘッダでインクルードする (必要最小限)
 // DirectX12 はソースでのみインクルードする
+
+#include "./Vector.h"
+
 #include <vector>
 #include <array>
 #include <string>
@@ -108,6 +111,14 @@ public: \
 	DEFINE_POINTER_WRAPPER_STRUCT(Blob, ID3DBlob);
 
 #undef DEFINE_POINTER_WRAPPER_STRUCT
+
+	// 頂点データ 単品
+	// 頂点は時計回り!!
+	struct VertexData
+	{
+		ForiverEngine::Vector4 pos; // 左手系 X-右, Y-上, Z-奥
+		ForiverEngine::Vector2 uv; // 左上が原点
+	};
 
 	// 頂点レイアウト 単品
 	struct VertexLayout
