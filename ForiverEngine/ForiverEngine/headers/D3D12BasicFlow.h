@@ -66,6 +66,20 @@ namespace ForiverEngine
 			return Check(GetCurrentBackBufferAndCreateView_Impl(device, swapChain, descriptorHeapRTV));
 		}
 
+		inline static const std::string ShaderEntryFuncVS = "VSMain";
+		inline static const std::string ShaderEntryFuncPS = "PSMain";
+
+		/// <summary>
+		/// シェーダーをロードして、頂点シェーダーとピクセルシェーダーにコンパイルする
+		/// </summary>
+		static std::tuple<Blob, Blob>
+			CompileShader_VS_PS(
+				const std::string& path
+			)
+		{
+			return Check(CompileShader_VS_PS_Impl(path));
+		}
+
 #pragma endregion
 
 #pragma region Implementation
@@ -103,6 +117,14 @@ namespace ForiverEngine
 				const Device& device,
 				const SwapChain& swapChain,
 				const DescriptorHeap& descriptorHeapRTV
+			);
+
+		/// <summary>
+		/// シェーダーをロードして、頂点シェーダーとピクセルシェーダーにコンパイルする
+		/// </summary>
+		static std::tuple<bool, std::wstring, std::tuple<Blob, Blob>>
+			CompileShader_VS_PS_Impl(
+				const std::string& path
 			);
 
 #pragma endregion

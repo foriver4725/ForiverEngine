@@ -45,17 +45,8 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		= D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, vertices, indices);
 
 	// シェーダーをロード
-	Blob shaderVS, shaderPS;
-	{
-		std::wstring errorMessage;
-		if (!D3D12Helper::CompileShaderFile_VS_PS(
-			L"./shaders/Basic.hlsl",
-			"VSMain", "PSMain",
-			shaderVS, shaderPS,
-			errorMessage
-		))
-			ShowError(errorMessage.c_str());
-	}
+	const auto [shaderVS, shaderPS]
+		= D3D12BasicFlow::CompileShader_VS_PS("./shaders/Basic.hlsl");
 
 	// 頂点レイアウトを作成
 	const std::vector<VertexLayout> vertexLayouts =

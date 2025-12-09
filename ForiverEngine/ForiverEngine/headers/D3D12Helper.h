@@ -4,6 +4,7 @@
 // DirectX12 はソースでのみインクルードする
 
 #include "./Vector.h"
+#include "./StringUtils.h"
 
 #include <vector>
 #include <array>

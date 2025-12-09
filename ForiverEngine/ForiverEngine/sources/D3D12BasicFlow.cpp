@@ -97,7 +97,7 @@ namespace ForiverEngine
 	}
 
 	std::tuple<bool, std::wstring, std::tuple<GraphicsBuffer, DescriptorHeapHandleAtCPU>>
-		GetCurrentBackBufferAndCreateView_Impl(
+		D3D12BasicFlow::GetCurrentBackBufferAndCreateView_Impl(
 			const Device& device,
 			const SwapChain& swapChain,
 			const DescriptorHeap& descriptorHeapRTV
@@ -118,6 +118,35 @@ namespace ForiverEngine
 			RETURN_FALSE(L"SwapChain から現在バックにある GraphicsBuffer を取得することに失敗しました");
 
 		currentBackBufferRTV = D3D12Helper::CreateDescriptorRTVHandleByIndex(device, descriptorHeapRTV, currentBackBufferIndex);
+
+		RETURN_TRUE();
+
+#undef RETURN_FALSE
+#undef RETURN_TRUE
+	}
+
+	std::tuple<bool, std::wstring, std::tuple<Blob, Blob>>
+		D3D12BasicFlow::CompileShader_VS_PS_Impl(
+			const std::string& path
+		)
+	{
+		Blob vs = Blob();
+		Blob ps = Blob();
+
+#define RETURN_FALSE(errorMessage) \
+	return { false, errorMessage, { vs, ps } };
+#define RETURN_TRUE() \
+	return { true, L"", { vs, ps } };
+
+		std::wstring errorMessage = L"";
+
+		if (!D3D12Helper::CompileShaderFile_VS_PS(
+			StringUtils::UTF8ToUTF16(path),
+			ShaderEntryFuncVS, ShaderEntryFuncPS,
+			vs, ps,
+			errorMessage
+		))
+			RETURN_FALSE(errorMessage.c_str());
 
 		RETURN_TRUE();
 
