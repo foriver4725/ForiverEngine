@@ -9,7 +9,6 @@ constexpr int WindowHeight = 540;
 BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeight);
 {
 	using namespace ForiverEngine;
-	using namespace DirectX;
 
 #ifdef _DEBUG
 	if (!D3D12Helper::EnableDebugLayer())
