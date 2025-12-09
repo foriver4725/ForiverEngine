@@ -19,11 +19,8 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		= D3D12BasicFlow::CreateStandardObjects(hwnd, WindowWidth, WindowHeight);
 
 	// ビューポートとシザー矩形
-	const ViewportScissorRect viewportScissorRect =
-	{
-		.minX = 0, .maxX = WindowWidth,
-		.minY = 0, .maxY = WindowHeight,
-	};
+	const ViewportScissorRect viewportScissorRect
+		= ViewportScissorRect::CreateFullSized(WindowWidth, WindowHeight);
 
 	const std::vector<VertexData> vertices =
 	{

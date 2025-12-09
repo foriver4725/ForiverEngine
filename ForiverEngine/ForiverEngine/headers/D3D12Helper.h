@@ -134,6 +134,15 @@ public: \
 	{
 		int minX, maxX;
 		int minY, maxY;
+
+		static constexpr ViewportScissorRect CreateFullSized(int width, int height)
+		{
+			return ViewportScissorRect
+			{
+				.minX = 0, .maxX = width,
+				.minY = 0, .maxY = height,
+			};
+		}
 	};
 
 	// DirectX の構造体を直接外部に公開したくないので、メモリ配置を同じにした構造体に reinterpret_cast する
