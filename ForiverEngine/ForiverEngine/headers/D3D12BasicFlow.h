@@ -53,6 +53,19 @@ namespace ForiverEngine
 			return Check(CreateVertexAndIndexBufferViews_Impl(device, vertices, indices));
 		}
 
+		/// <summary>
+		/// SwapChain から現在のバックバッファを取得し、そのビューを DescriptorHeap (RTV) に作成して返す
+		/// </summary>
+		static std::tuple<GraphicsBuffer, DescriptorHeapHandleAtCPU>
+			GetCurrentBackBufferAndCreateView(
+				const Device& device,
+				const SwapChain& swapChain,
+				const DescriptorHeap& descriptorHeapRTV
+			)
+		{
+			return Check(GetCurrentBackBufferAndCreateView_Impl(device, swapChain, descriptorHeapRTV));
+		}
+
 #pragma endregion
 
 #pragma region Implementation
@@ -80,6 +93,16 @@ namespace ForiverEngine
 				const Device& device,
 				const std::vector<VertexData>& vertices,
 				const std::vector<std::uint16_t>& indices
+			);
+
+		/// <summary>
+		/// SwapChain から現在のバックバッファを取得し、そのビューを DescriptorHeap (RTV) に作成して返す
+		/// </summary>
+		static std::tuple<bool, std::wstring, std::tuple<GraphicsBuffer, DescriptorHeapHandleAtCPU>>
+			GetCurrentBackBufferAndCreateView_Impl(
+				const Device& device,
+				const SwapChain& swapChain,
+				const DescriptorHeap& descriptorHeapRTV
 			);
 
 #pragma endregion

@@ -95,4 +95,33 @@ namespace ForiverEngine
 #undef RETURN_FALSE
 #undef RETURN_TRUE
 	}
+
+	std::tuple<bool, std::wstring, std::tuple<GraphicsBuffer, DescriptorHeapHandleAtCPU>>
+		GetCurrentBackBufferAndCreateView_Impl(
+			const Device& device,
+			const SwapChain& swapChain,
+			const DescriptorHeap& descriptorHeapRTV
+		)
+	{
+		GraphicsBuffer currentBackBuffer = GraphicsBuffer();
+		DescriptorHeapHandleAtCPU  currentBackBufferRTV = DescriptorHeapHandleAtCPU();
+
+#define RETURN_FALSE(errorMessage) \
+	return { false, errorMessage, { currentBackBuffer, currentBackBufferRTV } };
+#define RETURN_TRUE() \
+	return { true, L"", { currentBackBuffer, currentBackBufferRTV } };
+
+		const int currentBackBufferIndex = D3D12Helper::GetCurrentBackBufferIndex(swapChain);
+
+		currentBackBuffer = D3D12Helper::GetBufferByIndex(swapChain, currentBackBufferIndex);
+		if (!currentBackBuffer)
+			RETURN_FALSE(L"SwapChain から現在バックにある GraphicsBuffer を取得することに失敗しました");
+
+		currentBackBufferRTV = D3D12Helper::CreateDescriptorRTVHandleByIndex(device, descriptorHeapRTV, currentBackBufferIndex);
+
+		RETURN_TRUE();
+
+#undef RETURN_FALSE
+#undef RETURN_TRUE
+	}
 }

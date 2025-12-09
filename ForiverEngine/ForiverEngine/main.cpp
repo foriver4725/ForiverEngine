@@ -58,7 +58,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	}
 
 	// 頂点レイアウトを作成
-	std::vector<VertexLayout> vertexLayouts =
+	const std::vector<VertexLayout> vertexLayouts =
 	{
 		{ "POSITION", Format::RGBA_F32 },
 	};
@@ -76,17 +76,13 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 
 	BEGIN_MESSAGE_LOOP;
 	{
-		// 現在バックバッファにある RenderTarget を取得する
-		const int currentBackBufferIndex = D3D12Helper::GetCurrentBackBufferIndex(swapChain);
-		GraphicsBuffer currentBackBuffer = D3D12Helper::GetBufferByIndex(swapChain, currentBackBufferIndex);
-		if (!currentBackBuffer) ShowError(L"現在バックにある GraphicsBuffer を取得することに失敗しました");
-		DescriptorHeapHandleAtCPU backBufferRTV = D3D12Helper::CreateDescriptorRTVHandleByIndex(
-			device, descriptorHeapRTV, currentBackBufferIndex);
+		const auto [currentBackBuffer, currentBackBufferRTV]
+			= D3D12BasicFlow::GetCurrentBackBufferAndCreateView(device, swapChain, descriptorHeapRTV);
 
 		D3D12Helper::InvokeResourceBarrierAsTransitionFromPresentToRenderTarget(commandList, currentBackBuffer);
 		{
-			D3D12Helper::CommandSetRTAsOutputStage(commandList, backBufferRTV);
-			D3D12Helper::CommandClearRT(commandList, backBufferRTV, { 0, 0, 0, 1 });
+			D3D12Helper::CommandSetRTAsOutputStage(commandList, currentBackBufferRTV);
+			D3D12Helper::CommandClearRT(commandList, currentBackBufferRTV, { 0, 0, 0, 1 });
 			D3D12Helper::CommandSetGraphicsPipelineState(commandList, graphicsPipelineState);
 			D3D12Helper::CommandSetRootSignature(commandList, rootSignature);
 			D3D12Helper::CommandRSSetViewportAndScissorRect(commandList, viewportScissorRect);
