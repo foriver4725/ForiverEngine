@@ -54,16 +54,8 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		{ "POSITION", Format::RGBA_F32 },
 	};
 
-	RootSignature rootSignature;
-	{
-		std::wstring errorMessage;
-		rootSignature = D3D12Helper::CreateRootSignature(device, errorMessage);
-		if (!rootSignature)
-			ShowError(errorMessage.c_str());
-	}
-	PipelineState graphicsPipelineState = D3D12Helper::CreateGraphicsPipelineState(
-		device, rootSignature, shaderVS, shaderPS, vertexLayouts, FillMode::Solid, CullMode::None);
-	if (!graphicsPipelineState) ShowError(L"GraphicsPipelineState の作成に失敗しました");
+	const auto [rootSignature, graphicsPipelineState]
+		= D3D12BasicFlow::CreateRootSignatureAndGraphicsPipelineState(device, shaderVS, shaderPS, vertexLayouts, FillMode::Solid, CullMode::None);
 
 	BEGIN_MESSAGE_LOOP;
 	{

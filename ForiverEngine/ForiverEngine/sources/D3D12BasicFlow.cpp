@@ -153,4 +153,39 @@ namespace ForiverEngine
 #undef RETURN_FALSE
 #undef RETURN_TRUE
 	}
+
+	std::tuple<bool, std::wstring, std::tuple<RootSignature, PipelineState>>
+		D3D12BasicFlow::CreateRootSignatureAndGraphicsPipelineState_Impl(
+			const Device& device,
+			const Blob& shaderVS,
+			const Blob& shaderPS,
+			const std::vector<VertexLayout>& vertexLayouts,
+			int eFillMode,
+			int eCullMode
+		)
+	{
+		RootSignature rootSignature = RootSignature();
+		PipelineState graphicsPipelineState = PipelineState();
+
+#define RETURN_FALSE(errorMessage) \
+	return { false, errorMessage, { rootSignature, graphicsPipelineState } };
+#define RETURN_TRUE() \
+	return { true, L"", { rootSignature, graphicsPipelineState } };
+
+		std::wstring errorMessage = L"";
+
+		rootSignature = D3D12Helper::CreateRootSignature(device, errorMessage);
+		if (!rootSignature)
+			RETURN_FALSE(errorMessage.c_str());
+
+		graphicsPipelineState = D3D12Helper::CreateGraphicsPipelineState(
+			device, rootSignature, shaderVS, shaderPS, vertexLayouts, eFillMode, eCullMode);
+		if (!graphicsPipelineState)
+			RETURN_FALSE(L"GraphicsPipelineState の作成に失敗しました");
+
+		RETURN_TRUE();
+
+#undef RETURN_FALSE
+#undef RETURN_TRUE
+	}
 }

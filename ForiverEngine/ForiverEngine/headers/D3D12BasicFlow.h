@@ -68,7 +68,6 @@ namespace ForiverEngine
 
 		inline static const std::string ShaderEntryFuncVS = "VSMain";
 		inline static const std::string ShaderEntryFuncPS = "PSMain";
-
 		/// <summary>
 		/// シェーダーをロードして、頂点シェーダーとピクセルシェーダーにコンパイルする
 		/// </summary>
@@ -78,6 +77,23 @@ namespace ForiverEngine
 			)
 		{
 			return Check(CompileShader_VS_PS_Impl(path));
+		}
+
+		/// <summary>
+		/// RootSignature と GraphicsPipelineState を一括で作成して返す
+		/// </summary>
+		static std::tuple<RootSignature, PipelineState>
+			CreateRootSignatureAndGraphicsPipelineState(
+				const Device& device,
+				const Blob& shaderVS,
+				const Blob& shaderPS,
+				const std::vector<VertexLayout>& vertexLayouts,
+				int eFillMode,
+				int eCullMode
+			)
+		{
+			return Check(CreateRootSignatureAndGraphicsPipelineState_Impl(
+				device, shaderVS, shaderPS, vertexLayouts, eFillMode, eCullMode));
 		}
 
 #pragma endregion
@@ -125,6 +141,19 @@ namespace ForiverEngine
 		static std::tuple<bool, std::wstring, std::tuple<Blob, Blob>>
 			CompileShader_VS_PS_Impl(
 				const std::string& path
+			);
+
+		/// <summary>
+		/// RootSignature と GraphicsPipelineState を一括で作成して返す
+		/// </summary>
+		static std::tuple<bool, std::wstring, std::tuple<RootSignature, PipelineState>>
+			CreateRootSignatureAndGraphicsPipelineState_Impl(
+				const Device& device,
+				const Blob& shaderVS,
+				const Blob& shaderPS,
+				const std::vector<VertexLayout>& vertexLayouts,
+				int eFillMode,
+				int eCullMode
 			);
 
 #pragma endregion
