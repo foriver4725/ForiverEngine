@@ -208,6 +208,12 @@ public: \
 		static DescriptorHeap CreateDescriptorHeapRTV(const Device& device);
 
 		/// <summary>
+		/// <para>DescriptorHeap を作成して返す (失敗したら nullptr)</para>
+		/// ShaderResourceView 用
+		/// </summary>
+		static DescriptorHeap CreateDescriptorHeapSRV(const Device& device, int count);
+
+		/// <summary>
 		/// Fence を作成して返す (失敗したら nullptr)
 		/// </summary>
 		static Fence CreateFence(const Device& device);
@@ -238,6 +244,13 @@ public: \
 		/// <param name="indexFormat">インデックス配列の 要素1つ分の フォーマット</param>
 		/// <returns></returns>
 		static IndexBufferView CreateIndexBufferView(const GraphicsBuffer& indexBuffer, int indicesSize, Format indexFormat);
+
+		/// <summary>
+		/// <para>テクスチャバッファ から シェーダーリソースビュー を作成し、DescriptorHeap に登録する</para>
+		/// 戻り値として取得することは出来ない!
+		/// </summary>
+		static void CreateShaderResourceViewAndRegistToDescriptorHeap(
+			const GraphicsBuffer& graphicsBuffer, Format format, const Device& device, const DescriptorHeap& descriptorHeapSRV);
 
 		/// <summary>
 		/// <para>GraphicsBuffer の Map() を使って、CPUのバッファをGPU側にコピーする</para>

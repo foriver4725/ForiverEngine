@@ -317,9 +317,28 @@ namespace ForiverEngine
 	{
 		D3D12_DESCRIPTOR_HEAP_DESC desc
 		{
-			.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV, // レンダーターゲットビュー用
+			.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV, // Render Target View 用
 			.NumDescriptors = 2, // ダブルバッファリングなので、2
 			.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE, // シェーダー側には見せない
+			.NodeMask = 0, // アダプターが1つなので...
+		};
+
+		ID3D12DescriptorHeap* ptr = nullptr;
+		if (device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&ptr)) == S_OK)
+		{
+			return DescriptorHeap(ptr);
+		}
+
+		return DescriptorHeap();
+	}
+
+	DescriptorHeap D3D12Helper::CreateDescriptorHeapSRV(const Device& device, int count)
+	{
+		D3D12_DESCRIPTOR_HEAP_DESC desc
+		{
+			.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, // Shader Resource View 用
+			.NumDescriptors = static_cast<UINT>(count),
+			.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, // シェーダー側に見せる
 			.NodeMask = 0, // アダプターが1つなので...
 		};
 
@@ -451,6 +470,38 @@ namespace ForiverEngine
 		};
 
 		return *Reinterpret(&output);
+	}
+
+	void D3D12Helper::CreateShaderResourceViewAndRegistToDescriptorHeap(
+		const GraphicsBuffer& graphicsBuffer, Format format, const Device& device, const DescriptorHeap& descriptorHeapSRV)
+	{
+		D3D12_SHADER_RESOURCE_VIEW_DESC desc =
+		{
+			.Format = static_cast<DXGI_FORMAT>(format),
+			.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D, // 2Dテクスチャ
+			// デフォルト : テクセル値をそのまま、フォーマット・順序を変えずマッピングする
+			.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING,
+
+			// union
+			.Texture2D =
+			{
+				.MostDetailedMip = 0, // 規定値
+				.MipLevels = 1, // ミップマップは使わない
+				.PlaneSlice = 0, // 規定値
+				.ResourceMinLODClamp = 0.0f // 規定値
+			}
+		};
+
+		device->CreateShaderResourceView(
+			graphicsBuffer.Ptr,
+			&desc,
+			// 冗長だけど、処理を共通化する
+			*Reinterpret(&CreateDescriptorHeapHandleIndicatingDescriptorByIndexAtCPU(
+				device, descriptorHeapSRV,
+				D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+				0 // DescriptorHeap (SRV) の最初に登録する
+			))
+		);
 	}
 
 	bool D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer(
