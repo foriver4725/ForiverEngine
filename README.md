@@ -31,3 +31,4 @@ UV座標を渡す
 | 名前 | ライセンス |
 | --- | --- |
 | [SimplexNoise](https://github.com/SRombauts/SimplexNoise) | [MIT](https://github.com/SRombauts/SimplexNoise/blob/master/LICENSE.txt) |
+| [DirectXTex](https://github.com/microsoft/DirectXTex) | [MIT](https://github.com/microsoft/DirectXTex/blob/main/LICENSE) |
