@@ -18,12 +18,12 @@ namespace ForiverEngine
 	static D3D12_INPUT_ELEMENT_DESC Construct(const VertexLayout& vertexLayout);
 	static std::pair<D3D12_VIEWPORT, D3D12_RECT> Construct(const ViewportScissorRect& viewportScissorRect);
 
-	static D3D12_CPU_DESCRIPTOR_HANDLE* Reinterpret(DescriptorHeapHandleAtCPU* value);
-	static DescriptorHeapHandleAtCPU* Reinterpret(D3D12_CPU_DESCRIPTOR_HANDLE* value);
-	static D3D12_VERTEX_BUFFER_VIEW* Reinterpret(VertexBufferView* value);
-	static VertexBufferView* Reinterpret(D3D12_VERTEX_BUFFER_VIEW* value);
-	static D3D12_INDEX_BUFFER_VIEW* Reinterpret(IndexBufferView* value);
-	static IndexBufferView* Reinterpret(D3D12_INDEX_BUFFER_VIEW* value);
+	static D3D12_CPU_DESCRIPTOR_HANDLE* Reinterpret(const DescriptorHeapHandleAtCPU* value);
+	static DescriptorHeapHandleAtCPU* Reinterpret(const D3D12_CPU_DESCRIPTOR_HANDLE* value);
+	static D3D12_VERTEX_BUFFER_VIEW* Reinterpret(const VertexBufferView* value);
+	static VertexBufferView* Reinterpret(const D3D12_VERTEX_BUFFER_VIEW* value);
+	static D3D12_INDEX_BUFFER_VIEW* Reinterpret(const IndexBufferView* value);
+	static IndexBufferView* Reinterpret(const D3D12_INDEX_BUFFER_VIEW* value);
 
 	// エラーの Blob からエラーメッセージを取得する
 	static std::wstring FetchErrorMessageFromErrorBlob(const Blob& blob);
@@ -96,10 +96,12 @@ namespace ForiverEngine
 
 	RootSignature D3D12Helper::CreateRootSignature(const Device& device, const RootParameter& rootParameter, std::wstring& outErrorMessage)
 	{
-		D3D12_ROOT_SIGNATURE_DESC desc
+		const D3D12_ROOT_PARAMETER rootParameterReal = Construct(rootParameter);
+
+		const D3D12_ROOT_SIGNATURE_DESC desc
 		{
 			.NumParameters = 1,
-			.pParameters = &Construct(rootParameter),
+			.pParameters = &rootParameterReal,
 			.NumStaticSamplers = 0, // 指定なし
 			.pStaticSamplers = nullptr, // 指定なし
 			.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT, // 「頂点情報(入力アセンブラ) がある」
@@ -142,7 +144,7 @@ namespace ForiverEngine
 
 	PipelineState D3D12Helper::CreateGraphicsPipelineState(
 		const Device& device, const RootSignature& rootSignature, const Blob& vs, const Blob& ps,
-		const std::vector<VertexLayout>& vertexLayouts, int eFillMode, int eCullMode)
+		const std::vector<VertexLayout>& vertexLayouts, FillMode fillMode, CullMode cullMode)
 	{
 		std::vector<D3D12_INPUT_ELEMENT_DESC> vertexLayoutsReal = std::vector<D3D12_INPUT_ELEMENT_DESC>(vertexLayouts.size(), {});
 		for (int i = 0; i < static_cast<int>(vertexLayouts.size()); ++i)
@@ -176,8 +178,8 @@ namespace ForiverEngine
 			.SampleMask = D3D12_DEFAULT_SAMPLE_MASK, // デフォルト
 			.RasterizerState =
 			{
-				.FillMode = static_cast<D3D12_FILL_MODE>(eFillMode), // 塗りつぶし or ワイヤーフレーム
-				.CullMode = static_cast<D3D12_CULL_MODE>(eCullMode), // カリング (None, Front, Back)
+				.FillMode = static_cast<D3D12_FILL_MODE>(fillMode), // 塗りつぶし or ワイヤーフレーム
+				.CullMode = static_cast<D3D12_CULL_MODE>(cullMode), // カリング (None, Front, Back)
 				.DepthClipEnable = true, // 深度クリッピング有効
 				.MultisampleEnable = false, // まだアンチエイリアスは使わないので...
 			},
@@ -469,7 +471,7 @@ namespace ForiverEngine
 	void D3D12Helper::CreateShaderResourceViewAndRegistToDescriptorHeap(
 		const GraphicsBuffer& graphicsBuffer, Format format, const Device& device, const DescriptorHeap& descriptorHeapSRV)
 	{
-		D3D12_SHADER_RESOURCE_VIEW_DESC desc =
+		const D3D12_SHADER_RESOURCE_VIEW_DESC desc =
 		{
 			.Format = static_cast<DXGI_FORMAT>(format),
 			.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D, // 2Dテクスチャ
@@ -486,15 +488,18 @@ namespace ForiverEngine
 			}
 		};
 
-		device->CreateShaderResourceView(
-			graphicsBuffer.Ptr,
-			&desc,
-			// 冗長だけど、処理を共通化する
-			*Reinterpret(&CreateDescriptorHeapHandleIndicatingDescriptorByIndexAtCPU(
+		// 冗長だけど、処理を共通化する
+		const DescriptorHeapHandleAtCPU handleSRV =
+			CreateDescriptorHeapHandleIndicatingDescriptorByIndexAtCPU(
 				device, descriptorHeapSRV,
 				D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
 				0 // DescriptorHeap (SRV) の最初に登録する
-			))
+			);
+
+		device->CreateShaderResourceView(
+			graphicsBuffer.Ptr,
+			&desc,
+			*Reinterpret(&handleSRV)
 		);
 	}
 
@@ -884,34 +889,34 @@ namespace ForiverEngine
 		return { viewport, scissorRect };
 	}
 
-	D3D12_CPU_DESCRIPTOR_HANDLE* Reinterpret(DescriptorHeapHandleAtCPU* value)
+	D3D12_CPU_DESCRIPTOR_HANDLE* Reinterpret(const DescriptorHeapHandleAtCPU* value)
 	{
-		return reinterpret_cast<D3D12_CPU_DESCRIPTOR_HANDLE*>(value);
+		return reinterpret_cast<D3D12_CPU_DESCRIPTOR_HANDLE*>(const_cast<DescriptorHeapHandleAtCPU*>(value));
 	}
 
-	DescriptorHeapHandleAtCPU* Reinterpret(D3D12_CPU_DESCRIPTOR_HANDLE* value)
+	DescriptorHeapHandleAtCPU* Reinterpret(const D3D12_CPU_DESCRIPTOR_HANDLE* value)
 	{
-		return reinterpret_cast<DescriptorHeapHandleAtCPU*>(value);
+		return reinterpret_cast<DescriptorHeapHandleAtCPU*>(const_cast<D3D12_CPU_DESCRIPTOR_HANDLE*>(value));
 	}
 
-	D3D12_VERTEX_BUFFER_VIEW* Reinterpret(VertexBufferView* value)
+	D3D12_VERTEX_BUFFER_VIEW* Reinterpret(const VertexBufferView* value)
 	{
-		return reinterpret_cast<D3D12_VERTEX_BUFFER_VIEW*>(value);
+		return reinterpret_cast<D3D12_VERTEX_BUFFER_VIEW*>(const_cast<VertexBufferView*>(value));
 	}
 
-	VertexBufferView* Reinterpret(D3D12_VERTEX_BUFFER_VIEW* value)
+	VertexBufferView* Reinterpret(const D3D12_VERTEX_BUFFER_VIEW* value)
 	{
-		return reinterpret_cast<VertexBufferView*>(value);
+		return reinterpret_cast<VertexBufferView*>(const_cast<D3D12_VERTEX_BUFFER_VIEW*>(value));
 	}
 
-	D3D12_INDEX_BUFFER_VIEW* Reinterpret(IndexBufferView* value)
+	D3D12_INDEX_BUFFER_VIEW* Reinterpret(const IndexBufferView* value)
 	{
-		return reinterpret_cast<D3D12_INDEX_BUFFER_VIEW*>(value);
+		return reinterpret_cast<D3D12_INDEX_BUFFER_VIEW*>(const_cast<IndexBufferView*>(value));
 	}
 
-	IndexBufferView* Reinterpret(D3D12_INDEX_BUFFER_VIEW* value)
+	IndexBufferView* Reinterpret(const D3D12_INDEX_BUFFER_VIEW* value)
 	{
-		return reinterpret_cast<IndexBufferView*>(value);
+		return reinterpret_cast<IndexBufferView*>(const_cast<D3D12_INDEX_BUFFER_VIEW*>(value));
 	}
 
 	std::wstring FetchErrorMessageFromErrorBlob(const Blob& blob)

@@ -85,15 +85,16 @@ namespace ForiverEngine
 		static std::tuple<RootSignature, PipelineState>
 			CreateRootSignatureAndGraphicsPipelineState(
 				const Device& device,
+				const RootParameter& rootParameter,
 				const Blob& shaderVS,
 				const Blob& shaderPS,
 				const std::vector<VertexLayout>& vertexLayouts,
-				int eFillMode,
-				int eCullMode
+				FillMode fillMode,
+				CullMode cullMode
 			)
 		{
 			return Check(CreateRootSignatureAndGraphicsPipelineState_Impl(
-				device, shaderVS, shaderPS, vertexLayouts, eFillMode, eCullMode));
+				device, rootParameter, shaderVS, shaderPS, vertexLayouts, fillMode, cullMode));
 		}
 
 #pragma endregion
@@ -153,8 +154,8 @@ namespace ForiverEngine
 				const Blob& shaderVS,
 				const Blob& shaderPS,
 				const std::vector<VertexLayout>& vertexLayouts,
-				int eFillMode,
-				int eCullMode
+				FillMode fillMode,
+				CullMode cullMode
 			);
 
 #pragma endregion

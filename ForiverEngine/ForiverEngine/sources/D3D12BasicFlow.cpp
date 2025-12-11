@@ -161,8 +161,8 @@ namespace ForiverEngine
 			const Blob& shaderVS,
 			const Blob& shaderPS,
 			const std::vector<VertexLayout>& vertexLayouts,
-			int eFillMode,
-			int eCullMode
+			FillMode fillMode,
+			CullMode cullMode
 		)
 	{
 		RootSignature rootSignature = RootSignature();
@@ -180,7 +180,7 @@ namespace ForiverEngine
 			RETURN_FALSE(errorMessage.c_str());
 
 		graphicsPipelineState = D3D12Helper::CreateGraphicsPipelineState(
-			device, rootSignature, shaderVS, shaderPS, vertexLayouts, eFillMode, eCullMode);
+			device, rootSignature, shaderVS, shaderPS, vertexLayouts, fillMode, cullMode);
 		if (!graphicsPipelineState)
 			RETURN_FALSE(L"GraphicsPipelineState の作成に失敗しました");
 

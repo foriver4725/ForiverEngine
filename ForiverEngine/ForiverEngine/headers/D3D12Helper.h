@@ -214,7 +214,7 @@ public: \
 		/// </summary>
 		static PipelineState CreateGraphicsPipelineState(
 			const Device& device, const RootSignature& rootSignature, const Blob& vs, const Blob& ps,
-			const std::vector<VertexLayout>& vertexLayouts, int eFillMode, int eCullMode);
+			const std::vector<VertexLayout>& vertexLayouts, FillMode fillMode, CullMode cullMode);
 
 		/// <summary>
 		/// CommandAllocator を作成して返す (失敗したら nullptr)

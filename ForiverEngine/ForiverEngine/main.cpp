@@ -87,7 +87,8 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		= ViewportScissorRect::CreateFullSized(WindowWidth, WindowHeight);
 
 	const auto [rootSignature, graphicsPipelineState]
-		= D3D12BasicFlow::CreateRootSignatureAndGraphicsPipelineState(device, shaderVS, shaderPS, vertexLayouts, FillMode::Solid, CullMode::None);
+		= D3D12BasicFlow::CreateRootSignatureAndGraphicsPipelineState(
+			device, rootParameter, shaderVS, shaderPS, vertexLayouts, FillMode::Solid, CullMode::None);
 
 	BEGIN_MESSAGE_LOOP;
 	{
