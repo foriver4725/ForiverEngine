@@ -42,7 +42,7 @@ namespace ForiverEngine
 	// DirectX と等価の列挙型を定義
 
 	// ピクセルフォーマット
-	enum class Format : int
+	enum class Format : std::uint8_t
 	{
 		Unknown = 0,     // DXGI_FORMAT_UNKNOWN
 
@@ -69,18 +69,18 @@ namespace ForiverEngine
 	};
 
 	// ラスタライザの塗りつぶしモード
-	struct FillMode
+	enum class FillMode : std::uint8_t
 	{
-		static constexpr int Wireframe = 2; // D3D12_FILL_MODE_WIREFRAME
-		static constexpr int Solid = 3;     // D3D12_FILL_MODE_SOLID
+		Wireframe = 2, // D3D12_FILL_MODE_WIREFRAME
+		Solid = 3,     // D3D12_FILL_MODE_SOLID
 	};
 
 	// ラスタライザのカリングモード
-	struct CullMode
+	enum class CullMode : std::uint8_t
 	{
-		static constexpr int None = 1;  // D3D12_CULL_MODE_NONE
-		static constexpr int Front = 2; // D3D12_CULL_MODE_FRONT
-		static constexpr int Back = 3;  // D3D12_CULL_MODE_BACK
+		None = 1,  // D3D12_CULL_MODE_NONE
+		Front = 2, // D3D12_CULL_MODE_FRONT
+		Back = 3,  // D3D12_CULL_MODE_BACK
 	};
 
 	// ラッパークラスを定義
@@ -119,6 +119,9 @@ public: \
 	// ルートパラメータ
 	struct RootParameter
 	{
+		// DirectX と等価の列挙型を定義
+		// 命名的に混同されそうなので、この構造体内で定義してしまう
+
 		enum class ShaderVisibility : std::uint8_t
 		{
 			All = 0,        // D3D12_SHADER_VISIBILITY_ALL
