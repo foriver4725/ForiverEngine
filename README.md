@@ -17,6 +17,11 @@ DirectX12 を用いてフルスクラッチで制作した、自作ゲームエ�
 
 <img width="50%" alt="image" src="https://github.com/user-attachments/assets/6eedfb76-7f27-4da0-9b56-197bb5ad51d6" />
 
+---
+UV座標を渡す
+
+<img width="50%" alt="image" src="https://github.com/user-attachments/assets/60b61bae-83a6-4439-81b2-374f045079bb" />
+
 ## OSS
 | 名前 | ライセンス |
 | --- | --- |
