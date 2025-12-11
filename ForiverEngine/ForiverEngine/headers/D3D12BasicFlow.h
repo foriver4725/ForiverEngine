@@ -86,6 +86,7 @@ namespace ForiverEngine
 			CreateRootSignatureAndGraphicsPipelineState(
 				const Device& device,
 				const RootParameter& rootParameter,
+				const SamplerConfig& samplerConfig,
 				const Blob& shaderVS,
 				const Blob& shaderPS,
 				const std::vector<VertexLayout>& vertexLayouts,
@@ -94,7 +95,7 @@ namespace ForiverEngine
 			)
 		{
 			return Check(CreateRootSignatureAndGraphicsPipelineState_Impl(
-				device, rootParameter, shaderVS, shaderPS, vertexLayouts, fillMode, cullMode));
+				device, rootParameter, samplerConfig, shaderVS, shaderPS, vertexLayouts, fillMode, cullMode));
 		}
 
 #pragma endregion
@@ -151,6 +152,7 @@ namespace ForiverEngine
 			CreateRootSignatureAndGraphicsPipelineState_Impl(
 				const Device& device,
 				const RootParameter& rootParameter,
+				const SamplerConfig& samplerConfig,
 				const Blob& shaderVS,
 				const Blob& shaderPS,
 				const std::vector<VertexLayout>& vertexLayouts,

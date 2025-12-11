@@ -158,6 +158,7 @@ namespace ForiverEngine
 		D3D12BasicFlow::CreateRootSignatureAndGraphicsPipelineState_Impl(
 			const Device& device,
 			const RootParameter& rootParameter,
+			const SamplerConfig& samplerConfig,
 			const Blob& shaderVS,
 			const Blob& shaderPS,
 			const std::vector<VertexLayout>& vertexLayouts,
@@ -175,7 +176,7 @@ namespace ForiverEngine
 
 		std::wstring errorMessage = L"";
 
-		rootSignature = D3D12Helper::CreateRootSignature(device, rootParameter, errorMessage);
+		rootSignature = D3D12Helper::CreateRootSignature(device, rootParameter, samplerConfig, errorMessage);
 		if (!rootSignature)
 			RETURN_FALSE(errorMessage.c_str());
 

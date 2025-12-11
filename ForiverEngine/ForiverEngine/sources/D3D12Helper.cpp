@@ -14,7 +14,7 @@ namespace ForiverEngine
 	constexpr int FenceValueAfterGPUEvent = 1;
 
 	static D3D12_DESCRIPTOR_RANGE Construct(const RootParameter::DescriptorRange& descriptorRange);
-	static D3D12_ROOT_PARAMETER Construct(const RootParameter& rootParameter);
+	static D3D12_STATIC_SAMPLER_DESC Construct(const SamplerConfig& samplerConfig);
 	static D3D12_INPUT_ELEMENT_DESC Construct(const VertexLayout& vertexLayout);
 	static std::pair<D3D12_VIEWPORT, D3D12_RECT> Construct(const ViewportScissorRect& viewportScissorRect);
 
@@ -94,16 +94,33 @@ namespace ForiverEngine
 		return Device();
 	}
 
-	RootSignature D3D12Helper::CreateRootSignature(const Device& device, const RootParameter& rootParameter, std::wstring& outErrorMessage)
+	RootSignature D3D12Helper::CreateRootSignature(
+		const Device& device, const RootParameter& rootParameter, const SamplerConfig& samplerConfig, std::wstring& outErrorMessage)
 	{
-		const D3D12_ROOT_PARAMETER rootParameterReal = Construct(rootParameter);
+		// 複数 Descriptor が連続している場合に、指定できる
+		std::vector<D3D12_DESCRIPTOR_RANGE> descriptorRangesReal = std::vector<D3D12_DESCRIPTOR_RANGE>(rootParameter.descriptorRanges.size(), {});
+		for (int i = 0; i < static_cast<int>(rootParameter.descriptorRanges.size()); ++i)
+			descriptorRangesReal[i] = Construct(rootParameter.descriptorRanges[i]);
+
+		const D3D12_ROOT_PARAMETER rootParameterReal =
+		{
+			.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE,
+			.DescriptorTable =
+			{
+				.NumDescriptorRanges = 1,
+				.pDescriptorRanges = descriptorRangesReal.data()
+			},
+			.ShaderVisibility = static_cast<D3D12_SHADER_VISIBILITY>(rootParameter.shaderVisibility)
+		};
+
+		const D3D12_STATIC_SAMPLER_DESC samplerDescReal = Construct(samplerConfig);
 
 		const D3D12_ROOT_SIGNATURE_DESC desc
 		{
 			.NumParameters = 1,
 			.pParameters = &rootParameterReal,
-			.NumStaticSamplers = 0, // 指定なし
-			.pStaticSamplers = nullptr, // 指定なし
+			.NumStaticSamplers = 1,
+			.pStaticSamplers = &samplerDescReal,
 			.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT, // 「頂点情報(入力アセンブラ) がある」
 		};
 
@@ -833,22 +850,23 @@ namespace ForiverEngine
 		};
 	}
 
-	D3D12_ROOT_PARAMETER Construct(const RootParameter& rootParameter)
+	D3D12_STATIC_SAMPLER_DESC Construct(const SamplerConfig& samplerConfig)
 	{
-		// 複数 Descriptor が連続している場合に、指定できる
-		std::vector<D3D12_DESCRIPTOR_RANGE> descriptorRangesReal = std::vector<D3D12_DESCRIPTOR_RANGE>(rootParameter.descriptorRanges.size(), {});
-		for (int i = 0; i < static_cast<int>(rootParameter.descriptorRanges.size()); ++i)
-			descriptorRangesReal[i] = Construct(rootParameter.descriptorRanges[i]);
-
 		return
 		{
-			.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE,
-			.DescriptorTable =
-			{
-				.NumDescriptorRanges = 1,
-				.pDescriptorRanges = descriptorRangesReal.data()
-			},
-			.ShaderVisibility = static_cast<D3D12_SHADER_VISIBILITY>(rootParameter.shaderVisibility)
+			.Filter = static_cast<D3D12_FILTER>(samplerConfig.filter),
+			.AddressU = static_cast<D3D12_TEXTURE_ADDRESS_MODE>(samplerConfig.addressingMode),
+			.AddressV = static_cast<D3D12_TEXTURE_ADDRESS_MODE>(samplerConfig.addressingMode),
+			.AddressW = static_cast<D3D12_TEXTURE_ADDRESS_MODE>(samplerConfig.addressingMode), // 3Dテクスチャだと関与してくる
+			.MipLODBias = 0.0f, // 規定値
+			.MaxAnisotropy = 0, // 規定値
+			.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER, // リサンプリングしない
+			.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK, // 端の色 規定値
+			.MinLOD = 0.0f, // ミップマップの下限
+			.MaxLOD = D3D12_FLOAT32_MAX, // ミップマップの上限
+			.ShaderRegister = static_cast<UINT>(samplerConfig.registerIndex),
+			.RegisterSpace = 0, // 規定値
+			.ShaderVisibility = static_cast<D3D12_SHADER_VISIBILITY>(samplerConfig.shaderVisibility)
 		};
 	}
 

@@ -83,6 +83,14 @@ namespace ForiverEngine
 		Back = 3,  // D3D12_CULL_MODE_BACK
 	};
 
+	// シェーダーに公開する範囲 = どのシェーダーから参照可能か
+	enum class ShaderVisibility : std::uint8_t
+	{
+		All = 0,        // D3D12_SHADER_VISIBILITY_ALL
+		VertexOnly = 1, // D3D12_SHADER_VISIBILITY_VERTEX
+		PixelOnly = 5,  // D3D12_SHADER_VISIBILITY_PIXEL
+	};
+
 	// ラッパークラスを定義
 #define DEFINE_POINTER_WRAPPER_STRUCT(WrapperStructName, OriginalPointerType) \
 struct WrapperStructName \
@@ -120,14 +128,7 @@ public: \
 	struct RootParameter
 	{
 		// DirectX と等価の列挙型を定義
-		// 命名的に混同されそうなので、この構造体内で定義してしまう
-
-		enum class ShaderVisibility : std::uint8_t
-		{
-			All = 0,        // D3D12_SHADER_VISIBILITY_ALL
-			VertexOnly = 1, // D3D12_SHADER_VISIBILITY_VERTEX
-			PixelOnly = 5,  // D3D12_SHADER_VISIBILITY_PIXEL
-		};
+		// 混同されそうなので、この構造体内で定義してしまう
 
 		enum class DescriptorRangeType : std::uint8_t
 		{
@@ -146,6 +147,31 @@ public: \
 
 		ShaderVisibility shaderVisibility;
 		std::vector<DescriptorRange> descriptorRanges; // この順に登録される
+	};
+
+	// サンプラーの設定
+	struct SamplerConfig
+	{
+		// DirectX と等価の列挙型を定義
+		// 命名的に混同されそうなので、この構造体内で定義してしまう
+
+		enum class AddressingMode : std::uint8_t
+		{
+			Wrap = 1,       // D3D12_TEXTURE_ADDRESS_MODE_WRAP
+			Mirror = 2,     // D3D12_TEXTURE_ADDRESS_MODE_MIRROR
+			Clamp = 3,      // D3D12_TEXTURE_ADDRESS_MODE_CLAMP
+		};
+
+		enum class Filter : std::uint8_t
+		{
+			Point = 0,          // D3D12_FILTER_MIN_MAG_MIP_POINT
+			Bilinear = 0x15,      // D3D12_FILTER_MIN_MAG_MIP_LINEAR
+		};
+
+		ShaderVisibility shaderVisibility;
+		AddressingMode addressingMode;
+		Filter filter;
+		int registerIndex; // s# のレジスタに登録される
 	};
 
 	// 頂点データ 単品
@@ -207,7 +233,8 @@ public: \
 		/// <summary>
 		/// RootSignature を作成して返す (失敗したら nullptr)
 		/// </summary>
-		static RootSignature CreateRootSignature(const Device& device, const RootParameter& rootParameter, std::wstring& outErrorMessage);
+		static RootSignature CreateRootSignature(
+			const Device& device, const RootParameter& rootParameter, const SamplerConfig& samplerConfig, std::wstring& outErrorMessage);
 
 		/// <summary>
 		/// GraphicsPipelineState を作成して返す (失敗したら nullptr)

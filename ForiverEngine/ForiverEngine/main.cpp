@@ -21,7 +21,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	// ルートパラメータ
 	const RootParameter rootParameter =
 	{
-		.shaderVisibility = RootParameter::ShaderVisibility::PixelOnly,
+		.shaderVisibility = ShaderVisibility::PixelOnly,
 		.descriptorRanges =
 		{
 			// SRV x1 t0
@@ -31,6 +31,13 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 				.registerIndex = 0,
 			},
 		}
+	};
+
+	const SamplerConfig samplerConfig =
+	{
+		.shaderVisibility = ShaderVisibility::PixelOnly,
+		.addressingMode = SamplerConfig::AddressingMode::Wrap,
+		.filter = SamplerConfig::Filter::Bilinear,
 	};
 
 	// 頂点データ
@@ -70,6 +77,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 
 		const GraphicsBuffer textureBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, 256, 256, Format::RGBA_U8_01);
 		if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBufferUsingWriteToSubresource(textureBuffer, static_cast<void*>(textureData.data()), 256, 256))
+
 			ShowError(L"テクスチャデータのコピーに失敗しました");
 
 		const DescriptorHeap descriptorHeapSRV = D3D12Helper::CreateDescriptorHeapSRV(device, 1);
@@ -88,7 +96,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 
 	const auto [rootSignature, graphicsPipelineState]
 		= D3D12BasicFlow::CreateRootSignatureAndGraphicsPipelineState(
-			device, rootParameter, shaderVS, shaderPS, vertexLayouts, FillMode::Solid, CullMode::None);
+			device, rootParameter, samplerConfig, shaderVS, shaderPS, vertexLayouts, FillMode::Solid, CullMode::None);
 
 	BEGIN_MESSAGE_LOOP;
 	{
