@@ -1,3 +1,6 @@
+Texture2D<float4> _AlbedoTexture : register(t0);
+SamplerState _Sampler : register(s0);
+
 struct VSInput
 {
     float4 pos : POSITION;
@@ -29,7 +32,7 @@ PSOutput PSMain(V2P input)
 {
     PSOutput output;
     
-    output.color = float4(input.uv, 1, 1);
+    output.color = _AlbedoTexture.Sample(_Sampler, input.uv);
     
     return output;
 }
