@@ -6,9 +6,10 @@
 #include "./Vector.h"
 #include "./StringUtils.h"
 
-#include <vector>
-#include <array>
 #include <string>
+#include <vector>
+#include <tuple>
+#include <array>
 #include <functional>
 #include "Windows.h"
 
@@ -113,6 +114,37 @@ public: \
 
 #undef DEFINE_POINTER_WRAPPER_STRUCT
 
+	// DirectX の構造体を直接外部に公開したくないので、データを自作して、内部処理で構築する
+
+	// ルートパラメータ
+	struct RootParameter
+	{
+		enum class ShaderVisibility : std::uint8_t
+		{
+			All = 0,        // D3D12_SHADER_VISIBILITY_ALL
+			VertexOnly = 1, // D3D12_SHADER_VISIBILITY_VERTEX
+			PixelOnly = 5,  // D3D12_SHADER_VISIBILITY_PIXEL
+		};
+
+		enum class DescriptorRangeType : std::uint8_t
+		{
+			SRV = 0,     // D3D12_DESCRIPTOR_RANGE_TYPE_SRV
+			UAV = 1,     // D3D12_DESCRIPTOR_RANGE_TYPE_UAV
+			CBV = 2,     // D3D12_DESCRIPTOR_RANGE_TYPE_CBV
+			Sampler = 3, // D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER
+		};
+
+		struct DescriptorRange
+		{
+			DescriptorRangeType type;
+			int amount;
+			int registerIndex; // t#, u#, b#, s# のレジスタに登録される
+		};
+
+		ShaderVisibility shaderVisibility;
+		std::vector<DescriptorRange> descriptorRanges; // この順に登録される
+	};
+
 	// 頂点データ 単品
 	// 頂点は時計回り!!
 	struct VertexData
@@ -172,7 +204,7 @@ public: \
 		/// <summary>
 		/// RootSignature を作成して返す (失敗したら nullptr)
 		/// </summary>
-		static RootSignature CreateRootSignature(const Device& device, std::wstring& outErrorMessage);
+		static RootSignature CreateRootSignature(const Device& device, const RootParameter& rootParameter, std::wstring& outErrorMessage);
 
 		/// <summary>
 		/// GraphicsPipelineState を作成して返す (失敗したら nullptr)

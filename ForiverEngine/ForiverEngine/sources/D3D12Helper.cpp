@@ -13,6 +13,11 @@ namespace ForiverEngine
 	constexpr int FenceValueBeforeGPUEvent = 0;
 	constexpr int FenceValueAfterGPUEvent = 1;
 
+	static D3D12_DESCRIPTOR_RANGE Construct(const RootParameter::DescriptorRange& descriptorRange);
+	static D3D12_ROOT_PARAMETER Construct(const RootParameter& rootParameter);
+	static D3D12_INPUT_ELEMENT_DESC Construct(const VertexLayout& vertexLayout);
+	static std::pair<D3D12_VIEWPORT, D3D12_RECT> Construct(const ViewportScissorRect& viewportScissorRect);
+
 	static D3D12_CPU_DESCRIPTOR_HANDLE* Reinterpret(DescriptorHeapHandleAtCPU* value);
 	static DescriptorHeapHandleAtCPU* Reinterpret(D3D12_CPU_DESCRIPTOR_HANDLE* value);
 	static D3D12_VERTEX_BUFFER_VIEW* Reinterpret(VertexBufferView* value);
@@ -89,12 +94,12 @@ namespace ForiverEngine
 		return Device();
 	}
 
-	RootSignature D3D12Helper::CreateRootSignature(const Device& device, std::wstring& outErrorMessage)
+	RootSignature D3D12Helper::CreateRootSignature(const Device& device, const RootParameter& rootParameter, std::wstring& outErrorMessage)
 	{
 		D3D12_ROOT_SIGNATURE_DESC desc
 		{
-			.NumParameters = 0, // 指定なし
-			.pParameters = nullptr, // 指定なし
+			.NumParameters = 1,
+			.pParameters = &Construct(rootParameter),
 			.NumStaticSamplers = 0, // 指定なし
 			.pStaticSamplers = nullptr, // 指定なし
 			.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT, // 「頂点情報(入力アセンブラ) がある」
@@ -139,20 +144,9 @@ namespace ForiverEngine
 		const Device& device, const RootSignature& rootSignature, const Blob& vs, const Blob& ps,
 		const std::vector<VertexLayout>& vertexLayouts, int eFillMode, int eCullMode)
 	{
-		std::vector< D3D12_INPUT_ELEMENT_DESC> vertexLayoutsReal = std::vector< D3D12_INPUT_ELEMENT_DESC>(vertexLayouts.size(), {});
+		std::vector<D3D12_INPUT_ELEMENT_DESC> vertexLayoutsReal = std::vector<D3D12_INPUT_ELEMENT_DESC>(vertexLayouts.size(), {});
 		for (int i = 0; i < static_cast<int>(vertexLayouts.size()); ++i)
-		{
-			vertexLayoutsReal[i] =
-			{
-				.SemanticName = vertexLayouts[i].SemanticName,
-				.SemanticIndex = 0, // 同じセマンティクス名が複数ある場合のインデックス (0でOK)
-				.Format = static_cast<DXGI_FORMAT>(vertexLayouts[i].Format),
-				.InputSlot = 0, // インターリーブ なので、0番スロットだけ使えばOK
-				.AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT, // 頂点バッファのメンバは連続しているので、それらのアドレスは自動で計算してもらう
-				.InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, // 1頂点ごとにこのレイアウトが入っている
-				.InstanceDataStepRate = 0, // インスタンシングではないので、データは使いまわさない
-			};
-		}
+			vertexLayoutsReal[i] = Construct(vertexLayouts[i]);
 
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC desc =
 		{
@@ -659,23 +653,7 @@ namespace ForiverEngine
 
 	void D3D12Helper::CommandRSSetViewportAndScissorRect(const CommandList& commandList, const ViewportScissorRect& viewportScissorRect)
 	{
-		const D3D12_VIEWPORT viewport =
-		{
-			.TopLeftX = static_cast<FLOAT>(viewportScissorRect.minX),
-			.TopLeftY = static_cast<FLOAT>(viewportScissorRect.minY),
-			.Width = static_cast<FLOAT>(viewportScissorRect.maxX - viewportScissorRect.minX),
-			.Height = static_cast<FLOAT>(viewportScissorRect.maxY - viewportScissorRect.minY),
-			.MinDepth = 0.0f,
-			.MaxDepth = 1.0f,
-		};
-
-		const D3D12_RECT scissorRect =
-		{
-			.left = viewportScissorRect.minX,
-			.top = viewportScissorRect.minY,
-			.right = viewportScissorRect.maxX,
-			.bottom = viewportScissorRect.maxY,
-		};
+		const auto [viewport, scissorRect] = Construct(viewportScissorRect);
 
 		commandList->RSSetViewports(1, &viewport);
 		commandList->RSSetScissorRects(1, &scissorRect);
@@ -837,6 +815,74 @@ namespace ForiverEngine
 		return false;
 	}
 #endif
+
+	D3D12_DESCRIPTOR_RANGE Construct(const RootParameter::DescriptorRange& descriptorRange)
+	{
+		return
+		{
+			.RangeType = static_cast<D3D12_DESCRIPTOR_RANGE_TYPE>(descriptorRange.type),
+			.NumDescriptors = static_cast<UINT>(descriptorRange.amount),
+			.BaseShaderRegister = static_cast<UINT>(descriptorRange.registerIndex),
+			.RegisterSpace = 0, // つじつまを合わせる用 (0でOK)
+			.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND // 自動で割り当て
+		};
+	}
+
+	D3D12_ROOT_PARAMETER Construct(const RootParameter& rootParameter)
+	{
+		// 複数 Descriptor が連続している場合に、指定できる
+		std::vector<D3D12_DESCRIPTOR_RANGE> descriptorRangesReal = std::vector<D3D12_DESCRIPTOR_RANGE>(rootParameter.descriptorRanges.size(), {});
+		for (int i = 0; i < static_cast<int>(rootParameter.descriptorRanges.size()); ++i)
+			descriptorRangesReal[i] = Construct(rootParameter.descriptorRanges[i]);
+
+		return
+		{
+			.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE,
+			.DescriptorTable =
+			{
+				.NumDescriptorRanges = 1,
+				.pDescriptorRanges = descriptorRangesReal.data()
+			},
+			.ShaderVisibility = static_cast<D3D12_SHADER_VISIBILITY>(rootParameter.shaderVisibility)
+		};
+	}
+
+	D3D12_INPUT_ELEMENT_DESC Construct(const VertexLayout& vertexLayout)
+	{
+		return
+		{
+			.SemanticName = vertexLayout.SemanticName,
+			.SemanticIndex = 0, // 同じセマンティクス名が複数ある場合のインデックス (0でOK)
+			.Format = static_cast<DXGI_FORMAT>(vertexLayout.Format),
+			.InputSlot = 0, // インターリーブ なので、0番スロットだけ使えばOK
+			.AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT, // 頂点バッファのメンバは連続しているので、それらのアドレスは自動で計算してもらう
+			.InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, // 1頂点ごとにこのレイアウトが入っている
+			.InstanceDataStepRate = 0, // インスタンシングではないので、データは使いまわさない
+		};
+	}
+
+	std::pair<D3D12_VIEWPORT, D3D12_RECT> Construct(const ViewportScissorRect& viewportScissorRect)
+	{
+		const D3D12_VIEWPORT viewport =
+		{
+			.TopLeftX = static_cast<FLOAT>(viewportScissorRect.minX),
+			.TopLeftY = static_cast<FLOAT>(viewportScissorRect.minY),
+			.Width = static_cast<FLOAT>(viewportScissorRect.maxX - viewportScissorRect.minX),
+			.Height = static_cast<FLOAT>(viewportScissorRect.maxY - viewportScissorRect.minY),
+			.MinDepth = 0.0f,
+			.MaxDepth = 1.0f,
+		};
+
+		const D3D12_RECT scissorRect =
+		{
+			.left = viewportScissorRect.minX,
+			.top = viewportScissorRect.minY,
+			.right = viewportScissorRect.maxX,
+			.bottom = viewportScissorRect.maxY,
+		};
+
+		return { viewport, scissorRect };
+	}
 
 	D3D12_CPU_DESCRIPTOR_HANDLE* Reinterpret(DescriptorHeapHandleAtCPU* value)
 	{

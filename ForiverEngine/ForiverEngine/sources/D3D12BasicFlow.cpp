@@ -157,6 +157,7 @@ namespace ForiverEngine
 	std::tuple<bool, std::wstring, std::tuple<RootSignature, PipelineState>>
 		D3D12BasicFlow::CreateRootSignatureAndGraphicsPipelineState_Impl(
 			const Device& device,
+			const RootParameter& rootParameter,
 			const Blob& shaderVS,
 			const Blob& shaderPS,
 			const std::vector<VertexLayout>& vertexLayouts,
@@ -174,7 +175,7 @@ namespace ForiverEngine
 
 		std::wstring errorMessage = L"";
 
-		rootSignature = D3D12Helper::CreateRootSignature(device, errorMessage);
+		rootSignature = D3D12Helper::CreateRootSignature(device, rootParameter, errorMessage);
 		if (!rootSignature)
 			RETURN_FALSE(errorMessage.c_str());
 

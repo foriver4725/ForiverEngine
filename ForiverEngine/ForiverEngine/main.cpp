@@ -18,6 +18,21 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	const auto [factory, device, commandAllocater, commandList, commandQueue, swapChain, descriptorHeapRTV]
 		= D3D12BasicFlow::CreateStandardObjects(hwnd, WindowWidth, WindowHeight);
 
+	// ルートパラメータ
+	const RootParameter rootParameter =
+	{
+		.shaderVisibility = RootParameter::ShaderVisibility::PixelOnly,
+		.descriptorRanges =
+		{
+			// SRV x1 t0
+			{
+				.type = RootParameter::DescriptorRangeType::SRV,
+				.amount = 1,
+				.registerIndex = 0,
+			},
+		}
+	};
+
 	// 頂点データ
 	const std::vector<VertexData> vertices =
 	{

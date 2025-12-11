@@ -149,6 +149,7 @@ namespace ForiverEngine
 		static std::tuple<bool, std::wstring, std::tuple<RootSignature, PipelineState>>
 			CreateRootSignatureAndGraphicsPipelineState_Impl(
 				const Device& device,
+				const RootParameter& rootParameter,
 				const Blob& shaderVS,
 				const Blob& shaderPS,
 				const std::vector<VertexLayout>& vertexLayouts,
