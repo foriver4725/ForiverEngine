@@ -20,6 +20,8 @@ namespace ForiverEngine
 
 	static D3D12_CPU_DESCRIPTOR_HANDLE* Reinterpret(const DescriptorHeapHandleAtCPU* value);
 	static DescriptorHeapHandleAtCPU* Reinterpret(const D3D12_CPU_DESCRIPTOR_HANDLE* value);
+	static D3D12_GPU_DESCRIPTOR_HANDLE* Reinterpret(const DescriptorHeapHandleAtGPU* value);
+	static DescriptorHeapHandleAtGPU* Reinterpret(const D3D12_GPU_DESCRIPTOR_HANDLE* value);
 	static D3D12_VERTEX_BUFFER_VIEW* Reinterpret(const VertexBufferView* value);
 	static VertexBufferView* Reinterpret(const D3D12_VERTEX_BUFFER_VIEW* value);
 	static D3D12_INDEX_BUFFER_VIEW* Reinterpret(const IndexBufferView* value);
@@ -35,10 +37,7 @@ namespace ForiverEngine
 	// SwapChain からバッファ数を取得する (失敗したら -1)
 	static int GetBufferCountFromSwapChain(const SwapChain& swapChain);
 
-	// DescriptorHeap のハンドルを作成し、index 番目の Descriptor を指し示すように内部ポインタを進めて返す
-	// CPU 用
-	static DescriptorHeapHandleAtCPU CreateDescriptorHeapHandleIndicatingDescriptorByIndexAtCPU(
-		const Device& device, const DescriptorHeap& descriptorHeap, D3D12_DESCRIPTOR_HEAP_TYPE descriptorHeapType, int index);
+
 
 	// ResourceBarrier() を実行し、GraphicsBuffer がどう状態遷移するかをGPUに教える
 	static void InvokeResourceBarrierAsTransition(
@@ -97,7 +96,7 @@ namespace ForiverEngine
 	RootSignature D3D12Helper::CreateRootSignature(
 		const Device& device, const RootParameter& rootParameter, const SamplerConfig& samplerConfig, std::wstring& outErrorMessage)
 	{
-		// 複数 Descriptor が連続している場合に、指定できる
+		// 同じ種類の Descriptor が複数連続している場合、まとめて指定できるようにするためのもの
 		std::vector<D3D12_DESCRIPTOR_RANGE> descriptorRangesReal = std::vector<D3D12_DESCRIPTOR_RANGE>(rootParameter.descriptorRanges.size(), {});
 		for (int i = 0; i < static_cast<int>(rootParameter.descriptorRanges.size()); ++i)
 			descriptorRangesReal[i] = Construct(rootParameter.descriptorRanges[i]);
@@ -507,9 +506,9 @@ namespace ForiverEngine
 
 		// 冗長だけど、処理を共通化する
 		const DescriptorHeapHandleAtCPU handleSRV =
-			CreateDescriptorHeapHandleIndicatingDescriptorByIndexAtCPU(
+			CreateDescriptorHeapHandleAtCPUIndicatingDescriptorByIndex(
 				device, descriptorHeapSRV,
-				D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+				DescriptorHeapType::CBV_SRV_UAV,
 				0 // DescriptorHeap (SRV) の最初に登録する
 			);
 
@@ -518,6 +517,22 @@ namespace ForiverEngine
 			&desc,
 			*Reinterpret(&handleSRV)
 		);
+	}
+
+	DescriptorHeapHandleAtCPU D3D12Helper::CreateDescriptorHeapHandleAtCPUIndicatingDescriptorByIndex(
+		const Device& device, const DescriptorHeap& descriptorHeap, DescriptorHeapType descriptorHeapType, int index)
+	{
+		D3D12_CPU_DESCRIPTOR_HANDLE handle = descriptorHeap->GetCPUDescriptorHandleForHeapStart();
+		handle.ptr += index * device->GetDescriptorHandleIncrementSize(static_cast<D3D12_DESCRIPTOR_HEAP_TYPE>(descriptorHeapType));
+		return *Reinterpret(&handle);
+	}
+
+	DescriptorHeapHandleAtGPU D3D12Helper::CreateDescriptorHeapHandleAtGPUIndicatingDescriptorByIndex(
+		const Device& device, const DescriptorHeap& descriptorHeap, DescriptorHeapType descriptorHeapType, int index)
+	{
+		D3D12_GPU_DESCRIPTOR_HANDLE handle = descriptorHeap->GetGPUDescriptorHandleForHeapStart();
+		handle.ptr += index * device->GetDescriptorHandleIncrementSize(static_cast<D3D12_DESCRIPTOR_HEAP_TYPE>(descriptorHeapType));
+		return *Reinterpret(&handle);
 	}
 
 	bool D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer(
@@ -560,8 +575,8 @@ namespace ForiverEngine
 			if (!graphicsBuffer)
 				return false;
 
-			DescriptorHeapHandleAtCPU handleRTV = CreateDescriptorHeapHandleIndicatingDescriptorByIndexAtCPU(
-				device, descriptorHeapRTV, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, i);
+			DescriptorHeapHandleAtCPU handleRTV = CreateDescriptorHeapHandleAtCPUIndicatingDescriptorByIndex(
+				device, descriptorHeapRTV, DescriptorHeapType::RTV, i);
 
 			device->CreateRenderTargetView(
 				graphicsBuffer.Ptr,
@@ -594,13 +609,6 @@ namespace ForiverEngine
 		}
 
 		return GraphicsBuffer();
-	}
-
-	DescriptorHeapHandleAtCPU D3D12Helper::CreateDescriptorRTVHandleByIndex(
-		const Device& device, const DescriptorHeap& descriptorHeapRTV, int index)
-	{
-		return CreateDescriptorHeapHandleIndicatingDescriptorByIndexAtCPU(
-			device, descriptorHeapRTV, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, index);
 	}
 
 	void D3D12Helper::InvokeResourceBarrierAsTransitionFromPresentToRenderTarget(
@@ -639,14 +647,39 @@ namespace ForiverEngine
 		commandList->ClearRenderTargetView(*Reinterpret(const_cast<DescriptorHeapHandleAtCPU*>(&handleRTV)), clearColor.data(), 0, nullptr);
 	}
 
+	void D3D12Helper::CommandSetRootSignature(const CommandList& commandList, const RootSignature& rootSignature)
+	{
+		commandList->SetGraphicsRootSignature(rootSignature.Ptr);
+	}
+
 	void D3D12Helper::CommandSetGraphicsPipelineState(const CommandList& commandList, const PipelineState& graphicsPipelineState)
 	{
 		commandList->SetPipelineState(graphicsPipelineState.Ptr);
 	}
 
-	void D3D12Helper::CommandSetRootSignature(const CommandList& commandList, const RootSignature& rootSignature)
+	void D3D12Helper::CommandSetDescriptorHeaps(const CommandList& commandList, const std::vector<DescriptorHeap>& descriptorHeaps)
 	{
-		commandList->SetGraphicsRootSignature(rootSignature.Ptr);
+		std::vector<ID3D12DescriptorHeap*> descriptorHeapsReal = std::vector<ID3D12DescriptorHeap*>(descriptorHeaps.size(), {});
+		for (int i = 0; i < static_cast<int>(descriptorHeaps.size()); ++i)
+			descriptorHeapsReal[i] = descriptorHeaps[i].Ptr;
+
+		commandList->SetDescriptorHeaps(
+			static_cast<UINT>(descriptorHeapsReal.size()),
+			descriptorHeapsReal.data()
+		);
+	}
+
+	void D3D12Helper::CommandLinkRootParameterIndexAndDescriptorHeapHandleAtGPU(
+		const CommandList& commandList, const Device& device, const DescriptorHeap& descriptorHeap, DescriptorHeapType descriptorHeapType,
+		int rootParameterIndex, int descriptorIndexAtGPU)
+	{
+		const DescriptorHeapHandleAtGPU handle = CreateDescriptorHeapHandleAtGPUIndicatingDescriptorByIndex(
+			device, descriptorHeap, descriptorHeapType, descriptorIndexAtGPU);
+
+		commandList->SetGraphicsRootDescriptorTable(
+			static_cast<UINT>(rootParameterIndex),
+			*Reinterpret(&handle)
+		);
 	}
 
 	void D3D12Helper::CommandIASetTopologyAsTriangleList(const CommandList& commandList)
@@ -917,6 +950,16 @@ namespace ForiverEngine
 		return reinterpret_cast<DescriptorHeapHandleAtCPU*>(const_cast<D3D12_CPU_DESCRIPTOR_HANDLE*>(value));
 	}
 
+	D3D12_GPU_DESCRIPTOR_HANDLE* Reinterpret(const DescriptorHeapHandleAtGPU* value)
+	{
+		return reinterpret_cast<D3D12_GPU_DESCRIPTOR_HANDLE*>(const_cast<DescriptorHeapHandleAtGPU*>(value));
+	}
+
+	DescriptorHeapHandleAtGPU* Reinterpret(const D3D12_GPU_DESCRIPTOR_HANDLE* value)
+	{
+		return reinterpret_cast<DescriptorHeapHandleAtGPU*>(const_cast<D3D12_GPU_DESCRIPTOR_HANDLE*>(value));
+	}
+
 	D3D12_VERTEX_BUFFER_VIEW* Reinterpret(const VertexBufferView* value)
 	{
 		return reinterpret_cast<D3D12_VERTEX_BUFFER_VIEW*>(const_cast<VertexBufferView*>(value));
@@ -972,14 +1015,6 @@ namespace ForiverEngine
 		}
 
 		return -1;
-	}
-
-	DescriptorHeapHandleAtCPU CreateDescriptorHeapHandleIndicatingDescriptorByIndexAtCPU(
-		const Device& device, const DescriptorHeap& descriptorHeap, D3D12_DESCRIPTOR_HEAP_TYPE descriptorHeapType, int index)
-	{
-		D3D12_CPU_DESCRIPTOR_HANDLE handle = descriptorHeap->GetCPUDescriptorHandleForHeapStart();
-		handle.ptr += index * device->GetDescriptorHandleIncrementSize(descriptorHeapType);
-		return *Reinterpret(&handle);
 	}
 
 	void InvokeResourceBarrierAsTransition(

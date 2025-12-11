@@ -63,27 +63,24 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		{ "TEXCOORD", Format::RG_F32 },
 	};
 
+	struct TexRGBA { unsigned char r, g, b, a; };
+
+	std::vector<TexRGBA> textureData(256 * 256);
+	for (auto& pixel : textureData)
 	{
-		struct TexRGBA { unsigned char r, g, b, a; };
+		pixel.r = rand() % 256;
+		pixel.g = rand() % 256;
+		pixel.b = rand() % 256;
+		pixel.a = 255; // aは1
+	};
 
-		std::vector<TexRGBA> textureData(256 * 256);
-		for (auto& pixel : textureData)
-		{
-			pixel.r = rand() % 256;
-			pixel.g = rand() % 256;
-			pixel.b = rand() % 256;
-			pixel.a = 255; // aは1
-		};
+	const GraphicsBuffer textureBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, 256, 256, Format::RGBA_U8_01);
+	if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBufferUsingWriteToSubresource(textureBuffer, static_cast<void*>(textureData.data()), 256, 256))
 
-		const GraphicsBuffer textureBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, 256, 256, Format::RGBA_U8_01);
-		if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBufferUsingWriteToSubresource(textureBuffer, static_cast<void*>(textureData.data()), 256, 256))
+		ShowError(L"テクスチャデータのコピーに失敗しました");
 
-			ShowError(L"テクスチャデータのコピーに失敗しました");
-
-		const DescriptorHeap descriptorHeapSRV = D3D12Helper::CreateDescriptorHeapSRV(device, 1);
-
-		D3D12Helper::CreateShaderResourceViewAndRegistToDescriptorHeap(textureBuffer, Format::RGBA_U8_01, device, descriptorHeapSRV);
-	}
+	const DescriptorHeap descriptorHeapSRV = D3D12Helper::CreateDescriptorHeapSRV(device, 1);
+	D3D12Helper::CreateShaderResourceViewAndRegistToDescriptorHeap(textureBuffer, Format::RGBA_U8_01, device, descriptorHeapSRV);
 
 	const auto [vertexBufferView, indexBufferView]
 		= D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, vertices, indices);
@@ -107,12 +104,15 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		{
 			D3D12Helper::CommandSetRTAsOutputStage(commandList, currentBackBufferRTV);
 			D3D12Helper::CommandClearRT(commandList, currentBackBufferRTV, { 0, 0, 0, 1 });
-			D3D12Helper::CommandSetGraphicsPipelineState(commandList, graphicsPipelineState);
 			D3D12Helper::CommandSetRootSignature(commandList, rootSignature);
-			D3D12Helper::CommandRSSetViewportAndScissorRect(commandList, viewportScissorRect);
+			D3D12Helper::CommandSetGraphicsPipelineState(commandList, graphicsPipelineState);
+			D3D12Helper::CommandSetDescriptorHeaps(commandList, { descriptorHeapSRV });
+			D3D12Helper::CommandLinkRootParameterIndexAndDescriptorHeapHandleAtGPU(
+				commandList, device, descriptorHeapSRV, DescriptorHeapType::CBV_SRV_UAV, 0, 0); // ルートパラメーターは1つだけ
 			D3D12Helper::CommandIASetTopologyAsTriangleList(commandList);
 			D3D12Helper::CommandIASetVertexBuffer(commandList, { vertexBufferView });
 			D3D12Helper::CommandIASetIndexBuffer(commandList, indexBufferView);
+			D3D12Helper::CommandRSSetViewportAndScissorRect(commandList, viewportScissorRect);
 			D3D12Helper::CommandDrawIndexedInstanced(commandList, static_cast<int>(indices.size()));
 		}
 		D3D12Helper::InvokeResourceBarrierAsTransitionFromRenderTargetToPresent(commandList, currentBackBuffer);

@@ -117,7 +117,8 @@ namespace ForiverEngine
 		if (!currentBackBuffer)
 			RETURN_FALSE(L"SwapChain から現在バックにある GraphicsBuffer を取得することに失敗しました");
 
-		currentBackBufferRTV = D3D12Helper::CreateDescriptorRTVHandleByIndex(device, descriptorHeapRTV, currentBackBufferIndex);
+		currentBackBufferRTV = D3D12Helper::CreateDescriptorHeapHandleAtCPUIndicatingDescriptorByIndex(
+			device, descriptorHeapRTV, DescriptorHeapType::RTV, currentBackBufferIndex);
 
 		RETURN_TRUE();
 

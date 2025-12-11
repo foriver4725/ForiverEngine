@@ -91,6 +91,15 @@ namespace ForiverEngine
 		PixelOnly = 5,  // D3D12_SHADER_VISIBILITY_PIXEL
 	};
 
+	// DescriptorHeap の種類
+	enum class DescriptorHeapType : std::uint8_t
+	{
+		CBV_SRV_UAV = 0, // D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV
+		Sampler = 1,     // D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER
+		RTV = 2,         // D3D12_DESCRIPTOR_HEAP_TYPE_RTV
+		DSV = 3,         // D3D12_DESCRIPTOR_HEAP_TYPE_DSV
+	};
+
 	// ラッパークラスを定義
 #define DEFINE_POINTER_WRAPPER_STRUCT(WrapperStructName, OriginalPointerType) \
 struct WrapperStructName \
@@ -315,6 +324,20 @@ public: \
 			const GraphicsBuffer& graphicsBuffer, Format format, const Device& device, const DescriptorHeap& descriptorHeapSRV);
 
 		/// <summary>
+		/// <para>DescriptorHeap のハンドルを作成し、index 番目の Descriptor を指し示すように内部ポインタを進めて返す</para>
+		/// CPU 用
+		/// </summary>
+		static DescriptorHeapHandleAtCPU CreateDescriptorHeapHandleAtCPUIndicatingDescriptorByIndex(
+			const Device& device, const DescriptorHeap& descriptorHeap, DescriptorHeapType descriptorHeapType, int index);
+
+		/// <summary>
+		/// <para>DescriptorHeap のハンドルを作成し、index 番目の Descriptor を指し示すように内部ポインタを進めて返す</para>
+		/// GPU 用
+		/// </summary>
+		static DescriptorHeapHandleAtGPU CreateDescriptorHeapHandleAtGPUIndicatingDescriptorByIndex(
+			const Device& device, const DescriptorHeap& descriptorHeap, DescriptorHeapType descriptorHeapType, int index);
+
+		/// <summary>
 		/// <para>GraphicsBuffer の Map() を使って、CPUのバッファをGPU側にコピーする</para>
 		/// <para>バッファのサイズは、GraphicsBuffer 作成時に指定したサイズと同じであること! (一部のバッファのみコピー、などには未対応)</para>
 		/// 成功したら true, 失敗したら false を返す (失敗した瞬間に処理を中断する)
@@ -357,12 +380,6 @@ public: \
 		static GraphicsBuffer GetBufferByIndex(const SwapChain& swapChain, int index);
 
 		/// <summary>
-		/// DescriptorHeap (RTV) のハンドルを作成し、index 番目の Descriptor (RTV) を指し示すように内部ポインタを進めて返す
-		/// </summary>
-		static DescriptorHeapHandleAtCPU CreateDescriptorRTVHandleByIndex(
-			const Device& device, const DescriptorHeap& descriptorHeapRTV, int index);
-
-		/// <summary>
 		/// <para>ResourceBarrier() を実行し、GraphicsBuffer がどう状態遷移するかをGPUに教える</para>
 		/// Present -> RenderTarget
 		/// </summary>
@@ -393,15 +410,29 @@ public: \
 
 		/// <summary>
 		/// <para>[Command]</para>
+		/// RootSignature を設定する
+		/// </summary>
+		static void CommandSetRootSignature(const CommandList& commandList, const RootSignature& rootSignature);
+
+		/// <summary>
+		/// <para>[Command]</para>
 		/// GraphicsPipelineState を設定する
 		/// </summary>
 		static void CommandSetGraphicsPipelineState(const CommandList& commandList, const PipelineState& graphicsPipelineState);
 
 		/// <summary>
 		/// <para>[Command]</para>
-		/// RootSignature を設定する
+		/// DescriptorHeap 群を設定する
 		/// </summary>
-		static void CommandSetRootSignature(const CommandList& commandList, const RootSignature& rootSignature);
+		static void CommandSetDescriptorHeaps(const CommandList& commandList, const std::vector<DescriptorHeap>& descriptorHeaps);
+
+		/// <summary>
+		/// <para>[Command]</para>
+		/// ルートパラメータのインデックスと DescriptorHeap のハンドル (GPU) を関連付ける
+		/// </summary>
+		static void CommandLinkRootParameterIndexAndDescriptorHeapHandleAtGPU(
+			const CommandList& commandList, const Device& device, const DescriptorHeap& descriptorHeap, DescriptorHeapType descriptorHeapType,
+			int rootParameterIndex, int descriptorIndexAtGPU);
 
 		/// <summary>
 		/// <para>[Command]</para>
