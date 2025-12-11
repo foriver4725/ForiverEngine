@@ -219,6 +219,12 @@ public: \
 		static GraphicsBuffer CreateGraphicsBuffer1D(const Device& device, int size, bool canMapFromCPU);
 
 		/// <summary>
+		/// <para>GPU側のメモリ領域を確保し、その GraphicsBuffer を返す (失敗したら nullptr)</para>
+		/// 2次元テクスチャ用
+		/// </summary>
+		static GraphicsBuffer CreateGraphicsBufferTexture2D(const Device& device, int width, int height, Format format);
+
+		/// <summary>
 		/// 頂点バッファ から 頂点バッファービュー を作成して返す
 		/// </summary>
 		/// <param name="verticesSize">頂点座標配列の sizeof()</param>
@@ -238,7 +244,17 @@ public: \
 		/// <para>バッファのサイズは、GraphicsBuffer 作成時に指定したサイズと同じであること! (一部のバッファのみコピー、などには未対応)</para>
 		/// 成功したら true, 失敗したら false を返す (失敗した瞬間に処理を中断する)
 		/// </summary>
-		static bool CopyDataFromCPUToGPUThroughGraphicsBuffer(const GraphicsBuffer& GraphicsBuffer, void* dataBegin, int dataSize);
+		static bool CopyDataFromCPUToGPUThroughGraphicsBuffer(
+			const GraphicsBuffer& graphicsBuffer, void* dataBegin, int dataSize);
+
+		/// <summary>
+		/// <para>GraphicsBuffer の WriteToSubresource() を使って、CPUのバッファをGPU側にコピーする</para>
+		/// <para>バッファのサイズは、GraphicsBuffer 作成時に指定したサイズと同じであること! (一部のバッファのみコピー、などには未対応)</para>
+		/// <para>成功したら true, 失敗したら false を返す (失敗した瞬間に処理を中断する)</para>
+		/// 一部の状況でパフォーマンスが極端に低下するとのこと、注意!
+		/// </summary>
+		static bool CopyDataFromCPUToGPUThroughGraphicsBufferUsingWriteToSubresource(
+			const GraphicsBuffer& graphicsBuffer, void* dataBegin, int dataWidth, int dataHeight);
 
 		/// <summary>
 		/// <para>DescriptorHeap(RTV) と SwapChain を関連付ける</para>
