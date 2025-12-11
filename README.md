@@ -22,6 +22,11 @@ UV座標を渡す
 
 <img width="50%" alt="image" src="https://github.com/user-attachments/assets/60b61bae-83a6-4439-81b2-374f045079bb" />
 
+---
+テクスチャを渡す (テクスチャデータはプログラムで決め打ち)
+
+<img width="50%" alt="image" src="https://github.com/user-attachments/assets/bfa0e465-85cb-4828-9d52-9f9c18c529ed" />
+
 ## OSS
 | 名前 | ライセンス |
 | --- | --- |
