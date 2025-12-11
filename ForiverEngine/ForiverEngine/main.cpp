@@ -38,6 +38,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	const std::vector<VertexLayout> vertexLayouts =
 	{
 		{ "POSITION", Format::RGBA_F32 },
+		{ "TEXCOORD", Format::RG_F32 },
 	};
 
 	const auto [vertexBufferView, indexBufferView]
