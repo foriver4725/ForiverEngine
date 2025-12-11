@@ -344,12 +344,12 @@ namespace ForiverEngine
 		return DescriptorHeap();
 	}
 
-	DescriptorHeap D3D12Helper::CreateDescriptorHeapSRV(const Device& device, int count)
+	DescriptorHeap D3D12Helper::CreateDescriptorHeapSRV(const Device& device, int descriptorAmount)
 	{
 		D3D12_DESCRIPTOR_HEAP_DESC desc
 		{
 			.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, // Shader Resource View 用
-			.NumDescriptors = static_cast<UINT>(count),
+			.NumDescriptors = static_cast<UINT>(descriptorAmount),
 			.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, // シェーダー側に見せる
 			.NodeMask = 0, // アダプターが1つなので...
 		};

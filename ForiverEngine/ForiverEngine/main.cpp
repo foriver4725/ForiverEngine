@@ -76,7 +76,6 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 
 	const GraphicsBuffer textureBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, 256, 256, Format::RGBA_U8_01);
 	if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBufferUsingWriteToSubresource(textureBuffer, static_cast<void*>(textureData.data()), 256, 256))
-
 		ShowError(L"テクスチャデータのコピーに失敗しました");
 
 	const DescriptorHeap descriptorHeapSRV = D3D12Helper::CreateDescriptorHeapSRV(device, 1);

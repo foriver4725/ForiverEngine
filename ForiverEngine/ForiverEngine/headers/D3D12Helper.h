@@ -289,7 +289,7 @@ public: \
 		/// <para>DescriptorHeap を作成して返す (失敗したら nullptr)</para>
 		/// ShaderResourceView 用
 		/// </summary>
-		static DescriptorHeap CreateDescriptorHeapSRV(const Device& device, int count);
+		static DescriptorHeap CreateDescriptorHeapSRV(const Device& device, int descriptorAmount);
 
 		/// <summary>
 		/// Fence を作成して返す (失敗したら nullptr)
