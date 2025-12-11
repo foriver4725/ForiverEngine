@@ -109,7 +109,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 			D3D12Helper::CommandSetDescriptorHeaps(commandList, { descriptorHeapSRV });
 			D3D12Helper::CommandLinkRootParameterIndexAndDescriptorHeapHandleAtGPU(
 				commandList, device, descriptorHeapSRV, DescriptorHeapType::CBV_SRV_UAV, 0, 0); // ルートパラメーターは1つだけ
-			D3D12Helper::CommandIASetTopologyAsTriangleList(commandList);
+			D3D12Helper::CommandIASetPrimitiveTopology(commandList, PrimitiveTopology::TriangleList);
 			D3D12Helper::CommandIASetVertexBuffer(commandList, { vertexBufferView });
 			D3D12Helper::CommandIASetIndexBuffer(commandList, indexBufferView);
 			D3D12Helper::CommandRSSetViewportAndScissorRect(commandList, viewportScissorRect);

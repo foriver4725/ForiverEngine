@@ -682,9 +682,9 @@ namespace ForiverEngine
 		);
 	}
 
-	void D3D12Helper::CommandIASetTopologyAsTriangleList(const CommandList& commandList)
+	void D3D12Helper::CommandIASetPrimitiveTopology(const CommandList& commandList, PrimitiveTopology primitiveTopology)
 	{
-		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		commandList->IASetPrimitiveTopology(static_cast<D3D12_PRIMITIVE_TOPOLOGY>(primitiveTopology));
 	}
 
 	void D3D12Helper::CommandIASetVertexBuffer(const CommandList& commandList, const std::vector<VertexBufferView>& vertexBufferViews)

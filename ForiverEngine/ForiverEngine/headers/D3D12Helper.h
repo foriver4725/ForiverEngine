@@ -83,6 +83,13 @@ namespace ForiverEngine
 		Back = 3,  // D3D12_CULL_MODE_BACK
 	};
 
+	enum class PrimitiveTopology : std::uint8_t
+	{
+		PointList = 1,    // D3D_PRIMITIVE_TOPOLOGY_POINTLIST
+		LineList = 2,     // D3D_PRIMITIVE_TOPOLOGY_LINELIST
+		TriangleList = 4, // D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST
+	};
+
 	// シェーダーに公開する範囲 = どのシェーダーから参照可能か
 	enum class ShaderVisibility : std::uint8_t
 	{
@@ -436,10 +443,10 @@ public: \
 
 		/// <summary>
 		/// <para>[Command]</para>
-		/// Input Assembler : トポロジーを三角形リストに設定する
+		/// Input Assembler : トポロジーを設定する
 		/// </summary>
 		/// <param name="commandList"></param>
-		static void CommandIASetTopologyAsTriangleList(const CommandList& commandList);
+		static void CommandIASetPrimitiveTopology(const CommandList& commandList, PrimitiveTopology primitiveTopology);
 
 		/// <summary>
 		/// <para>[Command]</para>
