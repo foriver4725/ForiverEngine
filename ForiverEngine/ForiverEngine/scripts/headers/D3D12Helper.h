@@ -84,6 +84,13 @@ namespace ForiverEngine
 		static GraphicsBuffer CreateGraphicsBufferTexture2D(const Device& device, int width, int height, Format format);
 
 		/// <summary>
+		/// <para>GPU側のメモリ領域を確保し、その GraphicsBuffer を返す (失敗したら nullptr)</para>
+		/// <para>2次元テクスチャ用 (ロードされたテクスチャから作成)</para>
+		/// テクスチャのタイプが2Dで無いならば、失敗とみなし nullptr を返す
+		/// </summary>
+		static GraphicsBuffer CreateGraphicsBufferTexture2D(const Device& device, const Texture& texture);
+
+		/// <summary>
 		/// 頂点バッファ から 頂点バッファービュー を作成して返す
 		/// </summary>
 		/// <param name="verticesSize">頂点座標配列の sizeof()</param>
@@ -134,7 +141,7 @@ namespace ForiverEngine
 		/// 一部の状況でパフォーマンスが極端に低下するとのこと、注意!
 		/// </summary>
 		static bool CopyDataFromCPUToGPUThroughGraphicsBufferUsingWriteToSubresource(
-			const GraphicsBuffer& graphicsBuffer, void* dataBegin, int dataWidth, int dataHeight);
+			const GraphicsBuffer& graphicsBuffer, void* dataBegin, int dataRowSize, int dataSliceSize);
 
 		/// <summary>
 		/// <para>DescriptorHeap(RTV) と SwapChain を関連付ける</para>

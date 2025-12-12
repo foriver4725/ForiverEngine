@@ -62,23 +62,14 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		{ "TEXCOORD", Format::RG_F32 },
 	};
 
-	struct TexRGBA { unsigned char r, g, b, a; };
-
-	std::vector<TexRGBA> textureData(256 * 256);
-	for (auto& pixel : textureData)
-	{
-		pixel.r = rand() % 256;
-		pixel.g = rand() % 256;
-		pixel.b = rand() % 256;
-		pixel.a = 255; // aは1
-	};
-
-	const GraphicsBuffer textureBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, 256, 256, Format::RGBA_U8_01);
-	if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBufferUsingWriteToSubresource(textureBuffer, static_cast<void*>(textureData.data()), 256, 256))
+	const Texture texture = AssetLoader::LoadTexture("assets/pickaxe.png");
+	const GraphicsBuffer textureBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, texture);
+	if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBufferUsingWriteToSubresource(textureBuffer,
+		static_cast<void*>(const_cast<std::uint8_t*>(texture.data.data())), texture.rowSize, texture.sliceSize))
 		ShowError(L"テクスチャデータのコピーに失敗しました");
 
 	const DescriptorHeap descriptorHeapSRV = D3D12Helper::CreateDescriptorHeapSRV(device, 1);
-	D3D12Helper::CreateShaderResourceViewAndRegistToDescriptorHeap(textureBuffer, Format::RGBA_U8_01, device, descriptorHeapSRV);
+	D3D12Helper::CreateShaderResourceViewAndRegistToDescriptorHeap(textureBuffer, texture.format, device, descriptorHeapSRV);
 
 	const auto [vertexBufferView, indexBufferView]
 		= D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, vertices, indices);

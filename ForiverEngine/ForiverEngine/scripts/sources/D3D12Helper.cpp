@@ -460,6 +460,52 @@ namespace ForiverEngine
 		return GraphicsBuffer();
 	}
 
+	GraphicsBuffer D3D12Helper::CreateGraphicsBufferTexture2D(const Device& device, const Texture& texture)
+	{
+		if (texture.textureType != GraphicsBufferType::Texture2D)
+		{
+			return GraphicsBuffer();
+		}
+
+		D3D12_HEAP_PROPERTIES heapProperties =
+		{
+			.Type = D3D12_HEAP_TYPE_CUSTOM, // 特殊な設定をする
+			.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_WRITE_BACK, // ライトバック
+			.MemoryPoolPreference = D3D12_MEMORY_POOL_L0, // CPU側(L0)から直接転送する
+			.CreationNodeMask = 0, // アダプターが1つなので...
+			.VisibleNodeMask = 0, // アダプターが1つなので...
+		};
+
+		D3D12_RESOURCE_DESC resourceDesc =
+		{
+			.Dimension = static_cast<D3D12_RESOURCE_DIMENSION>(GraphicsBufferType::Texture2D),
+			.Alignment = 0, // 既定値でOK
+			.Width = static_cast<UINT64>(texture.width),
+			.Height = static_cast<UINT>(texture.height),
+			.DepthOrArraySize = static_cast<UINT16>(texture.sliceCount), // 配列のサイズ = スライス数
+			.MipLevels = static_cast<UINT16>(texture.mipLevels), // ミップマップ数
+			.Format = static_cast<DXGI_FORMAT>(texture.format),
+			.SampleDesc = {.Count = 1, .Quality = 0 }, // 通常テクスチャなのでアンチエイリアシングはしない (クオリティは最低)
+			.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN, // 決定しない
+			.Flags = D3D12_RESOURCE_FLAG_NONE, // 指定なし
+		};
+
+		ID3D12Resource* ptr = nullptr;
+		if (device->CreateCommittedResource(
+			&heapProperties,
+			D3D12_HEAP_FLAG_NONE, // 指定なし
+			&resourceDesc,
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, // テクスチャ用指定
+			nullptr, // 使わない
+			IID_PPV_ARGS(&ptr)
+		) == S_OK)
+		{
+			return GraphicsBuffer(ptr);
+		}
+
+		return GraphicsBuffer();
+	}
+
 	VertexBufferView D3D12Helper::CreateVertexBufferView(const GraphicsBuffer& vertexBuffer, int verticesSize, int vertexSize)
 	{
 		D3D12_VERTEX_BUFFER_VIEW output =
@@ -555,14 +601,14 @@ namespace ForiverEngine
 	}
 
 	bool D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBufferUsingWriteToSubresource(
-		const GraphicsBuffer& graphicsBuffer, void* dataBegin, int dataWidth, int dataHeight)
+		const GraphicsBuffer& graphicsBuffer, void* dataBegin, int dataRowSize, int dataSliceSize)
 	{
 		return graphicsBuffer->WriteToSubresource(
 			0, // 0 でOK
 			nullptr, // GraphicsBuffer の全範囲を対象にしたい
 			dataBegin,
-			static_cast<UINT>(dataWidth), // 1行あたりの sizeof
-			static_cast<UINT>(dataWidth * dataHeight) // スライスあたりの sizeof (3Dテクスチャ・2Dテクスチャ配列などで関与)
+			static_cast<UINT>(dataRowSize), // 1行あたりの sizeof
+			static_cast<UINT>(dataSliceSize) // スライスあたりの sizeof (3Dテクスチャ・2Dテクスチャ配列などで関与)
 		) == S_OK;
 	}
 

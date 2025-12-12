@@ -4,6 +4,7 @@
 
 #include "./WindowHelper.h"
 #include "./D3D12Helper.h"
+#include "./AssetLoader.h"
 
 namespace ForiverEngine
 {

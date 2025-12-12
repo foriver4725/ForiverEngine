@@ -132,6 +132,15 @@ public: \
 		DSV = 3,         // D3D12_DESCRIPTOR_HEAP_TYPE_DSV
 	};
 
+	// GraphicsBuffer の種類
+	enum class GraphicsBufferType : std::uint8_t
+	{
+		Buffer = 1,        // D3D12_RESOURCE_DIMENSION_BUFFER
+		Texture1D = 2,     // D3D12_RESOURCE_DIMENSION_TEXTURE1D
+		Texture2D = 3,     // D3D12_RESOURCE_DIMENSION_TEXTURE2D
+		Texture3D = 4,     // D3D12_RESOURCE_DIMENSION_TEXTURE3D
+	};
+
 	// DirectX の構造体を直接外部に公開したくないので、データを自作して、内部処理で構築する
 
 	// ルートパラメータ
@@ -222,4 +231,20 @@ public: \
 	struct DescriptorHeapHandleAtGPU { UINT64 ptr; };
 	struct VertexBufferView { UINT64 bufferAddress; UINT verticesSize; UINT vertexSize; };
 	struct IndexBufferView { UINT64 bufferAddress; UINT indicesSize; Format indexFormat; };
+
+	// 自作オブジェクト
+
+	// ロードされたテクスチャ
+	struct Texture
+	{
+		std::vector<std::uint8_t> data; // 生データ
+		GraphicsBufferType textureType;
+		Format format;
+		int width;
+		int height;
+		int rowSize; // 1行分のデータサイズ
+		int sliceSize; // 1スライス分のデータサイズ
+		int sliceCount; // スライス数
+		int mipLevels;
+	};
 }
