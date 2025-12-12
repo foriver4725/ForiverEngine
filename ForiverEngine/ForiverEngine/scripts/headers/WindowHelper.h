@@ -107,8 +107,7 @@ namespace ForiverEngine
 	class WindowHelper final
 	{
 	public:
-		WindowHelper() = delete;
-		~WindowHelper() = delete;
+		DELETE_DEFAULT_METHODS(WindowHelper);
 
 		/// <summary>
 		/// ウィンドウを初期化する

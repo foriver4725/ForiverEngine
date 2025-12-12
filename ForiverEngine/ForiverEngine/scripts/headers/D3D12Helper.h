@@ -222,8 +222,7 @@ public: \
 	class D3D12Helper final
 	{
 	public:
-		D3D12Helper() = delete;
-		~D3D12Helper() = delete;
+		DELETE_DEFAULT_METHODS(D3D12Helper);
 
 		/// <summary>
 		/// DXGIFactory を作成して返す (失敗したら nullptr)

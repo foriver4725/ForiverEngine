@@ -10,8 +10,7 @@ namespace ForiverEngine
 	class D3D12BasicFlow final
 	{
 	public:
-		D3D12BasicFlow() = delete;
-		~D3D12BasicFlow() = delete;
+		DELETE_DEFAULT_METHODS(D3D12BasicFlow);
 
 #pragma region With error check (useful)
 

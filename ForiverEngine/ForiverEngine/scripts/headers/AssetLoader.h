@@ -21,7 +21,6 @@ namespace ForiverEngine
 	class AssetLoader final
 	{
 	public:
-		AssetLoader() = delete;
-		~AssetLoader() = delete;
+		DELETE_DEFAULT_METHODS(AssetLoader);
 	};
 }
