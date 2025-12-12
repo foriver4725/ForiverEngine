@@ -574,7 +574,23 @@ namespace ForiverEngine
 				return false;
 			}
 
-			std::memcpy(bufferVirtualPtr, static_cast<const void*>(texture.data.data()), static_cast<std::size_t>(texture.sliceSize));
+			// バッファ間でコピー
+			// RowPitch のアラインメントがあって、バッファのサイズが異なるので、1行ごとにコピーするようにする
+			{
+				std::uint8_t* src = const_cast<std::uint8_t*>(texture.data.data());
+				std::uint8_t* dst = static_cast<std::uint8_t*>(bufferVirtualPtr);
+				if (!src || !dst)
+				{
+					textureCopyIntermediateBuffer->Unmap(0, nullptr);
+					return false;
+				}
+
+				for (int y = 0; y < texture.height; ++y,
+					src += texture.rowSize,
+					dst += GetAlignmentedSize(texture.rowSize, Texture::RowSizeAlignment))
+					std::memcpy(static_cast<void*>(dst), static_cast<void*>(src), static_cast<std::size_t>(texture.rowSize));
+			}
+
 			textureCopyIntermediateBuffer->Unmap(0, nullptr);
 		}
 
@@ -593,7 +609,7 @@ namespace ForiverEngine
 						.Width = static_cast<UINT>(texture.width),
 						.Height = static_cast<UINT>(texture.height),
 						.Depth = 1, // 2Dテクスチャなので...
-						.RowPitch = static_cast<UINT>(texture.rowSize)
+						.RowPitch = static_cast<UINT>(GetAlignmentedSize(texture.rowSize, Texture::RowSizeAlignment)),
 					}
 				}
 			};

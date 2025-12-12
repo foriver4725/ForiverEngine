@@ -247,6 +247,9 @@ public: \
 	// ロードされたテクスチャ
 	struct Texture
 	{
+		// アラインメントをこれに揃える必要がある
+		constexpr static int RowSizeAlignment = 256;
+
 		std::vector<std::uint8_t> data; // 生データ
 		GraphicsBufferType textureType;
 		Format format;
@@ -257,4 +260,12 @@ public: \
 		int sliceCount; // スライス数
 		int mipLevels;
 	};
+
+	// 関数
+
+	// アラインメントされたサイズを計算する
+	inline constexpr static int GetAlignmentedSize(int size, int alignment)
+	{
+		return size + alignment - size % alignment;
+	}
 }
