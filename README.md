@@ -27,6 +27,11 @@ UV座標を渡す
 
 <img width="50%" alt="image" src="https://github.com/user-attachments/assets/bfa0e465-85cb-4828-9d52-9f9c18c529ed" />
 
+---
+プロジェクト内のアセットから、テクスチャをロードする
+
+<img width="50%" alt="image" src="https://github.com/user-attachments/assets/201cd605-82ea-45b9-8a49-beb81ecc9124" />
+
 ## OSS
 | 名前 | ライセンス |
 | --- | --- |
