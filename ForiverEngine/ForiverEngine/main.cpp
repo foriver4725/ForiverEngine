@@ -63,10 +63,16 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	};
 
 	const Texture texture = AssetLoader::LoadTexture("assets/pickaxe.png");
+	const GraphicsBuffer textureCopyIntermediateBuffer = D3D12Helper::CreateGraphicsBuffer1D(device, texture.sliceSize, true);
 	const GraphicsBuffer textureBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, texture);
-	if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBufferUsingWriteToSubresource(textureBuffer,
-		static_cast<void*>(const_cast<std::uint8_t*>(texture.data.data())), texture.rowSize, texture.sliceSize))
-		ShowError(L"テクスチャデータのコピーに失敗しました");
+
+	if (!D3D12Helper::CommandCopyDataFromCPUToGPUThroughGraphicsBufferTexture2D(commandList, textureCopyIntermediateBuffer, textureBuffer, texture))
+		ShowError(L"テクスチャデータのアップロードに失敗しました");
+	D3D12Helper::CommandInvokeResourceBarrierAsTransition(commandList, textureBuffer,
+		GraphicsBufferState::CopyDestination, GraphicsBufferState::PixelShaderResource, false);
+	D3D12Helper::CommandClose(commandList);
+	D3D12Helper::ExecuteCommands(commandQueue, commandList);
+	D3D12Helper::WaitForGPUEventCompletion(D3D12Helper::CreateFence(device), commandQueue);
 
 	const DescriptorHeap descriptorHeapSRV = D3D12Helper::CreateDescriptorHeapSRV(device, 1);
 	D3D12Helper::CreateShaderResourceViewAndRegistToDescriptorHeap(textureBuffer, texture.format, device, descriptorHeapSRV);
@@ -89,7 +95,8 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		const auto [currentBackBuffer, currentBackBufferRTV]
 			= D3D12BasicFlow::GetCurrentBackBufferAndCreateView(device, swapChain, descriptorHeapRTV);
 
-		D3D12Helper::InvokeResourceBarrierAsTransitionFromPresentToRenderTarget(commandList, currentBackBuffer);
+		D3D12Helper::CommandInvokeResourceBarrierAsTransition(commandList, currentBackBuffer,
+			GraphicsBufferState::Present, GraphicsBufferState::RenderTarget, false);
 		{
 			D3D12Helper::CommandSetRTAsOutputStage(commandList, currentBackBufferRTV);
 			D3D12Helper::CommandClearRT(commandList, currentBackBufferRTV, { 0, 0, 0, 1 });
@@ -104,7 +111,8 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 			D3D12Helper::CommandRSSetViewportAndScissorRect(commandList, viewportScissorRect);
 			D3D12Helper::CommandDrawIndexedInstanced(commandList, static_cast<int>(indices.size()));
 		}
-		D3D12Helper::InvokeResourceBarrierAsTransitionFromRenderTargetToPresent(commandList, currentBackBuffer);
+		D3D12Helper::CommandInvokeResourceBarrierAsTransition(commandList, currentBackBuffer,
+			GraphicsBufferState::RenderTarget, GraphicsBufferState::Present, false);
 		D3D12Helper::CommandClose(commandList);
 		D3D12Helper::ExecuteCommands(commandQueue, commandList);
 

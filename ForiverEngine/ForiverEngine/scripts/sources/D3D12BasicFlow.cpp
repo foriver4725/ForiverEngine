@@ -81,13 +81,13 @@ namespace ForiverEngine
 
 		if (!(vertexBuffer = D3D12Helper::CreateGraphicsBuffer1D(device, verticesSize, true)))
 			RETURN_FALSE(L"頂点バッファーの作成に失敗しました");
-		if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer(vertexBuffer, static_cast<void*>(verticesPtr), verticesSize))
+		if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer1D(vertexBuffer, static_cast<void*>(verticesPtr), verticesSize))
 			RETURN_FALSE(L"頂点バッファーを GPU 側にコピーすることに失敗しました");
 		vertexBufferView = D3D12Helper::CreateVertexBufferView(vertexBuffer, verticesSize, vertexSize);
 
 		if (!(indexBuffer = D3D12Helper::CreateGraphicsBuffer1D(device, indicesSize, true)))
 			RETURN_FALSE(L"インデックスバッファーの作成に失敗しました");
-		if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer(indexBuffer, static_cast<void*>(indicesPtr), indicesSize))
+		if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer1D(indexBuffer, static_cast<void*>(indicesPtr), indicesSize))
 			RETURN_FALSE(L"インデックスバッファーを GPU 側にコピーすることに失敗しました");
 		indexBufferView = D3D12Helper::CreateIndexBufferView(indexBuffer, indicesSize, Format::R_U16);
 

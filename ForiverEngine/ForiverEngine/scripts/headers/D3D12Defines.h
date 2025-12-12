@@ -142,6 +142,15 @@ public: \
 		Texture3D = 4,     // D3D12_RESOURCE_DIMENSION_TEXTURE3D
 	};
 
+	// GraphicsBuffer がGPU上でどのように使用されるか
+	enum class GraphicsBufferState : std::uint8_t
+	{
+		Present = 0,               // D3D12_RESOURCE_STATE_PRESENT
+		RenderTarget = 0x4,        // D3D12_RESOURCE_STATE_RENDER_TARGET
+		PixelShaderResource = 0x80, // D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE
+		CopyDestination = 0x400,     // D3D12_RESOURCE_STATE_COPY_DEST
+	};
+
 	// DirectX の構造体を直接外部に公開したくないので、データを自作して、内部処理で構築する
 
 	// ルートパラメータ

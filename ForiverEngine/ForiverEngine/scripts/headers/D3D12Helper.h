@@ -79,14 +79,9 @@ namespace ForiverEngine
 
 		/// <summary>
 		/// <para>GPU側のメモリ領域を確保し、その GraphicsBuffer を返す (失敗したら nullptr)</para>
-		/// 2次元テクスチャ用
-		/// </summary>
-		static GraphicsBuffer CreateGraphicsBufferTexture2D(const Device& device, int width, int height, Format format);
-
-		/// <summary>
-		/// <para>GPU側のメモリ領域を確保し、その GraphicsBuffer を返す (失敗したら nullptr)</para>
-		/// <para>2次元テクスチャ用 (ロードされたテクスチャから作成)</para>
-		/// テクスチャのタイプが2Dで無いならば、失敗とみなし nullptr を返す
+		/// <para>2次元テクスチャ用 (テクスチャのタイプが2Dで無いならば、失敗とみなし nullptr を返す)</para>
+		/// <para>GPU内でのみ用いる想定で、CPUからのマップ不可</para>
+		/// <para>テクスチャ変数のメタデータを基に作成する</para>
 		/// </summary>
 		static GraphicsBuffer CreateGraphicsBufferTexture2D(const Device& device, const Texture& texture);
 
@@ -128,20 +123,27 @@ namespace ForiverEngine
 
 		/// <summary>
 		/// <para>GraphicsBuffer の Map() を使って、CPUのバッファをGPU側にコピーする</para>
+		/// <para>1次元配列用</para>
 		/// <para>バッファのサイズは、GraphicsBuffer 作成時に指定したサイズと同じであること! (一部のバッファのみコピー、などには未対応)</para>
 		/// 成功したら true, 失敗したら false を返す (失敗した瞬間に処理を中断する)
 		/// </summary>
-		static bool CopyDataFromCPUToGPUThroughGraphicsBuffer(
+		static bool CopyDataFromCPUToGPUThroughGraphicsBuffer1D(
 			const GraphicsBuffer& graphicsBuffer, void* dataBegin, int dataSize);
 
 		/// <summary>
-		/// <para>GraphicsBuffer の WriteToSubresource() を使って、CPUのバッファをGPU側にコピーする</para>
+		/// <para>[Command]</para>
+		/// <para>CPUのバッファをGPU側にコピーする</para>
+		/// <para>2次元テクスチャ用 (テクスチャのタイプが2Dで無いならば、失敗とみなし false を返す)</para>
 		/// <para>バッファのサイズは、GraphicsBuffer 作成時に指定したサイズと同じであること! (一部のバッファのみコピー、などには未対応)</para>
+		/// <para> textureCopyIntermediateBuffer : CPU からデータをアップロードするための中間バッファ</para>
+		/// <para> textureBuffer : 実際にテクスチャとして使われるバッファ</para>
+		/// <para> CPU のテクスチャ生データは textureCopyIntermediateBuffer にマップされ、その後 textureBuffer にコピーされる</para>
 		/// <para>成功したら true, 失敗したら false を返す (失敗した瞬間に処理を中断する)</para>
-		/// 一部の状況でパフォーマンスが極端に低下するとのこと、注意!
+		/// TODO: 中で色々やり過ぎている! 後でリファクタしたい
 		/// </summary>
-		static bool CopyDataFromCPUToGPUThroughGraphicsBufferUsingWriteToSubresource(
-			const GraphicsBuffer& graphicsBuffer, void* dataBegin, int dataRowSize, int dataSliceSize);
+		static bool CommandCopyDataFromCPUToGPUThroughGraphicsBufferTexture2D(
+			const CommandList& commandList,
+			const GraphicsBuffer& textureCopyIntermediateBuffer, const GraphicsBuffer& textureBuffer, const Texture& texture);
 
 		/// <summary>
 		/// <para>DescriptorHeap(RTV) と SwapChain を関連付ける</para>
@@ -169,18 +171,12 @@ namespace ForiverEngine
 		static GraphicsBuffer GetBufferByIndex(const SwapChain& swapChain, int index);
 
 		/// <summary>
-		/// <para>ResourceBarrier() を実行し、GraphicsBuffer がどう状態遷移するかをGPUに教える</para>
-		/// Present -> RenderTarget
+		/// <para>[Command]</para>
+		/// ResourceBarrier() を実行し、GraphicsBuffer がどう状態遷移するかをGPUに教える
 		/// </summary>
-		static void InvokeResourceBarrierAsTransitionFromPresentToRenderTarget(
-			const CommandList& commandList, const GraphicsBuffer& GraphicsBuffer);
-
-		/// <summary>
-		/// <para>ResourceBarrier() を実行し、GraphicsBuffer がどう状態遷移するかをGPUに教える</para>
-		/// RenderTarget -> Present
-		/// </summary>
-		static void InvokeResourceBarrierAsTransitionFromRenderTargetToPresent(
-			const CommandList& commandList, const GraphicsBuffer& GraphicsBuffer);
+		static void CommandInvokeResourceBarrierAsTransition(
+			const CommandList& commandList, const GraphicsBuffer& GraphicsBuffer,
+			GraphicsBufferState before, GraphicsBufferState after, bool useAllSubresources);
 
 		/// <summary>
 		/// <para>[Command]</para>

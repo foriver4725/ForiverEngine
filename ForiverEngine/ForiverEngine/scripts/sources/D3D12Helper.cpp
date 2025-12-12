@@ -37,13 +37,6 @@ namespace ForiverEngine
 	// SwapChain からバッファ数を取得する (失敗したら -1)
 	static int GetBufferCountFromSwapChain(const SwapChain& swapChain);
 
-
-
-	// ResourceBarrier() を実行し、GraphicsBuffer がどう状態遷移するかをGPUに教える
-	static void InvokeResourceBarrierAsTransition(
-		const CommandList& commandList, const GraphicsBuffer& GraphicsBuffer,
-		D3D12_RESOURCE_STATES beforeState, D3D12_RESOURCE_STATES afterState);
-
 	Factory D3D12Helper::CreateFactory()
 	{
 		IDXGIFactoryLatest* ptr = nullptr;
@@ -380,7 +373,7 @@ namespace ForiverEngine
 
 	GraphicsBuffer D3D12Helper::CreateGraphicsBuffer1D(const Device& device, int size, bool canMapFromCPU)
 	{
-		D3D12_HEAP_PROPERTIES heapProperties =
+		const D3D12_HEAP_PROPERTIES heapProperties =
 		{
 			.Type = canMapFromCPU ? D3D12_HEAP_TYPE_UPLOAD : D3D12_HEAP_TYPE_DEFAULT,
 			.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN, // 難しい設定だが、とりあえずデフォルトで
@@ -389,7 +382,7 @@ namespace ForiverEngine
 			.VisibleNodeMask = 0, // アダプターが1つなので...
 		};
 
-		D3D12_RESOURCE_DESC resourceDesc =
+		const D3D12_RESOURCE_DESC resourceDesc =
 		{
 			.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER,
 			.Alignment = 0, // 既定値でOK
@@ -419,47 +412,6 @@ namespace ForiverEngine
 		return GraphicsBuffer();
 	}
 
-	GraphicsBuffer D3D12Helper::CreateGraphicsBufferTexture2D(const Device& device, int width, int height, Format format)
-	{
-		D3D12_HEAP_PROPERTIES heapProperties =
-		{
-			.Type = D3D12_HEAP_TYPE_CUSTOM, // 特殊な設定をする
-			.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_WRITE_BACK, // ライトバック
-			.MemoryPoolPreference = D3D12_MEMORY_POOL_L0, // CPU側(L0)から直接転送する
-			.CreationNodeMask = 0, // アダプターが1つなので...
-			.VisibleNodeMask = 0, // アダプターが1つなので...
-		};
-
-		D3D12_RESOURCE_DESC resourceDesc =
-		{
-			.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D, // 2Dテクスチャ
-			.Alignment = 0, // 既定値でOK
-			.Width = static_cast<UINT64>(width),
-			.Height = static_cast<UINT>(height),
-			.DepthOrArraySize = 1, // 1でOK (2Dで配列でもない)
-			.MipLevels = 1, // ミップマップしない
-			.Format = static_cast<DXGI_FORMAT>(format),
-			.SampleDesc = {.Count = 1, .Quality = 0 }, // 通常テクスチャなのでアンチエイリアシングはしない (クオリティは最低)
-			.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN, // 決定しない
-			.Flags = D3D12_RESOURCE_FLAG_NONE, // 指定なし
-		};
-
-		ID3D12Resource* ptr = nullptr;
-		if (device->CreateCommittedResource(
-			&heapProperties,
-			D3D12_HEAP_FLAG_NONE, // 指定なし
-			&resourceDesc,
-			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, // テクスチャ用指定
-			nullptr, // 使わない
-			IID_PPV_ARGS(&ptr)
-		) == S_OK)
-		{
-			return GraphicsBuffer(ptr);
-		}
-
-		return GraphicsBuffer();
-	}
-
 	GraphicsBuffer D3D12Helper::CreateGraphicsBufferTexture2D(const Device& device, const Texture& texture)
 	{
 		if (texture.textureType != GraphicsBufferType::Texture2D)
@@ -467,16 +419,16 @@ namespace ForiverEngine
 			return GraphicsBuffer();
 		}
 
-		D3D12_HEAP_PROPERTIES heapProperties =
+		const D3D12_HEAP_PROPERTIES heapProperties =
 		{
-			.Type = D3D12_HEAP_TYPE_CUSTOM, // 特殊な設定をする
-			.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_WRITE_BACK, // ライトバック
-			.MemoryPoolPreference = D3D12_MEMORY_POOL_L0, // CPU側(L0)から直接転送する
+			.Type = D3D12_HEAP_TYPE_DEFAULT, // テクスチャ用
+			.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN, // 規定値
+			.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN, // 規定値
 			.CreationNodeMask = 0, // アダプターが1つなので...
 			.VisibleNodeMask = 0, // アダプターが1つなので...
 		};
 
-		D3D12_RESOURCE_DESC resourceDesc =
+		const D3D12_RESOURCE_DESC resourceDesc =
 		{
 			.Dimension = static_cast<D3D12_RESOURCE_DIMENSION>(GraphicsBufferType::Texture2D),
 			.Alignment = 0, // 既定値でOK
@@ -495,7 +447,7 @@ namespace ForiverEngine
 			&heapProperties,
 			D3D12_HEAP_FLAG_NONE, // 指定なし
 			&resourceDesc,
-			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, // テクスチャ用指定
+			D3D12_RESOURCE_STATE_COPY_DEST, // コピー先として使う
 			nullptr, // 使わない
 			IID_PPV_ARGS(&ptr)
 		) == S_OK)
@@ -581,13 +533,13 @@ namespace ForiverEngine
 		return *Reinterpret(&handle);
 	}
 
-	bool D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer(
+	bool D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer1D(
 		const GraphicsBuffer& graphicsBuffer, void* dataBegin, int dataSize)
 	{
 		void* bufferVirtualPtr = nullptr;
 		if (graphicsBuffer->Map(
 			0, // リソース配列やミップマップなどではないので、0でOK
-			nullptr, // GraphicsBuffer の全範囲を対象にしたい
+			nullptr, // GraphicsBuffer の全範囲を対象にする
 			&bufferVirtualPtr
 		) != S_OK)
 		{
@@ -600,16 +552,71 @@ namespace ForiverEngine
 		return true;
 	}
 
-	bool D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBufferUsingWriteToSubresource(
-		const GraphicsBuffer& graphicsBuffer, void* dataBegin, int dataRowSize, int dataSliceSize)
+	bool D3D12Helper::CommandCopyDataFromCPUToGPUThroughGraphicsBufferTexture2D(
+		const CommandList& commandList,
+		const GraphicsBuffer& textureCopyIntermediateBuffer, const GraphicsBuffer& textureBuffer, const Texture& texture)
 	{
-		return graphicsBuffer->WriteToSubresource(
-			0, // 0 でOK
-			nullptr, // GraphicsBuffer の全範囲を対象にしたい
-			dataBegin,
-			static_cast<UINT>(dataRowSize), // 1行あたりの sizeof
-			static_cast<UINT>(dataSliceSize) // スライスあたりの sizeof (3Dテクスチャ・2Dテクスチャ配列などで関与)
-		) == S_OK;
+		if (texture.textureType != GraphicsBufferType::Texture2D)
+		{
+			return false;
+		}
+
+		// 中間バッファ(1次元) にマップ
+		{
+			void* bufferVirtualPtr = nullptr;
+			if (textureCopyIntermediateBuffer->Map(
+				0, // リソース配列やミップマップなどではないので、0でOK
+				nullptr, // GraphicsBuffer の全範囲を対象にする
+				&bufferVirtualPtr
+			) != S_OK)
+			{
+				textureCopyIntermediateBuffer->Unmap(0, nullptr);
+				return false;
+			}
+
+			std::memcpy(bufferVirtualPtr, static_cast<const void*>(texture.data.data()), static_cast<std::size_t>(texture.sliceSize));
+			textureCopyIntermediateBuffer->Unmap(0, nullptr);
+		}
+
+		// 真のテクスチャバッファーにコピー
+		{
+			const D3D12_TEXTURE_COPY_LOCATION srcLocation =
+			{
+				.pResource = textureCopyIntermediateBuffer.Ptr,
+				.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT, // アップロードバッファーはこっちを指定
+				.PlacedFootprint =
+				{
+					.Offset = 0, // 規定値
+					.Footprint =
+					{
+						.Format = static_cast<DXGI_FORMAT>(texture.format),
+						.Width = static_cast<UINT>(texture.width),
+						.Height = static_cast<UINT>(texture.height),
+						.Depth = 1, // 2Dテクスチャなので...
+						.RowPitch = static_cast<UINT>(texture.rowSize)
+					}
+				}
+			};
+
+			const D3D12_TEXTURE_COPY_LOCATION dstLocation =
+			{
+				.pResource = textureBuffer.Ptr,
+				.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX, // コピー先バッファーはこっちを指定
+				.SubresourceIndex = 0 // ミップマップや配列ではないので、0でOK
+			};
+
+			// コマンドを発行
+			commandList->CopyTextureRegion(
+				&dstLocation,
+				0, // コピー先の開始オフセットは0でOK
+				0, // コピー先の開始オフセットは0でOK
+				0, // コピー先の開始オフセットは0でOK
+				&srcLocation,
+				nullptr // コピー元の全領域をコピーするので、nullptrでOK
+			);
+		}
+
+		return true;
 	}
 
 	bool D3D12Helper::LinkDescriptorHeapRTVToSwapChain(
@@ -668,22 +675,26 @@ namespace ForiverEngine
 		return GraphicsBuffer();
 	}
 
-	void D3D12Helper::InvokeResourceBarrierAsTransitionFromPresentToRenderTarget(
-		const CommandList& commandList, const GraphicsBuffer& GraphicsBuffer)
+	void D3D12Helper::CommandInvokeResourceBarrierAsTransition(
+		const CommandList& commandList, const GraphicsBuffer& GraphicsBuffer,
+		GraphicsBufferState before, GraphicsBufferState after, bool useAllSubresources)
 	{
-		InvokeResourceBarrierAsTransition(
-			commandList, GraphicsBuffer,
-			D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET
-		);
-	}
+		D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES; // 定数
+		const D3D12_RESOURCE_BARRIER desc =
+		{
+			.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION, // 状態遷移
+			.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE, // 特別なことはしないので、指定しない
+			.Transition = // union なので、これじゃないメンバは触らないこと!
+			{
+				.pResource = GraphicsBuffer.Ptr, // GraphicsBuffer のアドレスをそのまま渡せば良い
+				.Subresource = useAllSubresources ? D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES : 0, // 全サブリソース or サブリソース0のみ
+				.StateBefore = static_cast<D3D12_RESOURCE_STATES>(before),
+				.StateAfter = static_cast<D3D12_RESOURCE_STATES>(after),
+			},
+		};
 
-	void D3D12Helper::InvokeResourceBarrierAsTransitionFromRenderTargetToPresent(
-		const CommandList& commandList, const GraphicsBuffer& GraphicsBuffer)
-	{
-		InvokeResourceBarrierAsTransition(
-			commandList, GraphicsBuffer,
-			D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT
-		);
+		// 配列で渡せるが、今回はバリアは1つだけ
+		commandList->ResourceBarrier(1, &desc);
 	}
 
 	void D3D12Helper::CommandSetRTAsOutputStage(const CommandList& commandList, const DescriptorHeapHandleAtCPU& handleRTV)
@@ -1072,26 +1083,5 @@ namespace ForiverEngine
 		}
 
 		return -1;
-	}
-
-	void InvokeResourceBarrierAsTransition(
-		const CommandList& commandList, const GraphicsBuffer& GraphicsBuffer,
-		D3D12_RESOURCE_STATES beforeState, D3D12_RESOURCE_STATES afterState)
-	{
-		D3D12_RESOURCE_BARRIER desc =
-		{
-			.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION, // 状態遷移
-			.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE, // 特別なことはしないので、指定しない
-			.Transition = // union なので、これじゃないメンバは触らないこと!
-			{
-				.pResource = GraphicsBuffer.Ptr, // GraphicsBuffer のアドレスをそのまま渡せば良い
-				.Subresource = 0, // 今回はバックバッファーが1つしかないので、まとめて指定するなどは必要ない
-				.StateBefore = beforeState,
-				.StateAfter = afterState,
-			},
-		};
-
-		// 配列で渡せるが、今回はバリアは1つだけ
-		commandList->ResourceBarrier(1, &desc);
 	}
 }
