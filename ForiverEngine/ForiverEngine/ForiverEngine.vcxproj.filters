@@ -2,69 +2,69 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="sources\D3D12Helper.cpp">
-      <Filter>sources</Filter>
-    </ClCompile>
-    <ClCompile Include="sources\WindowHelper.cpp">
-      <Filter>sources</Filter>
-    </ClCompile>
     <ClCompile Include="oss\SimplexNoise.cpp">
       <Filter>oss</Filter>
     </ClCompile>
-    <ClCompile Include="sources\Math.cpp">
-      <Filter>sources</Filter>
+    <ClCompile Include="scripts\sources\AssetLoader.cpp">
+      <Filter>scripts\sources</Filter>
     </ClCompile>
-    <ClCompile Include="sources\D3D12BasicFlow.cpp">
-      <Filter>sources</Filter>
+    <ClCompile Include="scripts\sources\D3D12BasicFlow.cpp">
+      <Filter>scripts\sources</Filter>
     </ClCompile>
-    <ClCompile Include="sources\Vector.cpp">
-      <Filter>sources</Filter>
+    <ClCompile Include="scripts\sources\D3D12Helper.cpp">
+      <Filter>scripts\sources</Filter>
     </ClCompile>
-    <ClCompile Include="sources\StringUtils.cpp">
-      <Filter>sources</Filter>
-    </ClCompile>
-    <ClCompile Include="sources\AssetLoader.cpp">
-      <Filter>sources</Filter>
+    <ClCompile Include="scripts\sources\WindowHelper.cpp">
+      <Filter>scripts\sources</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="headers">
-      <UniqueIdentifier>{79509f2f-82df-4700-8351-848de95b4841}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="sources">
-      <UniqueIdentifier>{81efffeb-5c03-41be-ad7d-27a97a70cd16}</UniqueIdentifier>
-    </Filter>
     <Filter Include="shaders">
       <UniqueIdentifier>{6cee4819-d17a-41d9-aacc-5747a2ef1f2a}</UniqueIdentifier>
     </Filter>
     <Filter Include="oss">
       <UniqueIdentifier>{40c8b5a7-0048-4e60-b6c9-bbd99d927fa4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="scripts">
+      <UniqueIdentifier>{79509f2f-82df-4700-8351-848de95b4841}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scripts\common">
+      <UniqueIdentifier>{26cdc3f7-bef5-4e10-ba4d-8d81664aa60a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scripts\headers">
+      <UniqueIdentifier>{0d027826-2e35-4f6d-8616-6dbcad6c5df4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scripts\sources">
+      <UniqueIdentifier>{d19b9ac7-da06-4446-8c67-af99560650b2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="headers\D3D12Helper.h">
-      <Filter>headers</Filter>
-    </ClInclude>
-    <ClInclude Include="headers\WindowHelper.h">
-      <Filter>headers</Filter>
-    </ClInclude>
     <ClInclude Include="oss\SimplexNoise.h">
       <Filter>oss</Filter>
     </ClInclude>
-    <ClInclude Include="headers\Math.h">
-      <Filter>headers</Filter>
+    <ClInclude Include="scripts\common\Include.h">
+      <Filter>scripts\common</Filter>
     </ClInclude>
-    <ClInclude Include="headers\D3D12BasicFlow.h">
-      <Filter>headers</Filter>
+    <ClInclude Include="scripts\common\Noise.h">
+      <Filter>scripts\common</Filter>
     </ClInclude>
-    <ClInclude Include="headers\Vector.h">
-      <Filter>headers</Filter>
+    <ClInclude Include="scripts\common\StringUtils.h">
+      <Filter>scripts\common</Filter>
     </ClInclude>
-    <ClInclude Include="headers\StringUtils.h">
-      <Filter>headers</Filter>
+    <ClInclude Include="scripts\common\Vector.h">
+      <Filter>scripts\common</Filter>
     </ClInclude>
-    <ClInclude Include="headers\AssetLoader.h">
-      <Filter>headers</Filter>
+    <ClInclude Include="scripts\headers\AssetLoader.h">
+      <Filter>scripts\headers</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\headers\D3D12BasicFlow.h">
+      <Filter>scripts\headers</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\headers\D3D12Helper.h">
+      <Filter>scripts\headers</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\headers\WindowHelper.h">
+      <Filter>scripts\headers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

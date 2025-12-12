@@ -1,17 +1,7 @@
 ﻿#pragma once
 
-// 一般的なものはヘッダでインクルードする (必要最小限)
 // DirectX12 はソースでのみインクルードする
-
-#include "./Vector.h"
-#include "./StringUtils.h"
-
-#include <string>
-#include <vector>
-#include <tuple>
-#include <array>
-#include <functional>
-#include "Windows.h"
+#include <scripts/common/Include.h>
 
 struct IDXGIFactory7;
 struct ID3D12Device14;

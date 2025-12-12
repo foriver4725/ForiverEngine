@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include <scripts/common/Include.h>
+
 struct HINSTANCE__; typedef HINSTANCE__* HINSTANCE;
 struct HWND__; typedef HWND__* HWND;
 
@@ -10,11 +12,6 @@ typedef LONG_PTR LRESULT;
 typedef UINT_PTR WPARAM;
 typedef LONG_PTR LPARAM;
 typedef LRESULT(__stdcall* WNDPROC)(HWND, UINT, WPARAM, LPARAM);
-
-#include <Windows.h>
-#ifdef ENABLE_CUI_CONSOLE
-#include <iostream>
-#endif
 
 // WinMain() のマクロ
 // 既存マクロと重複しない命名にしている

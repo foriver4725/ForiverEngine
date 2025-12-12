@@ -1,13 +1,16 @@
 ﻿#pragma once
 
-#include <DirectXMath.h>
-
 #include <cmath>
-#include <algorithm>
+
+#include <DirectXMath.h>
 
 namespace ForiverEngine
 {
 	constexpr float VectorEpsilon = 1e-6f;
+
+	struct Vector2;
+	struct Vector3;
+	struct Vector4;
 
 	struct Vector2
 	{

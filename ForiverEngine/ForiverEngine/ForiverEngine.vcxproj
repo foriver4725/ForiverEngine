@@ -81,7 +81,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>F:\GameProjects\ForiverEngine\ForiverEngine\DirectXTex\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>F:\GameProjects\ForiverEngine\ForiverEngine\DirectXTex\headers;F:\GameProjects\ForiverEngine\ForiverEngine\ForiverEngine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -98,7 +98,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>F:\GameProjects\ForiverEngine\ForiverEngine\DirectXTex\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>F:\GameProjects\ForiverEngine\ForiverEngine\DirectXTex\headers;F:\GameProjects\ForiverEngine\ForiverEngine\ForiverEngine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -114,7 +114,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp23</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <AdditionalIncludeDirectories>F:\GameProjects\ForiverEngine\ForiverEngine\DirectXTex\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>F:\GameProjects\ForiverEngine\ForiverEngine\DirectXTex\headers;F:\GameProjects\ForiverEngine\ForiverEngine\ForiverEngine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -134,7 +134,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>F:\GameProjects\ForiverEngine\ForiverEngine\DirectXTex\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>F:\GameProjects\ForiverEngine\ForiverEngine\DirectXTex\headers;F:\GameProjects\ForiverEngine\ForiverEngine\ForiverEngine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -145,23 +145,21 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="oss\SimplexNoise.cpp" />
-    <ClCompile Include="sources\AssetLoader.cpp" />
-    <ClCompile Include="sources\D3D12BasicFlow.cpp" />
-    <ClCompile Include="sources\D3D12Helper.cpp" />
-    <ClCompile Include="sources\Math.cpp" />
-    <ClCompile Include="sources\StringUtils.cpp" />
-    <ClCompile Include="sources\Vector.cpp" />
-    <ClCompile Include="sources\WindowHelper.cpp" />
+    <ClCompile Include="scripts\sources\AssetLoader.cpp" />
+    <ClCompile Include="scripts\sources\D3D12BasicFlow.cpp" />
+    <ClCompile Include="scripts\sources\D3D12Helper.cpp" />
+    <ClCompile Include="scripts\sources\WindowHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="headers\AssetLoader.h" />
-    <ClInclude Include="headers\D3D12BasicFlow.h" />
-    <ClInclude Include="headers\D3D12Helper.h" />
-    <ClInclude Include="headers\Math.h" />
-    <ClInclude Include="headers\StringUtils.h" />
-    <ClInclude Include="headers\Vector.h" />
-    <ClInclude Include="headers\WindowHelper.h" />
     <ClInclude Include="oss\SimplexNoise.h" />
+    <ClInclude Include="scripts\common\Include.h" />
+    <ClInclude Include="scripts\common\Noise.h" />
+    <ClInclude Include="scripts\common\StringUtils.h" />
+    <ClInclude Include="scripts\common\Vector.h" />
+    <ClInclude Include="scripts\headers\AssetLoader.h" />
+    <ClInclude Include="scripts\headers\D3D12BasicFlow.h" />
+    <ClInclude Include="scripts\headers\D3D12Helper.h" />
+    <ClInclude Include="scripts\headers\WindowHelper.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shaders\Basic.hlsl">

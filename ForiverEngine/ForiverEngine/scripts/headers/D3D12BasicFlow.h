@@ -1,10 +1,9 @@
 #pragma once
 
+#include <scripts/common/Include.h>
+
 #include "./WindowHelper.h"
 #include "./D3D12Helper.h"
-
-#include <vector>
-#include <tuple>
 
 namespace ForiverEngine
 {

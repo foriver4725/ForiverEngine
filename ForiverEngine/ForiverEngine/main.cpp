@@ -1,7 +1,6 @@
 ﻿//#define ENABLE_CUI_CONSOLE
 
-#include "./headers/D3D12BasicFlow.h"
-#include "./headers/Math.h"
+#include "scripts/headers/D3D12BasicFlow.h"
 
 constexpr int WindowWidth = 960;
 constexpr int WindowHeight = 540;
