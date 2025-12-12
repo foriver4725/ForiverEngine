@@ -33,10 +33,11 @@ namespace ForiverEngine
 			CreateStandardObjects(
 				HWND hwnd,
 				int windowWidth,
-				int windowHeight
+				int windowHeight,
+				bool sRGB
 			)
 		{
-			return Check(CreateStandardObjects_Impl(hwnd, windowWidth, windowHeight));
+			return Check(CreateStandardObjects_Impl(hwnd, windowWidth, windowHeight, sRGB));
 		}
 
 		/// <summary>
@@ -113,7 +114,8 @@ namespace ForiverEngine
 			CreateStandardObjects_Impl(
 				HWND hwnd,
 				int windowWidth,
-				int windowHeight
+				int windowHeight,
+				bool sRGB
 			);
 
 		/// <summary>

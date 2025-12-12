@@ -6,7 +6,8 @@ namespace ForiverEngine
 		D3D12BasicFlow::CreateStandardObjects_Impl(
 			HWND hwnd,
 			int windowWidth,
-			int windowHeight
+			int windowHeight,
+			bool sRGB
 		)
 	{
 		Factory factory = Factory();
@@ -43,7 +44,7 @@ namespace ForiverEngine
 		if (!(descriptorHeapRTV = D3D12Helper::CreateDescriptorHeapRTV(device)))
 			RETURN_FALSE(L"DescriptorHeap (RTV) の作成に失敗しました");
 
-		if (!D3D12Helper::LinkDescriptorHeapRTVToSwapChain(device, descriptorHeapRTV, swapChain))
+		if (!D3D12Helper::LinkDescriptorHeapRTVToSwapChain(device, descriptorHeapRTV, swapChain, sRGB))
 			RETURN_FALSE(L"DescriptorHeap (RTV) を SwapChain に関連付けることに失敗しました");
 
 		RETURN_TRUE();

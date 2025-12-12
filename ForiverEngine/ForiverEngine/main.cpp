@@ -15,7 +15,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 #endif
 
 	const auto [factory, device, commandAllocater, commandList, commandQueue, swapChain, descriptorHeapRTV]
-		= D3D12BasicFlow::CreateStandardObjects(hwnd, WindowWidth, WindowHeight);
+		= D3D12BasicFlow::CreateStandardObjects(hwnd, WindowWidth, WindowHeight, false);
 
 	// ルートパラメータ
 	const RootParameter rootParameter =

@@ -286,7 +286,7 @@ namespace ForiverEngine
 
 	SwapChain D3D12Helper::CreateSwapChain(const Factory& factory, const CommandQueue& commandQueue, HWND hwnd, int windowWidth, int windowHeight)
 	{
-		DXGI_SWAP_CHAIN_DESC1 desc
+		const DXGI_SWAP_CHAIN_DESC1 desc
 		{
 			.Width = static_cast<UINT>(windowWidth),
 			.Height = static_cast<UINT>(windowHeight),
@@ -613,8 +613,19 @@ namespace ForiverEngine
 	}
 
 	bool D3D12Helper::LinkDescriptorHeapRTVToSwapChain(
-		const Device& device, const DescriptorHeap& descriptorHeapRTV, const SwapChain& swapChain)
+		const Device& device, const DescriptorHeap& descriptorHeapRTV, const SwapChain& swapChain, bool sRGB)
 	{
+		// NOTE : sRGB を true にした場合、バックバッファービューとレンダーターゲットフォーマットに食い違いが生じるため、
+		//        デバッグレイヤーをオンにしている場合にエラーが表示される
+
+		const Format format = sRGB ? Format::RGBA_U8_01_SRGB : Format::RGBA_U8_01;
+
+		const D3D12_RENDER_TARGET_VIEW_DESC desc =
+		{
+			.Format = static_cast<DXGI_FORMAT>(format),
+			.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D,
+		};
+
 		for (int i = 0; i < GetBufferCountFromSwapChain(swapChain); ++i)
 		{
 			GraphicsBuffer graphicsBuffer = GetBufferByIndex(swapChain, i);
@@ -626,7 +637,7 @@ namespace ForiverEngine
 
 			device->CreateRenderTargetView(
 				graphicsBuffer.Ptr,
-				nullptr, // 今回は nullptr でOK (ミップマップに関係したりする)
+				&desc,
 				*Reinterpret(&handleRTV) // i 番目の Descriptor (RTV) を指し示すハンドル
 			);
 		}

@@ -149,7 +149,7 @@ namespace ForiverEngine
 		/// 全て成功したら true, 1つでも失敗したら false を返す (失敗した瞬間に処理を中断する)
 		/// </summary>
 		static bool LinkDescriptorHeapRTVToSwapChain(
-			const Device& device, const DescriptorHeap& descriptorHeapRTV, const SwapChain& swapChain);
+			const Device& device, const DescriptorHeap& descriptorHeapRTV, const SwapChain& swapChain, bool sRGB);
 
 		/// <summary>
 		/// <para>CommandAllocator と CommandList をクリアする</para>
