@@ -259,6 +259,8 @@ public: \
 		int sliceSize; // 1スライス分のデータサイズ
 		int sliceCount; // スライス数
 		int mipLevels;
+
+		constexpr bool IsValid() const { return !data.empty() && width > 0 && height > 0; }
 	};
 
 	// 関数

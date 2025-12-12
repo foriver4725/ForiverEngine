@@ -11,7 +11,7 @@ namespace ForiverEngine
 		DELETE_DEFAULT_METHODS(AssetLoader);
 
 		/// <summary>
-		/// <para>テクスチャをロードする</para>
+		/// <para>テクスチャをロードして返す (失敗したら空の Texture を返す)</para>
 		/// BMP, PNG, JPG など、基本的なファイル形式はこれを使えばOK
 		/// </summary>
 		static Texture LoadTexture(const std::string& path);

@@ -63,9 +63,15 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	};
 
 	const Texture texture = AssetLoader::LoadTexture("assets/pickaxe.png");
+	if (!texture.IsValid())
+		ShowError(L"テクスチャのロードに失敗しました");
 	const GraphicsBuffer textureCopyIntermediateBuffer = D3D12Helper::CreateGraphicsBuffer1D(device,
 		static_cast<int>(GetAlignmentedSize(texture.rowSize, Texture::RowSizeAlignment) * texture.height), true);
+	if (!textureCopyIntermediateBuffer)
+		ShowError(L"テクスチャ転送用中間バッファの作成に失敗しました");
 	const GraphicsBuffer textureBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, texture);
+	if (!textureBuffer)
+		ShowError(L"テクスチャバッファの作成に失敗しました");
 
 	if (!D3D12Helper::CommandCopyDataFromCPUToGPUThroughGraphicsBufferTexture2D(commandList, textureCopyIntermediateBuffer, textureBuffer, texture))
 		ShowError(L"テクスチャデータのアップロードに失敗しました");
@@ -73,9 +79,12 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		GraphicsBufferState::CopyDestination, GraphicsBufferState::PixelShaderResource, false);
 	D3D12Helper::CommandClose(commandList);
 	D3D12Helper::ExecuteCommands(commandQueue, commandList);
-	D3D12Helper::WaitForGPUEventCompletion(D3D12Helper::CreateFence(device), commandQueue);
+	if (!D3D12Helper::WaitForGPUEventCompletion(D3D12Helper::CreateFence(device), commandQueue))
+		ShowError(L"GPU の処理待ち受けに失敗しました");
 
 	const DescriptorHeap descriptorHeapSRV = D3D12Helper::CreateDescriptorHeapSRV(device, 1);
+	if (!descriptorHeapSRV)
+		ShowError(L"SRV 用 DescriptorHeap の作成に失敗しました");
 	D3D12Helper::CreateShaderResourceViewAndRegistToDescriptorHeap(textureBuffer, texture.format, device, descriptorHeapSRV);
 
 	const auto [vertexBufferView, indexBufferView]
@@ -117,7 +126,8 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		D3D12Helper::CommandClose(commandList);
 		D3D12Helper::ExecuteCommands(commandQueue, commandList);
 
-		D3D12Helper::WaitForGPUEventCompletion(D3D12Helper::CreateFence(device), commandQueue);
+		if (!D3D12Helper::WaitForGPUEventCompletion(D3D12Helper::CreateFence(device), commandQueue))
+			ShowError(L"GPU の処理待ち受けに失敗しました");
 
 		if (!D3D12Helper::ClearCommandAllocatorAndList(commandAllocater, commandList))
 			ShowError(L"CommandAllocator, CommandList のクリアに失敗しました");
