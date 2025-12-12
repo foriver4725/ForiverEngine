@@ -66,6 +66,9 @@
     <ClInclude Include="scripts\headers\WindowHelper.h">
       <Filter>scripts\headers</Filter>
     </ClInclude>
+    <ClInclude Include="scripts\headers\D3D12Defines.h">
+      <Filter>scripts\headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shaders\Basic.hlsl">

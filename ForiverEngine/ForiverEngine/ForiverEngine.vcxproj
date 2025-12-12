@@ -158,6 +158,7 @@
     <ClInclude Include="scripts\common\Vector.h" />
     <ClInclude Include="scripts\headers\AssetLoader.h" />
     <ClInclude Include="scripts\headers\D3D12BasicFlow.h" />
+    <ClInclude Include="scripts\headers\D3D12Defines.h" />
     <ClInclude Include="scripts\headers\D3D12Helper.h" />
     <ClInclude Include="scripts\headers\WindowHelper.h" />
   </ItemGroup>
