@@ -43,7 +43,7 @@ Transform構造体を作り、MVP行列を計算する
 ループ内でくるくる回す  
 DSV をまだ作成していないので、深度テストは行われていない
 
-<img width="50%" alt="image" src="https://github.com/user-attachments/assets/9d5cff8b-6c71-49b5-8b0f-40fd6766335c" />
+<img width="50%" alt="image" src="https://github.com/user-attachments/assets/21295e88-391a-4c44-9e63-a064746e8d31" />
 
 ## OSS
 | 名前 | ライセンス |
