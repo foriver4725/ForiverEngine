@@ -62,7 +62,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		.nearClip = 0.1f,
 		.farClip = 1000.0f,
 		.isPerspective = true,
-		.fov = 60.0f * DegToRad,
+		.fov = 30.0f * DegToRad,
 		.aspectRatio = 1.0f * WindowWidth / WindowHeight,
 	};
 
