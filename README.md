@@ -38,6 +38,13 @@ Transform構造体を作り、MVP行列を計算する
 
 <img width="50%" alt="image" src="https://github.com/user-attachments/assets/bbccd236-f7a4-46e3-9884-42c9d064e2a3" />
 
+---
+立方体の頂点情報やテクスチャを定義し、3D表示する  
+ループ内でくるくる回す  
+DSV をまだ作成していないので、深度テストは行われていない
+
+<img width="50%" alt="image" src="https://github.com/user-attachments/assets/9d5cff8b-6c71-49b5-8b0f-40fd6766335c" />
+
 ## OSS
 | 名前 | ライセンス |
 | --- | --- |
