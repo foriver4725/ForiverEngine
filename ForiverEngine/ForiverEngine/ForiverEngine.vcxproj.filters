@@ -37,6 +37,12 @@
     <Filter Include="scripts\sources">
       <UniqueIdentifier>{d19b9ac7-da06-4446-8c67-af99560650b2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="scripts\common\Math">
+      <UniqueIdentifier>{5d68defa-3648-4d19-82f9-624bbb67090d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scripts\common\Math\LinearAlgebra">
+      <UniqueIdentifier>{95cbdcf1-a0b3-45e1-987e-6a98fa1fc434}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="oss\SimplexNoise.h">
@@ -49,9 +55,6 @@
       <Filter>scripts\common</Filter>
     </ClInclude>
     <ClInclude Include="scripts\common\StringUtils.h">
-      <Filter>scripts\common</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\common\Vector.h">
       <Filter>scripts\common</Filter>
     </ClInclude>
     <ClInclude Include="scripts\headers\AssetLoader.h">
@@ -68,6 +71,36 @@
     </ClInclude>
     <ClInclude Include="scripts\headers\D3D12Defines.h">
       <Filter>scripts\headers</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\common\Math\Include.h">
+      <Filter>scripts\common\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\common\Math\LinearAlgebra\Defines.h">
+      <Filter>scripts\common\Math\LinearAlgebra</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\common\Math\LinearAlgebra\Include.h">
+      <Filter>scripts\common\Math\LinearAlgebra</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\common\Math\LinearAlgebra\Matrix2x2.h">
+      <Filter>scripts\common\Math\LinearAlgebra</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\common\Math\LinearAlgebra\Matrix3x3.h">
+      <Filter>scripts\common\Math\LinearAlgebra</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\common\Math\LinearAlgebra\Matrix4x4.h">
+      <Filter>scripts\common\Math\LinearAlgebra</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\common\Math\LinearAlgebra\Quaternion.h">
+      <Filter>scripts\common\Math\LinearAlgebra</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\common\Math\LinearAlgebra\Vector2.h">
+      <Filter>scripts\common\Math\LinearAlgebra</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\common\Math\LinearAlgebra\Vector3.h">
+      <Filter>scripts\common\Math\LinearAlgebra</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\common\Math\LinearAlgebra\Vector4.h">
+      <Filter>scripts\common\Math\LinearAlgebra</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

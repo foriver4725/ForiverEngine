@@ -14,8 +14,8 @@
 #include <iostream>
 #include <Windows.h>
 
+#include "./Math/Include.h"
 #include "./StringUtils.h"
-#include "./Vector.h"
 #include "./Noise.h"
 
 // コンストラクタとデストラクタ、代入演算子を削除するマクロ
