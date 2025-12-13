@@ -10,6 +10,7 @@ struct VSInput
 {
     float4 pos : POSITION;
     float2 uv : TEXCOORD0;
+    float3 normal : NORMAL; // 一旦使わない
 };
 
 struct V2P

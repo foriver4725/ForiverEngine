@@ -77,22 +77,22 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		// TODO: テクスチャデータの構造が良くないかも
 
 		// U-L-B
-		{Vector4(-1, 1, -1, 1), Vector2(0.250f, 0.666f)},
+		{Vector4(-1, 1, -1, 1), Vector2(0.250f, 0.666f), Vector3(-1, 1, -1).Normed()},
 		// U-L-F
-		{Vector4(-1, 1, 1, 1), Vector2(0.250f, 0.333f)},
+		{Vector4(-1, 1, 1, 1), Vector2(0.250f, 0.333f), Vector3(-1, 1, 1).Normed()},
 		// U-R-B
-		{Vector4(1, 1, -1, 1), Vector2(0.500f, 0.666f)},
+		{Vector4(1, 1, -1, 1), Vector2(0.500f, 0.666f), Vector3(1, 1, -1).Normed()},
 		// U-R-F
-		{Vector4(1, 1, 1, 1), Vector2(0.500f, 0.333f)},
+		{Vector4(1, 1, 1, 1), Vector2(0.500f, 0.333f), Vector3(1, 1, 1).Normed()},
 
 		// D-L-B
-		{Vector4(-1, -1, -1, 1), Vector2(0.250f, 1.0f)},
+		{Vector4(-1, -1, -1, 1), Vector2(0.250f, 1.0f), Vector3(-1, -1, -1).Normed()},
 		// D-L-F
-		{Vector4(-1, -1, 1, 1), Vector2(0.250f, 0.0f)},
+		{Vector4(-1, -1, 1, 1), Vector2(0.250f, 0.0f), Vector3(-1, -1, 1).Normed()},
 		// D-R-B
-		{Vector4(1, -1, -1, 1), Vector2(0.500f, 1.0f)},
+		{Vector4(1, -1, -1, 1), Vector2(0.500f, 1.0f), Vector3(1, -1, -1).Normed()},
 		// D-R-F
-		{Vector4(1, -1, 1, 1), Vector2(0.500f, 0.0f)},
+		{Vector4(1, -1, 1, 1), Vector2(0.500f, 0.0f), Vector3(1, -1, 1).Normed()},
 	};
 
 	// 頂点インデックス
@@ -111,6 +111,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	{
 		{ "POSITION", Format::RGBA_F32 },
 		{ "TEXCOORD", Format::RG_F32 },
+		{ "NORMAL", Format::RGB_F32 },
 	};
 
 	// 定数バッファー (サイズは256バイトにアラインメントする必要がある!!)

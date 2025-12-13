@@ -209,6 +209,7 @@ public: \
 	{
 		ForiverEngine::Vector4 pos; // モデル座標系
 		ForiverEngine::Vector2 uv; // 左上が原点
+		ForiverEngine::Vector3 normal; // 法線ベクトル (単位ベクトル)
 	};
 
 	// 頂点レイアウト 単品
