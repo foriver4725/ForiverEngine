@@ -191,7 +191,7 @@ namespace ForiverEngine
 		/// 全体を1色でクリアする
 		/// </summary>
 		static void CommandClearRT(
-			const CommandList& commandList, const DescriptorHeapHandleAtCPU& handleRTV, const std::array<float, 4>& clearColor);
+			const CommandList& commandList, const DescriptorHeapHandleAtCPU& handleRTV, const Color& clearColor);
 
 		/// <summary>
 		/// <para>[Command]</para>

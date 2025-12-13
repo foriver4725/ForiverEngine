@@ -134,7 +134,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 			GraphicsBufferState::Present, GraphicsBufferState::RenderTarget, false);
 		{
 			D3D12Helper::CommandSetRTAsOutputStage(commandList, currentBackBufferRTV);
-			D3D12Helper::CommandClearRT(commandList, currentBackBufferRTV, { 0, 0, 0, 1 });
+			D3D12Helper::CommandClearRT(commandList, currentBackBufferRTV, Color::Black());
 			D3D12Helper::CommandSetRootSignature(commandList, rootSignature);
 			D3D12Helper::CommandSetGraphicsPipelineState(commandList, graphicsPipelineState);
 			D3D12Helper::CommandSetDescriptorHeaps(commandList, { descriptorHeapSRV });

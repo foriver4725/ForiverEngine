@@ -143,7 +143,7 @@ public: \
 	};
 
 	// GraphicsBuffer がGPU上でどのように使用されるか
-	enum class GraphicsBufferState : std::uint8_t
+	enum class GraphicsBufferState : std::uint16_t
 	{
 		Present = 0,               // D3D12_RESOURCE_STATE_PRESENT
 		RenderTarget = 0x4,        // D3D12_RESOURCE_STATE_RENDER_TARGET
