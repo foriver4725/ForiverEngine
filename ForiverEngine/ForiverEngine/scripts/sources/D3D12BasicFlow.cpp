@@ -41,7 +41,8 @@ namespace ForiverEngine
 		if (!(swapChain = D3D12Helper::CreateSwapChain(factory, commandQueue, hwnd, windowWidth, windowHeight)))
 			RETURN_FALSE(L"SwapChain の作成に失敗しました");
 
-		if (!(descriptorHeapRTV = D3D12Helper::CreateDescriptorHeapRTV(device)))
+		// ダブルバッファリングなので、2つ RTV を確保する
+		if (!(descriptorHeapRTV = D3D12Helper::CreateDescriptorHeap(device, DescriptorHeapType::RTV, 2, false)))
 			RETURN_FALSE(L"DescriptorHeap (RTV) の作成に失敗しました");
 
 		if (!D3D12Helper::LinkDescriptorHeapRTVToSwapChain(device, descriptorHeapRTV, swapChain, sRGB))
@@ -68,26 +69,26 @@ namespace ForiverEngine
 #define RETURN_TRUE() \
 	return { true, L"", { vertexBufferView, indexBufferView } };
 
-		VertexData* verticesPtr = const_cast<VertexData*>(vertices.data()); // 先頭ポインタ
-		const int vertexSize = static_cast<int>(sizeof(vertices[0]));                     // 要素1つ分のメモリサイズ
-		const int verticesSize = static_cast<int>(vertices.size() * vertexSize);          // 全体のメモリサイズ
+		const VertexData* verticesPtr = vertices.data();                         // 先頭ポインタ
+		const int vertexSize = static_cast<int>(sizeof(vertices[0]));            // 要素1つ分のメモリサイズ
+		const int verticesSize = static_cast<int>(vertices.size() * vertexSize); // 全体のメモリサイズ
 
-		std::uint16_t* indicesPtr = const_cast<std::uint16_t*>(indices.data());           // 先頭ポインタ
-		const int indexSize = static_cast<int>(sizeof(indices[0]));                       // 要素1つ分のメモリサイズ
-		const int indicesSize = static_cast<int>(indices.size() * indexSize);             // 全体のメモリサイズ
+		const std::uint16_t* indicesPtr = indices.data();                        // 先頭ポインタ
+		const int indexSize = static_cast<int>(sizeof(indices[0]));              // 要素1つ分のメモリサイズ
+		const int indicesSize = static_cast<int>(indices.size() * indexSize);    // 全体のメモリサイズ
 
 		GraphicsBuffer vertexBuffer = GraphicsBuffer();
 		GraphicsBuffer indexBuffer = GraphicsBuffer();
 
 		if (!(vertexBuffer = D3D12Helper::CreateGraphicsBuffer1D(device, verticesSize, true)))
 			RETURN_FALSE(L"頂点バッファーの作成に失敗しました");
-		if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer1D(vertexBuffer, static_cast<void*>(verticesPtr), verticesSize))
+		if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer1D(vertexBuffer, static_cast<const void*>(verticesPtr), verticesSize))
 			RETURN_FALSE(L"頂点バッファーを GPU 側にコピーすることに失敗しました");
 		vertexBufferView = D3D12Helper::CreateVertexBufferView(vertexBuffer, verticesSize, vertexSize);
 
 		if (!(indexBuffer = D3D12Helper::CreateGraphicsBuffer1D(device, indicesSize, true)))
 			RETURN_FALSE(L"インデックスバッファーの作成に失敗しました");
-		if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer1D(indexBuffer, static_cast<void*>(indicesPtr), indicesSize))
+		if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer1D(indexBuffer, static_cast<const void*>(indicesPtr), indicesSize))
 			RETURN_FALSE(L"インデックスバッファーを GPU 側にコピーすることに失敗しました");
 		indexBufferView = D3D12Helper::CreateIndexBufferView(indexBuffer, indicesSize, Format::R_U16);
 

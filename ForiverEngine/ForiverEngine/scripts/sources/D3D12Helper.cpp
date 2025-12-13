@@ -94,12 +94,17 @@ namespace ForiverEngine
 		for (int i = 0; i < static_cast<int>(rootParameter.descriptorRanges.size()); ++i)
 			descriptorRangesReal[i] = Construct(rootParameter.descriptorRanges[i]);
 
+		// Descriptor の総数を算出する
+		int totalDescriptorAmount = 0;
+		for (const auto& range : rootParameter.descriptorRanges)
+			totalDescriptorAmount += range.amount;
+
 		const D3D12_ROOT_PARAMETER rootParameterReal =
 		{
 			.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE,
 			.DescriptorTable =
 			{
-				.NumDescriptorRanges = 1,
+				.NumDescriptorRanges = static_cast<UINT>(totalDescriptorAmount),
 				.pDescriptorRanges = descriptorRangesReal.data()
 			},
 			.ShaderVisibility = static_cast<D3D12_SHADER_VISIBILITY>(rootParameter.shaderVisibility)
@@ -318,32 +323,13 @@ namespace ForiverEngine
 		return SwapChain();
 	}
 
-	DescriptorHeap D3D12Helper::CreateDescriptorHeapRTV(const Device& device)
+	DescriptorHeap D3D12Helper::CreateDescriptorHeap(const Device& device, DescriptorHeapType type, int descriptorAmount, bool visibleToShader)
 	{
 		D3D12_DESCRIPTOR_HEAP_DESC desc
 		{
-			.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV, // Render Target View 用
-			.NumDescriptors = 2, // ダブルバッファリングなので、2
-			.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE, // シェーダー側には見せない
-			.NodeMask = 0, // アダプターが1つなので...
-		};
-
-		ID3D12DescriptorHeap* ptr = nullptr;
-		if (device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&ptr)) == S_OK)
-		{
-			return DescriptorHeap(ptr);
-		}
-
-		return DescriptorHeap();
-	}
-
-	DescriptorHeap D3D12Helper::CreateDescriptorHeapSRV(const Device& device, int descriptorAmount)
-	{
-		D3D12_DESCRIPTOR_HEAP_DESC desc
-		{
-			.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, // Shader Resource View 用
+			.Type = static_cast<D3D12_DESCRIPTOR_HEAP_TYPE>(type),
 			.NumDescriptors = static_cast<UINT>(descriptorAmount),
-			.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, // シェーダー側に見せる
+			.Flags = visibleToShader ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE,
 			.NodeMask = 0, // アダプターが1つなので...
 		};
 
@@ -482,8 +468,30 @@ namespace ForiverEngine
 		return *Reinterpret(&output);
 	}
 
-	void D3D12Helper::CreateShaderResourceViewAndRegistToDescriptorHeap(
-		const GraphicsBuffer& graphicsBuffer, Format format, const Device& device, const DescriptorHeap& descriptorHeapSRV)
+	void D3D12Helper::CreateCBVAndRegistToDescriptorHeap(
+		const Device& device, const DescriptorHeap& descriptorHeap, const GraphicsBuffer& graphicsBuffer, int index)
+	{
+		const D3D12_CONSTANT_BUFFER_VIEW_DESC desc =
+		{
+			.BufferLocation = graphicsBuffer->GetGPUVirtualAddress(),
+			.SizeInBytes = static_cast<UINT>(graphicsBuffer->GetDesc().Width)
+		};
+
+		const DescriptorHeapHandleAtCPU handleCBV =
+			CreateDescriptorHeapHandleAtCPUIndicatingDescriptorByIndex(
+				device, descriptorHeap,
+				DescriptorHeapType::CBV_SRV_UAV,
+				index
+			);
+
+		device->CreateConstantBufferView(
+			&desc,
+			*Reinterpret(&handleCBV)
+		);
+	}
+
+	void D3D12Helper::CreateSRVAndRegistToDescriptorHeap(
+		const Device& device, const DescriptorHeap& descriptorHeap, const GraphicsBuffer& graphicsBuffer, int index, Format format)
 	{
 		const D3D12_SHADER_RESOURCE_VIEW_DESC desc =
 		{
@@ -502,12 +510,11 @@ namespace ForiverEngine
 			}
 		};
 
-		// 冗長だけど、処理を共通化する
 		const DescriptorHeapHandleAtCPU handleSRV =
 			CreateDescriptorHeapHandleAtCPUIndicatingDescriptorByIndex(
-				device, descriptorHeapSRV,
+				device, descriptorHeap,
 				DescriptorHeapType::CBV_SRV_UAV,
-				0 // DescriptorHeap (SRV) の最初に登録する
+				index
 			);
 
 		device->CreateShaderResourceView(
@@ -534,7 +541,7 @@ namespace ForiverEngine
 	}
 
 	bool D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer1D(
-		const GraphicsBuffer& graphicsBuffer, void* dataBegin, int dataSize)
+		const GraphicsBuffer& graphicsBuffer, const void* dataBegin, int dataSize)
 	{
 		void* bufferVirtualPtr = nullptr;
 		if (graphicsBuffer->Map(

@@ -1,3 +1,8 @@
+cbuffer _0 : register(b0)
+{
+    float4x4 _MVPMatrix;
+}
+
 Texture2D<float4> _AlbedoTexture : register(t0);
 SamplerState _Sampler : register(s0);
 
@@ -22,7 +27,7 @@ V2P VSMain(VSInput input)
 {
     V2P output;
     
-    output.pos = input.pos;
+    output.pos = mul(_MVPMatrix, input.pos);
     output.uv = input.uv;
     
     return output;

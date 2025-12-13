@@ -55,16 +55,9 @@ namespace ForiverEngine
 		static SwapChain CreateSwapChain(const Factory& factory, const CommandQueue& commandQueue, HWND hwnd, int windowWidth, int windowHeight);
 
 		/// <summary>
-		/// <para>DescriptorHeap を作成して返す (失敗したら nullptr)</para>
-		/// RenderTargetView 用
+		/// DescriptorHeap を作成して返す (失敗したら nullptr)
 		/// </summary>
-		static DescriptorHeap CreateDescriptorHeapRTV(const Device& device);
-
-		/// <summary>
-		/// <para>DescriptorHeap を作成して返す (失敗したら nullptr)</para>
-		/// ShaderResourceView 用
-		/// </summary>
-		static DescriptorHeap CreateDescriptorHeapSRV(const Device& device, int descriptorAmount);
+		static DescriptorHeap CreateDescriptorHeap(const Device& device, DescriptorHeapType type, int descriptorAmount, bool visibleToShader);
 
 		/// <summary>
 		/// Fence を作成して返す (失敗したら nullptr)
@@ -101,11 +94,20 @@ namespace ForiverEngine
 		static IndexBufferView CreateIndexBufferView(const GraphicsBuffer& indexBuffer, int indicesSize, Format indexFormat);
 
 		/// <summary>
-		/// <para>テクスチャバッファ から シェーダーリソースビュー を作成し、DescriptorHeap に登録する</para>
+		/// <para>定数バッファ から 定数バッファビュー を作成し、DescriptorHeap に登録する</para>
+		/// <para>DescriptorHeap の index 番目に登録する</para>
 		/// 戻り値として取得することは出来ない!
 		/// </summary>
-		static void CreateShaderResourceViewAndRegistToDescriptorHeap(
-			const GraphicsBuffer& graphicsBuffer, Format format, const Device& device, const DescriptorHeap& descriptorHeapSRV);
+		static void CreateCBVAndRegistToDescriptorHeap(
+			const Device& device, const DescriptorHeap& descriptorHeap, const GraphicsBuffer& graphicsBuffer, int index);
+
+		/// <summary>
+		/// <para>テクスチャバッファ から シェーダーリソースビュー を作成し、DescriptorHeap に登録する</para>
+		/// <para>DescriptorHeap の index 番目に登録する</para>
+		/// 戻り値として取得することは出来ない!
+		/// </summary>
+		static void CreateSRVAndRegistToDescriptorHeap(
+			const Device& device, const DescriptorHeap& descriptorHeap, const GraphicsBuffer& graphicsBuffer, int index, Format format);
 
 		/// <summary>
 		/// <para>DescriptorHeap のハンドルを作成し、index 番目の Descriptor を指し示すように内部ポインタを進めて返す</para>
@@ -128,7 +130,7 @@ namespace ForiverEngine
 		/// 成功したら true, 失敗したら false を返す (失敗した瞬間に処理を中断する)
 		/// </summary>
 		static bool CopyDataFromCPUToGPUThroughGraphicsBuffer1D(
-			const GraphicsBuffer& graphicsBuffer, void* dataBegin, int dataSize);
+			const GraphicsBuffer& graphicsBuffer, const void* dataBegin, int dataSize);
 
 		/// <summary>
 		/// <para>[Command]</para>

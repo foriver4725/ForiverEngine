@@ -20,10 +20,16 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	// ルートパラメータ
 	const RootParameter rootParameter =
 	{
-		.shaderVisibility = ShaderVisibility::PixelOnly,
+		.shaderVisibility = ShaderVisibility::All,
 		.descriptorRanges =
 		{
-			// SRV x1 t0
+			// CBV b0
+			{
+				.type = RootParameter::DescriptorRangeType::CBV,
+				.amount = 1,
+				.registerIndex = 0,
+			},
+			// SRV t0
 			{
 				.type = RootParameter::DescriptorRangeType::SRV,
 				.amount = 1,
@@ -37,6 +43,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		.shaderVisibility = ShaderVisibility::PixelOnly,
 		.addressingMode = SamplerConfig::AddressingMode::Wrap,
 		.filter = SamplerConfig::Filter::Bilinear,
+		.registerIndex = 0, // s0
 	};
 
 	const Transform transform =
@@ -87,6 +94,14 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		{ "TEXCOORD", Format::RG_F32 },
 	};
 
+	// 定数バッファー (サイズは256バイトにアラインメントする必要がある!!)
+	const GraphicsBuffer constantBuffer = D3D12Helper::CreateGraphicsBuffer1D(device, GetAlignmentedSize(sizeof(MVPMatrix), 256), true);
+	if (!constantBuffer)
+		ShowError(L"定数バッファーの作成に失敗しました");
+	// 定数バッファーにデータを書き込む
+	if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer1D(constantBuffer, &MVPMatrix, GetAlignmentedSize(sizeof(MVPMatrix), 256)))
+		ShowError(L"定数バッファーへのデータ転送に失敗しました");
+
 	const Texture texture = AssetLoader::LoadTexture("assets/pickaxe.png");
 	if (!texture.IsValid())
 		ShowError(L"テクスチャのロードに失敗しました");
@@ -107,10 +122,12 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	if (!D3D12Helper::WaitForGPUEventCompletion(D3D12Helper::CreateFence(device), commandQueue))
 		ShowError(L"GPU の処理待ち受けに失敗しました");
 
-	const DescriptorHeap descriptorHeapSRV = D3D12Helper::CreateDescriptorHeapSRV(device, 1);
-	if (!descriptorHeapSRV)
-		ShowError(L"SRV 用 DescriptorHeap の作成に失敗しました");
-	D3D12Helper::CreateShaderResourceViewAndRegistToDescriptorHeap(textureBuffer, texture.format, device, descriptorHeapSRV);
+	// CBV, SRV から成る DescriptorHeap
+	const DescriptorHeap descriptorHeap = D3D12Helper::CreateDescriptorHeap(device, DescriptorHeapType::CBV_SRV_UAV, 2, true);
+	if (!descriptorHeap)
+		ShowError(L"CBV/SRV/UAV 用 DescriptorHeap の作成に失敗しました");
+	D3D12Helper::CreateCBVAndRegistToDescriptorHeap(device, descriptorHeap, constantBuffer, 0);
+	D3D12Helper::CreateSRVAndRegistToDescriptorHeap(device, descriptorHeap, textureBuffer, 1, texture.format);
 
 	const auto [vertexBufferView, indexBufferView]
 		= D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, vertices, indices);
@@ -137,9 +154,9 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 			D3D12Helper::CommandClearRT(commandList, currentBackBufferRTV, Color::Black());
 			D3D12Helper::CommandSetRootSignature(commandList, rootSignature);
 			D3D12Helper::CommandSetGraphicsPipelineState(commandList, graphicsPipelineState);
-			D3D12Helper::CommandSetDescriptorHeaps(commandList, { descriptorHeapSRV });
+			D3D12Helper::CommandSetDescriptorHeaps(commandList, { descriptorHeap });
 			D3D12Helper::CommandLinkRootParameterIndexAndDescriptorHeapHandleAtGPU(
-				commandList, device, descriptorHeapSRV, DescriptorHeapType::CBV_SRV_UAV, 0, 0); // ルートパラメーターは1つだけ
+				commandList, device, descriptorHeap, DescriptorHeapType::CBV_SRV_UAV, 0, 0); // ルートパラメーターは1つだけ
 			D3D12Helper::CommandIASetPrimitiveTopology(commandList, PrimitiveTopology::TriangleList);
 			D3D12Helper::CommandIASetVertexBuffer(commandList, { vertexBufferView });
 			D3D12Helper::CommandIASetIndexBuffer(commandList, indexBufferView);

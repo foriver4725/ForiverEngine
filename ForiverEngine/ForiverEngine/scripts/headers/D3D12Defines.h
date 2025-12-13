@@ -269,5 +269,10 @@ public: \
 	inline constexpr static int GetAlignmentedSize(int size, int alignment)
 	{
 		return size + alignment - size % alignment;
+
+		// TODO: alignment == 256 の場合は、以下のビット演算で高速化できる
+#if 0
+		return (size + 0xff) & ~0xff;
+#endif
 	}
 }
