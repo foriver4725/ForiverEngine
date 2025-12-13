@@ -75,40 +75,40 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	const std::vector<VertexData> vertices =
 	{
 		// Up
-		{ Vector4(-1, 1, -1), Vector2(0.0f, 0.666f), Vector3(0, 1, 0)},
-		{ Vector4(-1, 1, 1), Vector2(0.0f, 0.333f), Vector3(0, 1, 0)},
-		{ Vector4(1, 1, -1), Vector2(0.250f, 0.666f), Vector3(0, 1, 0)},
-		{ Vector4(1, 1, 1), Vector2(0.250f, 0.333f), Vector3(0, 1, 0)},
+		{ Vector4(-1, 1, -1), Vector2(0.250f, 0.666f), Vector3(0, 1, 0)},
+		{ Vector4(-1, 1, 1), Vector2(0.250f, 0.333f), Vector3(0, 1, 0)},
+		{ Vector4(1, 1, -1), Vector2(0.500f, 0.666f), Vector3(0, 1, 0)},
+		{ Vector4(1, 1, 1), Vector2(0.500f, 0.333f), Vector3(0, 1, 0)},
 
 		// Down
-		{ Vector4(-1, -1, 1), Vector2(0.0f, 0.0f), Vector3(0, -1, 0)},
-		{ Vector4(-1, -1, -1), Vector2(0.0f, 1.0f), Vector3(0, -1, 0)},
-		{ Vector4(1, -1, 1), Vector2(0.250f, 0.0f), Vector3(0, -1, 0)},
-		{ Vector4(1, -1, -1), Vector2(0.250f, 1.0f), Vector3(0, -1, 0)},
+		{ Vector4(-1, -1, 1), Vector2(1.000f, 0.333f), Vector3(0, -1, 0)},
+		{ Vector4(-1, -1, -1), Vector2(1.000f, 0.666f), Vector3(0, -1, 0)},
+		{ Vector4(1, -1, 1), Vector2(0.750f, 0.333f), Vector3(0, -1, 0)},
+		{ Vector4(1, -1, -1), Vector2(0.750f, 0.666f), Vector3(0, -1, 0)},
 
 		// Right
-		{ Vector4(1, -1, -1), Vector2(0.500f, 1.0f), Vector3(1, 0, 0)},
+		{ Vector4(1, -1, -1), Vector2(0.750f, 0.666f), Vector3(1, 0, 0)},
 		{ Vector4(1, 1, -1), Vector2(0.500f, 0.666f), Vector3(1, 0, 0)},
-		{ Vector4(1, -1, 1), Vector2(0.750f, 1.0f), Vector3(1, 0, 0)},
-		{ Vector4(1, 1, 1), Vector2(0.750f, 0.666f), Vector3(1, 0, 0)},
+		{ Vector4(1, -1, 1), Vector2(0.750f, 0.333f), Vector3(1, 0, 0)},
+		{ Vector4(1, 1, 1), Vector2(0.500f, 0.333f), Vector3(1, 0, 0)},
 
 		// Left
-		{ Vector4(-1, -1, 1), Vector2(0.500f, 1.0f), Vector3(-1, 0, 0)},
-		{ Vector4(-1, 1, 1), Vector2(0.500f, 0.666f), Vector3(-1, 0, 0)},
-		{ Vector4(-1, -1, -1), Vector2(0.250f, 1.0f), Vector3(-1, 0, 0)},
+		{ Vector4(-1, -1, 1), Vector2(0.000f, 0.333f), Vector3(-1, 0, 0)},
+		{ Vector4(-1, 1, 1), Vector2(0.250f, 0.333f), Vector3(-1, 0, 0)},
+		{ Vector4(-1, -1, -1), Vector2(0.000f, 0.666f), Vector3(-1, 0, 0)},
 		{ Vector4(-1, 1, -1), Vector2(0.250f, 0.666f), Vector3(-1, 0, 0)},
 
 		// Forward
-		{ Vector4(1, -1, 1), Vector2(0.500f, 0.0f), Vector3(0, 0, 1)},
+		{ Vector4(1, -1, 1), Vector2(0.500f, 0.000f), Vector3(0, 0, 1)},
 		{ Vector4(1, 1, 1), Vector2(0.500f, 0.333f), Vector3(0, 0, 1)},
-		{ Vector4(-1, -1, 1), Vector2(0.250f, 0.0f), Vector3(0, 0, 1)},
+		{ Vector4(-1, -1, 1), Vector2(0.250f, 0.000f), Vector3(0, 0, 1)},
 		{ Vector4(-1, 1, 1), Vector2(0.250f, 0.333f), Vector3(0, 0, 1)},
 
 		// Backward
-		{ Vector4(-1, -1, -1), Vector2(0.750f, 1.0f), Vector3(0, 0, -1)},
-		{ Vector4(-1, 1, -1), Vector2(0.750f, 0.666f), Vector3(0, 0, -1)},
-		{ Vector4(1, -1, -1), Vector2(1.0f, 1.0f), Vector3(0, 0, -1)},
-		{ Vector4(1, 1, -1), Vector2(1.0f, 0.666f), Vector3(0, 0, -1)},
+		{ Vector4(-1, -1, -1), Vector2(0.250f, 1.000f), Vector3(0, 0, -1)},
+		{ Vector4(-1, 1, -1), Vector2(0.250f, 0.666f), Vector3(0, 0, -1)},
+		{ Vector4(1, -1, -1), Vector2(0.500f, 1.000f), Vector3(0, 0, -1)},
+		{ Vector4(1, 1, -1), Vector2(0.500f, 0.666f), Vector3(0, 0, -1)},
 	};
 
 	// 頂点インデックス (時計回り)
