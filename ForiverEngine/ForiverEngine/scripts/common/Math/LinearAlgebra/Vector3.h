@@ -160,6 +160,14 @@ namespace ForiverEngine
 			const float _t = std::clamp(t, 0.0f, 1.0f);
 			return from + (to - from) * _t;
 		}
+		static Vector3 Slerp(const Vector3& from, const Vector3& to, float t) noexcept
+		{
+			const float _t = std::clamp(t, 0.0f, 1.0f);
+			const float dot = Dot(from.Normed(), to.Normed());
+			const float theta = std::acos(std::clamp(dot, -1.0f, 1.0f)) * _t;
+			const Vector3 relativeVec = (to - from * dot).Normed();
+			return (from * std::cos(theta)) + (relativeVec * std::sin(theta));
+		}
 		static Vector3 Reflect(const Vector3& vec, const Vector3& normal) noexcept
 		{
 			const Vector3 _normal = normal.Normed();

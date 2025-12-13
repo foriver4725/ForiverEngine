@@ -75,9 +75,6 @@
     <ClInclude Include="scripts\common\Math\Include.h">
       <Filter>scripts\common\Math</Filter>
     </ClInclude>
-    <ClInclude Include="scripts\common\Math\LinearAlgebra\Defines.h">
-      <Filter>scripts\common\Math\LinearAlgebra</Filter>
-    </ClInclude>
     <ClInclude Include="scripts\common\Math\LinearAlgebra\Include.h">
       <Filter>scripts\common\Math\LinearAlgebra</Filter>
     </ClInclude>
@@ -100,6 +97,15 @@
       <Filter>scripts\common\Math\LinearAlgebra</Filter>
     </ClInclude>
     <ClInclude Include="scripts\common\Math\LinearAlgebra\Vector4.h">
+      <Filter>scripts\common\Math\LinearAlgebra</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\common\Math\Color.h">
+      <Filter>scripts\common\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\common\Math\Defines.h">
+      <Filter>scripts\common\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\common\Math\LinearAlgebra\Defines.h">
       <Filter>scripts\common\Math\LinearAlgebra</Filter>
     </ClInclude>
   </ItemGroup>

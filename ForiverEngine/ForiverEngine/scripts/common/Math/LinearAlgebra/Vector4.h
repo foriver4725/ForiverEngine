@@ -113,5 +113,14 @@ namespace ForiverEngine
 			float _t = std::clamp(t, 0.0f, 1.0f);
 			return a + (b - a) * _t;
 		}
+		static Vector4 Slerp(const Vector4& a, const Vector4& b, float t) noexcept
+		{
+			float _t = std::clamp(t, 0.0f, 1.0f);
+			float dot = Dot(a.Normed(), b.Normed());
+			dot = std::clamp(dot, -1.0f, 1.0f);
+			float theta = std::acos(dot) * _t;
+			Vector4 relativeVec = (b - a * dot).Normed();
+			return (a * std::cos(theta)) + (relativeVec * std::sin(theta));
+		}
 	};
 }

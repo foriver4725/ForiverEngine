@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <string>
+#define NOMINMAX
 #include <Windows.h>
 
 namespace ForiverEngine

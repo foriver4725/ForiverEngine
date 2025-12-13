@@ -153,6 +153,8 @@
   <ItemGroup>
     <ClInclude Include="oss\SimplexNoise.h" />
     <ClInclude Include="scripts\common\Include.h" />
+    <ClInclude Include="scripts\common\Math\Color.h" />
+    <ClInclude Include="scripts\common\Math\Defines.h" />
     <ClInclude Include="scripts\common\Math\Include.h" />
     <ClInclude Include="scripts\common\Math\LinearAlgebra\Defines.h" />
     <ClInclude Include="scripts\common\Math\LinearAlgebra\Include.h" />
