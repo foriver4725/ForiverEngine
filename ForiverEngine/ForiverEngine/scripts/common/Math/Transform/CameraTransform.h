@@ -19,7 +19,10 @@ namespace ForiverEngine
 
 		float nearClip; // near > 0
 		float farClip; // far > near
-		Vector2 fov; // 水平/垂直 (ラジアン)
+
+		bool isPerspective = true; // true: 透視投影, false: 平行投影
+		float fov; // 垂直方向 (ラジアン)
+		float aspectRatio; // 幅 / 高さ
 
 		/// <summary>
 		/// <para>View行列を計算</para>
@@ -52,22 +55,34 @@ namespace ForiverEngine
 
 		/// <summary>
 		/// <para>Projection行列を計算</para>
-		/// <para>x[-1,1], y[-1,1], z[0,1]の範囲に変換</para>
-		/// <para>アフィン変換ではない!!</para>
+		/// <para>x[-1,1], y[-1,1], z[0,1] の範囲に変換</para>
 		/// </summary>
 		Matrix4x4 CalculateProjectionMatrix() const noexcept
 		{
-			const float fovXRad = fov.x;
-			const float fovYRad = fov.y;
-			const float tanHalfFovX = std::tan(fovXRad * 0.5f);
-			const float tanHalfFovY = std::tan(fovYRad * 0.5f);
+			if (isPerspective)
+			{
+				const float tanHalfFovY = std::tan(fov * 0.5f);
+				const float tanHalfFovX = tanHalfFovY * aspectRatio;
 
-			return Matrix4x4(
-				1.0f / tanHalfFovX, 0.0f, 0.0f, 0.0f,
-				0.0f, 1.0f / tanHalfFovY, 0.0f, 0.0f,
-				0.0f, 0.0f, farClip / (farClip - nearClip), 1.0f,
-				0.0f, 0.0f, -(farClip * nearClip) / (farClip - nearClip), 0.0f
-			);
+				return Matrix4x4(
+					1.0f / tanHalfFovX, 0.0f, 0.0f, 0.0f,
+					0.0f, 1.0f / tanHalfFovY, 0.0f, 0.0f,
+					0.0f, 0.0f, farClip / (farClip - nearClip), 1.0f,
+					0.0f, 0.0f, -(farClip * nearClip) / (farClip - nearClip), 0.0f
+				);
+			}
+			else
+			{
+				const float viewHeight = 2.0f * nearClip * std::tan(fov * 0.5f);
+				const float viewWidth = viewHeight * aspectRatio;
+
+				return Matrix4x4(
+					2.0f / viewWidth, 0.0f, 0.0f, 0.0f,
+					0.0f, 2.0f / viewHeight, 0.0f, 0.0f,
+					0.0f, 0.0f, 1.0f / (farClip - nearClip), 0.0f,
+					0.0f, 0.0f, -nearClip / (farClip - nearClip), 1.0f
+				);
+			}
 		}
 	};
 }

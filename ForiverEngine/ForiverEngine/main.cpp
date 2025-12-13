@@ -39,6 +39,31 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		.filter = SamplerConfig::Filter::Bilinear,
 	};
 
+	const Transform transform =
+	{
+		.parent = nullptr,
+		.position = Vector3::Zero(),
+		.rotation = Quaternion::Identity(),
+		.scale = Vector3::One(),
+	};
+
+	const CameraTransform cameraTransform =
+	{
+		.position = Vector3(0, 0, -10),
+		.target = Vector3::Zero(),
+		.up = Vector3::Up(),
+		.nearClip = 0.1f,
+		.farClip = 1000.0f,
+		.isPerspective = true,
+		.fov = 60.0f * DegToRad,
+		.aspectRatio = 1.0f * WindowWidth / WindowHeight,
+	};
+
+	const Matrix4x4 ModelMatrix = transform.CalculateModelMatrix();
+	const Matrix4x4 ViewMatrix = cameraTransform.CalculateViewMatrix();
+	const Matrix4x4 ProjectionMatrix = cameraTransform.CalculateProjectionMatrix();
+	const Matrix4x4 MVPMatrix = ProjectionMatrix * ViewMatrix * ModelMatrix;
+
 	// 頂点データ
 	const std::vector<VertexData> vertices =
 	{
