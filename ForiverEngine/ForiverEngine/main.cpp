@@ -42,7 +42,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	{
 		.shaderVisibility = ShaderVisibility::PixelOnly,
 		.addressingMode = SamplerConfig::AddressingMode::Wrap,
-		.filter = SamplerConfig::Filter::Bilinear,
+		.filter = SamplerConfig::Filter::Point,
 		.registerIndex = 0, // s0
 	};
 
@@ -74,36 +74,52 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	// 頂点データ
 	const std::vector<VertexData> vertices =
 	{
-		// TODO: テクスチャデータの構造が良くないかも
+		// Up
+		{ Vector4(-1, 1, -1), Vector2(0.0f, 0.666f), Vector3(0, 1, 0)},
+		{ Vector4(-1, 1, 1), Vector2(0.0f, 0.333f), Vector3(0, 1, 0)},
+		{ Vector4(1, 1, -1), Vector2(0.250f, 0.666f), Vector3(0, 1, 0)},
+		{ Vector4(1, 1, 1), Vector2(0.250f, 0.333f), Vector3(0, 1, 0)},
 
-		// U-L-B
-		{Vector4(-1, 1, -1, 1), Vector2(0.250f, 0.666f), Vector3(-1, 1, -1).Normed()},
-		// U-L-F
-		{Vector4(-1, 1, 1, 1), Vector2(0.250f, 0.333f), Vector3(-1, 1, 1).Normed()},
-		// U-R-B
-		{Vector4(1, 1, -1, 1), Vector2(0.500f, 0.666f), Vector3(1, 1, -1).Normed()},
-		// U-R-F
-		{Vector4(1, 1, 1, 1), Vector2(0.500f, 0.333f), Vector3(1, 1, 1).Normed()},
+		// Down
+		{ Vector4(-1, -1, -1), Vector2(0.0f, 1.0f), Vector3(0, -1, 0)},
+		{ Vector4(-1, -1, 1), Vector2(0.0f, 0.0f), Vector3(0, -1, 0)},
+		{ Vector4(1, -1, -1), Vector2(0.250f, 1.0f), Vector3(0, -1, 0)},
+		{ Vector4(1, -1, 1), Vector2(0.250f, 0.0f), Vector3(0, -1, 0)},
 
-		// D-L-B
-		{Vector4(-1, -1, -1, 1), Vector2(0.250f, 1.0f), Vector3(-1, -1, -1).Normed()},
-		// D-L-F
-		{Vector4(-1, -1, 1, 1), Vector2(0.250f, 0.0f), Vector3(-1, -1, 1).Normed()},
-		// D-R-B
-		{Vector4(1, -1, -1, 1), Vector2(0.500f, 1.0f), Vector3(1, -1, -1).Normed()},
-		// D-R-F
-		{Vector4(1, -1, 1, 1), Vector2(0.500f, 0.0f), Vector3(1, -1, 1).Normed()},
+		// Left
+		{ Vector4(-1, 1, -1), Vector2(0.250f, 0.666f), Vector3(-1, 0, 0)},
+		{ Vector4(-1, -1, -1), Vector2(0.250f, 1.0f), Vector3(-1, 0, 0)},
+		{ Vector4(-1, 1, 1), Vector2(0.500f, 0.666f), Vector3(-1, 0, 0)},
+		{ Vector4(-1, -1, 1), Vector2(0.500f, 1.0f), Vector3(-1, 0, 0)},
+
+		// Right
+		{ Vector4(1, 1, -1), Vector2(0.500f, 0.666f), Vector3(1, 0, 0)},
+		{ Vector4(1, -1, -1), Vector2(0.500f, 1.0f), Vector3(1, 0, 0)},
+		{ Vector4(1, 1, 1), Vector2(0.750f, 0.666f), Vector3(1, 0, 0)},
+		{ Vector4(1, -1, 1), Vector2(0.750f, 1.0f), Vector3(1, 0, 0)},
+
+		// Forward
+		{ Vector4(-1, 1, 1), Vector2(0.250f, 0.333f), Vector3(0, 0, 1)},
+		{ Vector4(-1, -1, 1), Vector2(0.250f, 0.0f), Vector3(0, 0, 1)},
+		{ Vector4(1, 1, 1), Vector2(0.500f, 0.333f), Vector3(0, 0, 1)},
+		{ Vector4(1, -1, 1), Vector2(0.500f, 0.0f), Vector3(0, 0, 1)},
+
+		// Backward
+		{ Vector4(-1, 1, -1), Vector2(0.750f, 0.666f), Vector3(0, 0, -1)},
+		{ Vector4(-1, -1, -1), Vector2(0.750f, 1.0f), Vector3(0, 0, -1)},
+		{ Vector4(1, 1, -1), Vector2(1.0f, 0.666f), Vector3(0, 0, -1)},
+		{ Vector4(1, -1, -1), Vector2(1.0f, 1.0f), Vector3(0, 0, -1)},
 	};
 
-	// 頂点インデックス
+	// 頂点インデックス (時計回り)
 	const std::vector<std::uint16_t> indices =
 	{
-		0, 1, 2, 2, 1, 3, // Up
-		4, 6, 5, 5, 6, 7, // Down
-		4, 5, 0, 0, 5, 1, // Left
-		2, 3, 6, 6, 3, 7, // Right
-		1, 5, 3, 3, 5, 7, // Forward
-		4, 0, 6, 6, 0, 2, // Backward
+		0, 1, 2, 1, 2, 3,       // Up
+		4, 6, 5, 5, 6, 7,       // Down
+		8, 9, 10, 9, 10, 11,    // Left
+		12, 14, 13, 13, 14, 15,  // Right
+		16, 17, 18, 17, 18, 19,  // Forward
+		20, 22, 21, 21, 22, 23,  // Backward
 	};
 
 	// 頂点レイアウト
