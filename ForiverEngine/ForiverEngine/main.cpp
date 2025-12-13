@@ -50,19 +50,19 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	{
 		.parent = nullptr,
 		.position = Vector3::Zero(),
-		.rotation = Quaternion::FromAxisAngle(Vector3::Up(), 45.0f * DegToRad),
+		.rotation = Quaternion::Identity(),
 		.scale = Vector3::One(),
 	};
 
 	CameraTransform cameraTransform =
 	{
-		.position = Vector3(0, 3, -7),
+		.position = Vector3(0, 3, -5),
 		.target = Vector3::Zero(),
 		.up = Vector3::Up(),
 		.nearClip = 0.1f,
 		.farClip = 1000.0f,
 		.isPerspective = true,
-		.fov = 120.0f * DegToRad,
+		.fov = 60.0f * DegToRad,
 		.aspectRatio = 1.0f * WindowWidth / WindowHeight,
 	};
 
@@ -176,11 +176,11 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 			= D3D12BasicFlow::GetCurrentBackBufferAndCreateView(device, swapChain, descriptorHeapRTV);
 
 		// 適当に、立方体を回転させる
-		/*transform.rotation = Quaternion::FromAxisAngle(Vector3(1, 2, -3).Normed(), 1.0f * DegToRad) * transform.rotation;
+		transform.rotation = Quaternion::FromAxisAngle(Vector3::Up(), 1.0f * DegToRad) * transform.rotation;
 		const Matrix4x4 ModelMatrix = transform.CalculateModelMatrix();
 		const Matrix4x4 ViewMatrix = cameraTransform.CalculateViewMatrix();
 		const Matrix4x4 ProjectionMatrix = cameraTransform.CalculateProjectionMatrix();
-		*constantBufferVirtualPtr = ProjectionMatrix * ViewMatrix * ModelMatrix;*/
+		*constantBufferVirtualPtr = ProjectionMatrix * ViewMatrix * ModelMatrix;
 
 		D3D12Helper::CommandInvokeResourceBarrierAsTransition(commandList, currentBackBuffer,
 			GraphicsBufferState::Present, GraphicsBufferState::RenderTarget, false);

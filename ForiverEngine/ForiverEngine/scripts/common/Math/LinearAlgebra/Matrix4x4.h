@@ -10,10 +10,10 @@ namespace ForiverEngine
 	// 列優先
 	struct Matrix4x4
 	{
-		float c0r0; float c1r0; float c2r0; float c3r0;
-		float c0r1; float c1r1; float c2r1; float c3r1;
-		float c0r2; float c1r2; float c2r2; float c3r2;
-		float c0r3; float c1r3; float c2r3; float c3r3;
+		float c0r0; float c0r1; float c0r2; float c0r3;
+		float c1r0; float c1r1; float c1r2; float c1r3;
+		float c2r0; float c2r1; float c2r2; float c2r3;
+		float c3r0; float c3r1; float c3r2; float c3r3;
 
 		constexpr Matrix4x4() noexcept
 			: c0r0(1.0f), c1r0(0.0f), c2r0(0.0f), c3r0(0.0f)

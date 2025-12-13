@@ -8,8 +8,8 @@ namespace ForiverEngine
 	// 列優先
 	struct Matrix2x2
 	{
-		float c0r0; float c1r0;
-		float c0r1; float c1r1;
+		float c0r0; float c0r1;
+		float c1r0; float c1r1;
 
 		constexpr Matrix2x2() noexcept
 			: c0r0(1.0f), c1r0(0.0f)

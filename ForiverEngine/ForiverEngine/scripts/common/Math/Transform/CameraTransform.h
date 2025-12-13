@@ -21,7 +21,7 @@ namespace ForiverEngine
 		float farClip; // far > near
 
 		bool isPerspective = true; // true: 透視投影, false: 平行投影
-		float fov; // 垂直方向 (ラジアン, 視線ベクトルからの角度を2倍したもの)
+		float fov; // 垂直方向 (ラジアン. 視線ベクトルからの角度)
 		float aspectRatio; // 幅 / 高さ
 
 		/// <summary>
@@ -65,13 +65,12 @@ namespace ForiverEngine
 		/// </summary>
 		Matrix4x4 CalculateProjectionMatrix() const noexcept
 		{
-			const float halfFov = fov * 0.5f;
 			const float zRangeRcp = 1.0f / (farClip - nearClip);
 
 			if (isPerspective)
 			{
-				const float xScale = 1.0f / (aspectRatio * std::tan(halfFov));
-				const float yScale = 1.0f / std::tan(halfFov);
+				const float xScale = 1.0f / (aspectRatio * std::tan(fov));
+				const float yScale = 1.0f / std::tan(fov);
 				const float zScale = farClip * zRangeRcp;
 				const float zTranslate = farClip * -nearClip * zRangeRcp;
 
@@ -85,8 +84,8 @@ namespace ForiverEngine
 			else
 			{
 				// nearクリップ面で平行投影を始めると想定する
-				const float xScale = 1.0f / (nearClip * aspectRatio * std::tan(halfFov));
-				const float yScale = 1.0f / (nearClip * std::tan(halfFov));
+				const float xScale = 1.0f / (nearClip * aspectRatio * std::tan(fov));
+				const float yScale = 1.0f / (nearClip * std::tan(fov));
 				const float zScale = zRangeRcp;
 				const float zTranslate = -nearClip * zRangeRcp;
 
