@@ -117,12 +117,14 @@ namespace ForiverEngine
 			return Vector3(result.x, result.y, result.z);
 		}
 
-		void operator*=(const Quaternion& other) noexcept
+		Quaternion& operator*=(const Quaternion& other) noexcept
 		{
 			x = w * other.x + x * other.w + y * other.z - z * other.y;
 			y = w * other.y - x * other.z + y * other.w + z * other.x;
 			z = w * other.z + x * other.y - y * other.x + z * other.w;
 			w = w * other.w - x * other.x - y * other.y - z * other.z;
+
+			return *this;
 		}
 
 		float LenSq() const noexcept
@@ -144,9 +146,10 @@ namespace ForiverEngine
 			}
 			return Quaternion(x / len, y / len, z / len, w / len);
 		}
-		void Norm() noexcept
+		Quaternion& Norm() noexcept
 		{
 			*this = Normalized();
+			return *this;
 		}
 
 		Quaternion Conjugate() const noexcept

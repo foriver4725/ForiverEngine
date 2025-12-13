@@ -111,42 +111,52 @@ namespace ForiverEngine
 			return Color(color.r * scalar, color.g * scalar, color.b * scalar, color.a * scalar);
 		}
 
-		void operator+=(const Color& other) noexcept
+		Color& operator+=(const Color& other) noexcept
 		{
 			r += other.r;
 			g += other.g;
 			b += other.b;
 			a += other.a;
+
+			return *this;
 		}
-		void operator-=(const Color& other) noexcept
+		Color& operator-=(const Color& other) noexcept
 		{
 			r -= other.r;
 			g -= other.g;
 			b -= other.b;
 			a -= other.a;
+
+			return *this;
 		}
-		void operator*=(const Color& other) noexcept
+		Color& operator*=(const Color& other) noexcept
 		{
 			r *= other.r;
 			g *= other.g;
 			b *= other.b;
 			a *= other.a;
+
+			return *this;
 		}
-		void operator/=(const Color& other) noexcept
+		Color& operator/=(const Color& other) noexcept
 		{
 			r = (std::abs(other.r) < Epsilon) ? 0.0f : (r / other.r);
 			g = (std::abs(other.g) < Epsilon) ? 0.0f : (g / other.g);
 			b = (std::abs(other.b) < Epsilon) ? 0.0f : (b / other.b);
 			a = (std::abs(other.a) < Epsilon) ? 0.0f : (a / other.a);
+
+			return *this;
 		}
-		void operator*=(float scalar) noexcept
+		Color& operator*=(float scalar) noexcept
 		{
 			r *= scalar;
 			g *= scalar;
 			b *= scalar;
 			a *= scalar;
+
+			return *this;
 		}
-		void operator/=(float scalar) noexcept
+		Color& operator/=(float scalar) noexcept
 		{
 			if (std::abs(scalar) < Epsilon)
 			{
@@ -162,6 +172,8 @@ namespace ForiverEngine
 				b /= scalar;
 				a /= scalar;
 			}
+
+			return *this;
 		}
 
 		static Color Lerp(const Color& from, const Color& to, float t) noexcept

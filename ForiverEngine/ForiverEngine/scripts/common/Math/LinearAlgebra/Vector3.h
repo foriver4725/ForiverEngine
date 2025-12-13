@@ -60,6 +60,15 @@ namespace ForiverEngine
 			return !(*this == other);
 		}
 
+		Vector3 operator+() const noexcept
+		{
+			return *this;
+		}
+		Vector3 operator-() const noexcept
+		{
+			return Vector3(-x, -y, -z);
+		}
+
 		Vector3 operator+(const Vector3& other) const noexcept
 		{
 			return Vector3(x + other.x, y + other.y, z + other.z);
@@ -85,25 +94,31 @@ namespace ForiverEngine
 			return Vector3(vec.x * scalar, vec.y * scalar, vec.z * scalar);
 		}
 
-		void operator+=(const Vector3& other) noexcept
+		Vector3& operator+=(const Vector3& other) noexcept
 		{
 			x += other.x;
 			y += other.y;
 			z += other.z;
+
+			return *this;
 		}
-		void operator-=(const Vector3& other) noexcept
+		Vector3& operator-=(const Vector3& other) noexcept
 		{
 			x -= other.x;
 			y -= other.y;
 			z -= other.z;
+
+			return *this;
 		}
-		void operator*=(float scalar) noexcept
+		Vector3& operator*=(float scalar) noexcept
 		{
 			x *= scalar;
 			y *= scalar;
 			z *= scalar;
+
+			return *this;
 		}
-		void operator/=(float scalar) noexcept
+		Vector3& operator/=(float scalar) noexcept
 		{
 			if (std::abs(scalar) < Epsilon)
 			{
@@ -117,6 +132,8 @@ namespace ForiverEngine
 				y /= scalar;
 				z /= scalar;
 			}
+
+			return *this;
 		}
 
 		float LenSq() const noexcept
@@ -137,9 +154,10 @@ namespace ForiverEngine
 			}
 			return *this / len;
 		}
-		void Norm() noexcept
+		Vector3& Norm() noexcept
 		{
 			*this = Normed();
+			return *this;
 		}
 
 		static float Dot(const Vector3& lhs, const Vector3& rhs) noexcept

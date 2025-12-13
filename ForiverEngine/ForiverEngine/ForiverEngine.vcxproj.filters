@@ -108,6 +108,9 @@
     <ClInclude Include="scripts\common\Math\LinearAlgebra\Defines.h">
       <Filter>scripts\common\Math\LinearAlgebra</Filter>
     </ClInclude>
+    <ClInclude Include="scripts\common\Math\LinearAlgebra\Transform.h">
+      <Filter>scripts\common\Math\LinearAlgebra</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shaders\Basic.hlsl">
