@@ -32,6 +32,12 @@ UV座標を渡す
 
 <img width="50%" alt="image" src="https://github.com/user-attachments/assets/201cd605-82ea-45b9-8a49-beb81ecc9124" />
 
+---
+線形代数の算術を定義  
+Transform構造体を作り、MVP行列を計算する
+
+<img width="50%" alt="image" src="https://github.com/user-attachments/assets/bbccd236-f7a4-46e3-9884-42c9d064e2a3" />
+
 ## OSS
 | 名前 | ライセンス |
 | --- | --- |
