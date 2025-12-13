@@ -21,7 +21,7 @@ namespace ForiverEngine
 		float farClip; // far > near
 
 		bool isPerspective = true; // true: 透視投影, false: 平行投影
-		float fov; // 垂直方向 (ラジアン)
+		float fov; // 垂直方向 (ラジアン, 視線ベクトルからの角度を2倍したもの)
 		float aspectRatio; // 幅 / 高さ
 
 		/// <summary>
@@ -29,28 +29,34 @@ namespace ForiverEngine
 		/// </summary>
 		Matrix4x4 CalculateViewMatrix() const noexcept
 		{
-			Vector3 safeUp = up.Normed();
-			if (std::abs(Vector3::Dot((target - position).Normed(), safeUp)) < Epsilon)
+			const Vector3 toTarget = target - position;
+			Vector3 up = this->up;
+
+			// 注視点に近すぎる → 単位行列を返す
+			if (toTarget.LenSq() < Epsilon)
+				return Matrix4x4::Identity();
+			// up ベクトルが視線ベクトルに近すぎる → 別の軸をupにする
+			if (Vector3::Dot(toTarget.Normed(), up.Normed()) > 1.0f - Epsilon)
+				up = (std::abs(toTarget.y) < 0.9f) ? Vector3::Up() : Vector3::Right();
+
+			// カメラ座標系の基底ベクトル
+			Vector3 cameraX, cameraY, cameraZ;
 			{
-				// 注視点方向とupベクトルがほぼ同じ場合、upベクトルを変更する
-				safeUp = Vector3::Right();
+				cameraZ = toTarget.Normed();
+				cameraY = up.Normed(); // 仮
+				cameraX = Vector3::Cross(cameraY, cameraZ).Normed();
+				cameraY = Vector3::Cross(cameraZ, cameraX).Normed();
 			}
 
-			const Vector3 zAxis = (target - position).Normed(); // 前方向
-			const Vector3 xAxis = Vector3::Cross(safeUp, zAxis).Normed(); // 右方向
-			const Vector3 yAxis = Vector3::Cross(zAxis, xAxis); // 上方向
-
-			return Matrix4x4::FromColumnVectors(
-				Vector4(xAxis, 0.0f),
-				Vector4(yAxis, 0.0f),
-				Vector4(zAxis, 0.0f),
-				Vector4(
-					-Vector3::Dot(xAxis, position),
-					-Vector3::Dot(yAxis, position),
-					-Vector3::Dot(zAxis, position),
-					1.0f
-				)
+			const Matrix4x4 rotateInversed = Matrix4x4::FromRowVectors(
+				Vector4(cameraX, 0.0f),
+				Vector4(cameraY, 0.0f),
+				Vector4(cameraZ, 0.0f),
+				Vector4(0.0f, 0.0f, 0.0f, 1.0f)
 			);
+			const Matrix4x4 tranlateInversed = Matrix4x4::Translate(-position);
+
+			return rotateInversed * tranlateInversed;
 		}
 
 		/// <summary>
@@ -59,30 +65,36 @@ namespace ForiverEngine
 		/// </summary>
 		Matrix4x4 CalculateProjectionMatrix() const noexcept
 		{
+			const float halfFov = fov * 0.5f;
+			const float zRangeRcp = 1.0f / (farClip - nearClip);
+
 			if (isPerspective)
 			{
-				const float yScale = 1.0f / std::tan(fov * 0.5f);
-				const float xScale = yScale / aspectRatio;
-				const float zRange = farClip - nearClip;
+				const float xScale = 1.0f / (aspectRatio * std::tan(halfFov));
+				const float yScale = 1.0f / std::tan(halfFov);
+				const float zScale = farClip * zRangeRcp;
+				const float zTranslate = farClip * -nearClip * zRangeRcp;
 
-				return Matrix4x4::FromColumnVectors(
+				return Matrix4x4::FromRowVectors(
 					Vector4(xScale, 0.0f, 0.0f, 0.0f),
 					Vector4(0.0f, yScale, 0.0f, 0.0f),
-					Vector4(0.0f, 0.0f, farClip / zRange, 1.0f),
-					Vector4(0.0f, 0.0f, -(nearClip * farClip) / zRange, 0.0f)
+					Vector4(0.0f, 0.0f, zScale, zTranslate),
+					Vector4(0.0f, 0.0f, 1.0f, 0.0f)
 				);
 			}
 			else
 			{
-				const float viewHeight = 2.0f * nearClip * std::tan(fov * 0.5f);
-				const float viewWidth = viewHeight * aspectRatio;
-				const float zRange = farClip - nearClip;
+				// nearクリップ面で平行投影を始めると想定する
+				const float xScale = 1.0f / (nearClip * aspectRatio * std::tan(halfFov));
+				const float yScale = 1.0f / (nearClip * std::tan(halfFov));
+				const float zScale = zRangeRcp;
+				const float zTranslate = -nearClip * zRangeRcp;
 
-				return Matrix4x4::FromColumnVectors(
-					Vector4(2.0f / viewWidth, 0.0f, 0.0f, 0.0f),
-					Vector4(0.0f, 2.0f / viewHeight, 0.0f, 0.0f),
-					Vector4(0.0f, 0.0f, 1.0f / zRange, 0.0f),
-					Vector4(0.0f, 0.0f, -nearClip / zRange, 1.0f)
+				return Matrix4x4::FromRowVectors(
+					Vector4(xScale, 0.0f, 0.0f, 0.0f),
+					Vector4(0.0f, yScale, 0.0f, 0.0f),
+					Vector4(0.0f, 0.0f, zScale, zTranslate),
+					Vector4(0.0f, 0.0f, 0.0f, 1.0f)
 				);
 			}
 		}
