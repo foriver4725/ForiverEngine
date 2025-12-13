@@ -17,11 +17,13 @@ namespace ForiverEngine
 		Vector3 target;
 		Vector3 up = Vector3::Up();
 
-		float near; // near > 0
-		float far; // far > near
-		Vector2 fov; // 水平/垂直
+		float nearClip; // near > 0
+		float farClip; // far > near
+		Vector2 fov; // 水平/垂直 (ラジアン)
 
-		// View行列を計算
+		/// <summary>
+		/// <para>View行列を計算</para>
+		/// </summary>
 		Matrix4x4 CalculateViewMatrix() const noexcept
 		{
 			Vector3 safeUp = up.Normed();
@@ -48,18 +50,23 @@ namespace ForiverEngine
 			);
 		}
 
-		// Projection行列を計算
+		/// <summary>
+		/// <para>Projection行列を計算</para>
+		/// <para>x[-1,1], y[-1,1], z[0,1]の範囲に変換</para>
+		/// <para>アフィン変換ではない!!</para>
+		/// </summary>
 		Matrix4x4 CalculateProjectionMatrix() const noexcept
 		{
 			const float fovXRad = fov.x;
 			const float fovYRad = fov.y;
 			const float tanHalfFovX = std::tan(fovXRad * 0.5f);
 			const float tanHalfFovY = std::tan(fovYRad * 0.5f);
+
 			return Matrix4x4(
 				1.0f / tanHalfFovX, 0.0f, 0.0f, 0.0f,
 				0.0f, 1.0f / tanHalfFovY, 0.0f, 0.0f,
-				0.0f, 0.0f, far / (far - near), 1.0f,
-				0.0f, 0.0f, -(far * near) / (far - near), 0.0f
+				0.0f, 0.0f, farClip / (farClip - nearClip), 1.0f,
+				0.0f, 0.0f, -(farClip * nearClip) / (farClip - nearClip), 0.0f
 			);
 		}
 	};

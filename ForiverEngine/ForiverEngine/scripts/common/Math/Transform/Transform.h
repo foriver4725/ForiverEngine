@@ -19,7 +19,9 @@ namespace ForiverEngine
 		Quaternion rotation;
 		Vector3 scale;
 
-		// Model行列を計算
+		/// <summary>
+		/// <para>Model行列を計算</para>
+		/// </summary>
 		Matrix4x4 CalculateModelMatrix() const noexcept
 		{
 			const Matrix4x4 s = Matrix4x4::Scale(scale);
