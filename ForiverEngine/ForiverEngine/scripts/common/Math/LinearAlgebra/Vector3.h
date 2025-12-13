@@ -16,6 +16,7 @@ namespace ForiverEngine
 		constexpr Vector3(const Vector3& other) noexcept : x(other.x), y(other.y), z(other.z) {}
 		constexpr Vector3(Vector3&& other) noexcept : x(other.x), y(other.y), z(other.z) {}
 
+		constexpr Vector3(float x, float y) noexcept : x(x), y(y), z(0.0f) {}
 		constexpr Vector3(const Vector2& vec2) noexcept : x(vec2.x), y(vec2.y), z(0.0f) {}
 		constexpr Vector3(const Vector2& vec2, float z) noexcept : x(vec2.x), y(vec2.y), z(z) {}
 

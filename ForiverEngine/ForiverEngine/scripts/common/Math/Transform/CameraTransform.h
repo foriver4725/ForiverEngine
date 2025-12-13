@@ -61,26 +61,28 @@ namespace ForiverEngine
 		{
 			if (isPerspective)
 			{
-				const float tanHalfFovY = std::tan(fov * 0.5f);
-				const float tanHalfFovX = tanHalfFovY * aspectRatio;
+				const float yScale = 1.0f / std::tan(fov * 0.5f);
+				const float xScale = yScale / aspectRatio;
+				const float zRange = farClip - nearClip;
 
-				return Matrix4x4(
-					1.0f / tanHalfFovX, 0.0f, 0.0f, 0.0f,
-					0.0f, 1.0f / tanHalfFovY, 0.0f, 0.0f,
-					0.0f, 0.0f, farClip / (farClip - nearClip), 1.0f,
-					0.0f, 0.0f, -(farClip * nearClip) / (farClip - nearClip), 0.0f
+				return Matrix4x4::FromColumnVectors(
+					Vector4(xScale, 0.0f, 0.0f, 0.0f),
+					Vector4(0.0f, yScale, 0.0f, 0.0f),
+					Vector4(0.0f, 0.0f, farClip / zRange, 1.0f),
+					Vector4(0.0f, 0.0f, -(nearClip * farClip) / zRange, 0.0f)
 				);
 			}
 			else
 			{
 				const float viewHeight = 2.0f * nearClip * std::tan(fov * 0.5f);
 				const float viewWidth = viewHeight * aspectRatio;
+				const float zRange = farClip - nearClip;
 
-				return Matrix4x4(
-					2.0f / viewWidth, 0.0f, 0.0f, 0.0f,
-					0.0f, 2.0f / viewHeight, 0.0f, 0.0f,
-					0.0f, 0.0f, 1.0f / (farClip - nearClip), 0.0f,
-					0.0f, 0.0f, -nearClip / (farClip - nearClip), 1.0f
+				return Matrix4x4::FromColumnVectors(
+					Vector4(2.0f / viewWidth, 0.0f, 0.0f, 0.0f),
+					Vector4(0.0f, 2.0f / viewHeight, 0.0f, 0.0f),
+					Vector4(0.0f, 0.0f, 1.0f / zRange, 0.0f),
+					Vector4(0.0f, 0.0f, -nearClip / zRange, 1.0f)
 				);
 			}
 		}

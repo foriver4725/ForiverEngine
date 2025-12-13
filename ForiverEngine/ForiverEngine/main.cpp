@@ -46,7 +46,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		.registerIndex = 0, // s0
 	};
 
-	const Transform transform =
+	Transform transform =
 	{
 		.parent = nullptr,
 		.position = Vector3::Zero(),
@@ -54,9 +54,9 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		.scale = Vector3::One(),
 	};
 
-	const CameraTransform cameraTransform =
+	CameraTransform cameraTransform =
 	{
-		.position = Vector3(0, 0, -10),
+		.position = Vector3(0, 5, -5),
 		.target = Vector3::Zero(),
 		.up = Vector3::Up(),
 		.nearClip = 0.1f,
@@ -69,22 +69,41 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	const Matrix4x4 ModelMatrix = transform.CalculateModelMatrix();
 	const Matrix4x4 ViewMatrix = cameraTransform.CalculateViewMatrix();
 	const Matrix4x4 ProjectionMatrix = cameraTransform.CalculateProjectionMatrix();
-	const Matrix4x4 MVPMatrix = ProjectionMatrix * ViewMatrix * ModelMatrix;
+	Matrix4x4 MVPMatrix = ProjectionMatrix * ViewMatrix * ModelMatrix;
 
 	// 頂点データ
 	const std::vector<VertexData> vertices =
 	{
-		{{ -0.4f, -0.7f, 0, 1 }, {0.0f, 1.0f}},
-		{{ -0.4f, 0.7f, 0, 1 },  {0.0f, 0.0f}},
-		{{ 0.4f, -0.7f, 0, 1 },  {1.0f, 1.0f}},
-		{{ 0.4f, 0.7f, 0, 1 },   {1.0f, 0.0f}},
+		// TODO: テクスチャデータの構造が良くないかも
+
+		// U-L-B
+		{Vector4(-1, 1, -1, 1), Vector2(0.250f, 0.666f)},
+		// U-L-F
+		{Vector4(-1, 1, 1, 1), Vector2(0.250f, 0.333f)},
+		// U-R-B
+		{Vector4(1, 1, -1, 1), Vector2(0.500f, 0.666f)},
+		// U-R-F
+		{Vector4(1, 1, 1, 1), Vector2(0.500f, 0.333f)},
+
+		// D-L-B
+		{Vector4(-1, -1, -1, 1), Vector2(0.250f, 1.0f)},
+		// D-L-F
+		{Vector4(-1, -1, 1, 1), Vector2(0.250f, 0.0f)},
+		// D-R-B
+		{Vector4(1, -1, -1, 1), Vector2(0.500f, 1.0f)},
+		// D-R-F
+		{Vector4(1, -1, 1, 1), Vector2(0.500f, 0.0f)},
 	};
 
 	// 頂点インデックス
 	const std::vector<std::uint16_t> indices =
 	{
-		0, 1, 2,
-		2, 1, 3,
+		0, 1, 2, 2, 1, 3, // Up
+		4, 6, 5, 5, 6, 7, // Down
+		4, 5, 0, 0, 5, 1, // Left
+		2, 3, 6, 6, 3, 7, // Right
+		1, 5, 3, 3, 5, 7, // Forward
+		4, 0, 6, 6, 0, 2, // Backward
 	};
 
 	// 頂点レイアウト
@@ -99,10 +118,18 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	if (!constantBuffer)
 		ShowError(L"定数バッファーの作成に失敗しました");
 	// 定数バッファーにデータを書き込む
-	if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer1D(constantBuffer, &MVPMatrix, GetAlignmentedSize(sizeof(MVPMatrix), 256)))
+	// Unmap しないでおく
+	Matrix4x4* constantBufferVirtualPtr = nullptr;
+	if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer1D(constantBuffer, &MVPMatrix, sizeof(MVPMatrix),
+		false, reinterpret_cast<void**>(&constantBufferVirtualPtr)))
 		ShowError(L"定数バッファーへのデータ転送に失敗しました");
 
-	const Texture texture = AssetLoader::LoadTexture("assets/pickaxe.png");
+	// 立方体を切り開いた展開図
+	// Up, Down, Left, Right, Forward, Backward
+	//    [F]
+	// [L][U][R][D]
+	//    [B]
+	const Texture texture = AssetLoader::LoadTexture("assets/textures/grass.png");
 	if (!texture.IsValid())
 		ShowError(L"テクスチャのロードに失敗しました");
 	const GraphicsBuffer textureCopyIntermediateBuffer = D3D12Helper::CreateGraphicsBuffer1D(device,
@@ -146,6 +173,13 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	{
 		const auto [currentBackBuffer, currentBackBufferRTV]
 			= D3D12BasicFlow::GetCurrentBackBufferAndCreateView(device, swapChain, descriptorHeapRTV);
+
+		// 適当に、立方体を回転させる
+		transform.rotation = Quaternion::FromAxisAngle(Vector3(1, 2, -3).Normed(), 1.0f * DegToRad) * transform.rotation;
+		const Matrix4x4 ModelMatrix = transform.CalculateModelMatrix();
+		const Matrix4x4 ViewMatrix = cameraTransform.CalculateViewMatrix();
+		const Matrix4x4 ProjectionMatrix = cameraTransform.CalculateProjectionMatrix();
+		*constantBufferVirtualPtr = ProjectionMatrix * ViewMatrix * ModelMatrix;
 
 		D3D12Helper::CommandInvokeResourceBarrierAsTransition(commandList, currentBackBuffer,
 			GraphicsBufferState::Present, GraphicsBufferState::RenderTarget, false);

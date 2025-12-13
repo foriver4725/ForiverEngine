@@ -541,8 +541,11 @@ namespace ForiverEngine
 	}
 
 	bool D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer1D(
-		const GraphicsBuffer& graphicsBuffer, const void* dataBegin, int dataSize)
+		const GraphicsBuffer& graphicsBuffer, const void* dataBegin, int dataSize, bool unmapOnEnd, void** outBufferVirtualPtr)
 	{
+		if (outBufferVirtualPtr)
+			*outBufferVirtualPtr = nullptr;
+
 		void* bufferVirtualPtr = nullptr;
 		if (graphicsBuffer->Map(
 			0, // リソース配列やミップマップなどではないので、0でOK
@@ -550,12 +553,18 @@ namespace ForiverEngine
 			&bufferVirtualPtr
 		) != S_OK)
 		{
-			graphicsBuffer->Unmap(0, nullptr);
+			if (unmapOnEnd)
+				graphicsBuffer->Unmap(0, nullptr);
+			else
+				*outBufferVirtualPtr = nullptr;
 			return false;
 		}
 
 		std::memcpy(bufferVirtualPtr, dataBegin, static_cast<std::size_t>(dataSize));
-		graphicsBuffer->Unmap(0, nullptr);
+		if (unmapOnEnd)
+			graphicsBuffer->Unmap(0, nullptr);
+		else
+			*outBufferVirtualPtr = bufferVirtualPtr;
 		return true;
 	}
 

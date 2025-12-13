@@ -127,10 +127,13 @@ namespace ForiverEngine
 		/// <para>GraphicsBuffer の Map() を使って、CPUのバッファをGPU側にコピーする</para>
 		/// <para>1次元配列用</para>
 		/// <para>バッファのサイズは、GraphicsBuffer 作成時に指定したサイズと同じであること! (一部のバッファのみコピー、などには未対応)</para>
+		/// <para>Unmap() しないように設定した場合、outBufferVirtualPtr を経由してポインタが返される</para>
+		/// <para>そのポインタを通じてデータを書き換えることで、シェーダーから参照しているメモリの内容を書き換えることが出来る</para>
 		/// 成功したら true, 失敗したら false を返す (失敗した瞬間に処理を中断する)
 		/// </summary>
 		static bool CopyDataFromCPUToGPUThroughGraphicsBuffer1D(
-			const GraphicsBuffer& graphicsBuffer, const void* dataBegin, int dataSize);
+			const GraphicsBuffer& graphicsBuffer, const void* dataBegin, int dataSize,
+			bool unmapOnEnd = true, void** outBufferVirtualPtr = nullptr);
 
 		/// <summary>
 		/// <para>[Command]</para>
