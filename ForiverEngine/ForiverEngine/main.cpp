@@ -81,45 +81,45 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		{ Vector4(1, 1, 1), Vector2(0.250f, 0.333f), Vector3(0, 1, 0)},
 
 		// Down
-		{ Vector4(-1, -1, -1), Vector2(0.0f, 1.0f), Vector3(0, -1, 0)},
 		{ Vector4(-1, -1, 1), Vector2(0.0f, 0.0f), Vector3(0, -1, 0)},
-		{ Vector4(1, -1, -1), Vector2(0.250f, 1.0f), Vector3(0, -1, 0)},
+		{ Vector4(-1, -1, -1), Vector2(0.0f, 1.0f), Vector3(0, -1, 0)},
 		{ Vector4(1, -1, 1), Vector2(0.250f, 0.0f), Vector3(0, -1, 0)},
-
-		// Left
-		{ Vector4(-1, 1, -1), Vector2(0.250f, 0.666f), Vector3(-1, 0, 0)},
-		{ Vector4(-1, -1, -1), Vector2(0.250f, 1.0f), Vector3(-1, 0, 0)},
-		{ Vector4(-1, 1, 1), Vector2(0.500f, 0.666f), Vector3(-1, 0, 0)},
-		{ Vector4(-1, -1, 1), Vector2(0.500f, 1.0f), Vector3(-1, 0, 0)},
+		{ Vector4(1, -1, -1), Vector2(0.250f, 1.0f), Vector3(0, -1, 0)},
 
 		// Right
-		{ Vector4(1, 1, -1), Vector2(0.500f, 0.666f), Vector3(1, 0, 0)},
 		{ Vector4(1, -1, -1), Vector2(0.500f, 1.0f), Vector3(1, 0, 0)},
-		{ Vector4(1, 1, 1), Vector2(0.750f, 0.666f), Vector3(1, 0, 0)},
+		{ Vector4(1, 1, -1), Vector2(0.500f, 0.666f), Vector3(1, 0, 0)},
 		{ Vector4(1, -1, 1), Vector2(0.750f, 1.0f), Vector3(1, 0, 0)},
+		{ Vector4(1, 1, 1), Vector2(0.750f, 0.666f), Vector3(1, 0, 0)},
+
+		// Left
+		{ Vector4(-1, -1, 1), Vector2(0.500f, 1.0f), Vector3(-1, 0, 0)},
+		{ Vector4(-1, 1, 1), Vector2(0.500f, 0.666f), Vector3(-1, 0, 0)},
+		{ Vector4(-1, -1, -1), Vector2(0.250f, 1.0f), Vector3(-1, 0, 0)},
+		{ Vector4(-1, 1, -1), Vector2(0.250f, 0.666f), Vector3(-1, 0, 0)},
 
 		// Forward
-		{ Vector4(-1, 1, 1), Vector2(0.250f, 0.333f), Vector3(0, 0, 1)},
-		{ Vector4(-1, -1, 1), Vector2(0.250f, 0.0f), Vector3(0, 0, 1)},
-		{ Vector4(1, 1, 1), Vector2(0.500f, 0.333f), Vector3(0, 0, 1)},
 		{ Vector4(1, -1, 1), Vector2(0.500f, 0.0f), Vector3(0, 0, 1)},
+		{ Vector4(1, 1, 1), Vector2(0.500f, 0.333f), Vector3(0, 0, 1)},
+		{ Vector4(-1, -1, 1), Vector2(0.250f, 0.0f), Vector3(0, 0, 1)},
+		{ Vector4(-1, 1, 1), Vector2(0.250f, 0.333f), Vector3(0, 0, 1)},
 
 		// Backward
-		{ Vector4(-1, 1, -1), Vector2(0.750f, 0.666f), Vector3(0, 0, -1)},
 		{ Vector4(-1, -1, -1), Vector2(0.750f, 1.0f), Vector3(0, 0, -1)},
-		{ Vector4(1, 1, -1), Vector2(1.0f, 0.666f), Vector3(0, 0, -1)},
+		{ Vector4(-1, 1, -1), Vector2(0.750f, 0.666f), Vector3(0, 0, -1)},
 		{ Vector4(1, -1, -1), Vector2(1.0f, 1.0f), Vector3(0, 0, -1)},
+		{ Vector4(1, 1, -1), Vector2(1.0f, 0.666f), Vector3(0, 0, -1)},
 	};
 
 	// 頂点インデックス (時計回り)
 	const std::vector<std::uint16_t> indices =
 	{
-		0, 1, 2, 1, 2, 3,       // Up
-		4, 6, 5, 5, 6, 7,       // Down
-		8, 9, 10, 9, 10, 11,    // Left
-		12, 14, 13, 13, 14, 15,  // Right
-		16, 17, 18, 17, 18, 19,  // Forward
-		20, 22, 21, 21, 22, 23,  // Backward
+		0, 1, 2, 2, 1, 3,       // Up
+		4, 5, 6, 6, 5, 7,       // Down
+		8, 9, 10, 10, 9, 11,    // Right
+		12, 13, 14, 14, 13, 15, // Left
+		16, 17, 18, 18, 17, 19, // Forward
+		20, 21, 22, 22, 21, 23, // Backward
 	};
 
 	// 頂点レイアウト
@@ -142,7 +142,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		ShowError(L"定数バッファーへのデータ転送に失敗しました");
 
 	// 立方体を切り開いた展開図
-	// Up, Down, Left, Right, Forward, Backward
+	// Up, Down, Right, Left, Forward, Backward
 	//    [F]
 	// [L][U][R][D]
 	//    [B]
