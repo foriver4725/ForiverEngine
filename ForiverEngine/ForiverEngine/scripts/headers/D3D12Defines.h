@@ -207,7 +207,7 @@ public: \
 	// 頂点は時計回り!!
 	struct VertexData
 	{
-		ForiverEngine::Vector4 pos; // 左手系 X-右, Y-上, Z-奥
+		ForiverEngine::Vector4 pos; // モデル座標系
 		ForiverEngine::Vector2 uv; // 左上が原点
 	};
 

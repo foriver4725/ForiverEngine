@@ -2,6 +2,8 @@
 
 #include "./Defines.h"
 #include "./Vector3.h"
+#include "./Quaternion.h"
+#include "./Matrix2x2.h"
 
 namespace ForiverEngine
 {
@@ -26,6 +28,18 @@ namespace ForiverEngine
 			: c0r0(c0r0), c1r0(c1r0), c2r0(c2r0)
 			, c0r1(c0r1), c1r1(c1r1), c2r1(c2r1)
 			, c0r2(c0r2), c1r2(c1r2), c2r2(c2r2)
+		{
+		}
+		constexpr Matrix3x3(const Matrix2x2& other) noexcept
+			: c0r0(other.c0r0), c1r0(other.c1r0), c2r0(0.0f)
+			, c0r1(other.c0r1), c1r1(other.c1r1), c2r1(0.0f)
+			, c0r2(0.0f), c1r2(0.0f), c2r2(1.0f)
+		{
+		}
+		constexpr Matrix3x3(Matrix2x2&& other) noexcept
+			: c0r0(other.c0r0), c1r0(other.c1r0), c2r0(0.0f)
+			, c0r1(other.c0r1), c1r1(other.c1r1), c2r1(0.0f)
+			, c0r2(0.0f), c1r2(0.0f), c2r2(1.0f)
 		{
 		}
 		constexpr Matrix3x3(const Matrix3x3& other) noexcept
