@@ -1,11 +1,11 @@
 ﻿#pragma once
 
 #include "./Defines.h"
-#include "./LinearAlgebra/Include.h"
 
 namespace ForiverEngine
 {
 	/// <summary>
+	/// <para>基本的なオブジェクトの Transform</para>
 	/// <para>左手系</para>
 	/// <para>X-右, Y-上, Z-奥</para>
 	/// </summary>
@@ -19,7 +19,7 @@ namespace ForiverEngine
 		Quaternion rotation;
 		Vector3 scale;
 
-		// モデル行列を計算
+		// Model行列を計算
 		Matrix4x4 CalculateModelMatrix() const noexcept
 		{
 			const Matrix4x4 s = Matrix4x4::Scale(scale);

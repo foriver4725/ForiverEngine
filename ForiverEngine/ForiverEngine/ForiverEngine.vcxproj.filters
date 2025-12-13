@@ -43,6 +43,9 @@
     <Filter Include="scripts\common\Math\LinearAlgebra">
       <UniqueIdentifier>{95cbdcf1-a0b3-45e1-987e-6a98fa1fc434}</UniqueIdentifier>
     </Filter>
+    <Filter Include="scripts\common\Math\Transform">
+      <UniqueIdentifier>{2836b5ec-f0b4-40ac-bdcb-21650f08031b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="oss\SimplexNoise.h">
@@ -108,8 +111,17 @@
     <ClInclude Include="scripts\common\Math\LinearAlgebra\Defines.h">
       <Filter>scripts\common\Math\LinearAlgebra</Filter>
     </ClInclude>
-    <ClInclude Include="scripts\common\Math\Transform.h">
-      <Filter>scripts\common\Math</Filter>
+    <ClInclude Include="scripts\common\Math\Transform\Transform.h">
+      <Filter>scripts\common\Math\Transform</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\common\Math\Transform\Defines.h">
+      <Filter>scripts\common\Math\Transform</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\common\Math\Transform\Include.h">
+      <Filter>scripts\common\Math\Transform</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\common\Math\Transform\CameraTransform.h">
+      <Filter>scripts\common\Math\Transform</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
