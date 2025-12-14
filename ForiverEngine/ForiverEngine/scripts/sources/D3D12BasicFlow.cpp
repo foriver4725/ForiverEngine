@@ -202,6 +202,28 @@ namespace ForiverEngine
 		return { true, L"" };
 	}
 
+	std::tuple<bool, std::wstring>
+		D3D12BasicFlow::UploadTextureToGPU_Impl(
+			const CommandList& commandList,
+			const CommandQueue& commandQueue,
+			const Device& device,
+			const GraphicsBuffer& textureCopyIntermediateBuffer,
+			const GraphicsBuffer& textureBuffer,
+			const Texture& textureAsMetadata
+		)
+	{
+		if (!D3D12Helper::CommandCopyDataFromCPUToGPUThroughGraphicsBufferTexture2D(
+			commandList, textureCopyIntermediateBuffer, textureBuffer, textureAsMetadata))
+			return { false, L"テクスチャデータを GPU 側にコピーするコマンドの発行に失敗しました" };
+
+		D3D12Helper::CommandInvokeResourceBarrierAsTransition(commandList, textureBuffer,
+			GraphicsBufferState::CopyDestination, GraphicsBufferState::PixelShaderResource, false);
+
+		D3D12BasicFlow::CommandCloseAndWaitForCompletion(commandList, commandQueue, device);
+
+		return { true, L"" };
+	}
+
 	Matrix4x4 D3D12BasicFlow::CalculateMVPMatrix(const Transform& transform, const CameraTransform& cameraTransform)
 	{
 		const Matrix4x4 m = transform.CalculateModelMatrix();

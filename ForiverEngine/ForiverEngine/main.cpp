@@ -185,11 +185,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	const GraphicsBuffer textureBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, texture);
 	if (!textureBuffer)
 		ShowError(L"テクスチャバッファの作成に失敗しました");
-	if (!D3D12Helper::CommandCopyDataFromCPUToGPUThroughGraphicsBufferTexture2D(commandList, textureCopyIntermediateBuffer, textureBuffer, texture))
-		ShowError(L"テクスチャデータのアップロードに失敗しました");
-	D3D12Helper::CommandInvokeResourceBarrierAsTransition(commandList, textureBuffer,
-		GraphicsBufferState::CopyDestination, GraphicsBufferState::PixelShaderResource, false);
-	D3D12BasicFlow::CommandCloseAndWaitForCompletion(commandList, commandQueue, device);
+	D3D12BasicFlow::UploadTextureToGPU(commandList, commandQueue, device, textureCopyIntermediateBuffer, textureBuffer, texture);
 
 	// CBV, SRV から成る DescriptorHeap
 	const DescriptorHeap descriptorHeap = D3D12Helper::CreateDescriptorHeap(device, DescriptorHeapType::CBV_SRV_UAV, 2, true);

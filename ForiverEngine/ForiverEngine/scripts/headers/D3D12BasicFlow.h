@@ -124,6 +124,22 @@ namespace ForiverEngine
 			Check(CommandCloseAndWaitForCompletion_Impl(commandList, commandQueue, device));
 		}
 
+		/// <summary>
+		/// <para>テクスチャデータを GPU 側にアップロードする</para>
+		/// </summary>
+		static void
+			UploadTextureToGPU(
+				const CommandList& commandList,
+				const CommandQueue& commandQueue,
+				const Device& device,
+				const GraphicsBuffer& textureCopyIntermediateBuffer,
+				const GraphicsBuffer& textureBuffer,
+				const Texture& textureAsMetadata
+			)
+		{
+			Check(UploadTextureToGPU_Impl(
+				commandList, commandQueue, device, textureCopyIntermediateBuffer, textureBuffer, textureAsMetadata));
+		}
 
 #pragma endregion
 
@@ -196,6 +212,19 @@ namespace ForiverEngine
 				const CommandList& commandList,
 				const CommandQueue& commandQueue,
 				const Device& device
+			);
+
+		/// <summary>
+		/// <para>テクスチャデータを GPU 側にアップロードする</para>
+		/// </summary>
+		static std::tuple<bool, std::wstring>
+			UploadTextureToGPU_Impl(
+				const CommandList& commandList,
+				const CommandQueue& commandQueue,
+				const Device& device,
+				const GraphicsBuffer& textureCopyIntermediateBuffer,
+				const GraphicsBuffer& textureBuffer,
+				const Texture& textureAsMetadata
 			);
 
 #pragma endregion
