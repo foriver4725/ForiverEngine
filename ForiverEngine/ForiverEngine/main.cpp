@@ -92,14 +92,10 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		.aspectRatio = 1.0f * WindowWidth / WindowHeight,
 	};
 
-	const Matrix4x4 ModelMatrix = transform.CalculateModelMatrix();
-	const Matrix4x4 ViewMatrix = cameraTransform.CalculateViewMatrix();
-	const Matrix4x4 ProjectionMatrix = cameraTransform.CalculateProjectionMatrix();
-	const Matrix4x4 MVPMatrix = ProjectionMatrix * ViewMatrix * ModelMatrix;
 	CBData0 cbData0 =
 	{
 		.Matrix_M_IT = transform.CalculateModelMatrixInversed().Transposed(),
-		.Matrix_MVP = MVPMatrix,
+		.Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(transform, cameraTransform),
 	};
 
 	// 頂点データ
@@ -162,7 +158,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	};
 
 	// 定数バッファー (サイズは256バイトにアラインメントする必要がある!!)
-	const GraphicsBuffer constantBuffer = D3D12Helper::CreateGraphicsBuffer1D(device, GetAlignmentedSize(sizeof(MVPMatrix), 256), true);
+	const GraphicsBuffer constantBuffer = D3D12Helper::CreateGraphicsBuffer1D(device, GetAlignmentedSize(sizeof(cbData0), 256), true);
 	if (!constantBuffer)
 		ShowError(L"定数バッファーの作成に失敗しました");
 	// 定数バッファーにデータを書き込む
@@ -226,11 +222,8 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 
 		// 適当に、立方体を回転させる
 		transform.rotation = Quaternion::FromAxisAngle(Vector3::Up(), 1.0f * DegToRad) * transform.rotation;
-		const Matrix4x4 ModelMatrix = transform.CalculateModelMatrix();
-		const Matrix4x4 ViewMatrix = cameraTransform.CalculateViewMatrix();
-		const Matrix4x4 ProjectionMatrix = cameraTransform.CalculateProjectionMatrix();
 		constantBufferVirtualPtr->Matrix_M_IT = transform.CalculateModelMatrixInversed().Transposed();
-		constantBufferVirtualPtr->Matrix_MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
+		constantBufferVirtualPtr->Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(transform, cameraTransform);
 
 		D3D12Helper::CommandInvokeResourceBarrierAsTransition(commandList, currentBackBuffer,
 			GraphicsBufferState::Present, GraphicsBufferState::RenderTarget, false);

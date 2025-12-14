@@ -184,4 +184,13 @@ namespace ForiverEngine
 #undef RETURN_FALSE
 #undef RETURN_TRUE
 	}
+
+	Matrix4x4 D3D12BasicFlow::CalculateMVPMatrix(const Transform& transform, const CameraTransform& cameraTransform)
+	{
+		const Matrix4x4 m = transform.CalculateModelMatrix();
+		const Matrix4x4 v = cameraTransform.CalculateViewMatrix();
+		const Matrix4x4 p = cameraTransform.CalculateProjectionMatrix();
+
+		return p * v * m;
+	}
 }

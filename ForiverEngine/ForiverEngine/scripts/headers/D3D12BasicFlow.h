@@ -97,6 +97,11 @@ namespace ForiverEngine
 				device, rootParameter, samplerConfig, shaderVS, shaderPS, vertexLayouts, fillMode, cullMode));
 		}
 
+		/// <summary>
+		/// MVP行列を計算して返す
+		/// </summary>
+		static Matrix4x4 CalculateMVPMatrix(const Transform& transform, const CameraTransform& cameraTransform);
+
 #pragma endregion
 
 #pragma region Implementation
