@@ -1,7 +1,8 @@
 ﻿#pragma once
 
 #include <cmath>
-#include <vector>
+#include <algorithm>
+#include <stdint.h>
 
 namespace ForiverEngine
 {

@@ -152,11 +152,16 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="oss\SimplexNoise.h" />
+    <ClInclude Include="scripts\common\Component\Include.h" />
+    <ClInclude Include="scripts\common\Component\Mesh\Include.h" />
+    <ClInclude Include="scripts\common\Component\Mesh\Mesh.h" />
+    <ClInclude Include="scripts\common\Component\Transform\CameraTransform.h" />
+    <ClInclude Include="scripts\common\Component\Transform\Include.h" />
+    <ClInclude Include="scripts\common\Component\Transform\Transform.h" />
     <ClInclude Include="scripts\common\Include.h" />
     <ClInclude Include="scripts\common\Math\Color.h" />
     <ClInclude Include="scripts\common\Math\Defines.h" />
     <ClInclude Include="scripts\common\Math\Include.h" />
-    <ClInclude Include="scripts\common\Math\LinearAlgebra\Defines.h" />
     <ClInclude Include="scripts\common\Math\LinearAlgebra\Include.h" />
     <ClInclude Include="scripts\common\Math\LinearAlgebra\Matrix2x2.h" />
     <ClInclude Include="scripts\common\Math\LinearAlgebra\Matrix3x3.h" />
@@ -165,10 +170,6 @@
     <ClInclude Include="scripts\common\Math\LinearAlgebra\Vector2.h" />
     <ClInclude Include="scripts\common\Math\LinearAlgebra\Vector3.h" />
     <ClInclude Include="scripts\common\Math\LinearAlgebra\Vector4.h" />
-    <ClInclude Include="scripts\common\Math\Transform\CameraTransform.h" />
-    <ClInclude Include="scripts\common\Math\Transform\Defines.h" />
-    <ClInclude Include="scripts\common\Math\Transform\Include.h" />
-    <ClInclude Include="scripts\common\Math\Transform\Transform.h" />
     <ClInclude Include="scripts\common\Noise.h" />
     <ClInclude Include="scripts\common\StringUtils.h" />
     <ClInclude Include="scripts\headers\AssetLoader.h" />

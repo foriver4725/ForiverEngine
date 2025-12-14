@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "./Defines.h"
+#include <scripts/common/Math/Defines.h>
 #include "./Vector4.h"
 #include "./Quaternion.h"
 #include "./Matrix3x3.h"

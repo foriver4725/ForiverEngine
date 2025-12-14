@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "./Defines.h"
+#include <scripts/common/Math/Defines.h>
 #include "./Vector3.h"
 
 namespace ForiverEngine

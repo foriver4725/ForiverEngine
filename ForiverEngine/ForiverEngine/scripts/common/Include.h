@@ -16,6 +16,7 @@
 #include <Windows.h>
 
 #include "./Math/Include.h"
+#include "./Component/Include.h"
 #include "./StringUtils.h"
 #include "./Noise.h"
 

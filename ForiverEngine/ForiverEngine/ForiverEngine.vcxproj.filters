@@ -43,8 +43,14 @@
     <Filter Include="scripts\common\Math\LinearAlgebra">
       <UniqueIdentifier>{95cbdcf1-a0b3-45e1-987e-6a98fa1fc434}</UniqueIdentifier>
     </Filter>
-    <Filter Include="scripts\common\Math\Transform">
-      <UniqueIdentifier>{2836b5ec-f0b4-40ac-bdcb-21650f08031b}</UniqueIdentifier>
+    <Filter Include="scripts\common\Component">
+      <UniqueIdentifier>{e0e928fe-3a53-4277-878f-93931ea93924}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scripts\common\Component\Mesh">
+      <UniqueIdentifier>{981e5dff-fef7-4075-8cda-1be93af33534}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scripts\common\Component\Transform">
+      <UniqueIdentifier>{722f7aff-d51c-43c5-8061-2e27b20653bf}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -108,20 +114,23 @@
     <ClInclude Include="scripts\common\Math\Defines.h">
       <Filter>scripts\common\Math</Filter>
     </ClInclude>
-    <ClInclude Include="scripts\common\Math\LinearAlgebra\Defines.h">
-      <Filter>scripts\common\Math\LinearAlgebra</Filter>
+    <ClInclude Include="scripts\common\Component\Include.h">
+      <Filter>scripts\common\Component</Filter>
     </ClInclude>
-    <ClInclude Include="scripts\common\Math\Transform\Transform.h">
-      <Filter>scripts\common\Math\Transform</Filter>
+    <ClInclude Include="scripts\common\Component\Mesh\Include.h">
+      <Filter>scripts\common\Component\Mesh</Filter>
     </ClInclude>
-    <ClInclude Include="scripts\common\Math\Transform\Defines.h">
-      <Filter>scripts\common\Math\Transform</Filter>
+    <ClInclude Include="scripts\common\Component\Mesh\Mesh.h">
+      <Filter>scripts\common\Component\Mesh</Filter>
     </ClInclude>
-    <ClInclude Include="scripts\common\Math\Transform\Include.h">
-      <Filter>scripts\common\Math\Transform</Filter>
+    <ClInclude Include="scripts\common\Component\Transform\Transform.h">
+      <Filter>scripts\common\Component\Transform</Filter>
     </ClInclude>
-    <ClInclude Include="scripts\common\Math\Transform\CameraTransform.h">
-      <Filter>scripts\common\Math\Transform</Filter>
+    <ClInclude Include="scripts\common\Component\Transform\CameraTransform.h">
+      <Filter>scripts\common\Component\Transform</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\common\Component\Transform\Include.h">
+      <Filter>scripts\common\Component\Transform</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

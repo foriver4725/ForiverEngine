@@ -1,8 +1,6 @@
 ﻿#pragma once
 
-#include "./Defines.h"
-#include <stdint.h>
-#include <algorithm>
+#include <scripts/common/Math/Defines.h>
 
 namespace ForiverEngine
 {
