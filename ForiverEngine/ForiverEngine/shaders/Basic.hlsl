@@ -1,6 +1,7 @@
 cbuffer _0 : register(b0)
 {
-    float4x4 _MVPMatrix;
+    float4x4 _Matrix_M_IT;
+    float4x4 _Matrix_MVP;
 }
 
 Texture2D<float4> _AlbedoTexture : register(t0);
@@ -9,13 +10,14 @@ SamplerState _Sampler : register(s0);
 struct VSInput
 {
     float4 pos : POSITION;
+    float3 normal : NORMAL;
     float2 uv : TEXCOORD0;
-    float3 normal : NORMAL; // 一旦使わない
 };
 
 struct V2P
 {
     float4 pos : SV_POSITION;
+    float3 normal : NORMAL;
     float2 uv : TEXCOORD0;
 };
 
@@ -28,7 +30,8 @@ V2P VSMain(VSInput input)
 {
     V2P output;
     
-    output.pos = mul(_MVPMatrix, input.pos);
+    output.pos = mul(_Matrix_MVP, input.pos);
+    output.normal = mul((float3x3) _Matrix_M_IT, input.normal);
     output.uv = input.uv;
     
     return output;

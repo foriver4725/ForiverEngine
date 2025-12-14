@@ -33,5 +33,20 @@ namespace ForiverEngine
 
 			return worldMatrix;
 		}
+
+		/// <summary>
+		/// <para>Modelの逆行列を計算</para>
+		/// </summary>
+		Matrix4x4 CalculateModelMatrixInversed() const noexcept
+		{
+			const Matrix4x4 sInv = Matrix4x4::Scale(Vector3(1.0f / scale.x, 1.0f / scale.y, 1.0f / scale.z));
+			const Matrix4x4 rInv = Matrix4x4::Rotate(rotation.Conjugate());
+			const Matrix4x4 tInv = Matrix4x4::Translate(-position);
+
+			const Matrix4x4 localMatrixInv = sInv * rInv * tInv;
+			const Matrix4x4 worldMatrixInv = parent ? localMatrixInv * parent->CalculateModelMatrixInversed() : localMatrixInv;
+
+			return worldMatrixInv;
+		}
 	};
 }

@@ -65,6 +65,13 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		.shaderRegister = ShaderRegister::s0,
 	};
 
+	// b0 レジスタに渡すデータ
+	struct alignas(256) CBData0
+	{
+		Matrix4x4 Matrix_M_IT; // M の逆→転置行列
+		Matrix4x4 Matrix_MVP; // MVP
+	};
+
 	Transform transform =
 	{
 		.parent = nullptr,
@@ -88,7 +95,12 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	const Matrix4x4 ModelMatrix = transform.CalculateModelMatrix();
 	const Matrix4x4 ViewMatrix = cameraTransform.CalculateViewMatrix();
 	const Matrix4x4 ProjectionMatrix = cameraTransform.CalculateProjectionMatrix();
-	Matrix4x4 MVPMatrix = ProjectionMatrix * ViewMatrix * ModelMatrix;
+	const Matrix4x4 MVPMatrix = ProjectionMatrix * ViewMatrix * ModelMatrix;
+	CBData0 cbData0 =
+	{
+		.Matrix_M_IT = transform.CalculateModelMatrixInversed().Transposed(),
+		.Matrix_MVP = MVPMatrix,
+	};
 
 	// 頂点データ
 	const std::vector<VertexData> vertices =
@@ -155,8 +167,8 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		ShowError(L"定数バッファーの作成に失敗しました");
 	// 定数バッファーにデータを書き込む
 	// Unmap しないでおく
-	Matrix4x4* constantBufferVirtualPtr = nullptr;
-	if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer1D(constantBuffer, &MVPMatrix, sizeof(MVPMatrix),
+	CBData0* constantBufferVirtualPtr = nullptr;
+	if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer1D(constantBuffer, &cbData0, sizeof(cbData0),
 		false, reinterpret_cast<void**>(&constantBufferVirtualPtr)))
 		ShowError(L"定数バッファーへのデータ転送に失敗しました");
 
@@ -217,7 +229,8 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		const Matrix4x4 ModelMatrix = transform.CalculateModelMatrix();
 		const Matrix4x4 ViewMatrix = cameraTransform.CalculateViewMatrix();
 		const Matrix4x4 ProjectionMatrix = cameraTransform.CalculateProjectionMatrix();
-		*constantBufferVirtualPtr = ProjectionMatrix * ViewMatrix * ModelMatrix;
+		constantBufferVirtualPtr->Matrix_M_IT = transform.CalculateModelMatrixInversed().Transposed();
+		constantBufferVirtualPtr->Matrix_MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
 
 		D3D12Helper::CommandInvokeResourceBarrierAsTransition(commandList, currentBackBuffer,
 			GraphicsBufferState::Present, GraphicsBufferState::RenderTarget, false);
