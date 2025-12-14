@@ -185,15 +185,11 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	const GraphicsBuffer textureBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, texture);
 	if (!textureBuffer)
 		ShowError(L"テクスチャバッファの作成に失敗しました");
-
 	if (!D3D12Helper::CommandCopyDataFromCPUToGPUThroughGraphicsBufferTexture2D(commandList, textureCopyIntermediateBuffer, textureBuffer, texture))
 		ShowError(L"テクスチャデータのアップロードに失敗しました");
 	D3D12Helper::CommandInvokeResourceBarrierAsTransition(commandList, textureBuffer,
 		GraphicsBufferState::CopyDestination, GraphicsBufferState::PixelShaderResource, false);
-	D3D12Helper::CommandClose(commandList);
-	D3D12Helper::ExecuteCommands(commandQueue, commandList);
-	if (!D3D12Helper::WaitForGPUEventCompletion(D3D12Helper::CreateFence(device), commandQueue))
-		ShowError(L"GPU の処理待ち受けに失敗しました");
+	D3D12BasicFlow::CommandCloseAndWaitForCompletion(commandList, commandQueue, device);
 
 	// CBV, SRV から成る DescriptorHeap
 	const DescriptorHeap descriptorHeap = D3D12Helper::CreateDescriptorHeap(device, DescriptorHeapType::CBV_SRV_UAV, 2, true);
@@ -243,11 +239,8 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		}
 		D3D12Helper::CommandInvokeResourceBarrierAsTransition(commandList, currentBackBuffer,
 			GraphicsBufferState::RenderTarget, GraphicsBufferState::Present, false);
-		D3D12Helper::CommandClose(commandList);
-		D3D12Helper::ExecuteCommands(commandQueue, commandList);
 
-		if (!D3D12Helper::WaitForGPUEventCompletion(D3D12Helper::CreateFence(device), commandQueue))
-			ShowError(L"GPU の処理待ち受けに失敗しました");
+		D3D12BasicFlow::CommandCloseAndWaitForCompletion(commandList, commandQueue, device);
 
 		if (!D3D12Helper::ClearCommandAllocatorAndList(commandAllocater, commandList))
 			ShowError(L"CommandAllocator, CommandList のクリアに失敗しました");

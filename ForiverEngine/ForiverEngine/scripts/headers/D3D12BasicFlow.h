@@ -15,6 +15,14 @@ namespace ForiverEngine
 
 #pragma region With error check (useful)
 
+		static void Check(std::tuple<bool, std::wstring>&& value)
+		{
+			auto& [success, errorMessage] = value;
+
+			if (!success)
+				ShowError(errorMessage.c_str());
+		}
+
 		template<typename... Types>
 		static std::tuple<Types...> Check(std::tuple<bool, std::wstring, std::tuple<Types...>>&& value)
 		{
@@ -102,6 +110,21 @@ namespace ForiverEngine
 		/// </summary>
 		static Matrix4x4 CalculateMVPMatrix(const Transform& transform, const CameraTransform& cameraTransform);
 
+		/// <summary>
+		/// <para>[Command]</para>
+		/// <para>コマンドリストをクローズして実行し、GPUの処理が完了するまで待機する</para>
+		/// </summary>
+		static void
+			CommandCloseAndWaitForCompletion(
+				const CommandList& commandList,
+				const CommandQueue& commandQueue,
+				const Device& device
+			)
+		{
+			Check(CommandCloseAndWaitForCompletion_Impl(commandList, commandQueue, device));
+		}
+
+
 #pragma endregion
 
 #pragma region Implementation
@@ -162,6 +185,17 @@ namespace ForiverEngine
 				const std::vector<VertexLayout>& vertexLayouts,
 				FillMode fillMode,
 				CullMode cullMode
+			);
+
+		/// <summary>
+		/// <para>[Command]</para>
+		/// <para>コマンドリストをクローズして実行し、GPUの処理が完了するまで待機する</para>
+		/// </summary>
+		static std::tuple<bool, std::wstring>
+			CommandCloseAndWaitForCompletion_Impl(
+				const CommandList& commandList,
+				const CommandQueue& commandQueue,
+				const Device& device
 			);
 
 #pragma endregion

@@ -185,6 +185,23 @@ namespace ForiverEngine
 #undef RETURN_TRUE
 	}
 
+	std::tuple<bool, std::wstring>
+		D3D12BasicFlow::CommandCloseAndWaitForCompletion_Impl(
+			const CommandList& commandList,
+			const CommandQueue& commandQueue,
+			const Device& device
+		)
+	{
+		D3D12Helper::CommandClose(commandList);
+
+		D3D12Helper::ExecuteCommands(commandQueue, commandList);
+
+		if (!D3D12Helper::WaitForGPUEventCompletion(D3D12Helper::CreateFence(device), commandQueue))
+			return { false, L"GPU の処理待ち受けに失敗しました" };
+
+		return { true, L"" };
+	}
+
 	Matrix4x4 D3D12BasicFlow::CalculateMVPMatrix(const Transform& transform, const CameraTransform& cameraTransform)
 	{
 		const Matrix4x4 m = transform.CalculateModelMatrix();
