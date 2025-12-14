@@ -979,7 +979,7 @@ namespace ForiverEngine
 		{
 			.RangeType = static_cast<D3D12_DESCRIPTOR_RANGE_TYPE>(descriptorRange.type),
 			.NumDescriptors = static_cast<UINT>(descriptorRange.amount),
-			.BaseShaderRegister = static_cast<UINT>(descriptorRange.registerIndex),
+			.BaseShaderRegister = static_cast<UINT>(descriptorRange.shaderRegister),
 			.RegisterSpace = 0, // つじつまを合わせる用 (0でOK)
 			.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND // 自動で割り当て
 		};
@@ -999,7 +999,7 @@ namespace ForiverEngine
 			.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK, // 端の色 規定値
 			.MinLOD = 0.0f, // ミップマップの下限
 			.MaxLOD = D3D12_FLOAT32_MAX, // ミップマップの上限
-			.ShaderRegister = static_cast<UINT>(samplerConfig.registerIndex),
+			.ShaderRegister = static_cast<UINT>(samplerConfig.shaderRegister),
 			.RegisterSpace = 0, // 規定値
 			.ShaderVisibility = static_cast<D3D12_SHADER_VISIBILITY>(samplerConfig.shaderVisibility)
 		};

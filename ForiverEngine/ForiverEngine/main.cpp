@@ -23,17 +23,15 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		.shaderVisibility = ShaderVisibility::All,
 		.descriptorRanges =
 		{
-			// CBV b0
 			{
 				.type = RootParameter::DescriptorRangeType::CBV,
 				.amount = 1,
-				.registerIndex = 0,
+				.shaderRegister = ShaderRegister::b0,
 			},
-			// SRV t0
 			{
 				.type = RootParameter::DescriptorRangeType::SRV,
 				.amount = 1,
-				.registerIndex = 0,
+				.shaderRegister = ShaderRegister::t0,
 			},
 		}
 	};
@@ -43,7 +41,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		.shaderVisibility = ShaderVisibility::PixelOnly,
 		.addressingMode = SamplerConfig::AddressingMode::Wrap,
 		.filter = SamplerConfig::Filter::Point,
-		.registerIndex = 0, // s0
+		.shaderRegister = ShaderRegister::s0,
 	};
 
 	Transform transform =

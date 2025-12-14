@@ -66,6 +66,35 @@ public: \
 
 	// DirectX と等価の列挙型を定義
 
+	// シェーダーのレジスタ
+	// インデックスを直書きすると分かりにくいので、列挙型でラップする
+	enum class ShaderRegister : std::uint8_t
+	{
+		// CB
+		b0 = 0,
+		b1 = 1,
+		b2 = 2,
+		b3 = 3,
+
+		// SR
+		t0 = 0,
+		t1 = 1,
+		t2 = 2,
+		t3 = 3,
+
+		// UA
+		u0 = 0,
+		u1 = 1,
+		u2 = 2,
+		u3 = 3,
+
+		// Sampler
+		s0 = 0,
+		s1 = 1,
+		s2 = 2,
+		s3 = 3,
+	};
+
 	// ピクセルフォーマット
 	enum class Format : std::uint8_t
 	{
@@ -109,6 +138,7 @@ public: \
 		Back = 3,  // D3D12_CULL_MODE_BACK
 	};
 
+	// インプットアセンブラで設定する、プリミティブトポロジー
 	enum class PrimitiveTopology : std::uint8_t
 	{
 		PointList = 1,    // D3D_PRIMITIVE_TOPOLOGY_POINTLIST
@@ -171,7 +201,7 @@ public: \
 		{
 			DescriptorRangeType type;
 			int amount;
-			int registerIndex; // t#, u#, b#, s# のレジスタに登録される
+			ShaderRegister shaderRegister;
 		};
 
 		ShaderVisibility shaderVisibility;
@@ -200,7 +230,7 @@ public: \
 		ShaderVisibility shaderVisibility;
 		AddressingMode addressingMode;
 		Filter filter;
-		int registerIndex; // s# のレジスタに登録される
+		ShaderRegister shaderRegister;
 	};
 
 	// 頂点データ 単品
