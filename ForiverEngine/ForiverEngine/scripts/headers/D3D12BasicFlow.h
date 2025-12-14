@@ -53,11 +53,10 @@ namespace ForiverEngine
 		static std::tuple<VertexBufferView, IndexBufferView>
 			CreateVertexAndIndexBufferViews(
 				const Device& device,
-				const std::vector<VertexData>& vertices,
-				const std::vector<std::uint16_t>& indices
+				const Mesh& mesh
 			)
 		{
-			return Check(CreateVertexAndIndexBufferViews_Impl(device, vertices, indices));
+			return Check(CreateVertexAndIndexBufferViews_Impl(device, mesh));
 		}
 
 		/// <summary>
@@ -166,8 +165,7 @@ namespace ForiverEngine
 		static std::tuple<bool, std::wstring, std::tuple<VertexBufferView, IndexBufferView>>
 			CreateVertexAndIndexBufferViews_Impl(
 				const Device& device,
-				const std::vector<VertexData>& vertices,
-				const std::vector<std::uint16_t>& indices
+				const Mesh& mesh
 			);
 
 		/// <summary>

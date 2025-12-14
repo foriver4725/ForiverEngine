@@ -72,6 +72,8 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		Matrix4x4 Matrix_MVP; // MVP
 	};
 
+	const Mesh mesh = Mesh::CreateCube();
+
 	Transform transform =
 	{
 		.parent = nullptr,
@@ -96,65 +98,6 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	{
 		.Matrix_M_IT = transform.CalculateModelMatrixInversed().Transposed(),
 		.Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(transform, cameraTransform),
-	};
-
-	// 頂点データ
-	const std::vector<VertexData> vertices =
-	{
-		// Up
-		{ Vector4(-1, 1, -1), Vector2(0.25f, 0.50f), Vector3(0, 1, 0)},
-		{ Vector4(-1, 1, 1), Vector2(0.25f, 0.25f), Vector3(0, 1, 0)},
-		{ Vector4(1, 1, -1), Vector2(0.50f, 0.50f), Vector3(0, 1, 0)},
-		{ Vector4(1, 1, 1), Vector2(0.50f, 0.25f), Vector3(0, 1, 0)},
-
-		// Down
-		{ Vector4(-1, -1, 1), Vector2(1.00f, 0.25f), Vector3(0, -1, 0)},
-		{ Vector4(-1, -1, -1), Vector2(1.00f, 0.50f), Vector3(0, -1, 0)},
-		{ Vector4(1, -1, 1), Vector2(0.75f, 0.25f), Vector3(0, -1, 0)},
-		{ Vector4(1, -1, -1), Vector2(0.75f, 0.50f), Vector3(0, -1, 0)},
-
-		// Right
-		{ Vector4(1, -1, -1), Vector2(0.75f, 0.50f), Vector3(1, 0, 0)},
-		{ Vector4(1, 1, -1), Vector2(0.50f, 0.50f), Vector3(1, 0, 0)},
-		{ Vector4(1, -1, 1), Vector2(0.75f, 0.25f), Vector3(1, 0, 0)},
-		{ Vector4(1, 1, 1), Vector2(0.50f, 0.25f), Vector3(1, 0, 0)},
-
-		// Left
-		{ Vector4(-1, -1, 1), Vector2(0.00f, 0.25f), Vector3(-1, 0, 0)},
-		{ Vector4(-1, 1, 1), Vector2(0.25f, 0.25f), Vector3(-1, 0, 0)},
-		{ Vector4(-1, -1, -1), Vector2(0.00f, 0.50f), Vector3(-1, 0, 0)},
-		{ Vector4(-1, 1, -1), Vector2(0.25f, 0.50f), Vector3(-1, 0, 0)},
-
-		// Forward
-		{ Vector4(1, -1, 1), Vector2(0.50f, 0.00f), Vector3(0, 0, 1)},
-		{ Vector4(1, 1, 1), Vector2(0.50f, 0.25f), Vector3(0, 0, 1)},
-		{ Vector4(-1, -1, 1), Vector2(0.25f, 0.00f), Vector3(0, 0, 1)},
-		{ Vector4(-1, 1, 1), Vector2(0.25f, 0.25f), Vector3(0, 0, 1)},
-
-		// Backward
-		{ Vector4(-1, -1, -1), Vector2(0.25f, 0.75f), Vector3(0, 0, -1)},
-		{ Vector4(-1, 1, -1), Vector2(0.25f, 0.50f), Vector3(0, 0, -1)},
-		{ Vector4(1, -1, -1), Vector2(0.50f, 0.75f), Vector3(0, 0, -1)},
-		{ Vector4(1, 1, -1), Vector2(0.50f, 0.50f), Vector3(0, 0, -1)},
-	};
-
-	// 頂点インデックス (時計回り)
-	const std::vector<std::uint16_t> indices =
-	{
-		0, 1, 2, 2, 1, 3,       // Up
-		4, 5, 6, 6, 5, 7,       // Down
-		8, 9, 10, 10, 9, 11,    // Right
-		12, 13, 14, 14, 13, 15, // Left
-		16, 17, 18, 18, 17, 19, // Forward
-		20, 21, 22, 22, 21, 23, // Backward
-	};
-
-	// 頂点レイアウト
-	const std::vector<VertexLayout> vertexLayouts =
-	{
-		{ "POSITION", Format::RGBA_F32 },
-		{ "TEXCOORD", Format::RG_F32 },
-		{ "NORMAL", Format::RGB_F32 },
 	};
 
 	// 定数バッファー (サイズは256バイトにアラインメントする必要がある!!)
@@ -195,7 +138,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	D3D12Helper::CreateSRVAndRegistToDescriptorHeap(device, descriptorHeap, textureBuffer, 1, texture.format);
 
 	const auto [vertexBufferView, indexBufferView]
-		= D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, vertices, indices);
+		= D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, mesh);
 
 	const auto [shaderVS, shaderPS]
 		= D3D12BasicFlow::CompileShader_VS_PS("./shaders/Basic.hlsl");
@@ -205,7 +148,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 
 	const auto [rootSignature, graphicsPipelineState]
 		= D3D12BasicFlow::CreateRootSignatureAndGraphicsPipelineState(
-			device, rootParameter, samplerConfig, shaderVS, shaderPS, vertexLayouts, FillMode::Solid, CullMode::None);
+			device, rootParameter, samplerConfig, shaderVS, shaderPS, VertexLayouts, FillMode::Solid, CullMode::None);
 
 	BEGIN_MESSAGE_LOOP;
 	{
@@ -231,7 +174,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 			D3D12Helper::CommandIASetVertexBuffer(commandList, { vertexBufferView });
 			D3D12Helper::CommandIASetIndexBuffer(commandList, indexBufferView);
 			D3D12Helper::CommandRSSetViewportAndScissorRect(commandList, viewportScissorRect);
-			D3D12Helper::CommandDrawIndexedInstanced(commandList, static_cast<int>(indices.size()));
+			D3D12Helper::CommandDrawIndexedInstanced(commandList, static_cast<int>(mesh.indices.size()));
 		}
 		D3D12Helper::CommandInvokeResourceBarrierAsTransition(commandList, currentBackBuffer,
 			GraphicsBufferState::RenderTarget, GraphicsBufferState::Present, false);

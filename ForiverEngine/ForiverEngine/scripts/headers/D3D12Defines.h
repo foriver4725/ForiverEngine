@@ -234,7 +234,6 @@ public: \
 	};
 
 	// 頂点データ 単品
-	// 頂点は時計回り!!
 	struct VertexData
 	{
 		ForiverEngine::Vector4 pos; // モデル座標系
@@ -247,6 +246,14 @@ public: \
 	{
 		const char* SemanticName;
 		Format Format;
+	};
+
+	// 頂点レイアウト (不変値の想定)
+	const std::vector<VertexLayout> VertexLayouts =
+	{
+		{ "POSITION", Format::RGBA_F32 },
+		{ "TEXCOORD", Format::RG_F32 },
+		{ "NORMAL", Format::RGB_F32 },
 	};
 
 	// ビューポートとシザー矩形
