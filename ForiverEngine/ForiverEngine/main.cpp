@@ -14,8 +14,29 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		ShowError(L"DebugLayer の有効化に失敗しました");
 #endif
 
-	const auto [factory, device, commandAllocater, commandList, commandQueue, swapChain, descriptorHeapRTV]
-		= D3D12BasicFlow::CreateStandardObjects(hwnd, WindowWidth, WindowHeight, false);
+	const auto [factory, device, commandAllocater, commandList, commandQueue, swapChain]
+		= D3D12BasicFlow::CreateStandardObjects(hwnd, WindowWidth, WindowHeight);
+
+	// ダブルバッファリングなので、2つ RTV を確保する
+	const DescriptorHeap descriptorHeapRTV = D3D12Helper::CreateDescriptorHeap(device, DescriptorHeapType::RTV, 2, false);
+	if (!descriptorHeapRTV)
+		ShowError(L"DescriptorHeap (RTV) の作成に失敗しました");
+	if (!D3D12Helper::CreateRenderTargetViews(device, descriptorHeapRTV, swapChain, false))
+		ShowError(L"RenderTargetView を作成できない RenderTargetBuffer がありました");
+
+	// 深度バッファは手動で生成する必要がある
+	// 記録用なので、1つで十分
+	const GraphicsBuffer depthBuffer = D3D12Helper::CreateGraphicsBufferTexture2DAsDepthBuffer(device, WindowWidth, WindowHeight, 1.0f);
+	if (!depthBuffer)
+		ShowError(L"DepthBuffer の作成に失敗しました");
+	// DSVは異なるカテゴリなので、別個に DescriptorHeap を作成する
+	const DescriptorHeap descriptorHeapDSV = D3D12Helper::CreateDescriptorHeap(device, DescriptorHeapType::DSV, 1, false);
+	if (!descriptorHeapDSV)
+		ShowError(L"DescriptorHeap (DSV) の作成に失敗しました");
+	D3D12Helper::CreateDepthStencilView(device, descriptorHeapDSV, depthBuffer);
+	// スワップしないので、ここで Descriptor のハンドルを取得しておけばよい
+	const DescriptorHeapHandleAtCPU dsv = D3D12Helper::CreateDescriptorHeapHandleAtCPUIndicatingDescriptorByIndex(
+		device, descriptorHeapDSV, DescriptorHeapType::DSV, 0);
 
 	// ルートパラメータ
 	const RootParameter rootParameter =
@@ -189,7 +210,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	BEGIN_MESSAGE_LOOP;
 	{
 		const auto [currentBackBuffer, currentBackBufferRTV]
-			= D3D12BasicFlow::GetCurrentBackBufferAndCreateView(device, swapChain, descriptorHeapRTV);
+			= D3D12BasicFlow::GetCurrentBackBufferAndView(device, swapChain, descriptorHeapRTV);
 
 		// 適当に、立方体を回転させる
 		transform.rotation = Quaternion::FromAxisAngle(Vector3::Up(), 1.0f * DegToRad) * transform.rotation;
@@ -201,8 +222,8 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		D3D12Helper::CommandInvokeResourceBarrierAsTransition(commandList, currentBackBuffer,
 			GraphicsBufferState::Present, GraphicsBufferState::RenderTarget, false);
 		{
-			D3D12Helper::CommandSetRTAsOutputStage(commandList, currentBackBufferRTV);
-			D3D12Helper::CommandClearRT(commandList, currentBackBufferRTV, Color::Black());
+			D3D12Helper::CommandSetRT(commandList, currentBackBufferRTV, dsv);
+			D3D12Helper::CommandClearRT(commandList, currentBackBufferRTV, dsv, Color::Black(), 1.0f); // 深度値は座標変換で [0, 1] になっていることに注意!
 			D3D12Helper::CommandSetRootSignature(commandList, rootSignature);
 			D3D12Helper::CommandSetGraphicsPipelineState(commandList, graphicsPipelineState);
 			D3D12Helper::CommandSetDescriptorHeaps(commandList, { descriptorHeap });

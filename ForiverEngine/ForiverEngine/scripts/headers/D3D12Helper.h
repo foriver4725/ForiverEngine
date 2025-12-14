@@ -79,6 +79,30 @@ namespace ForiverEngine
 		static GraphicsBuffer CreateGraphicsBufferTexture2D(const Device& device, const Texture& texture);
 
 		/// <summary>
+		/// <para>GPU側のメモリ領域を確保し、その GraphicsBuffer を返す (失敗したら nullptr)</para>
+		/// <para>デプスバッファ用 (ステンシルは用いず、32bit 深度のみとする)</para>
+		/// <para>GPU内でのみ用いる想定で、CPUからのマップ不可</para>
+		/// </summary>
+		static GraphicsBuffer CreateGraphicsBufferTexture2DAsDepthBuffer(const Device& device, int width, int height, float clearValue);
+
+		/// <summary>
+		/// <para>RTV を作成し、RTV 用 DescriptorHeap に登録する</para>
+		/// <para>swapChain からレンダーターゲットバッファ群を取得し、それぞれに対して RTV を作成する</para>
+		/// <para>全て成功したら true, 1つでも失敗したら false を返す (失敗した瞬間に処理を中断する)<para>
+		/// <para>戻り値として取得することは出来ない!</para>
+		/// </summary>
+		static bool CreateRenderTargetViews(
+			const Device& device, const DescriptorHeap& descriptorHeapRTV, const SwapChain& swapChain, bool sRGB);
+
+		/// <summary>
+		/// <para>DSV を作成し、DSV 用 DescriptorHeap に登録する</para>
+		/// <para>ステンシルは用いず、32bit 深度のみとする</para>
+		/// <para>戻り値として取得することは出来ない!</para>
+		/// </summary>
+		static void CreateDepthStencilView(
+			const Device& device, const DescriptorHeap& descriptorHeapDSV, const GraphicsBuffer& depthBuffer);
+
+		/// <summary>
 		/// 頂点バッファ から 頂点バッファービュー を作成して返す
 		/// </summary>
 		/// <param name="verticesSize">頂点座標配列の sizeof()</param>
@@ -151,14 +175,6 @@ namespace ForiverEngine
 			const GraphicsBuffer& textureCopyIntermediateBuffer, const GraphicsBuffer& textureBuffer, const Texture& texture);
 
 		/// <summary>
-		/// <para>DescriptorHeap(RTV) と SwapChain を関連付ける</para>
-		/// <para>Descriptorの数 = バッファの数だけ、繰り返し処理を行う</para>
-		/// 全て成功したら true, 1つでも失敗したら false を返す (失敗した瞬間に処理を中断する)
-		/// </summary>
-		static bool LinkDescriptorHeapRTVToSwapChain(
-			const Device& device, const DescriptorHeap& descriptorHeapRTV, const SwapChain& swapChain, bool sRGB);
-
-		/// <summary>
 		/// <para>CommandAllocator と CommandList をクリアする</para>
 		/// 全て成功したら true, 1つでも失敗したら false を返す (失敗した瞬間に処理を中断する)
 		/// </summary>
@@ -185,18 +201,19 @@ namespace ForiverEngine
 
 		/// <summary>
 		/// <para>[Command]</para>
-		/// <para>ハンドルが指し示す RenderTarget について、以下の処理を行う</para>
-		/// 出力ステージとして設定する
+		/// <para>RTV, DSV を、RT として出力ステージに設定する</para>
 		/// </summary>
-		static void CommandSetRTAsOutputStage(const CommandList& commandList, const DescriptorHeapHandleAtCPU& handleRTV);
+		static void CommandSetRT(const CommandList& commandList,
+			const DescriptorHeapHandleAtCPU& rtv, const DescriptorHeapHandleAtCPU& dsv);
 
 		/// <summary>
 		/// <para>[Command]</para>
-		/// <para>ハンドルが指し示す RenderTarget について、以下の処理を行う</para>
-		/// 全体を1色でクリアする
+		/// <para>RT をクリアする</para>
+		/// <para>DSV について、ステンシルは使っていないので、深度のみのクリアをしている</para>
 		/// </summary>
 		static void CommandClearRT(
-			const CommandList& commandList, const DescriptorHeapHandleAtCPU& handleRTV, const Color& clearColor);
+			const CommandList& commandList, const DescriptorHeapHandleAtCPU& rtv, const DescriptorHeapHandleAtCPU& dsv,
+			Color rtvClearValue, float dsvClearValue);
 
 		/// <summary>
 		/// <para>[Command]</para>

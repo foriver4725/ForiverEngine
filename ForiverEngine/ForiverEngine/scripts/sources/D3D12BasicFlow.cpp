@@ -2,12 +2,11 @@
 
 namespace ForiverEngine
 {
-	std::tuple<bool, std::wstring, std::tuple<Factory, Device, CommandAllocator, CommandList, CommandQueue, SwapChain, DescriptorHeap>>
+	std::tuple<bool, std::wstring, std::tuple<Factory, Device, CommandAllocator, CommandList, CommandQueue, SwapChain>>
 		D3D12BasicFlow::CreateStandardObjects_Impl(
 			HWND hwnd,
 			int windowWidth,
-			int windowHeight,
-			bool sRGB
+			int windowHeight
 		)
 	{
 		Factory factory = Factory();
@@ -16,12 +15,11 @@ namespace ForiverEngine
 		CommandList commandList = CommandList();
 		CommandQueue commandQueue = CommandQueue();
 		SwapChain swapChain = SwapChain();
-		DescriptorHeap descriptorHeapRTV = DescriptorHeap();
 
 #define RETURN_FALSE(errorMessage) \
-    return { false, errorMessage, { factory, device, commandAllocater, commandList, commandQueue, swapChain, descriptorHeapRTV } };
+    return { false, errorMessage, { factory, device, commandAllocater, commandList, commandQueue, swapChain } };
 #define RETURN_TRUE() \
-	return { true, L"", { factory, device, commandAllocater, commandList, commandQueue, swapChain, descriptorHeapRTV } };
+	return { true, L"", { factory, device, commandAllocater, commandList, commandQueue, swapChain } };
 
 		if (!(factory = D3D12Helper::CreateFactory()))
 			RETURN_FALSE(L"Factory の作成に失敗しました");
@@ -40,13 +38,6 @@ namespace ForiverEngine
 
 		if (!(swapChain = D3D12Helper::CreateSwapChain(factory, commandQueue, hwnd, windowWidth, windowHeight)))
 			RETURN_FALSE(L"SwapChain の作成に失敗しました");
-
-		// ダブルバッファリングなので、2つ RTV を確保する
-		if (!(descriptorHeapRTV = D3D12Helper::CreateDescriptorHeap(device, DescriptorHeapType::RTV, 2, false)))
-			RETURN_FALSE(L"DescriptorHeap (RTV) の作成に失敗しました");
-
-		if (!D3D12Helper::LinkDescriptorHeapRTVToSwapChain(device, descriptorHeapRTV, swapChain, sRGB))
-			RETURN_FALSE(L"DescriptorHeap (RTV) を SwapChain に関連付けることに失敗しました");
 
 		RETURN_TRUE();
 
@@ -99,7 +90,7 @@ namespace ForiverEngine
 	}
 
 	std::tuple<bool, std::wstring, std::tuple<GraphicsBuffer, DescriptorHeapHandleAtCPU>>
-		D3D12BasicFlow::GetCurrentBackBufferAndCreateView_Impl(
+		D3D12BasicFlow::GetCurrentBackBufferAndView_Impl(
 			const Device& device,
 			const SwapChain& swapChain,
 			const DescriptorHeap& descriptorHeapRTV

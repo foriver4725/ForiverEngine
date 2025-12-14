@@ -197,7 +197,13 @@ namespace ForiverEngine
 				.DepthClipEnable = true, // 深度クリッピング有効
 				.MultisampleEnable = false, // まだアンチエイリアスは使わないので...
 			},
-			.DepthStencilState = {}, // 深度ステンシルバッファの設定 (今回は指定しない)
+			.DepthStencilState =
+			{
+				.DepthEnable = true,
+				.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL, // 深度値を書き込む
+				.DepthFunc = D3D12_COMPARISON_FUNC_LESS, // 深度値がより小さいなら、描画して良い (手前にあるので)
+				.StencilEnable = false, // ステンシルは使わない!
+			},
 			.InputLayout = // 頂点レイアウト
 			{
 				.pInputElementDescs = vertexLayoutsReal.data(),
@@ -209,11 +215,11 @@ namespace ForiverEngine
 			.RTVFormats =
 			{
 				// [0]
-				DXGI_FORMAT_R8G8B8A8_UNORM, // RT のフォーマット. [0, 1] に正規化された RGBA. RT は1つなので、[0] のみ指定
+				static_cast<DXGI_FORMAT>(Format::RGBA_U8_01), // バックバッファがあるけど、使われる RT は1つなので、[0] のみ指定すれば良い
 
 				// [1] ~ [7]
 			},
-			.DSVFormat = {}, // 深度ステンシルバッファのフォーマット (今回は指定しない)
+			.DSVFormat = static_cast<DXGI_FORMAT>(Format::D_F32),
 			.SampleDesc = {.Count = 1, .Quality = 0 }, // アンチエイリアシングはしない (1ピクセルあたり1回サンプリング)
 			.NodeMask = 0, // アダプターが1つなので...
 			.CachedPSO = {}, // 高速化出来るけど、今は使わない
@@ -444,6 +450,111 @@ namespace ForiverEngine
 		return GraphicsBuffer();
 	}
 
+	GraphicsBuffer D3D12Helper::CreateGraphicsBufferTexture2DAsDepthBuffer(const Device& device, int width, int height, float clearValue)
+	{
+		const D3D12_HEAP_PROPERTIES heapProperties =
+		{
+			.Type = D3D12_HEAP_TYPE_DEFAULT, // テクスチャ用
+			.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN, // 規定値
+			.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN, // 規定値
+			.CreationNodeMask = 0, // アダプターが1つなので...
+			.VisibleNodeMask = 0, // アダプターが1つなので...
+		};
+
+		const D3D12_RESOURCE_DESC resourceDesc =
+		{
+			.Dimension = static_cast<D3D12_RESOURCE_DIMENSION>(GraphicsBufferType::Texture2D),
+			.Alignment = 0, // 既定値
+			.Width = static_cast<UINT64>(width),
+			.Height = static_cast<UINT>(height),
+			.DepthOrArraySize = 1, // テクスチャ配列でも3Dテクスチャでもない
+			.MipLevels = 0, // 規定値
+			.Format = static_cast<DXGI_FORMAT>(Format::D_F32),
+			.SampleDesc = {.Count = 1, .Quality = 0 }, // アンチエイリアシングなし
+			.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN, // 決定しない
+			.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL, // 深度ステンシルバッファとして使う
+		};
+
+		const D3D12_CLEAR_VALUE clearValueDesc =
+		{
+			.Format = static_cast<DXGI_FORMAT>(Format::D_F32),
+			.DepthStencil =
+			{
+				.Depth = static_cast<FLOAT>(clearValue),
+				.Stencil = 0, // 規定値
+			}
+		};
+
+		ID3D12Resource* ptr = nullptr;
+		if (device->CreateCommittedResource(
+			&heapProperties,
+			D3D12_HEAP_FLAG_NONE, // 指定なし
+			&resourceDesc,
+			D3D12_RESOURCE_STATE_DEPTH_WRITE, // 深度値書き込み用
+			&clearValueDesc,
+			IID_PPV_ARGS(&ptr)
+		) == S_OK)
+		{
+			return GraphicsBuffer(ptr);
+		}
+
+		return GraphicsBuffer();
+	}
+
+	bool D3D12Helper::CreateRenderTargetViews(
+		const Device& device, const DescriptorHeap& descriptorHeapRTV, const SwapChain& swapChain, bool sRGB)
+	{
+		// NOTE : sRGB を true にした場合、バックバッファービューとレンダーターゲットフォーマットに食い違いが生じるため、
+		//        デバッグレイヤーをオンにしている場合にエラーが表示される
+
+		const Format format = sRGB ? Format::RGBA_U8_01_SRGB : Format::RGBA_U8_01;
+
+		const D3D12_RENDER_TARGET_VIEW_DESC desc =
+		{
+			.Format = static_cast<DXGI_FORMAT>(format),
+			.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D,
+		};
+
+		for (int i = 0; i < GetBufferCountFromSwapChain(swapChain); ++i)
+		{
+			const GraphicsBuffer graphicsBuffer = GetBufferByIndex(swapChain, i);
+			if (!graphicsBuffer)
+				return false;
+
+			const DescriptorHeapHandleAtCPU handleRTV = CreateDescriptorHeapHandleAtCPUIndicatingDescriptorByIndex(
+				device, descriptorHeapRTV, DescriptorHeapType::RTV, i);
+
+			device->CreateRenderTargetView(
+				graphicsBuffer.Ptr,
+				&desc,
+				*Reinterpret(&handleRTV) // i 番目の Descriptor (RTV) を指し示すハンドル
+			);
+		}
+
+		return true;
+	}
+
+	void D3D12Helper::CreateDepthStencilView(
+		const Device& device, const DescriptorHeap& descriptorHeapDSV, const GraphicsBuffer& depthBuffer)
+	{
+		const D3D12_DEPTH_STENCIL_VIEW_DESC desc =
+		{
+			.Format = static_cast<DXGI_FORMAT>(Format::D_F32),
+			.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D,
+			.Flags = D3D12_DSV_FLAG_NONE, // 指定なし
+		};
+
+		// DescriptorHeap の 0 番目に DSV を作成する
+		const DescriptorHeapHandleAtCPU handleRTV = CreateDescriptorHeapHandleAtCPUIndicatingDescriptorByIndex(
+			device, descriptorHeapDSV, DescriptorHeapType::DSV, 0);
+
+		device->CreateDepthStencilView(
+			depthBuffer.Ptr,
+			&desc,
+			*Reinterpret(&handleRTV)
+		);
+	}
+
 	VertexBufferView D3D12Helper::CreateVertexBufferView(const GraphicsBuffer& vertexBuffer, int verticesSize, int vertexSize)
 	{
 		D3D12_VERTEX_BUFFER_VIEW output =
@@ -651,39 +762,6 @@ namespace ForiverEngine
 		return true;
 	}
 
-	bool D3D12Helper::LinkDescriptorHeapRTVToSwapChain(
-		const Device& device, const DescriptorHeap& descriptorHeapRTV, const SwapChain& swapChain, bool sRGB)
-	{
-		// NOTE : sRGB を true にした場合、バックバッファービューとレンダーターゲットフォーマットに食い違いが生じるため、
-		//        デバッグレイヤーをオンにしている場合にエラーが表示される
-
-		const Format format = sRGB ? Format::RGBA_U8_01_SRGB : Format::RGBA_U8_01;
-
-		const D3D12_RENDER_TARGET_VIEW_DESC desc =
-		{
-			.Format = static_cast<DXGI_FORMAT>(format),
-			.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D,
-		};
-
-		for (int i = 0; i < GetBufferCountFromSwapChain(swapChain); ++i)
-		{
-			GraphicsBuffer graphicsBuffer = GetBufferByIndex(swapChain, i);
-			if (!graphicsBuffer)
-				return false;
-
-			DescriptorHeapHandleAtCPU handleRTV = CreateDescriptorHeapHandleAtCPUIndicatingDescriptorByIndex(
-				device, descriptorHeapRTV, DescriptorHeapType::RTV, i);
-
-			device->CreateRenderTargetView(
-				graphicsBuffer.Ptr,
-				&desc,
-				*Reinterpret(&handleRTV) // i 番目の Descriptor (RTV) を指し示すハンドル
-			);
-		}
-
-		return true;
-	}
-
 	bool D3D12Helper::ClearCommandAllocatorAndList(const CommandAllocator& commandAllocator, const CommandList& commandList)
 	{
 		if (commandAllocator->Reset() != S_OK) return false;
@@ -729,24 +807,35 @@ namespace ForiverEngine
 		commandList->ResourceBarrier(1, &desc);
 	}
 
-	void D3D12Helper::CommandSetRTAsOutputStage(const CommandList& commandList, const DescriptorHeapHandleAtCPU& handleRTV)
+	void D3D12Helper::CommandSetRT(const CommandList& commandList,
+		const DescriptorHeapHandleAtCPU& rtv, const DescriptorHeapHandleAtCPU& dsv)
 	{
 		commandList->OMSetRenderTargets(
-			1, // 今のところ、一回の描画における RT は1つのみ
-			Reinterpret(const_cast<DescriptorHeapHandleAtCPU*>(&handleRTV)), // Descriptor (RTV) を指し示すハンドル
-			true, // Descriptor (RTV) 達はメモリで連続している
-			nullptr // Descriptor (DSV) を指し示すハンドル (今のところは nullptr でOK)
+			1, // 今のところ、一回の描画における RTV は1つのみ
+			Reinterpret(const_cast<DescriptorHeapHandleAtCPU*>(&rtv)),
+			false, // 規定値
+			Reinterpret(const_cast<DescriptorHeapHandleAtCPU*>(&dsv))
 		);
 	}
 
 	void D3D12Helper::CommandClearRT(
-		const CommandList& commandList, const DescriptorHeapHandleAtCPU& handleRTV, const Color& clearColor)
+		const CommandList& commandList, const DescriptorHeapHandleAtCPU& rtv, const DescriptorHeapHandleAtCPU& dsv,
+		Color rtvClearValue, float dsvClearValue)
 	{
-		const float clearColorAsArray[4] = { clearColor.r, clearColor.g, clearColor.b, clearColor.a };
+		const float clearColorAsArray[4] = { rtvClearValue.r, rtvClearValue.g, rtvClearValue.b, rtvClearValue.a };
+		commandList->ClearRenderTargetView(
+			*Reinterpret(const_cast<DescriptorHeapHandleAtCPU*>(&rtv)),
+			clearColorAsArray,
+			0, nullptr // 全範囲をクリアするので、指定しない
+		);
 
-		// 第3,4引数は、クリアする範囲を指定する
-		// 今回は画面全体をクリアするので、指定する必要はない
-		commandList->ClearRenderTargetView(*Reinterpret(const_cast<DescriptorHeapHandleAtCPU*>(&handleRTV)), clearColorAsArray, 0, nullptr);
+		commandList->ClearDepthStencilView(
+			*Reinterpret(const_cast<DescriptorHeapHandleAtCPU*>(&dsv)),
+			D3D12_CLEAR_FLAG_DEPTH, // 深度値のみクリア
+			dsvClearValue,
+			0, // ステンシル値はクリアしないので、0でOK
+			0, nullptr // 全範囲をクリアするので、指定しない
+		);
 	}
 
 	void D3D12Helper::CommandSetRootSignature(const CommandList& commandList, const RootSignature& rootSignature)

@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <scripts/common/Include.h>
 
@@ -27,21 +27,20 @@ namespace ForiverEngine
 		}
 
 		/// <summary>
-		/// DirectX12 ‚ÌŠî–{“I‚ÈƒIƒuƒWƒFƒNƒgŒQ‚ğˆêŠ‡‚Åì¬‚·‚é
+		/// DirectX12 ã®åŸºæœ¬çš„ãªã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆç¾¤ã‚’ä¸€æ‹¬ã§ä½œæˆã™ã‚‹
 		/// </summary>
-		static std::tuple<Factory, Device, CommandAllocator, CommandList, CommandQueue, SwapChain, DescriptorHeap>
+		static std::tuple<Factory, Device, CommandAllocator, CommandList, CommandQueue, SwapChain>
 			CreateStandardObjects(
 				HWND hwnd,
 				int windowWidth,
-				int windowHeight,
-				bool sRGB
+				int windowHeight
 			)
 		{
-			return Check(CreateStandardObjects_Impl(hwnd, windowWidth, windowHeight, sRGB));
+			return Check(CreateStandardObjects_Impl(hwnd, windowWidth, windowHeight));
 		}
 
 		/// <summary>
-		/// ’¸“_ƒoƒbƒtƒ@ƒrƒ…[‚ÆƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@ƒrƒ…[‚ğˆêŠ‡‚Åì¬‚·‚é
+		/// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ãƒ“ãƒ¥ãƒ¼ã¨ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡ãƒ“ãƒ¥ãƒ¼ã‚’ä¸€æ‹¬ã§ä½œæˆã™ã‚‹
 		/// </summary>
 		static std::tuple<VertexBufferView, IndexBufferView>
 			CreateVertexAndIndexBufferViews(
@@ -54,22 +53,22 @@ namespace ForiverEngine
 		}
 
 		/// <summary>
-		/// SwapChain ‚©‚çŒ»İ‚ÌƒoƒbƒNƒoƒbƒtƒ@‚ğæ“¾‚µA‚»‚Ìƒrƒ…[‚ğ DescriptorHeap (RTV) ‚Éì¬‚µ‚Ä•Ô‚·
+		/// SwapChain ã‹ã‚‰ã€ç¾åœ¨ã®ãƒãƒƒã‚¯ãƒãƒƒãƒ•ã‚¡ã¨ãã®ãƒ“ãƒ¥ãƒ¼ã‚’å–å¾—ã—ã¦è¿”ã™
 		/// </summary>
 		static std::tuple<GraphicsBuffer, DescriptorHeapHandleAtCPU>
-			GetCurrentBackBufferAndCreateView(
+			GetCurrentBackBufferAndView(
 				const Device& device,
 				const SwapChain& swapChain,
 				const DescriptorHeap& descriptorHeapRTV
 			)
 		{
-			return Check(GetCurrentBackBufferAndCreateView_Impl(device, swapChain, descriptorHeapRTV));
+			return Check(GetCurrentBackBufferAndView_Impl(device, swapChain, descriptorHeapRTV));
 		}
 
 		inline static const std::string ShaderEntryFuncVS = "VSMain";
 		inline static const std::string ShaderEntryFuncPS = "PSMain";
 		/// <summary>
-		/// ƒVƒF[ƒ_[‚ğƒ[ƒh‚µ‚ÄA’¸“_ƒVƒF[ƒ_[‚ÆƒsƒNƒZƒ‹ƒVƒF[ƒ_[‚ÉƒRƒ“ƒpƒCƒ‹‚·‚é
+		/// ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã‚’ãƒ­ãƒ¼ãƒ‰ã—ã¦ã€é ‚ç‚¹ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã¨ãƒ”ã‚¯ã‚»ãƒ«ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã«ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«ã™ã‚‹
 		/// </summary>
 		static std::tuple<Blob, Blob>
 			CompileShader_VS_PS(
@@ -80,7 +79,7 @@ namespace ForiverEngine
 		}
 
 		/// <summary>
-		/// RootSignature ‚Æ GraphicsPipelineState ‚ğˆêŠ‡‚Åì¬‚µ‚Ä•Ô‚·
+		/// RootSignature ã¨ GraphicsPipelineState ã‚’ä¸€æ‹¬ã§ä½œæˆã—ã¦è¿”ã™
 		/// </summary>
 		static std::tuple<RootSignature, PipelineState>
 			CreateRootSignatureAndGraphicsPipelineState(
@@ -102,24 +101,23 @@ namespace ForiverEngine
 
 #pragma region Implementation
 
-		// –ß‚è’l‚Ì\‘¢‚Í‹¤’Ê‰»‚·‚é
-		// 1”Ô–Ú : ¬Œ÷‚µ‚½‚ç true, ¸”s‚µ‚½‚ç false
-		// 2”Ô–Ú : ƒGƒ‰[ƒƒbƒZ[ƒW (¬Œ÷‚µ‚½‚ç‹ó•¶š—ñ)
-		// ¸”s‚µ‚½’iŠK‚Åˆ—‚ğ’†’f‚·‚é
+		// æˆ»ã‚Šå€¤ã®æ§‹é€ ã¯å…±é€šåŒ–ã™ã‚‹
+		// 1ç•ªç›® : æˆåŠŸã—ãŸã‚‰ true, å¤±æ•—ã—ãŸã‚‰ false
+		// 2ç•ªç›® : ã‚¨ãƒ©ãƒ¼ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ (æˆåŠŸã—ãŸã‚‰ç©ºæ–‡å­—åˆ—)
+		// å¤±æ•—ã—ãŸæ®µéšã§å‡¦ç†ã‚’ä¸­æ–­ã™ã‚‹
 
 		/// <summary>
-		/// DirectX12 ‚ÌŠî–{“I‚ÈƒIƒuƒWƒFƒNƒgŒQ‚ğˆêŠ‡‚Åì¬‚·‚é
+		/// DirectX12 ã®åŸºæœ¬çš„ãªã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆç¾¤ã‚’ä¸€æ‹¬ã§ä½œæˆã™ã‚‹
 		/// </summary>
-		static std::tuple<bool, std::wstring, std::tuple<Factory, Device, CommandAllocator, CommandList, CommandQueue, SwapChain, DescriptorHeap>>
+		static std::tuple<bool, std::wstring, std::tuple<Factory, Device, CommandAllocator, CommandList, CommandQueue, SwapChain>>
 			CreateStandardObjects_Impl(
 				HWND hwnd,
 				int windowWidth,
-				int windowHeight,
-				bool sRGB
+				int windowHeight
 			);
 
 		/// <summary>
-		/// ’¸“_ƒoƒbƒtƒ@ƒrƒ…[‚ÆƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@ƒrƒ…[‚ğˆêŠ‡‚Åì¬‚·‚é
+		/// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ãƒ“ãƒ¥ãƒ¼ã¨ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡ãƒ“ãƒ¥ãƒ¼ã‚’ä¸€æ‹¬ã§ä½œæˆã™ã‚‹
 		/// </summary>
 		static std::tuple<bool, std::wstring, std::tuple<VertexBufferView, IndexBufferView>>
 			CreateVertexAndIndexBufferViews_Impl(
@@ -129,17 +127,17 @@ namespace ForiverEngine
 			);
 
 		/// <summary>
-		/// SwapChain ‚©‚çŒ»İ‚ÌƒoƒbƒNƒoƒbƒtƒ@‚ğæ“¾‚µA‚»‚Ìƒrƒ…[‚ğ DescriptorHeap (RTV) ‚Éì¬‚µ‚Ä•Ô‚·
+		/// SwapChain ã‹ã‚‰ç¾åœ¨ã®ãƒãƒƒã‚¯ãƒãƒƒãƒ•ã‚¡ã‚’å–å¾—ã—ã€ãã®ãƒ“ãƒ¥ãƒ¼ã‚’ DescriptorHeap (RTV) ã«ä½œæˆã—ã¦è¿”ã™
 		/// </summary>
 		static std::tuple<bool, std::wstring, std::tuple<GraphicsBuffer, DescriptorHeapHandleAtCPU>>
-			GetCurrentBackBufferAndCreateView_Impl(
+			GetCurrentBackBufferAndView_Impl(
 				const Device& device,
 				const SwapChain& swapChain,
 				const DescriptorHeap& descriptorHeapRTV
 			);
 
 		/// <summary>
-		/// ƒVƒF[ƒ_[‚ğƒ[ƒh‚µ‚ÄA’¸“_ƒVƒF[ƒ_[‚ÆƒsƒNƒZƒ‹ƒVƒF[ƒ_[‚ÉƒRƒ“ƒpƒCƒ‹‚·‚é
+		/// ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã‚’ãƒ­ãƒ¼ãƒ‰ã—ã¦ã€é ‚ç‚¹ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã¨ãƒ”ã‚¯ã‚»ãƒ«ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã«ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«ã™ã‚‹
 		/// </summary>
 		static std::tuple<bool, std::wstring, std::tuple<Blob, Blob>>
 			CompileShader_VS_PS_Impl(
@@ -147,7 +145,7 @@ namespace ForiverEngine
 			);
 
 		/// <summary>
-		/// RootSignature ‚Æ GraphicsPipelineState ‚ğˆêŠ‡‚Åì¬‚µ‚Ä•Ô‚·
+		/// RootSignature ã¨ GraphicsPipelineState ã‚’ä¸€æ‹¬ã§ä½œæˆã—ã¦è¿”ã™
 		/// </summary>
 		static std::tuple<bool, std::wstring, std::tuple<RootSignature, PipelineState>>
 			CreateRootSignatureAndGraphicsPipelineState_Impl(
