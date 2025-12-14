@@ -41,9 +41,14 @@ Transform構造体を作り、MVP行列を計算する
 ---
 立方体の頂点情報やテクスチャを定義し、3D表示する  
 ループ内でくるくる回す  
-DSV をまだ作成していないので、深度テストは行われていない
+まだ深度バッファーを導入していないので、深度テストは行われていない
 
 <img width="50%" alt="image" src="https://github.com/user-attachments/assets/21295e88-391a-4c44-9e63-a064746e8d31" />
+
+---
+深度バッファーを導入
+
+<img width="50%" alt="image" src="https://github.com/user-attachments/assets/42e1c754-5cd8-4b02-b8b0-322c00fa6f91" />
 
 ## OSS
 | 名前 | ライセンス |
