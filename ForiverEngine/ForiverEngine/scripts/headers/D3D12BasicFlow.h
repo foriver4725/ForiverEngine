@@ -140,6 +140,52 @@ namespace ForiverEngine
 				commandList, commandQueue, device, textureCopyIntermediateBuffer, textureBuffer, textureAsMetadata));
 		}
 
+		/// <summary>
+		/// <para>[Command]</para>
+		/// <para>ループ内の、基本的なコマンド系処理を実行する</para>
+		/// </summary>
+		/// <param name="commandList">CommandList</param>
+		/// <param name="commandQueue">CommandQueue</param>
+		/// <param name="commandAllocator">CommandAllocator</param>
+		/// <param name="device">Device</param>
+		/// <param name="rootSignature">RootSignature</param>
+		/// <param name="graphicsPipelineState">Graphics PipelineState</param>
+		/// <param name="currentBackBuffer">現在のバックバッファ</param>
+		/// <param name="currentBackBufferRTV">現在のバックバッファの RTV</param>
+		/// <param name="dsv">DSV</param>
+		/// <param name="descriptorHeapBasics">CBV/SRV/UAV 用 DescriptorHeap (0番目のルートパラメーターに紐づける想定なので、1つしか渡せない)</param>
+		/// <param name="vertexBufferViews">頂点バッファビュー群</param>
+		/// <param name="indexBufferView">インデックスバッファビュー</param>
+		/// <param name="viewportScissorRect">ビューポートとシザー矩形</param>
+		/// <param name="primitiveTopology">プリミティブのトポロジー</param>
+		/// <param name="rtvClearColor">RTV のクリアカラー</param>
+		/// <param name="depthClearValue">DSV のクリア深度値 (ステンシルは使わないので、深度値のみ. [0, 1])</param>
+		/// <param name="indexTotalCount">ドローコール時のインデックス総数</param>
+		static void
+			CommandBasicLoop(
+				// 基本オブジェクト
+				const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator,
+				const Device& device,
+				// パイプライン関連
+				const RootSignature& rootSignature, const PipelineState& graphicsPipelineState, const GraphicsBuffer& currentBackBuffer,
+				// Descriptor
+				const DescriptorHeapHandleAtCPU& currentBackBufferRTV, const DescriptorHeapHandleAtCPU& dsv,
+				const DescriptorHeap& descriptorHeapBasic,
+				const std::vector<VertexBufferView>& vertexBufferViews, const IndexBufferView& indexBufferView,
+				// 数値情報
+				const ViewportScissorRect& viewportScissorRect, PrimitiveTopology primitiveTopology,
+				Color rtvClearColor, float depthClearValue,
+				// ドローコール関連
+				int indexTotalCount
+			)
+		{
+			Check(CommandBasicLoop_Impl(
+				commandList, commandQueue, commandAllocator, device,
+				rootSignature, graphicsPipelineState, currentBackBuffer,
+				currentBackBufferRTV, dsv, descriptorHeapBasic, vertexBufferViews, indexBufferView,
+				viewportScissorRect, primitiveTopology, rtvClearColor, depthClearValue, indexTotalCount));
+		}
+
 #pragma endregion
 
 #pragma region Implementation
@@ -223,6 +269,45 @@ namespace ForiverEngine
 				const GraphicsBuffer& textureCopyIntermediateBuffer,
 				const GraphicsBuffer& textureBuffer,
 				const Texture& textureAsMetadata
+			);
+
+		/// <summary>
+		/// <para>[Command]</para>
+		/// <para>ループ内の、基本的なコマンド系処理を実行する</para>
+		/// </summary>
+		/// <param name="commandList">CommandList</param>
+		/// <param name="commandQueue">CommandQueue</param>
+		/// <param name="commandAllocator">CommandAllocator</param>
+		/// <param name="device">Device</param>
+		/// <param name="rootSignature">RootSignature</param>
+		/// <param name="graphicsPipelineState">Graphics PipelineState</param>
+		/// <param name="currentBackBuffer">現在のバックバッファ</param>
+		/// <param name="currentBackBufferRTV">現在のバックバッファの RTV</param>
+		/// <param name="dsv">DSV</param>
+		/// <param name="descriptorHeapBasics">CBV/SRV/UAV 用 DescriptorHeap (0番目のルートパラメーターに紐づける想定なので、1つしか渡せない)</param>
+		/// <param name="vertexBufferViews">頂点バッファビュー群</param>
+		/// <param name="indexBufferView">インデックスバッファビュー</param>
+		/// <param name="viewportScissorRect">ビューポートとシザー矩形</param>
+		/// <param name="primitiveTopology">プリミティブのトポロジー</param>
+		/// <param name="rtvClearColor">RTV のクリアカラー</param>
+		/// <param name="depthClearValue">DSV のクリア深度値 (ステンシルは使わないので、深度値のみ. [0, 1])</param>
+		/// <param name="indexTotalCount">ドローコール時のインデックス総数</param>
+		static std::tuple<bool, std::wstring>
+			CommandBasicLoop_Impl(
+				// 基本オブジェクト
+				const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator,
+				const Device& device,
+				// パイプライン関連
+				const RootSignature& rootSignature, const PipelineState& graphicsPipelineState, const GraphicsBuffer& currentBackBuffer,
+				// Descriptor
+				const DescriptorHeapHandleAtCPU& currentBackBufferRTV, const DescriptorHeapHandleAtCPU& dsv,
+				const DescriptorHeap& descriptorHeapBasic,
+				const std::vector<VertexBufferView>& vertexBufferViews, const IndexBufferView& indexBufferView,
+				// 数値情報
+				const ViewportScissorRect& viewportScissorRect, PrimitiveTopology primitiveTopology,
+				Color rtvClearColor, float depthClearValue,
+				// ドローコール関連
+				int indexTotalCount
 			);
 
 #pragma endregion

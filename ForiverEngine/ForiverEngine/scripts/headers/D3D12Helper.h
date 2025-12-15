@@ -235,11 +235,11 @@ namespace ForiverEngine
 
 		/// <summary>
 		/// <para>[Command]</para>
-		/// ルートパラメータのインデックスと DescriptorHeap のハンドル (GPU) を関連付ける
+		/// <para>DescriptorHeap を RootSignature にリンクする</para>
+		/// DescriptorHeap の最初のハンドルを受け取り、それを rootParameterIndex 番目のルートパラメータにリンクする
 		/// </summary>
-		static void CommandLinkRootParameterIndexAndDescriptorHeapHandleAtGPU(
-			const CommandList& commandList, const Device& device, const DescriptorHeap& descriptorHeap, DescriptorHeapType descriptorHeapType,
-			int rootParameterIndex, int descriptorIndexAtGPU);
+		static void CommandLinkDescriptorHeapToRootSignature(
+			const CommandList& commandList, const DescriptorHeapHandleAtGPU& firstDescriptor, int rootParameterIndex);
 
 		/// <summary>
 		/// <para>[Command]</para>

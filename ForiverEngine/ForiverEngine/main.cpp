@@ -14,7 +14,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		ShowError(L"DebugLayer の有効化に失敗しました");
 #endif
 
-	const auto [factory, device, commandAllocater, commandList, commandQueue, swapChain]
+	const auto [factory, device, commandAllocator, commandList, commandQueue, swapChain]
 		= D3D12BasicFlow::CreateStandardObjects(hwnd, WindowWidth, WindowHeight);
 
 	// ダブルバッファリングなので、2つ RTV を確保する
@@ -124,11 +124,11 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	D3D12BasicFlow::UploadTextureToGPU(commandList, commandQueue, device, textureCopyIntermediateBuffer, textureBuffer, texture);
 
 	// CBV, SRV から成る DescriptorHeap
-	const DescriptorHeap descriptorHeap = D3D12Helper::CreateDescriptorHeap(device, DescriptorHeapType::CBV_SRV_UAV, 2, true);
-	if (!descriptorHeap)
+	const DescriptorHeap descriptorHeapBasic = D3D12Helper::CreateDescriptorHeap(device, DescriptorHeapType::CBV_SRV_UAV, 2, true);
+	if (!descriptorHeapBasic)
 		ShowError(L"CBV/SRV/UAV 用 DescriptorHeap の作成に失敗しました");
-	D3D12Helper::CreateCBVAndRegistToDescriptorHeap(device, descriptorHeap, constantBuffer, 0);
-	D3D12Helper::CreateSRVAndRegistToDescriptorHeap(device, descriptorHeap, textureBuffer, 1, texture.format);
+	D3D12Helper::CreateCBVAndRegistToDescriptorHeap(device, descriptorHeapBasic, constantBuffer, 0);
+	D3D12Helper::CreateSRVAndRegistToDescriptorHeap(device, descriptorHeapBasic, textureBuffer, 1, texture.format);
 
 	const auto [vertexBufferView, indexBufferView]
 		= D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, mesh);
@@ -153,30 +153,13 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		constantBufferVirtualPtr->Matrix_M_IT = transform.CalculateModelMatrixInversed().Transposed();
 		constantBufferVirtualPtr->Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(transform, cameraTransform);
 
-		D3D12Helper::CommandInvokeResourceBarrierAsTransition(commandList, currentBackBuffer,
-			GraphicsBufferState::Present, GraphicsBufferState::RenderTarget, false);
-		{
-			D3D12Helper::CommandSetRT(commandList, currentBackBufferRTV, dsv);
-			D3D12Helper::CommandClearRT(commandList, currentBackBufferRTV, dsv, Color::Black(), 1.0f); // 深度値は座標変換で [0, 1] になっていることに注意!
-			D3D12Helper::CommandSetRootSignature(commandList, rootSignature);
-			D3D12Helper::CommandSetGraphicsPipelineState(commandList, graphicsPipelineState);
-			D3D12Helper::CommandSetDescriptorHeaps(commandList, { descriptorHeap });
-			D3D12Helper::CommandLinkRootParameterIndexAndDescriptorHeapHandleAtGPU(
-				commandList, device, descriptorHeap, DescriptorHeapType::CBV_SRV_UAV, 0, 0); // ルートパラメーターは1つだけ
-			D3D12Helper::CommandIASetPrimitiveTopology(commandList, PrimitiveTopology::TriangleList);
-			D3D12Helper::CommandIASetVertexBuffer(commandList, { vertexBufferView });
-			D3D12Helper::CommandIASetIndexBuffer(commandList, indexBufferView);
-			D3D12Helper::CommandRSSetViewportAndScissorRect(commandList, viewportScissorRect);
-			D3D12Helper::CommandDrawIndexedInstanced(commandList, static_cast<int>(mesh.indices.size()));
-		}
-		D3D12Helper::CommandInvokeResourceBarrierAsTransition(commandList, currentBackBuffer,
-			GraphicsBufferState::RenderTarget, GraphicsBufferState::Present, false);
-
-		D3D12BasicFlow::CommandCloseAndWaitForCompletion(commandList, commandQueue, device);
-
-		if (!D3D12Helper::ClearCommandAllocatorAndList(commandAllocater, commandList))
-			ShowError(L"CommandAllocator, CommandList のクリアに失敗しました");
-
+		D3D12BasicFlow::CommandBasicLoop(
+			commandList, commandQueue, commandAllocator, device,
+			rootSignature, graphicsPipelineState, currentBackBuffer,
+			currentBackBufferRTV, dsv, descriptorHeapBasic, { vertexBufferView }, indexBufferView,
+			viewportScissorRect, PrimitiveTopology::TriangleList, Color::Black(), 1.0f,
+			static_cast<int>(mesh.indices.size())
+		);
 		if (!D3D12Helper::Present(swapChain))
 			ShowError(L"画面のフリップに失敗しました");
 	}

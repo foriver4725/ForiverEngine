@@ -860,16 +860,12 @@ namespace ForiverEngine
 		);
 	}
 
-	void D3D12Helper::CommandLinkRootParameterIndexAndDescriptorHeapHandleAtGPU(
-		const CommandList& commandList, const Device& device, const DescriptorHeap& descriptorHeap, DescriptorHeapType descriptorHeapType,
-		int rootParameterIndex, int descriptorIndexAtGPU)
+	void D3D12Helper::CommandLinkDescriptorHeapToRootSignature(
+		const CommandList& commandList, const DescriptorHeapHandleAtGPU& firstDescriptor, int rootParameterIndex)
 	{
-		const DescriptorHeapHandleAtGPU handle = CreateDescriptorHeapHandleAtGPUIndicatingDescriptorByIndex(
-			device, descriptorHeap, descriptorHeapType, descriptorIndexAtGPU);
-
 		commandList->SetGraphicsRootDescriptorTable(
 			static_cast<UINT>(rootParameterIndex),
-			*Reinterpret(&handle)
+			*Reinterpret(&firstDescriptor)
 		);
 	}
 
