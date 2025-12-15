@@ -111,13 +111,6 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		false, reinterpret_cast<void**>(&constantBufferVirtualPtr)))
 		ShowError(L"定数バッファーへのデータ転送に失敗しました");
 
-	// 立方体を切り開いた展開図
-	// TODO: テクスチャ画像の空きスペースが無駄!
-	// Up, Down, Right, Left, Forward, Backward
-	// [ ][F][ ][ ]
-	// [L][U][R][D]
-	// [ ][B][ ][ ]
-	// [ ][ ][ ][ ]
 	const Texture texture = AssetLoader::LoadTexture("assets/textures/grass.png");
 	if (!texture.IsValid())
 		ShowError(L"テクスチャのロードに失敗しました");

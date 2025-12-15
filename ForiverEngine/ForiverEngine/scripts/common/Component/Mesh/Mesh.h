@@ -11,6 +11,15 @@ namespace ForiverEngine
 		std::vector<VertexData> vertices;
 		std::vector<std::uint16_t> indices;
 
+		// テクスチャ構造
+		// 立方体を切り開いた展開図
+		// TODO: テクスチャ画像の空きスペースが無駄!
+		// Up, Down, Right, Left, Forward, Backward
+		// [ ][F][ ][ ]
+		// [L][U][R][D]
+		// [ ][B][ ][ ]
+		// [ ][ ][ ][ ]
+
 		static Mesh CreateCube()
 		{
 			return
