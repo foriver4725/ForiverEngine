@@ -116,6 +116,22 @@ namespace ForiverEngine
 		}
 
 		/// <summary>
+		/// <para>深度バッファと専用の DescriptorHeap を作成し、DSV をその DescriptorHeap の中に作成して返す</para>
+		/// <para>記録用のバッファなので、1つのみ作成する</para>
+		/// <para>ステンシルは使わないので、深度のみとして作成する</para>
+		/// </summary>
+		static DescriptorHeapHandleAtCPU
+			InitDSV(
+				const Device& device,
+				int width,
+				int height,
+				float depthClearValue
+			)
+		{
+			return Check(InitDSV_Impl(device, width, height, depthClearValue));
+		}
+
+		/// <summary>
 		/// <para>[Command]</para>
 		/// <para>コマンドリストをクローズして実行し、GPUの処理が完了するまで待機する</para>
 		/// </summary>
@@ -263,6 +279,19 @@ namespace ForiverEngine
 				const std::vector<VertexLayout>& vertexLayouts,
 				FillMode fillMode,
 				CullMode cullMode
+			);
+
+		/// <summary>
+		/// <para>深度バッファと専用の DescriptorHeap を作成し、DSV をその DescriptorHeap の中に作成して返す</para>
+		/// <para>記録用のバッファなので、1つのみ作成する</para>
+		/// <para>ステンシルは使わないので、深度のみとして作成する</para>
+		/// </summary>
+		static std::tuple<bool, std::wstring, std::tuple<DescriptorHeapHandleAtCPU>>
+			InitDSV_Impl(
+				const Device& device,
+				int width,
+				int height,
+				float depthClearValue
 			);
 
 		/// <summary>

@@ -186,6 +186,40 @@ namespace ForiverEngine
 #undef RETURN_TRUE
 	}
 
+	std::tuple<bool, std::wstring, std::tuple<DescriptorHeapHandleAtCPU>>
+		D3D12BasicFlow::InitDSV_Impl(
+			const Device& device,
+			int width,
+			int height,
+			float depthClearValue
+		)
+	{
+		DescriptorHeapHandleAtCPU dsv = DescriptorHeapHandleAtCPU();
+
+#define RETURN_FALSE(errorMessage) \
+	return { false, errorMessage, { dsv } };
+#define RETURN_TRUE() \
+	return { true, L"", { dsv } };
+
+		const GraphicsBuffer depthBuffer = D3D12Helper::CreateGraphicsBufferTexture2DAsDepthBuffer(device, width, height, depthClearValue);
+		if (!depthBuffer)
+			RETURN_FALSE(L"DepthBuffer の作成に失敗しました");
+
+		const DescriptorHeap descriptorHeapDSV = D3D12Helper::CreateDescriptorHeap(device, DescriptorHeapType::DSV, 1, false);
+		if (!descriptorHeapDSV)
+			RETURN_FALSE(L"DescriptorHeap (DSV) の作成に失敗しました");
+
+		D3D12Helper::CreateDepthStencilView(device, descriptorHeapDSV, depthBuffer);
+
+		dsv = D3D12Helper::CreateDescriptorHeapHandleAtCPUIndicatingDescriptorByIndex(
+			device, descriptorHeapDSV, DescriptorHeapType::DSV, 0);
+
+		RETURN_TRUE();
+
+#undef RETURN_FALSE
+#undef RETURN_TRUE
+	}
+
 	std::tuple<bool, std::wstring>
 		D3D12BasicFlow::CommandCloseAndWaitForCompletion_Impl(
 			const CommandList& commandList,

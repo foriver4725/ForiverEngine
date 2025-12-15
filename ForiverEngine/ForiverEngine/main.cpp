@@ -24,19 +24,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	if (!D3D12Helper::CreateRenderTargetViews(device, descriptorHeapRTV, swapChain, false))
 		ShowError(L"RenderTargetView を作成できない RenderTargetBuffer がありました");
 
-	// 深度バッファは手動で生成する必要がある
-	// 記録用なので、1つで十分
-	const GraphicsBuffer depthBuffer = D3D12Helper::CreateGraphicsBufferTexture2DAsDepthBuffer(device, WindowWidth, WindowHeight, 1.0f);
-	if (!depthBuffer)
-		ShowError(L"DepthBuffer の作成に失敗しました");
-	// DSVは異なるカテゴリなので、別個に DescriptorHeap を作成する
-	const DescriptorHeap descriptorHeapDSV = D3D12Helper::CreateDescriptorHeap(device, DescriptorHeapType::DSV, 1, false);
-	if (!descriptorHeapDSV)
-		ShowError(L"DescriptorHeap (DSV) の作成に失敗しました");
-	D3D12Helper::CreateDepthStencilView(device, descriptorHeapDSV, depthBuffer);
-	// スワップしないので、ここで Descriptor のハンドルを取得しておけばよい
-	const DescriptorHeapHandleAtCPU dsv = D3D12Helper::CreateDescriptorHeapHandleAtCPUIndicatingDescriptorByIndex(
-		device, descriptorHeapDSV, DescriptorHeapType::DSV, 0);
+	const DescriptorHeapHandleAtCPU dsv = D3D12BasicFlow::InitDSV(device, WindowWidth, WindowHeight, 1.0f);
 
 	// ルートパラメータ
 	const RootParameter rootParameter =
