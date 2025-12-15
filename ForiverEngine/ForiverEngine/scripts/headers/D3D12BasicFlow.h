@@ -23,6 +23,17 @@ namespace ForiverEngine
 				ShowError(errorMessage.c_str());
 		}
 
+		template<typename T>
+		static T Check(std::tuple<bool, std::wstring, std::tuple<T>>&& value)
+		{
+			auto& [success, errorMessage, output] = value;
+
+			if (!success)
+				ShowError(errorMessage.c_str());
+
+			return std::get<0>(output);
+		}
+
 		template<typename... Types>
 		static std::tuple<Types...> Check(std::tuple<bool, std::wstring, std::tuple<Types...>>&& value)
 		{
@@ -105,11 +116,6 @@ namespace ForiverEngine
 		}
 
 		/// <summary>
-		/// MVP行列を計算して返す
-		/// </summary>
-		static Matrix4x4 CalculateMVPMatrix(const Transform& transform, const CameraTransform& cameraTransform);
-
-		/// <summary>
 		/// <para>[Command]</para>
 		/// <para>コマンドリストをクローズして実行し、GPUの処理が完了するまで待機する</para>
 		/// </summary>
@@ -125,19 +131,19 @@ namespace ForiverEngine
 
 		/// <summary>
 		/// <para>テクスチャデータを GPU 側にアップロードする</para>
+		/// <para>内部で中間バッファを作成し、転送する</para>
 		/// </summary>
 		static void
 			UploadTextureToGPU(
 				const CommandList& commandList,
 				const CommandQueue& commandQueue,
 				const Device& device,
-				const GraphicsBuffer& textureCopyIntermediateBuffer,
 				const GraphicsBuffer& textureBuffer,
 				const Texture& textureAsMetadata
 			)
 		{
 			Check(UploadTextureToGPU_Impl(
-				commandList, commandQueue, device, textureCopyIntermediateBuffer, textureBuffer, textureAsMetadata));
+				commandList, commandQueue, device, textureBuffer, textureAsMetadata));
 		}
 
 		/// <summary>
@@ -184,6 +190,18 @@ namespace ForiverEngine
 				rootSignature, graphicsPipelineState, currentBackBuffer,
 				currentBackBufferRTV, dsv, descriptorHeapBasic, vertexBufferViews, indexBufferView,
 				viewportScissorRect, primitiveTopology, rtvClearColor, depthClearValue, indexTotalCount));
+		}
+
+		/// <summary>
+		/// MVP行列を計算して返す
+		/// </summary>
+		static Matrix4x4
+			CalculateMVPMatrix(
+				const Transform& transform,
+				const CameraTransform& cameraTransform
+			)
+		{
+			return Check(CalculateMVPMatrix_Impl(transform, cameraTransform));
 		}
 
 #pragma endregion
@@ -260,13 +278,13 @@ namespace ForiverEngine
 
 		/// <summary>
 		/// <para>テクスチャデータを GPU 側にアップロードする</para>
+		/// <para>内部で中間バッファを作成し、転送する</para>
 		/// </summary>
 		static std::tuple<bool, std::wstring>
 			UploadTextureToGPU_Impl(
 				const CommandList& commandList,
 				const CommandQueue& commandQueue,
 				const Device& device,
-				const GraphicsBuffer& textureCopyIntermediateBuffer,
 				const GraphicsBuffer& textureBuffer,
 				const Texture& textureAsMetadata
 			);
@@ -308,6 +326,15 @@ namespace ForiverEngine
 				Color rtvClearColor, float depthClearValue,
 				// ドローコール関連
 				int indexTotalCount
+			);
+
+		/// <summary>
+		/// MVP行列を計算して返す
+		/// </summary>
+		static std::tuple<bool, std::wstring, std::tuple<Matrix4x4>>
+			CalculateMVPMatrix_Impl(
+				const Transform& transform,
+				const CameraTransform& cameraTransform
 			);
 
 #pragma endregion

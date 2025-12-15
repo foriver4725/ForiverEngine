@@ -114,14 +114,10 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	const Texture texture = AssetLoader::LoadTexture("assets/textures/grass.png");
 	if (!texture.IsValid())
 		ShowError(L"テクスチャのロードに失敗しました");
-	const GraphicsBuffer textureCopyIntermediateBuffer = D3D12Helper::CreateGraphicsBuffer1D(device,
-		static_cast<int>(GetAlignmentedSize(texture.rowSize, Texture::RowSizeAlignment) * texture.height), true);
-	if (!textureCopyIntermediateBuffer)
-		ShowError(L"テクスチャ転送用中間バッファの作成に失敗しました");
 	const GraphicsBuffer textureBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, texture);
 	if (!textureBuffer)
 		ShowError(L"テクスチャバッファの作成に失敗しました");
-	D3D12BasicFlow::UploadTextureToGPU(commandList, commandQueue, device, textureCopyIntermediateBuffer, textureBuffer, texture);
+	D3D12BasicFlow::UploadTextureToGPU(commandList, commandQueue, device, textureBuffer, texture);
 
 	// CBV, SRV から成る DescriptorHeap
 	const DescriptorHeap descriptorHeapBasic = D3D12Helper::CreateDescriptorHeap(device, DescriptorHeapType::CBV_SRV_UAV, 2, true);

@@ -208,13 +208,20 @@ namespace ForiverEngine
 			const CommandList& commandList,
 			const CommandQueue& commandQueue,
 			const Device& device,
-			const GraphicsBuffer& textureCopyIntermediateBuffer,
 			const GraphicsBuffer& textureBuffer,
 			const Texture& textureAsMetadata
 		)
 	{
+		const GraphicsBuffer intermediateBuffer = D3D12Helper::CreateGraphicsBuffer1D(
+			device,
+			static_cast<int>(GetAlignmentedSize(textureAsMetadata.rowSize, Texture::RowSizeAlignment) * textureAsMetadata.height),
+			true
+		);
+		if (!intermediateBuffer)
+			return { false, L"テクスチャ転送用中間バッファの作成に失敗しました" };
+
 		if (!D3D12Helper::CommandCopyDataFromCPUToGPUThroughGraphicsBufferTexture2D(
-			commandList, textureCopyIntermediateBuffer, textureBuffer, textureAsMetadata))
+			commandList, intermediateBuffer, textureBuffer, textureAsMetadata))
 			return { false, L"テクスチャデータを GPU 側にコピーするコマンドの発行に失敗しました" };
 
 		D3D12Helper::CommandInvokeResourceBarrierAsTransition(commandList, textureBuffer,
@@ -275,12 +282,18 @@ namespace ForiverEngine
 		return { true, L"" };
 	}
 
-	Matrix4x4 D3D12BasicFlow::CalculateMVPMatrix(const Transform& transform, const CameraTransform& cameraTransform)
+	std::tuple<bool, std::wstring, std::tuple<Matrix4x4>>
+		D3D12BasicFlow::CalculateMVPMatrix_Impl(
+			const Transform& transform,
+			const CameraTransform& cameraTransform
+		)
 	{
 		const Matrix4x4 m = transform.CalculateModelMatrix();
 		const Matrix4x4 v = cameraTransform.CalculateViewMatrix();
 		const Matrix4x4 p = cameraTransform.CalculateProjectionMatrix();
 
-		return p * v * m;
+		const Matrix4x4 mvp = p * v * m;
+
+		return { true, L"", { mvp } };
 	}
 }
