@@ -163,6 +163,15 @@ public: \
 		DSV = 3,         // D3D12_DESCRIPTOR_HEAP_TYPE_DSV
 	};
 
+	// DescriptorRange の種類
+	enum class DescriptorRangeType : std::uint8_t
+	{
+		SRV = 0,     // D3D12_DESCRIPTOR_RANGE_TYPE_SRV
+		UAV = 1,     // D3D12_DESCRIPTOR_RANGE_TYPE_UAV
+		CBV = 2,     // D3D12_DESCRIPTOR_RANGE_TYPE_CBV
+		Sampler = 3, // D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER
+	};
+
 	// GraphicsBuffer の種類
 	enum class GraphicsBufferType : std::uint8_t
 	{
@@ -186,17 +195,6 @@ public: \
 	// ルートパラメータ
 	struct RootParameter
 	{
-		// DirectX と等価の列挙型を定義
-		// 混同されそうなので、この構造体内で定義してしまう
-
-		enum class DescriptorRangeType : std::uint8_t
-		{
-			SRV = 0,     // D3D12_DESCRIPTOR_RANGE_TYPE_SRV
-			UAV = 1,     // D3D12_DESCRIPTOR_RANGE_TYPE_UAV
-			CBV = 2,     // D3D12_DESCRIPTOR_RANGE_TYPE_CBV
-			Sampler = 3, // D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER
-		};
-
 		struct DescriptorRange
 		{
 			DescriptorRangeType type;

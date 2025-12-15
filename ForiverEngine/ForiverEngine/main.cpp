@@ -44,16 +44,8 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		.shaderVisibility = ShaderVisibility::All,
 		.descriptorRanges =
 		{
-			{
-				.type = RootParameter::DescriptorRangeType::CBV,
-				.amount = 1,
-				.shaderRegister = ShaderRegister::b0,
-			},
-			{
-				.type = RootParameter::DescriptorRangeType::SRV,
-				.amount = 1,
-				.shaderRegister = ShaderRegister::t0,
-			},
+			{ DescriptorRangeType::CBV, 1, ShaderRegister::b0, },
+			{ DescriptorRangeType::SRV, 1, ShaderRegister::t0, },
 		}
 	};
 
