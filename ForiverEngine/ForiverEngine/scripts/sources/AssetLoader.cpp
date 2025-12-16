@@ -49,4 +49,87 @@ namespace ForiverEngine
 			.mipLevels = static_cast<int>(metadata.mipLevels),
 		};
 	}
+
+	Texture AssetLoader::LoadTextureArray(const std::vector<std::string>& paths)
+	{
+		if (paths.empty())
+			return Texture{};
+
+		DirectX::TexMetadata baseMetadata = {};
+		std::vector<std::uint8_t> combinedData;
+
+		Format format = Format::Unknown;
+		int width = 0;
+		int height = 0;
+		int rowSize = 0;
+		int sliceSize = 0;
+
+		for (int i = 0; i < static_cast<int>(paths.size()); ++i)
+		{
+			DirectX::ScratchImage scratchImage = {};
+			DirectX::TexMetadata metadata = {};
+
+			if (DirectX::LoadFromWICFile(
+				StringUtils::UTF8ToUTF16(paths[i]).c_str(),
+				DirectX::WIC_FLAGS_NONE,
+				&metadata,
+				scratchImage
+			) != S_OK)
+			{
+				return Texture{};
+			}
+
+			const DirectX::Image* image = scratchImage.GetImage(0, 0, 0);
+			if (!image)
+				return Texture{};
+
+			// 1枚目で基準を決める
+			if (i == 0)
+			{
+				baseMetadata = metadata;
+
+				format = static_cast<Format>(metadata.format);
+				width = static_cast<int>(metadata.width);
+				height = static_cast<int>(metadata.height);
+				rowSize = static_cast<int>(image->rowPitch);
+				sliceSize = static_cast<int>(image->slicePitch);
+
+				combinedData.reserve(sliceSize * paths.size());
+			}
+			else
+			{
+				// サイズチェック
+				if (metadata.width != baseMetadata.width ||
+					metadata.height != baseMetadata.height)
+				{
+					// Texture2DArray にできない
+					return Texture{};
+				}
+
+				// TODO: フォーマットチェックはしない!!
+			}
+
+			// スライス分コピー
+			size_t offset = combinedData.size();
+			combinedData.resize(offset + sliceSize);
+			std::memcpy(
+				combinedData.data() + offset,
+				image->pixels,
+				sliceSize
+			);
+		}
+
+		return Texture
+		{
+			.data = std::move(combinedData),
+			.textureType = GraphicsBufferType::Texture2D, // テクスチャ配列も2Dテクスチャ扱いでOK
+			.format = format,
+			.width = width,
+			.height = height,
+			.rowSize = rowSize,
+			.sliceSize = sliceSize,
+			.sliceCount = static_cast<int>(paths.size()),
+			.mipLevels = 1, // ミップマップは作成していないので、1固定
+		};
+	}
 }

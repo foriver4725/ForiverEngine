@@ -27,7 +27,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	const auto [rtBufferGetter, rtvGetter] = D3D12BasicFlow::InitRTV(device, swapChain, 2, false);
 	const DescriptorHeapHandleAtCPU dsv = D3D12BasicFlow::InitDSV(device, WindowWidth, WindowHeight, 1.0f);
 
-	const Mesh mesh = Mesh::CreateCube(true);
+	const Mesh mesh = Mesh::CreateCube();
 
 	Transform transform =
 	{
@@ -54,12 +54,16 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	{
 		Matrix4x4 Matrix_M_IT; // M の逆→転置行列
 		Matrix4x4 Matrix_MVP; // MVP
+		int TextureIndex; // 使用するテクスチャのインデックス (仮)
+		int UseUpperUV; // 上半分のUVを使うかどうか (仮). 1=true:上半分, 0=false:下半分
 	};
 
 	CBData0 cbData0 =
 	{
 		.Matrix_M_IT = transform.CalculateModelMatrixInversed().Transposed(),
 		.Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(transform, cameraTransform),
+		.TextureIndex = 0,
+		.UseUpperUV = true,
 	};
 
 	// 定数バッファー (サイズは256バイトにアラインメントする必要がある!!)
@@ -73,20 +77,24 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		false, reinterpret_cast<void**>(&cbData0VirtualPtr)))
 		ShowError(L"定数バッファーへのデータ転送に失敗しました");
 
-	const Texture texture = AssetLoader::LoadTexture("assets/textures/grass_stone.png");
-	if (!texture.IsValid())
-		ShowError(L"テクスチャのロードに失敗しました");
-	const GraphicsBuffer textureBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, texture);
-	if (!textureBuffer)
-		ShowError(L"テクスチャバッファの作成に失敗しました");
-	D3D12BasicFlow::UploadTextureToGPU(commandList, commandQueue, device, textureBuffer, texture);
+	const Texture textureArray = AssetLoader::LoadTextureArray(
+		{
+			"assets/textures/grass_stone.png",
+			"assets/textures/dirt_sand.png",
+		});
+	if (!textureArray.IsValid())
+		ShowError(L"テクスチャ群のロードに失敗しました");
+	const GraphicsBuffer textureArrayBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, textureArray);
+	if (!textureArrayBuffer)
+		ShowError(L"テクスチャ配列バッファの作成に失敗しました");
+	D3D12BasicFlow::UploadTextureToGPU(commandList, commandQueue, device, textureArrayBuffer, textureArray);
 
 	// CBV, SRV から成る DescriptorHeap
 	const DescriptorHeap descriptorHeapBasic = D3D12Helper::CreateDescriptorHeap(device, DescriptorHeapType::CBV_SRV_UAV, 2, true);
 	if (!descriptorHeapBasic)
 		ShowError(L"CBV/SRV/UAV 用 DescriptorHeap の作成に失敗しました");
 	D3D12Helper::CreateCBVAndRegistToDescriptorHeap(device, descriptorHeapBasic, constantBuffer, 0);
-	D3D12Helper::CreateSRVAndRegistToDescriptorHeap(device, descriptorHeapBasic, textureBuffer, 1, texture.format);
+	D3D12Helper::CreateSRVAndRegistToDescriptorHeap(device, descriptorHeapBasic, textureArrayBuffer, 1, textureArray);
 
 	const auto [vertexBufferView, indexBufferView]
 		= D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, mesh);

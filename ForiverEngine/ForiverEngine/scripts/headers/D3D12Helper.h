@@ -72,7 +72,7 @@ namespace ForiverEngine
 
 		/// <summary>
 		/// <para>GPU側のメモリ領域を確保し、その GraphicsBuffer を返す (失敗したら nullptr)</para>
-		/// <para>2次元テクスチャ用 (テクスチャのタイプが2Dで無いならば、失敗とみなし nullptr を返す)</para>
+		/// <para>2次元テクスチャ/2次元テクスチャ配列 用 (テクスチャのタイプが2Dで無いならば、失敗とみなし nullptr を返す)</para>
 		/// <para>GPU内でのみ用いる想定で、CPUからのマップ不可</para>
 		/// <para>テクスチャ変数のメタデータを基に作成する</para>
 		/// </summary>
@@ -128,10 +128,12 @@ namespace ForiverEngine
 		/// <summary>
 		/// <para>テクスチャバッファ から シェーダーリソースビュー を作成し、DescriptorHeap に登録する</para>
 		/// <para>DescriptorHeap の index 番目に登録する</para>
+		/// <para>テクスチャのスライス数が1より大きい場合、2Dテクスチャ配列として登録する</para>
 		/// 戻り値として取得することは出来ない!
 		/// </summary>
 		static void CreateSRVAndRegistToDescriptorHeap(
-			const Device& device, const DescriptorHeap& descriptorHeap, const GraphicsBuffer& graphicsBuffer, int index, Format format);
+			const Device& device, const DescriptorHeap& descriptorHeap, const GraphicsBuffer& graphicsBuffer, int index,
+			const Texture& textureAsMetadata);
 
 		/// <summary>
 		/// <para>DescriptorHeap のハンドルを作成し、index 番目の Descriptor を指し示すように内部ポインタを進めて返す</para>
@@ -162,7 +164,7 @@ namespace ForiverEngine
 		/// <summary>
 		/// <para>[Command]</para>
 		/// <para>CPUのバッファをGPU側にコピーする</para>
-		/// <para>2次元テクスチャ用 (テクスチャのタイプが2Dで無いならば、失敗とみなし false を返す)</para>
+		/// <para>2次元テクスチャ/2次元テクスチャ配列 用 (テクスチャのタイプが2Dで無いならば、失敗とみなし false を返す)</para>
 		/// <para>バッファのサイズは、GraphicsBuffer 作成時に指定したサイズと同じであること! (一部のバッファのみコピー、などには未対応)</para>
 		/// <para> textureCopyIntermediateBuffer : CPU からデータをアップロードするための中間バッファ</para>
 		/// <para> textureBuffer : 実際にテクスチャとして使われるバッファ</para>

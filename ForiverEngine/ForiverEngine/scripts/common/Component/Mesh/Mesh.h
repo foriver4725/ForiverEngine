@@ -13,58 +13,54 @@ namespace ForiverEngine
 
 		// [テクスチャ構造]
 		// 凡例 : Up, Down, Right, Left, Forward, Backward
-		// useUpperUV == true  : 上半分のテクスチャを見る
-		// useUpperUV == false : 下半分のテクスチャを見る
+		// 1枚のテクスチャに2つ詰め込んでいるが、読み取りを切り替えるのはシェーダー側で行うので、下半分は無いものとしてUV値を設定する
 		// [L][R][B][F]
 		// [U][D][ ][ ]
 		// [L][R][B][F]
 		// [U][D][ ][ ]
 
-		static Mesh CreateCube(bool useUpperUV)
+		static Mesh CreateCube()
 		{
-			const float vOffset = useUpperUV ? 0.00f : 0.50f;
-			const Vector2 uvOffset = Vector2(0.00f, vOffset);
-
 			return
 			{
 				// 頂点順 : 左下, 左上, 右下, 右上
 				.vertices =
 				{
 					// Up
-					{ Vector4(-0.5f, +0.5f, -0.5f), Vector2(0.00f, 0.50f) + uvOffset, Vector3::Up() },
-					{ Vector4(-0.5f, +0.5f, +0.5f), Vector2(0.00f, 0.25f) + uvOffset, Vector3::Up() },
-					{ Vector4(+0.5f, +0.5f, -0.5f), Vector2(0.25f, 0.50f) + uvOffset, Vector3::Up() },
-					{ Vector4(+0.5f, +0.5f, +0.5f), Vector2(0.25f, 0.25f) + uvOffset, Vector3::Up() },
+					{ Vector4(-0.5f, +0.5f, -0.5f), Vector2(0.00f, 0.50f), Vector3::Up() },
+					{ Vector4(-0.5f, +0.5f, +0.5f), Vector2(0.00f, 0.25f), Vector3::Up() },
+					{ Vector4(+0.5f, +0.5f, -0.5f), Vector2(0.25f, 0.50f), Vector3::Up() },
+					{ Vector4(+0.5f, +0.5f, +0.5f), Vector2(0.25f, 0.25f), Vector3::Up() },
 
 					// Down
-					{ Vector4(-0.5f, -0.5f, +0.5f), Vector2(0.25f, 0.50f) + uvOffset, Vector3::Down() },
-					{ Vector4(-0.5f, -0.5f, -0.5f), Vector2(0.25f, 0.25f) + uvOffset, Vector3::Down() },
-					{ Vector4(+0.5f, -0.5f, +0.5f), Vector2(0.50f, 0.50f) + uvOffset, Vector3::Down() },
-					{ Vector4(+0.5f, -0.5f, -0.5f), Vector2(0.50f, 0.25f) + uvOffset, Vector3::Down() },
+					{ Vector4(-0.5f, -0.5f, +0.5f), Vector2(0.25f, 0.50f), Vector3::Down() },
+					{ Vector4(-0.5f, -0.5f, -0.5f), Vector2(0.25f, 0.25f), Vector3::Down() },
+					{ Vector4(+0.5f, -0.5f, +0.5f), Vector2(0.50f, 0.50f), Vector3::Down() },
+					{ Vector4(+0.5f, -0.5f, -0.5f), Vector2(0.50f, 0.25f), Vector3::Down() },
 
 					// Right
-					{ Vector4(+0.5f, -0.5f, -0.5f), Vector2(0.25f, 0.25f) + uvOffset, Vector3::Right() },
-					{ Vector4(+0.5f, +0.5f, -0.5f), Vector2(0.25f, 0.00f) + uvOffset, Vector3::Right() },
-					{ Vector4(+0.5f, -0.5f, +0.5f), Vector2(0.50f, 0.25f) + uvOffset, Vector3::Right() },
-					{ Vector4(+0.5f, +0.5f, +0.5f), Vector2(0.50f, 0.00f) + uvOffset, Vector3::Right() },
+					{ Vector4(+0.5f, -0.5f, -0.5f), Vector2(0.25f, 0.25f), Vector3::Right() },
+					{ Vector4(+0.5f, +0.5f, -0.5f), Vector2(0.25f, 0.00f), Vector3::Right() },
+					{ Vector4(+0.5f, -0.5f, +0.5f), Vector2(0.50f, 0.25f), Vector3::Right() },
+					{ Vector4(+0.5f, +0.5f, +0.5f), Vector2(0.50f, 0.00f), Vector3::Right() },
 
 					// Left
-					{ Vector4(-0.5f, -0.5f, +0.5f), Vector2(0.00f, 0.25f) + uvOffset, Vector3::Left() },
-					{ Vector4(-0.5f, +0.5f, +0.5f), Vector2(0.00f, 0.00f) + uvOffset, Vector3::Left() },
-					{ Vector4(-0.5f, -0.5f, -0.5f), Vector2(0.25f, 0.25f) + uvOffset, Vector3::Left() },
-					{ Vector4(-0.5f, +0.5f, -0.5f), Vector2(0.25f, 0.00f) + uvOffset, Vector3::Left() },
+					{ Vector4(-0.5f, -0.5f, +0.5f), Vector2(0.00f, 0.25f), Vector3::Left() },
+					{ Vector4(-0.5f, +0.5f, +0.5f), Vector2(0.00f, 0.00f), Vector3::Left() },
+					{ Vector4(-0.5f, -0.5f, -0.5f), Vector2(0.25f, 0.25f), Vector3::Left() },
+					{ Vector4(-0.5f, +0.5f, -0.5f), Vector2(0.25f, 0.00f), Vector3::Left() },
 
 					// Forward
-					{ Vector4(+0.5f, -0.5f, +0.5f), Vector2(0.75f, 0.25f) + uvOffset, Vector3::Forward() },
-					{ Vector4(+0.5f, +0.5f, +0.5f), Vector2(0.75f, 0.00f) + uvOffset, Vector3::Forward() },
-					{ Vector4(-0.5f, -0.5f, +0.5f), Vector2(1.00f, 0.25f) + uvOffset, Vector3::Forward() },
-					{ Vector4(-0.5f, +0.5f, +0.5f), Vector2(1.00f, 0.00f) + uvOffset, Vector3::Forward() },
+					{ Vector4(+0.5f, -0.5f, +0.5f), Vector2(0.75f, 0.25f), Vector3::Forward() },
+					{ Vector4(+0.5f, +0.5f, +0.5f), Vector2(0.75f, 0.00f), Vector3::Forward() },
+					{ Vector4(-0.5f, -0.5f, +0.5f), Vector2(1.00f, 0.25f), Vector3::Forward() },
+					{ Vector4(-0.5f, +0.5f, +0.5f), Vector2(1.00f, 0.00f), Vector3::Forward() },
 
 					// Backward
-					{ Vector4(-0.5f, -0.5f, -0.5f), Vector2(0.50f, 0.25f) + uvOffset, Vector3::Backward() },
-					{ Vector4(-0.5f, +0.5f, -0.5f), Vector2(0.50f, 0.00f) + uvOffset, Vector3::Backward() },
-					{ Vector4(+0.5f, -0.5f, -0.5f), Vector2(0.75f, 0.25f) + uvOffset, Vector3::Backward() },
-					{ Vector4(+0.5f, +0.5f, -0.5f), Vector2(0.75f, 0.00f) + uvOffset, Vector3::Backward() },
+					{ Vector4(-0.5f, -0.5f, -0.5f), Vector2(0.50f, 0.25f), Vector3::Backward() },
+					{ Vector4(-0.5f, +0.5f, -0.5f), Vector2(0.50f, 0.00f), Vector3::Backward() },
+					{ Vector4(+0.5f, -0.5f, -0.5f), Vector2(0.75f, 0.25f), Vector3::Backward() },
+					{ Vector4(+0.5f, +0.5f, -0.5f), Vector2(0.75f, 0.00f), Vector3::Backward() },
 				},
 
 				.indices =

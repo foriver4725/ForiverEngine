@@ -2,9 +2,11 @@ cbuffer _0 : register(b0)
 {
     float4x4 _Matrix_M_IT;
     float4x4 _Matrix_MVP;
+    int _TextureIndex;
+    int _UseUpperUV;
 }
 
-Texture2D<float4> _AlbedoTexture : register(t0);
+Texture2DArray<float4> _Texture : register(t0);
 SamplerState _Sampler : register(s0);
 
 struct VSInput
@@ -41,7 +43,9 @@ PSOutput PSMain(V2P input)
 {
     PSOutput output;
     
-    output.color = _AlbedoTexture.Sample(_Sampler, input.uv);
+    // 1枚のテクスチャのうち、上下どちらから読み取るべきかを判断する
+    float2 uv = _UseUpperUV > 0.5 ? input.uv : input.uv + float2(0.0, 0.5);
+    output.color = _Texture.Sample(_Sampler, float3(uv, _TextureIndex));
     
     return output;
 }

@@ -602,11 +602,36 @@ namespace ForiverEngine
 	}
 
 	void D3D12Helper::CreateSRVAndRegistToDescriptorHeap(
-		const Device& device, const DescriptorHeap& descriptorHeap, const GraphicsBuffer& graphicsBuffer, int index, Format format)
+		const Device& device, const DescriptorHeap& descriptorHeap, const GraphicsBuffer& graphicsBuffer, int index,
+		const Texture& textureAsMetadata)
 	{
-		const D3D12_SHADER_RESOURCE_VIEW_DESC desc =
+		const bool isArray = textureAsMetadata.sliceCount > 1;
+		const D3D12_SHADER_RESOURCE_VIEW_DESC desc = isArray ?
+			D3D12_SHADER_RESOURCE_VIEW_DESC
 		{
-			.Format = static_cast<DXGI_FORMAT>(format),
+			// 2次元テクスチャ配列
+
+			.Format = static_cast<DXGI_FORMAT>(textureAsMetadata.format),
+			.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY, // 2Dテクスチャ配列
+			// デフォルト : テクセル値をそのまま、フォーマット・順序を変えずマッピングする
+			.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING,
+
+			// union
+			.Texture2DArray =
+			{
+				.MostDetailedMip = 0, // 規定値
+				.MipLevels = 1, // ミップマップは使わない
+				.FirstArraySlice = 0,
+				.ArraySize = static_cast<UINT>(textureAsMetadata.sliceCount),
+				.PlaneSlice = 0, // 規定値
+				.ResourceMinLODClamp = 0.0f // 規定値
+			}
+		}:
+		D3D12_SHADER_RESOURCE_VIEW_DESC
+		{
+			// 2次元テクスチャ単体
+
+			.Format = static_cast<DXGI_FORMAT>(textureAsMetadata.format),
 			.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D, // 2Dテクスチャ
 			// デフォルト : テクセル値をそのまま、フォーマット・順序を変えずマッピングする
 			.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING,
@@ -688,11 +713,13 @@ namespace ForiverEngine
 			return false;
 		}
 
+		const int alignedRowSize = GetAlignmentedSize(texture.rowSize, Texture::RowSizeAlignment);
+
 		// 中間バッファ(1次元) にマップ
 		{
 			void* bufferVirtualPtr = nullptr;
 			if (textureCopyIntermediateBuffer->Map(
-				0, // リソース配列やミップマップなどではないので、0でOK
+				0, // 1次元バッファなので、これで良い
 				nullptr, // GraphicsBuffer の全範囲を対象にする
 				&bufferVirtualPtr
 			) != S_OK)
@@ -702,20 +729,30 @@ namespace ForiverEngine
 			}
 
 			// バッファ間でコピー
-			// RowPitch のアラインメントがあって、バッファのサイズが異なるので、1行ごとにコピーするようにする
 			{
-				std::uint8_t* src = const_cast<std::uint8_t*>(texture.data.data());
-				std::uint8_t* dst = static_cast<std::uint8_t*>(bufferVirtualPtr);
-				if (!src || !dst)
-				{
-					textureCopyIntermediateBuffer->Unmap(0, nullptr);
-					return false;
-				}
+				std::uint8_t* dstBase = static_cast<std::uint8_t*>(bufferVirtualPtr);
 
-				for (int y = 0; y < texture.height; ++y,
-					src += texture.rowSize,
-					dst += GetAlignmentedSize(texture.rowSize, Texture::RowSizeAlignment))
-					std::memcpy(static_cast<void*>(dst), static_cast<void*>(src), static_cast<std::size_t>(texture.rowSize));
+				for (int sliceIndex = 0; sliceIndex < texture.sliceCount; ++sliceIndex)
+				{
+					std::uint8_t* src = const_cast<std::uint8_t*>(texture.data.data())
+						+ sliceIndex * texture.sliceSize;
+					std::uint8_t* dst = dstBase
+						+ sliceIndex * alignedRowSize * texture.height;
+
+					if (!src || !dst)
+					{
+						textureCopyIntermediateBuffer->Unmap(0, nullptr);
+						return false;
+					}
+
+					// RowPitch のアラインメントがあって、バッファのサイズが異なるので、1行ごとにコピーするようにする
+					for (int y = 0; y < texture.height; ++y)
+					{
+						std::memcpy(dst, src, texture.rowSize);
+						src += texture.rowSize;
+						dst += alignedRowSize;
+					}
+				}
 			}
 
 			textureCopyIntermediateBuffer->Unmap(0, nullptr);
@@ -723,40 +760,43 @@ namespace ForiverEngine
 
 		// 真のテクスチャバッファーにコピー
 		{
-			const D3D12_TEXTURE_COPY_LOCATION srcLocation =
+			for (int sliceIndex = 0; sliceIndex < texture.sliceCount; ++sliceIndex)
 			{
-				.pResource = textureCopyIntermediateBuffer.Ptr,
-				.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT, // アップロードバッファーはこっちを指定
-				.PlacedFootprint =
+				const D3D12_TEXTURE_COPY_LOCATION srcLocation =
 				{
-					.Offset = 0, // 規定値
-					.Footprint =
+					.pResource = textureCopyIntermediateBuffer.Ptr,
+					.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT, // アップロードバッファーはこっちを指定
+					.PlacedFootprint =
 					{
-						.Format = static_cast<DXGI_FORMAT>(texture.format),
-						.Width = static_cast<UINT>(texture.width),
-						.Height = static_cast<UINT>(texture.height),
-						.Depth = 1, // 2Dテクスチャなので...
-						.RowPitch = static_cast<UINT>(GetAlignmentedSize(texture.rowSize, Texture::RowSizeAlignment)),
+						.Offset = static_cast<UINT64>(sliceIndex * alignedRowSize * texture.height),
+						.Footprint =
+						{
+							.Format = static_cast<DXGI_FORMAT>(texture.format),
+							.Width = static_cast<UINT>(texture.width),
+							.Height = static_cast<UINT>(texture.height),
+							.Depth = 1, // 2Dテクスチャなので...
+							.RowPitch = static_cast<UINT>(alignedRowSize),
+						}
 					}
-				}
-			};
+				};
 
-			const D3D12_TEXTURE_COPY_LOCATION dstLocation =
-			{
-				.pResource = textureBuffer.Ptr,
-				.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX, // コピー先バッファーはこっちを指定
-				.SubresourceIndex = 0 // ミップマップや配列ではないので、0でOK
-			};
+				const D3D12_TEXTURE_COPY_LOCATION dstLocation =
+				{
+					.pResource = textureBuffer.Ptr,
+					.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX, // コピー先バッファーはこっちを指定
+					.SubresourceIndex = static_cast<UINT>(sliceIndex)
+				};
 
-			// コマンドを発行
-			commandList->CopyTextureRegion(
-				&dstLocation,
-				0, // コピー先の開始オフセットは0でOK
-				0, // コピー先の開始オフセットは0でOK
-				0, // コピー先の開始オフセットは0でOK
-				&srcLocation,
-				nullptr // コピー元の全領域をコピーするので、nullptrでOK
-			);
+				// コマンドを発行
+				commandList->CopyTextureRegion(
+					&dstLocation,
+					0, // コピー先の開始オフセットは0でOK
+					0, // コピー先の開始オフセットは0でOK
+					0, // コピー先の開始オフセットは0でOK
+					&srcLocation,
+					nullptr // コピー元の全領域をコピーするので、nullptrでOK
+				);
+			}
 		}
 
 		return true;
