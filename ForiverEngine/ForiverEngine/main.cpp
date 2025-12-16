@@ -69,9 +69,9 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		ShowError(L"定数バッファーの作成に失敗しました");
 	// 定数バッファーにデータを書き込む
 	// Unmap しないでおく
-	CBData0* constantBufferVirtualPtr = nullptr;
+	CBData0* cbData0VirtualPtr = nullptr;
 	if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer1D(constantBuffer, &cbData0, sizeof(cbData0),
-		false, reinterpret_cast<void**>(&constantBufferVirtualPtr)))
+		false, reinterpret_cast<void**>(&cbData0VirtualPtr)))
 		ShowError(L"定数バッファーへのデータ転送に失敗しました");
 
 	const Texture texture = AssetLoader::LoadTexture("assets/textures/grass.png");
@@ -99,8 +99,8 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	{
 		// 適当に、立方体を回転させる
 		transform.rotation = Quaternion::FromAxisAngle(Vector3::Up(), 1.0f * DegToRad) * transform.rotation;
-		constantBufferVirtualPtr->Matrix_M_IT = transform.CalculateModelMatrixInversed().Transposed();
-		constantBufferVirtualPtr->Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(transform, cameraTransform);
+		cbData0VirtualPtr->Matrix_M_IT = transform.CalculateModelMatrixInversed().Transposed();
+		cbData0VirtualPtr->Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(transform, cameraTransform);
 
 		const int currentBackBufferIndex = D3D12Helper::GetCurrentBackBufferIndex(swapChain);
 		const GraphicsBuffer currentBackBuffer = rtBufferGetter(currentBackBufferIndex);
