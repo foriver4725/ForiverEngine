@@ -27,7 +27,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	const auto [rtBufferGetter, rtvGetter] = D3D12BasicFlow::InitRTV(device, swapChain, 2, false);
 	const DescriptorHeapHandleAtCPU dsv = D3D12BasicFlow::InitDSV(device, WindowWidth, WindowHeight, 1.0f);
 
-	const Mesh mesh = Mesh::CreateCube();
+	const Mesh mesh = Mesh::CreateCube(true);
 
 	Transform transform =
 	{
@@ -73,7 +73,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		false, reinterpret_cast<void**>(&cbData0VirtualPtr)))
 		ShowError(L"定数バッファーへのデータ転送に失敗しました");
 
-	const Texture texture = AssetLoader::LoadTexture("assets/textures/grass.png");
+	const Texture texture = AssetLoader::LoadTexture("assets/textures/grass_stone.png");
 	if (!texture.IsValid())
 		ShowError(L"テクスチャのロードに失敗しました");
 	const GraphicsBuffer textureBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, texture);
