@@ -90,36 +90,6 @@ namespace ForiverEngine
 #undef RETURN_TRUE
 	}
 
-	std::tuple<bool, std::wstring, std::tuple<GraphicsBuffer, DescriptorHeapHandleAtCPU>>
-		D3D12BasicFlow::GetCurrentBackBufferAndView_Impl(
-			const Device& device,
-			const SwapChain& swapChain,
-			const DescriptorHeap& descriptorHeapRTV
-		)
-	{
-		GraphicsBuffer currentBackBuffer = GraphicsBuffer();
-		DescriptorHeapHandleAtCPU  currentBackBufferRTV = DescriptorHeapHandleAtCPU();
-
-#define RETURN_FALSE(errorMessage) \
-	return { false, errorMessage, { currentBackBuffer, currentBackBufferRTV } };
-#define RETURN_TRUE() \
-	return { true, L"", { currentBackBuffer, currentBackBufferRTV } };
-
-		const int currentBackBufferIndex = D3D12Helper::GetCurrentBackBufferIndex(swapChain);
-
-		currentBackBuffer = D3D12Helper::GetBufferByIndex(swapChain, currentBackBufferIndex);
-		if (!currentBackBuffer)
-			RETURN_FALSE(L"SwapChain から現在バックにある GraphicsBuffer を取得することに失敗しました");
-
-		currentBackBufferRTV = D3D12Helper::CreateDescriptorHeapHandleAtCPUIndicatingDescriptorByIndex(
-			device, descriptorHeapRTV, DescriptorHeapType::RTV, currentBackBufferIndex);
-
-		RETURN_TRUE();
-
-#undef RETURN_FALSE
-#undef RETURN_TRUE
-	}
-
 	std::tuple<bool, std::wstring, std::tuple<Blob, Blob>>
 		D3D12BasicFlow::CompileShader_VS_PS_Impl(
 			const std::string& path
@@ -179,6 +149,41 @@ namespace ForiverEngine
 			device, rootSignature, shaderVS, shaderPS, vertexLayouts, fillMode, cullMode);
 		if (!graphicsPipelineState)
 			RETURN_FALSE(L"GraphicsPipelineState の作成に失敗しました");
+
+		RETURN_TRUE();
+
+#undef RETURN_FALSE
+#undef RETURN_TRUE
+	}
+
+	std::tuple<bool, std::wstring, std::tuple<std::function<GraphicsBuffer(int)>, std::function<DescriptorHeapHandleAtCPU(int)>>>
+		D3D12BasicFlow::InitRTV_Impl(
+			const Device& device,
+			const SwapChain& swapChain,
+			int amount,
+			bool sRGB
+		)
+	{
+		std::function<GraphicsBuffer(int)> bufferGetter = std::function<GraphicsBuffer(int)>();
+		std::function<DescriptorHeapHandleAtCPU(int)> viewGetter = std::function<DescriptorHeapHandleAtCPU(int)>();
+
+#define RETURN_FALSE(errorMessage) \
+	return { false, errorMessage, { bufferGetter, viewGetter } };
+#define RETURN_TRUE() \
+	return { true, L"", { bufferGetter, viewGetter } };
+
+		const DescriptorHeap descriptorHeapRTV = D3D12Helper::CreateDescriptorHeap(device, DescriptorHeapType::RTV, amount, false);
+		if (!descriptorHeapRTV)
+			RETURN_FALSE(L"DescriptorHeap (RTV) の作成に失敗しました");
+
+		if (!D3D12Helper::CreateRenderTargetViews(device, descriptorHeapRTV, swapChain, sRGB))
+			RETURN_FALSE(L"RenderTargetView を作成できない RenderTargetBuffer がありました");
+
+		bufferGetter = [swapChain](int i) { return D3D12Helper::GetBufferByIndex(swapChain, i); };
+		viewGetter = [device, descriptorHeapRTV](int i) {
+			return D3D12Helper::CreateDescriptorHeapHandleAtCPUIndicatingDescriptorByIndex(
+				device, descriptorHeapRTV, DescriptorHeapType::RTV, i);
+			};
 
 		RETURN_TRUE();
 

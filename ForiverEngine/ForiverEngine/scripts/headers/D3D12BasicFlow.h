@@ -70,19 +70,6 @@ namespace ForiverEngine
 			return Check(CreateVertexAndIndexBufferViews_Impl(device, mesh));
 		}
 
-		/// <summary>
-		/// SwapChain から、現在のバックバッファとそのビューを取得して返す
-		/// </summary>
-		static std::tuple<GraphicsBuffer, DescriptorHeapHandleAtCPU>
-			GetCurrentBackBufferAndView(
-				const Device& device,
-				const SwapChain& swapChain,
-				const DescriptorHeap& descriptorHeapRTV
-			)
-		{
-			return Check(GetCurrentBackBufferAndView_Impl(device, swapChain, descriptorHeapRTV));
-		}
-
 		inline static const std::string ShaderEntryFuncVS = "VSMain";
 		inline static const std::string ShaderEntryFuncPS = "PSMain";
 		/// <summary>
@@ -113,6 +100,21 @@ namespace ForiverEngine
 		{
 			return Check(CreateRootSignatureAndGraphicsPipelineState_Impl(
 				device, rootParameter, samplerConfig, shaderVS, shaderPS, vertexLayouts, fillMode, cullMode));
+		}
+
+		/// <summary>
+		/// <para>専用の DescriptorHeap を作成し、複数個の RTV をその DescriptorHeap の中に作成して返す</para>
+		/// <para>戻り値は関数で、インデックスを基に、バッファとビューを取得出来る</para>
+		/// </summary>
+		static std::tuple<std::function<GraphicsBuffer(int)>, std::function<DescriptorHeapHandleAtCPU(int)>>
+			InitRTV(
+				const Device& device,
+				const SwapChain& swapChain,
+				int amount,
+				bool sRGB
+			)
+		{
+			return Check(InitRTV_Impl(device, swapChain, amount, sRGB));
 		}
 
 		/// <summary>
@@ -249,16 +251,6 @@ namespace ForiverEngine
 			);
 
 		/// <summary>
-		/// SwapChain から現在のバックバッファを取得し、そのビューを DescriptorHeap (RTV) に作成して返す
-		/// </summary>
-		static std::tuple<bool, std::wstring, std::tuple<GraphicsBuffer, DescriptorHeapHandleAtCPU>>
-			GetCurrentBackBufferAndView_Impl(
-				const Device& device,
-				const SwapChain& swapChain,
-				const DescriptorHeap& descriptorHeapRTV
-			);
-
-		/// <summary>
 		/// シェーダーをロードして、頂点シェーダーとピクセルシェーダーにコンパイルする
 		/// </summary>
 		static std::tuple<bool, std::wstring, std::tuple<Blob, Blob>>
@@ -279,6 +271,18 @@ namespace ForiverEngine
 				const std::vector<VertexLayout>& vertexLayouts,
 				FillMode fillMode,
 				CullMode cullMode
+			);
+
+		/// <summary>
+		/// <para>専用の DescriptorHeap を作成し、複数個の RTV をその DescriptorHeap の中に作成して返す</para>
+		/// <para>戻り値は関数で、インデックスを基に、バッファとビューを取得出来る</para>
+		/// </summary>
+		static std::tuple<bool, std::wstring, std::tuple<std::function<GraphicsBuffer(int)>, std::function<DescriptorHeapHandleAtCPU(int)>>>
+			InitRTV_Impl(
+				const Device& device,
+				const SwapChain& swapChain,
+				int amount,
+				bool sRGB
 			);
 
 		/// <summary>

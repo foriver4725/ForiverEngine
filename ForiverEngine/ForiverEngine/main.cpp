@@ -17,15 +17,6 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	const auto [factory, device, commandAllocator, commandList, commandQueue, swapChain]
 		= D3D12BasicFlow::CreateStandardObjects(hwnd, WindowWidth, WindowHeight);
 
-	// ダブルバッファリングなので、2つ RTV を確保する
-	const DescriptorHeap descriptorHeapRTV = D3D12Helper::CreateDescriptorHeap(device, DescriptorHeapType::RTV, 2, false);
-	if (!descriptorHeapRTV)
-		ShowError(L"DescriptorHeap (RTV) の作成に失敗しました");
-	if (!D3D12Helper::CreateRenderTargetViews(device, descriptorHeapRTV, swapChain, false))
-		ShowError(L"RenderTargetView を作成できない RenderTargetBuffer がありました");
-
-	const DescriptorHeapHandleAtCPU dsv = D3D12BasicFlow::InitDSV(device, WindowWidth, WindowHeight, 1.0f);
-
 	// ルートパラメータ
 	const RootParameter rootParameter =
 	{
@@ -36,7 +27,6 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 			{ DescriptorRangeType::SRV, 1, ShaderRegister::t0, },
 		}
 	};
-
 	const SamplerConfig samplerConfig =
 	{
 		.shaderVisibility = ShaderVisibility::PixelOnly,
@@ -44,13 +34,14 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		.filter = SamplerConfig::Filter::Point,
 		.shaderRegister = ShaderRegister::s0,
 	};
+	const auto [shaderVS, shaderPS]
+		= D3D12BasicFlow::CompileShader_VS_PS("./shaders/Basic.hlsl");
+	const auto [rootSignature, graphicsPipelineState]
+		= D3D12BasicFlow::CreateRootSignatureAndGraphicsPipelineState(
+			device, rootParameter, samplerConfig, shaderVS, shaderPS, VertexLayouts, FillMode::Solid, CullMode::None);
 
-	// b0 レジスタに渡すデータ
-	struct alignas(256) CBData0
-	{
-		Matrix4x4 Matrix_M_IT; // M の逆→転置行列
-		Matrix4x4 Matrix_MVP; // MVP
-	};
+	const auto [rtBufferGetter, rtvGetter] = D3D12BasicFlow::InitRTV(device, swapChain, 2, false);
+	const DescriptorHeapHandleAtCPU dsv = D3D12BasicFlow::InitDSV(device, WindowWidth, WindowHeight, 1.0f);
 
 	const Mesh mesh = Mesh::CreateCube();
 
@@ -72,6 +63,13 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		.isPerspective = true,
 		.fov = 60.0f * DegToRad,
 		.aspectRatio = 1.0f * WindowWidth / WindowHeight,
+	};
+
+	// b0 レジスタに渡すデータ
+	struct alignas(256) CBData0
+	{
+		Matrix4x4 Matrix_M_IT; // M の逆→転置行列
+		Matrix4x4 Matrix_MVP; // MVP
 	};
 
 	CBData0 cbData0 =
@@ -109,25 +107,21 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	const auto [vertexBufferView, indexBufferView]
 		= D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, mesh);
 
-	const auto [shaderVS, shaderPS]
-		= D3D12BasicFlow::CompileShader_VS_PS("./shaders/Basic.hlsl");
-
 	const ViewportScissorRect viewportScissorRect
 		= ViewportScissorRect::CreateFullSized(WindowWidth, WindowHeight);
 
-	const auto [rootSignature, graphicsPipelineState]
-		= D3D12BasicFlow::CreateRootSignatureAndGraphicsPipelineState(
-			device, rootParameter, samplerConfig, shaderVS, shaderPS, VertexLayouts, FillMode::Solid, CullMode::None);
-
 	BEGIN_MESSAGE_LOOP;
 	{
-		const auto [currentBackBuffer, currentBackBufferRTV]
-			= D3D12BasicFlow::GetCurrentBackBufferAndView(device, swapChain, descriptorHeapRTV);
-
 		// 適当に、立方体を回転させる
 		transform.rotation = Quaternion::FromAxisAngle(Vector3::Up(), 1.0f * DegToRad) * transform.rotation;
 		constantBufferVirtualPtr->Matrix_M_IT = transform.CalculateModelMatrixInversed().Transposed();
 		constantBufferVirtualPtr->Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(transform, cameraTransform);
+
+		const int currentBackBufferIndex = D3D12Helper::GetCurrentBackBufferIndex(swapChain);
+		const GraphicsBuffer currentBackBuffer = rtBufferGetter(currentBackBufferIndex);
+		const DescriptorHeapHandleAtCPU currentBackBufferRTV = rtvGetter(currentBackBufferIndex);
+		if (!currentBackBuffer)
+			ShowError(L"現在のバックバッファーの取得に失敗しました");
 
 		D3D12BasicFlow::CommandBasicLoop(
 			commandList, commandQueue, commandAllocator, device,
