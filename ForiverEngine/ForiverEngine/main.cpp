@@ -19,8 +19,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 
 	const RootParameter rootParameter = RootParameter::CreateBasic(1, 1, 0);
 	const SamplerConfig samplerConfig = SamplerConfig::CreateBasic(AddressingMode::Wrap, Filter::Point);
-	const auto [shaderVS, shaderPS]
-		= D3D12BasicFlow::CompileShader_VS_PS("./shaders/Basic.hlsl");
+	const auto [shaderVS, shaderPS] = D3D12BasicFlow::CompileShader_VS_PS("./shaders/Basic.hlsl");
 	const auto [rootSignature, graphicsPipelineState]
 		= D3D12BasicFlow::CreateRootSignatureAndGraphicsPipelineState(
 			device, rootParameter, samplerConfig, shaderVS, shaderPS, VertexLayouts, FillMode::Solid, CullMode::None);
