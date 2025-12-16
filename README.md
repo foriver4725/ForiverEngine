@@ -50,6 +50,11 @@ Transform構造体を作り、MVP行列を計算する
 
 <img width="50%" alt="image" src="https://github.com/user-attachments/assets/42e1c754-5cd8-4b02-b8b0-322c00fa6f91" />
 
+---
+2ブロック分のテクスチャを1枚にまとめ、効率的に使用する
+
+<img width="50%" alt="image" src="https://github.com/user-attachments/assets/7927f9cc-2ef5-4d64-b104-e9f7145015ba" />
+
 ## OSS
 | 名前 | ライセンス |
 | --- | --- |
