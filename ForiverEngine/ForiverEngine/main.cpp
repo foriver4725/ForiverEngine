@@ -17,23 +17,8 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	const auto [factory, device, commandAllocator, commandList, commandQueue, swapChain]
 		= D3D12BasicFlow::CreateStandardObjects(hwnd, WindowWidth, WindowHeight);
 
-	// ルートパラメータ
-	const RootParameter rootParameter =
-	{
-		.shaderVisibility = ShaderVisibility::All,
-		.descriptorRanges =
-		{
-			{ DescriptorRangeType::CBV, 1, ShaderRegister::b0, },
-			{ DescriptorRangeType::SRV, 1, ShaderRegister::t0, },
-		}
-	};
-	const SamplerConfig samplerConfig =
-	{
-		.shaderVisibility = ShaderVisibility::PixelOnly,
-		.addressingMode = SamplerConfig::AddressingMode::Wrap,
-		.filter = SamplerConfig::Filter::Point,
-		.shaderRegister = ShaderRegister::s0,
-	};
+	const RootParameter rootParameter = RootParameter::CreateBasic(1, 1, 0);
+	const SamplerConfig samplerConfig = SamplerConfig::CreateBasic(AddressingMode::Wrap, Filter::Point);
 	const auto [shaderVS, shaderPS]
 		= D3D12BasicFlow::CompileShader_VS_PS("./shaders/Basic.hlsl");
 	const auto [rootSignature, graphicsPipelineState]

@@ -172,6 +172,21 @@ public: \
 		Sampler = 3, // D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER
 	};
 
+	// サンプラーのアドレッシングモード
+	enum class AddressingMode : std::uint8_t
+	{
+		Wrap = 1,       // D3D12_TEXTURE_ADDRESS_MODE_WRAP
+		Mirror = 2,     // D3D12_TEXTURE_ADDRESS_MODE_MIRROR
+		Clamp = 3,      // D3D12_TEXTURE_ADDRESS_MODE_CLAMP
+	};
+
+	// サンプラーのフィルターモード
+	enum class Filter : std::uint8_t
+	{
+		Point = 0,          // D3D12_FILTER_MIN_MAG_MIP_POINT
+		Bilinear = 0x15,      // D3D12_FILTER_MIN_MAG_MIP_LINEAR
+	};
+
 	// GraphicsBuffer の種類
 	enum class GraphicsBufferType : std::uint8_t
 	{
@@ -204,31 +219,56 @@ public: \
 
 		ShaderVisibility shaderVisibility;
 		std::vector<DescriptorRange> descriptorRanges; // この順に登録される
+
+		/// <summary>
+		/// <para>CBV, SRV, UAV の順に、指定された数だけ並べて作成する</para>
+		/// <para>レジスタも順に、b0,b1,..., t0,t1,..., u0,u1,... と割り当てられる</para>
+		/// <para>全てのシェーダーから参照可能に設定される</para>
+		/// </summary>
+		static constexpr RootParameter CreateBasic(
+			int cbvAmount,
+			int srvAmount,
+			int uavAmount
+		)
+		{
+			return
+			{
+				.shaderVisibility = ShaderVisibility::All,
+				.descriptorRanges =
+				{
+					{ DescriptorRangeType::CBV, cbvAmount, ShaderRegister::b0 },
+					{ DescriptorRangeType::SRV, srvAmount, ShaderRegister::t0 },
+					{ DescriptorRangeType::UAV, uavAmount, ShaderRegister::u0 },
+				},
+			};
+		}
 	};
 
 	// サンプラーの設定
 	struct SamplerConfig
 	{
-		// DirectX と等価の列挙型を定義
-		// 命名的に混同されそうなので、この構造体内で定義してしまう
-
-		enum class AddressingMode : std::uint8_t
-		{
-			Wrap = 1,       // D3D12_TEXTURE_ADDRESS_MODE_WRAP
-			Mirror = 2,     // D3D12_TEXTURE_ADDRESS_MODE_MIRROR
-			Clamp = 3,      // D3D12_TEXTURE_ADDRESS_MODE_CLAMP
-		};
-
-		enum class Filter : std::uint8_t
-		{
-			Point = 0,          // D3D12_FILTER_MIN_MAG_MIP_POINT
-			Bilinear = 0x15,      // D3D12_FILTER_MIN_MAG_MIP_LINEAR
-		};
-
 		ShaderVisibility shaderVisibility;
 		AddressingMode addressingMode;
 		Filter filter;
 		ShaderRegister shaderRegister;
+
+		/// <summary>
+		/// <para>ピクセルシェーダー専用の、基本的なサンプラー設定を作成する</para>
+		/// <para>シェーダーレジスタは s0</para>
+		/// </summary>
+		static constexpr SamplerConfig CreateBasic(
+			AddressingMode addressingMode,
+			Filter filter
+		)
+		{
+			return
+			{
+				.shaderVisibility = ShaderVisibility::PixelOnly,
+				.addressingMode = addressingMode,
+				.filter = filter,
+				.shaderRegister = ShaderRegister::s0,
+			};
+		}
 	};
 
 	// 頂点データ 単品
