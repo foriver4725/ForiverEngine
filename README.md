@@ -65,6 +65,11 @@ https://github.com/user-attachments/assets/997b0030-4f6a-4257-81c2-c25ae09285a7
 
 https://github.com/user-attachments/assets/c85485b3-ea79-44a8-9014-86f93b563cf1
 
+---
+ターゲットFPSに合わせて、フレームループを回す
+
+<img width="30%" alt="image" src="https://github.com/user-attachments/assets/1cd4f815-8151-4b2e-8363-4671e94c1977" />
+
 ## OSS
 | 名前 | ライセンス |
 | --- | --- |
