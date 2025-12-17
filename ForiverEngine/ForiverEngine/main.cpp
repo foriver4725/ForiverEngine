@@ -9,6 +9,8 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 {
 	using namespace ForiverEngine;
 
+	//Print("Hello, World!\n");
+
 #ifdef _DEBUG
 	if (!D3D12Helper::EnableDebugLayer())
 		ShowError(L"DebugLayer の有効化に失敗しました");
@@ -102,13 +104,16 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	const ViewportScissorRect viewportScissorRect
 		= ViewportScissorRect::CreateFullSized(WindowWidth, WindowHeight);
 
-	BEGIN_MESSAGE_LOOP;
+	BEGIN_FRAME;
 	{
 		// 適当に、立方体を回転させる
 #if false
-		transform.rotation = Quaternion::FromAxisAngle(Vector3::Up(), 1.0f * DegToRad) * transform.rotation;
-		cbData0VirtualPtr->Matrix_M_IT = transform.CalculateModelMatrixInversed().Transposed();
-		cbData0VirtualPtr->Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(transform, cameraTransform);
+		if (InputHelper::GetKeyInfo(Key::Space).pressed)
+		{
+			transform.rotation = Quaternion::FromAxisAngle(Vector3::Up(), 1.0f * DegToRad) * transform.rotation;
+			cbData0VirtualPtr->Matrix_M_IT = transform.CalculateModelMatrixInversed().Transposed();
+			cbData0VirtualPtr->Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(transform, cameraTransform);
+		}
 #endif
 
 		const int currentBackBufferIndex = D3D12Helper::GetCurrentBackBufferIndex(swapChain);
@@ -127,6 +132,6 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		if (!D3D12Helper::Present(swapChain))
 			ShowError(L"画面のフリップに失敗しました");
 	}
-	END_MESSAGE_LOOP;
+	END_FRAME;
 }
 END_INITIALIZE(0);

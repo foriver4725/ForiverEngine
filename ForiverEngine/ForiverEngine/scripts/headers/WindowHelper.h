@@ -23,16 +23,7 @@ WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ in
 #define DEFINE_DEFAULT_WINDOW_PROCEDURE(FunctionName) \
 static LRESULT CALLBACK FunctionName(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) \
 { \
-    /* ウィンドウが破棄されたら呼ばれる */ \
-	if (msg == WM_DESTROY) \
-	{ \
-        /* OSに対して「もうこのアプリは終わる」と伝える */ \
-		PostQuitMessage(0); \
-		return 0; \
-	} \
-\
-    /* デフォルトの処理を行う */ \
-	return DefWindowProc(hwnd, msg, wparam, lparam); \
+    return ForiverEngine::WindowHelper::OnWindowProcedure(hwnd, msg, wparam, lparam); \
 }
 
 // エラーのメッセージボックスを出すマクロ
@@ -55,6 +46,9 @@ int WindowMain(hInstance) \
 \
 	HWND HwndName = ForiverEngine::WindowHelper::CreateTheWindow((WindowClassName), (WindowTitle), (WindowWidth), (WindowHeight)); \
 \
+	/* キー入力を初期化 */ \
+    ForiverEngine::InputHelper::InitKeyTable(); \
+\
 	ForiverEngine::WindowHelper::CreateConsoleInGUIApplication();
 
 #else
@@ -70,6 +64,9 @@ int WindowMain(hInstance) \
 		ShowError(L"ウィンドウの初期化に失敗しました"); \
 		return -1; \
 	} \
+\
+    /* キー入力を初期化 */ \
+	ForiverEngine::InputHelper::InitKeyTable(); \
 \
 	HWND HwndName = ForiverEngine::WindowHelper::CreateTheWindow((WindowClassName), (WindowTitle), (WindowWidth), (WindowHeight));
 
@@ -92,15 +89,21 @@ int WindowMain(hInstance) \
 
 #endif
 
-	// メッセージループのマクロ 開始
-#define BEGIN_MESSAGE_LOOP \
+	// フレーム処理のマクロ 開始
+#define BEGIN_FRAME \
 MSG msg = {}; \
-while (GetMessage(&msg, nullptr, 0, 0)) { \
-	TranslateMessage(&msg); \
-	DispatchMessage(&msg);
+while (true) \
+{ \
+    /* キー入力を更新 */ \
+    ForiverEngine::InputHelper::OnEveryFrame(); \
+\
+    /* 全てのメッセージを処理する */ \
+    /* WM_QUIT メッセージが来たらループを抜ける */ \
+	if (ForiverEngine::WindowHelper::HandleAllMessages(msg) < 0) \
+		return 0; \
 
-	// メッセージループのマクロ 終了
-#define END_MESSAGE_LOOP \
+// フレーム処理のマクロ 終了
+#define END_FRAME \
 }
 
 namespace ForiverEngine
@@ -123,6 +126,18 @@ namespace ForiverEngine
 		/// 既存マクロと重複しない命名にしている
 		/// </summary>
 		static HWND CreateTheWindow(const wchar_t* className, const wchar_t* title, int width, int height);
+
+		/// <summary>
+		/// <para>ウィンドウプロシージャの内部実装</para>
+		/// </summary>
+		static LRESULT OnWindowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
+
+		/// <summary>
+		/// <para>全てのメッセージを処理する</para>
+		/// <para>戻り値が -1 の場合、WM_QUIT メッセージが来たことを示す</para>
+		/// <para>それ以外の場合、0 を返す</para>
+		/// </summary>
+		static int HandleAllMessages(MSG& msg);
 
 		/// <summary>
 		/// エラーのメッセージボックスを出す

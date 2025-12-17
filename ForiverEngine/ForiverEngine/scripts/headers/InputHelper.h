@@ -10,8 +10,14 @@ namespace ForiverEngine
 	{
 		Unknown = 0,
 
+		// マウス
+		LMouse, RMouse, MMouse,
+
 		// 数字
 		N0, N1, N2, N3, N4, N5, N6, N7, N8, N9,
+
+		// 数字 (テンキー)
+		NP0, NP1, NP2, NP3, NP4, NP5, NP6, NP7, NP8, NP9,
 
 		// 英字
 		A, B, C, D, E, F, G, H, I, J, K, L, M,
@@ -19,6 +25,7 @@ namespace ForiverEngine
 
 		// ファンクション
 		F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12,
+		F13, F14, F15, F16, F17, F18, F19, F20, F21, F22, F23, F24,
 
 		// 矢印
 		Up, Down, Left, Right,
@@ -63,42 +70,31 @@ namespace ForiverEngine
 		/// <para>Released フラグのみ true に設定される</para>
 		/// <para>複数回呼び出しても問題ない</para>
 		/// </summary>
-		static void InitKeyTable()
-		{
-			for (KeyEnumInt i = 0; i < static_cast<KeyEnumInt>(Key::Count); ++i)
-				KeyTable[i] = { .released = true };
-		}
+		static void InitKeyTable();
 
-		static void OnEveryFrame()
-		{
-			for (KeyEnumInt i = 0; i < static_cast<KeyEnumInt>(Key::Count); ++i)
-			{
-				KeyInfo& keyInfo = KeyTable[i];
-				keyInfo.pressedNow = false;
-				keyInfo.releasedNow = false;
-			}
-		}
+		/// <summary>
+		/// <para>メッセージループ内で、毎フレーム呼び出しすこと</para>
+		/// </summary>
+		static void OnEveryFrame();
 
-		static void OnPressed(Key key)
-		{
-			KeyInfo& keyInfo = KeyTable[static_cast<KeyEnumInt>(key)];
-			if (!keyInfo.pressed)
-			{
-				keyInfo.pressed = true;
-				keyInfo.released = false;
-				keyInfo.pressedNow = true;
-			}
-		}
+		/// <summary>
+		/// <para>ウィンドウプロシージャ内で、WM_KEYDOWN メッセージを受け取ったときに呼び出すこと</para>
+		/// </summary>
+		static void OnPressed(Key key);
 
-		static void OnReleased(Key key)
-		{
-			KeyInfo& keyInfo = KeyTable[static_cast<KeyEnumInt>(key)];
-			if (!keyInfo.released)
-			{
-				keyInfo.pressed = false;
-				keyInfo.released = true;
-				keyInfo.releasedNow = true;
-			}
-		}
+		/// <summary>
+		/// <para>ウィンドウプロシージャ内で、WM_KEYUP メッセージを受け取ったときに呼び出すこと</para>
+		/// </summary>
+		static void OnReleased(Key key);
+
+		/// <summary>
+		/// <para>仮想キーコード (WPARAM) を Key 列挙型に変換して返す</para>
+		/// </summary>
+		static Key ConvertVKToKey(WPARAM vk);
+
+		/// <summary>
+		/// <para>外部公開用に、便利なアクセサを提供する</para>
+		/// </summary>
+		static KeyInfo GetKeyInfo(Key key);
 	};
 }
