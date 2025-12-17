@@ -41,9 +41,9 @@ namespace ForiverEngine
 	{
 		IDXGIFactoryLatest* ptr = nullptr;
 #ifdef _DEBUG
-		if (CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(&ptr)) == S_OK)
+		if (SUCCEEDED(CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(&ptr))))
 #else
-		if (CreateDXGIFactory1(IID_PPV_ARGS(&ptr)) == S_OK)
+		if (SUCCEEDED(CreateDXGIFactory1(IID_PPV_ARGS(&ptr))))
 #endif
 			return Factory(ptr);
 
@@ -77,7 +77,7 @@ namespace ForiverEngine
 		for (auto featureLevel : featureLevels)
 		{
 			ID3D12DeviceLatest* ptr = nullptr;
-			if (D3D12CreateDevice(adapter.Ptr, featureLevel, IID_PPV_ARGS(&ptr)) == S_OK)
+			if (SUCCEEDED(D3D12CreateDevice(adapter.Ptr, featureLevel, IID_PPV_ARGS(&ptr))))
 			{
 				return Device(ptr);
 			}
@@ -123,12 +123,12 @@ namespace ForiverEngine
 
 		ID3DBlob* blob = nullptr;
 		ID3DBlob* errorBlob = nullptr;
-		if (D3D12SerializeRootSignature(
+		if (FAILED(D3D12SerializeRootSignature(
 			&desc,
 			D3D_ROOT_SIGNATURE_VERSION_1_0, // バージョン間で仕様が違ったりするので、今回は 1.0 を指定
 			&blob,
 			&errorBlob
-		) != S_OK)
+		)))
 		{
 			outErrorMessage = FetchErrorMessageFromErrorBlob(Blob(errorBlob));
 			if (blob) blob->Release();
@@ -137,12 +137,12 @@ namespace ForiverEngine
 		}
 
 		ID3D12RootSignature* ptr = nullptr;
-		if (device->CreateRootSignature(
+		if (FAILED(device->CreateRootSignature(
 			0, // ノードマスク (アダプターが1つなので...)
 			blob->GetBufferPointer(),
 			blob->GetBufferSize(),
 			IID_PPV_ARGS(&ptr)
-		) != S_OK)
+		)))
 		{
 			outErrorMessage = L"RootSignature の作成に失敗しました";
 			if (blob) blob->Release();
@@ -227,10 +227,10 @@ namespace ForiverEngine
 		};
 
 		ID3D12PipelineState* ptr = nullptr;
-		if (device->CreateGraphicsPipelineState(
+		if (SUCCEEDED(device->CreateGraphicsPipelineState(
 			&desc,
 			IID_PPV_ARGS(&ptr)
-		) == S_OK)
+		)))
 		{
 			return PipelineState(ptr);
 		}
@@ -241,10 +241,10 @@ namespace ForiverEngine
 	CommandAllocator D3D12Helper::CreateCommandAllocator(const Device& device)
 	{
 		ID3D12CommandAllocator* ptr = nullptr;
-		if (device->CreateCommandAllocator(
+		if (SUCCEEDED(device->CreateCommandAllocator(
 			D3D12_COMMAND_LIST_TYPE_DIRECT,
 			IID_PPV_ARGS(&ptr)
-		) == S_OK)
+		)))
 		{
 			return CommandAllocator(ptr);
 		}
@@ -255,13 +255,13 @@ namespace ForiverEngine
 	CommandList D3D12Helper::CreateCommandList(const Device& device, const CommandAllocator& commandAllocator)
 	{
 		ID3D12GraphicsCommandList* ptr = nullptr;
-		if (device->CreateCommandList(
+		if (SUCCEEDED(device->CreateCommandList(
 			0,
 			D3D12_COMMAND_LIST_TYPE_DIRECT,
 			commandAllocator.Ptr,
 			nullptr,
 			IID_PPV_ARGS(&ptr)
-		) == S_OK)
+		)))
 		{
 			return CommandList(ptr);
 		}
@@ -280,7 +280,7 @@ namespace ForiverEngine
 		};
 
 		ID3D12CommandQueue* ptr = nullptr;
-		if (device->CreateCommandQueue(&desc, IID_PPV_ARGS(&ptr)) == S_OK)
+		if (SUCCEEDED(device->CreateCommandQueue(&desc, IID_PPV_ARGS(&ptr))))
 		{
 			return CommandQueue(ptr);
 		}
@@ -314,14 +314,14 @@ namespace ForiverEngine
 			return SwapChain();
 		}
 
-		if (factory->CreateSwapChainForHwnd(
+		if (SUCCEEDED(factory->CreateSwapChainForHwnd(
 			commandQueue.Ptr, // 注意 : コマンドキュー
 			hwnd,
 			&desc,
 			nullptr, // ひとまずnullptrでOK
 			nullptr, // ひとまずnullptrでOK
 			ptrAs1
-		) == S_OK)
+		)))
 		{
 			return SwapChain(ptr);
 		}
@@ -340,7 +340,7 @@ namespace ForiverEngine
 		};
 
 		ID3D12DescriptorHeap* ptr = nullptr;
-		if (device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&ptr)) == S_OK)
+		if (SUCCEEDED(device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&ptr))))
 		{
 			return DescriptorHeap(ptr);
 		}
@@ -351,11 +351,11 @@ namespace ForiverEngine
 	Fence D3D12Helper::CreateFence(const Device& device)
 	{
 		ID3D12Fence* ptr = nullptr;
-		if (device->CreateFence(
+		if (SUCCEEDED(device->CreateFence(
 			FenceValueBeforeGPUEvent, // 初期化値
 			D3D12_FENCE_FLAG_NONE, // 取り合えず NONE
 			IID_PPV_ARGS(&ptr)
-		) == S_OK)
+		)))
 		{
 			return Fence(ptr);
 		}
@@ -389,14 +389,14 @@ namespace ForiverEngine
 		};
 
 		ID3D12Resource* ptr = nullptr;
-		if (device->CreateCommittedResource(
+		if (SUCCEEDED(device->CreateCommittedResource(
 			&heapProperties,
 			D3D12_HEAP_FLAG_NONE, // 指定なし
 			&resourceDesc,
 			D3D12_RESOURCE_STATE_GENERIC_READ, // GPUからは読み取り専用
 			nullptr, // 使わない
 			IID_PPV_ARGS(&ptr)
-		) == S_OK)
+		)))
 		{
 			return GraphicsBuffer(ptr);
 		}
@@ -435,14 +435,14 @@ namespace ForiverEngine
 		};
 
 		ID3D12Resource* ptr = nullptr;
-		if (device->CreateCommittedResource(
+		if (SUCCEEDED(device->CreateCommittedResource(
 			&heapProperties,
 			D3D12_HEAP_FLAG_NONE, // 指定なし
 			&resourceDesc,
 			D3D12_RESOURCE_STATE_COPY_DEST, // コピー先として使う
 			nullptr, // 使わない
 			IID_PPV_ARGS(&ptr)
-		) == S_OK)
+		)))
 		{
 			return GraphicsBuffer(ptr);
 		}
@@ -486,14 +486,14 @@ namespace ForiverEngine
 		};
 
 		ID3D12Resource* ptr = nullptr;
-		if (device->CreateCommittedResource(
+		if (SUCCEEDED(device->CreateCommittedResource(
 			&heapProperties,
 			D3D12_HEAP_FLAG_NONE, // 指定なし
 			&resourceDesc,
 			D3D12_RESOURCE_STATE_DEPTH_WRITE, // 深度値書き込み用
 			&clearValueDesc,
 			IID_PPV_ARGS(&ptr)
-		) == S_OK)
+		)))
 		{
 			return GraphicsBuffer(ptr);
 		}
@@ -683,16 +683,14 @@ namespace ForiverEngine
 			*outBufferVirtualPtr = nullptr;
 
 		void* bufferVirtualPtr = nullptr;
-		if (graphicsBuffer->Map(
+		if (FAILED(graphicsBuffer->Map(
 			0, // リソース配列やミップマップなどではないので、0でOK
 			nullptr, // GraphicsBuffer の全範囲を対象にする
 			&bufferVirtualPtr
-		) != S_OK)
+		)))
 		{
 			if (unmapOnEnd)
 				graphicsBuffer->Unmap(0, nullptr);
-			else
-				*outBufferVirtualPtr = nullptr;
 			return false;
 		}
 
@@ -718,11 +716,11 @@ namespace ForiverEngine
 		// 中間バッファ(1次元) にマップ
 		{
 			void* bufferVirtualPtr = nullptr;
-			if (textureCopyIntermediateBuffer->Map(
+			if (FAILED(textureCopyIntermediateBuffer->Map(
 				0, // 1次元バッファなので、これで良い
 				nullptr, // GraphicsBuffer の全範囲を対象にする
 				&bufferVirtualPtr
-			) != S_OK)
+			)))
 			{
 				textureCopyIntermediateBuffer->Unmap(0, nullptr);
 				return false;
@@ -804,8 +802,8 @@ namespace ForiverEngine
 
 	bool D3D12Helper::ClearCommandAllocatorAndList(const CommandAllocator& commandAllocator, const CommandList& commandList)
 	{
-		if (commandAllocator->Reset() != S_OK) return false;
-		if (commandList->Reset(commandAllocator.Ptr, nullptr) != S_OK) return false;
+		if (FAILED(commandAllocator->Reset())) return false;
+		if (FAILED(commandList->Reset(commandAllocator.Ptr, nullptr))) return false;
 		return true;
 	}
 
@@ -817,7 +815,7 @@ namespace ForiverEngine
 	GraphicsBuffer D3D12Helper::GetBufferByIndex(const SwapChain& swapChain, int index)
 	{
 		ID3D12Resource* ptr = nullptr;
-		if (swapChain->GetBuffer(index, IID_PPV_ARGS(&ptr)) == S_OK)
+		if (SUCCEEDED(swapChain->GetBuffer(index, IID_PPV_ARGS(&ptr))))
 		{
 			return GraphicsBuffer(ptr);
 		}
@@ -978,7 +976,7 @@ namespace ForiverEngine
 	{
 		// CPU側で、GPU側の処理終了時に期待されるフェンス値を渡す
 		// GetCompletedValue() は GPU からのフェンス値を返すので、この等価比較で同期をとる
-		if (commandQueue->Signal(fence.Ptr, FenceValueAfterGPUEvent) != S_OK)
+		if (FAILED(commandQueue->Signal(fence.Ptr, FenceValueAfterGPUEvent)))
 			return false;
 
 		if (fence->GetCompletedValue() != FenceValueAfterGPUEvent)
@@ -1002,7 +1000,7 @@ namespace ForiverEngine
 		// 第1引数は、フリップまでの待機フレーム数 (= 待つべき垂直同期の数)
 		// バックバッファーが2枚のみなので、今は1で良い (フルスクリーン or ウィンドウ によっても変わる)
 		// 第2引数は、特殊用途での指定が多い (今は必要ないので 0)
-		return swapChain->Present(1, 0) == S_OK;
+		return SUCCEEDED(swapChain->Present(1, 0));
 	}
 
 	Blob D3D12Helper::CompileShaderFile(
@@ -1029,14 +1027,14 @@ namespace ForiverEngine
 			&errorBlob
 		);
 
-		if (result == S_OK)
+		if (SUCCEEDED(result))
 		{
 			outErrorMessage = L"";
 			if (errorBlob) errorBlob->Release();
 			return Blob(blob);
 		}
 
-		if (FAILED(result) && result == HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND))
+		if (result == HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND))
 		{
 			outErrorMessage = L"Shader file not found.";
 			if (errorBlob) errorBlob->Release();
@@ -1086,7 +1084,7 @@ namespace ForiverEngine
 	bool D3D12Helper::EnableDebugLayer()
 	{
 		ID3D12Debug* debugLayer = nullptr;
-		if (D3D12GetDebugInterface(IID_PPV_ARGS(&debugLayer)) == S_OK)
+		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugLayer))))
 		{
 			debugLayer->EnableDebugLayer();
 			debugLayer->Release();
@@ -1236,7 +1234,7 @@ namespace ForiverEngine
 	int GetBufferCountFromSwapChain(const SwapChain& swapChain)
 	{
 		DXGI_SWAP_CHAIN_DESC desc = {};
-		if (swapChain->GetDesc(&desc) == S_OK)
+		if (SUCCEEDED(swapChain->GetDesc(&desc)))
 		{
 			return desc.BufferCount;
 		}
