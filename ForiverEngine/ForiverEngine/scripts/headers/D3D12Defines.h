@@ -34,6 +34,7 @@ namespace ForiverEngine
 #define ShaderTargetPS "ps_5_1"
 
 	// ラッパークラスを定義
+	// TODO: <wrl.h> の ComPtr を使うようにしたい
 #define DEFINE_POINTER_WRAPPER_STRUCT(WrapperStructName, OriginalPointerType) \
 struct WrapperStructName \
 { \
