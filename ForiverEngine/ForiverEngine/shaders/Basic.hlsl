@@ -43,7 +43,7 @@ PSOutput PSMain(V2P input)
 {
     PSOutput output;
     
-    // 1���̃e�N�X�`���̂����A�㉺�ǂ��炩��ǂݎ��ׂ����𔻒f����
+    // 1枚のテクスチャのうち、上下どちらから読み取るべきかを判断する
     float2 uv = _UseUpperUV > 0.5 ? input.uv : input.uv + float2(0.0, 0.5);
     output.color = _Texture.Sample(_Sampler, float3(uv, _TextureIndex));
     
