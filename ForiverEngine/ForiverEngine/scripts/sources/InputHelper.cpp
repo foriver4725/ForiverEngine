@@ -40,9 +40,9 @@ namespace ForiverEngine
 		}
 	}
 
-	Key InputHelper::ConvertVKToKey(WPARAM vk)
+	Key InputHelper::ConvertVKToKey(WPARAM wparam, LPARAM lparam)
 	{
-		switch (vk)
+		switch (wparam)
 		{
 			// マウス
 		case VK_LBUTTON: return Key::LMouse;
@@ -142,12 +142,22 @@ namespace ForiverEngine
 		case VK_ESCAPE: return Key::Escape;
 
 			// その他 (複数存在)
-		case VK_LSHIFT: return Key::LShift;
-		case VK_RSHIFT: return Key::RShift;
-		case VK_LCONTROL: return Key::LCtrl;
-		case VK_RCONTROL: return Key::RCtrl;
-		case VK_LMENU: return Key::LAlt;
-		case VK_RMENU: return Key::RAlt;
+		case VK_SHIFT:
+		{
+			const UINT scancode = (lparam >> 16) & 0xff; // lparam の 16〜23bit
+			const UINT vkEx = MapVirtualKey(scancode, MAPVK_VSC_TO_VK_EX); // scan code → 仮想キー（左右判定可能）
+			return (vkEx == VK_RSHIFT) ? Key::RShift : Key::LShift;
+		}
+		case VK_CONTROL:
+		{
+			const bool isRight = (lparam & (1 << 24)) != 0;
+			return isRight ? Key::RCtrl : Key::LCtrl;
+		}
+		case VK_MENU:
+		{
+			const bool isRight = (lparam & (1 << 24)) != 0;
+			return isRight ? Key::RAlt : Key::LAlt;
+		}
 		}
 
 		return Key::Unknown;

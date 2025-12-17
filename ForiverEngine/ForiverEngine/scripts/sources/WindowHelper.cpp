@@ -26,7 +26,7 @@ namespace ForiverEngine
 			// キー押下
 		case WM_KEYDOWN:
 		{
-			const Key key = InputHelper::ConvertVKToKey(wparam);
+			const Key key = InputHelper::ConvertVKToKey(wparam, lparam);
 			if (key != Key::Unknown)
 				InputHelper::OnPressed(key);
 
@@ -36,7 +36,7 @@ namespace ForiverEngine
 		// キー解放
 		case WM_KEYUP:
 		{
-			const Key key = InputHelper::ConvertVKToKey(wparam);
+			const Key key = InputHelper::ConvertVKToKey(wparam, lparam);
 			if (key != Key::Unknown)
 				InputHelper::OnReleased(key);
 

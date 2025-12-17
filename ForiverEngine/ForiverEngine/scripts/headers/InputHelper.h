@@ -90,7 +90,7 @@ namespace ForiverEngine
 		/// <summary>
 		/// <para>仮想キーコード (WPARAM) を Key 列挙型に変換して返す</para>
 		/// </summary>
-		static Key ConvertVKToKey(WPARAM vk);
+		static Key ConvertVKToKey(WPARAM wparam, LPARAM lparam);
 
 		/// <summary>
 		/// <para>外部公開用に、便利なアクセサを提供する</para>
