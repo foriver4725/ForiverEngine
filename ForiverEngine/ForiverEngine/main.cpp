@@ -106,13 +106,23 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 
 	BEGIN_FRAME;
 	{
+#if true
 		// 適当に、立方体を回転させる
-#if false
 		if (InputHelper::GetKeyInfo(Key::Space).pressed)
 		{
 			transform.rotation = Quaternion::FromAxisAngle(Vector3::Up(), 1.0f * DegToRad) * transform.rotation;
 			cbData0VirtualPtr->Matrix_M_IT = transform.CalculateModelMatrixInversed().Transposed();
 			cbData0VirtualPtr->Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(transform, cameraTransform);
+		}
+		// 適当に、テクスチャを切り替える
+		if (InputHelper::GetKeyInfo(Key::N1).pressedNow)
+		{
+			cbData0VirtualPtr->TextureIndex = (cbData0VirtualPtr->TextureIndex + 1) % textureArray.sliceCount;
+		}
+		// 適当に、使うUVを切り替える
+		if (InputHelper::GetKeyInfo(Key::N2).pressedNow)
+		{
+			cbData0VirtualPtr->UseUpperUV = 1 - cbData0VirtualPtr->UseUpperUV;
 		}
 #endif
 
