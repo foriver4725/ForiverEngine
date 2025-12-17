@@ -49,6 +49,9 @@ int WindowMain(hInstance) \
 	/* キー入力を初期化 */ \
     ForiverEngine::InputHelper::InitKeyTable(); \
 \
+	/* 時間計測を初期化 */ \
+	ForiverEngine::WindowHelper::InitTime(); \
+\
 	ForiverEngine::WindowHelper::CreateConsoleInGUIApplication();
 
 #else
@@ -67,6 +70,9 @@ int WindowMain(hInstance) \
 \
     /* キー入力を初期化 */ \
 	ForiverEngine::InputHelper::InitKeyTable(); \
+\
+	/* 時間計測を初期化 */ \
+	ForiverEngine::WindowHelper::InitTime(); \
 \
 	HWND HwndName = ForiverEngine::WindowHelper::CreateTheWindow((WindowClassName), (WindowTitle), (WindowWidth), (WindowHeight));
 
@@ -94,6 +100,10 @@ int WindowMain(hInstance) \
 MSG msg = {}; \
 while (true) \
 { \
+\
+	/* フレーム開始時の時間を記録 */ \
+	ForiverEngine::WindowHelper::RecordTimeAtBeginFrame(); \
+\
     /* キー入力を更新 */ \
     ForiverEngine::InputHelper::OnEveryFrame(); \
 \
@@ -104,6 +114,10 @@ while (true) \
 
 // フレーム処理のマクロ 終了
 #define END_FRAME \
+\
+	/* フレーム終了時の時間を記録し、必要ならばスリープする */ \
+	ForiverEngine::WindowHelper::CollectTimeAtEndFrameAndSleepIfNeeded(); \
+	ForiverEngine::WindowHelper::ResetTimeAtBeginFrame(); \
 }
 
 namespace ForiverEngine
@@ -112,6 +126,16 @@ namespace ForiverEngine
 	{
 	public:
 		DELETE_DEFAULT_METHODS(WindowHelper);
+
+		/// <summary>
+		/// ターゲットFPS
+		/// </summary>
+		static int GetTargetFps() { return targetFps; }
+
+		/// <summary>
+		/// 前フレームからの経過時間 [s]
+		/// </summary>
+		static double GetDeltaSeconds() { return deltaTime * 0.001; } // [ms] → [s]
 
 		/// <summary>
 		/// ウィンドウを初期化する
@@ -140,6 +164,36 @@ namespace ForiverEngine
 		static int HandleAllMessages(MSG& msg);
 
 		/// <summary>
+		/// ターゲットFPSを設定する
+		/// </summary>
+		static void SetTargetFps(int fps);
+
+		/// <summary>
+		/// 時間計測の初期化
+		/// </summary>
+		static void InitTime();
+
+		/// <summary>
+		/// 現在の時間を[ms]で返す
+		/// </summary>
+		static double GetTime();
+
+		/// <summary>
+		/// フレーム開始時の時間を記録する
+		/// </summary>
+		static void RecordTimeAtBeginFrame();
+
+		/// <summary>
+		/// フレーム開始時の時間記録をリセットする
+		/// </summary>
+		static void ResetTimeAtBeginFrame();
+
+		/// <summary>
+		/// フレーム終了時の時間を記録し、必要ならばスリープする
+		/// </summary>
+		static void CollectTimeAtEndFrameAndSleepIfNeeded();
+
+		/// <summary>
 		/// エラーのメッセージボックスを出す
 		/// </summary>
 		static void PopupErrorDialog(const wchar_t* message);
@@ -163,6 +217,13 @@ namespace ForiverEngine
 			FreeConsole();
 		}
 #endif
+
+	private:
+		inline static int targetFps = -1;
+		inline static double targetFrameTime = -1; // [ms]
+		inline static LARGE_INTEGER timeFrequency{}; // 時間計測で使う値 (1回だけ初期化)
+		inline static double timeAtBeginFrame = -1; // フレーム開始時の時間をメモっておく用
+		inline static double deltaTime = -1; // 前フレームからの経過時間 [ms] を計算し、外部公開する
 	};
 
 #ifdef ENABLE_CUI_CONSOLE

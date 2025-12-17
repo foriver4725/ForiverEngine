@@ -16,6 +16,8 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		ShowError(L"DebugLayer の有効化に失敗しました");
 #endif
 
+	WindowHelper::SetTargetFps(60);
+
 	const auto [factory, device, commandAllocator, commandList, commandQueue, swapChain]
 		= D3D12BasicFlow::CreateStandardObjects(hwnd, WindowWidth, WindowHeight);
 
@@ -110,7 +112,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		// 適当に、立方体を回転させる
 		if (InputHelper::GetKeyInfo(Key::Space).pressed)
 		{
-			transform.rotation = Quaternion::FromAxisAngle(Vector3::Up(), 1.0f * DegToRad) * transform.rotation;
+			transform.rotation = Quaternion::FromAxisAngle(Vector3::Up(), 180.0f * DegToRad * WindowHelper::GetDeltaSeconds()) * transform.rotation;
 			cbData0VirtualPtr->Matrix_M_IT = transform.CalculateModelMatrixInversed().Transposed();
 			cbData0VirtualPtr->Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(transform, cameraTransform);
 		}

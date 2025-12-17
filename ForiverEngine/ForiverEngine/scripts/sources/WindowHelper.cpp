@@ -70,6 +70,66 @@ namespace ForiverEngine
 		return 0;
 	}
 
+	void WindowHelper::SetTargetFps(int fps)
+	{
+		WindowHelper::targetFps = fps;
+		WindowHelper::targetFrameTime = (fps > 0) ? (1000.0 / fps) : -1;
+	}
+
+	void WindowHelper::InitTime()
+	{
+		QueryPerformanceFrequency(&WindowHelper::timeFrequency);
+	}
+
+	double WindowHelper::GetTime()
+	{
+		LARGE_INTEGER now;
+		QueryPerformanceCounter(&now);
+		return 1000.0 * static_cast<double>(now.QuadPart) / static_cast<double>(WindowHelper::timeFrequency.QuadPart);
+	}
+
+	void WindowHelper::RecordTimeAtBeginFrame()
+	{
+		WindowHelper::timeAtBeginFrame = GetTime();
+	}
+
+	void WindowHelper::ResetTimeAtBeginFrame()
+	{
+		WindowHelper::timeAtBeginFrame = -1;
+	}
+
+	void WindowHelper::CollectTimeAtEndFrameAndSleepIfNeeded()
+	{
+		// フレーム開始時の時間が記録されていない
+		if (WindowHelper::timeAtBeginFrame < 0)
+			return;
+
+		// 時間をコレクトし、フレームタイムを算出
+		const double timeAtBeginFrame = WindowHelper::timeAtBeginFrame;
+		const double timeAtEndFrame = GetTime();
+		const double frameTime = timeAtEndFrame - timeAtBeginFrame;
+
+		// deltaTime として更新する
+		// 処理が早く終わった場合、この後の処理で再度更新される
+		// 従って、deltaTime の最小値は targetFrameTime であり、
+		// フレーム落ちなどでこれより大きくなることはあるが、小さくなることはない
+		WindowHelper::deltaTime = frameTime;
+
+		// 処理が早く終わった場合、スリープする
+		if (WindowHelper::targetFrameTime > 0)
+		{
+			const double timeToSleep = WindowHelper::targetFrameTime - frameTime;
+			if (timeToSleep > 0.0)
+			{
+				Sleep(static_cast<DWORD>(timeToSleep));
+
+				// スリープ後の時間を再取得し、deltaTime を正確にする
+				const double newTimeAtEndFrame = GetTime();
+				WindowHelper::deltaTime = newTimeAtEndFrame - timeAtBeginFrame;
+			}
+		}
+	}
+
 	void WindowHelper::PopupErrorDialog(const wchar_t* message)
 	{
 		MessageBox(nullptr, message, L"error", MB_OK | MB_ICONERROR);
