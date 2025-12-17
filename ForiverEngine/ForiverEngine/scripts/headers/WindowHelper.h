@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <scripts/common/Include.h>
+#include "./InputHelper.h"
 
 struct HINSTANCE__; typedef HINSTANCE__* HINSTANCE;
 struct HWND__; typedef HWND__* HWND;

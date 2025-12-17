@@ -148,6 +148,7 @@
     <ClCompile Include="scripts\sources\AssetLoader.cpp" />
     <ClCompile Include="scripts\sources\D3D12BasicFlow.cpp" />
     <ClCompile Include="scripts\sources\D3D12Helper.cpp" />
+    <ClCompile Include="scripts\sources\InputHelper.cpp" />
     <ClCompile Include="scripts\sources\WindowHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -176,6 +177,7 @@
     <ClInclude Include="scripts\headers\D3D12BasicFlow.h" />
     <ClInclude Include="scripts\headers\D3D12Defines.h" />
     <ClInclude Include="scripts\headers\D3D12Helper.h" />
+    <ClInclude Include="scripts\headers\InputHelper.h" />
     <ClInclude Include="scripts\headers\WindowHelper.h" />
   </ItemGroup>
   <ItemGroup>
