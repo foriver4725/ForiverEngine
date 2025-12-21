@@ -42,9 +42,8 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 
 	CameraTransform cameraTransform =
 	{
-		.position = Vector3(6, 4, 6),
-		.lookDirection = Vector3(0, -1, 1).Normed(),
-		.up = Vector3::Up(),
+		.position = Vector3(0, 20, 0),
+		.lookDirection = Vector3(0, -1, 0).Normed(),
 		.nearClip = 0.1f,
 		.farClip = 1000.0f,
 		.isPerspective = true,
@@ -79,6 +78,9 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 				}
 			}
 		}
+
+		// (15,15) だけ砂にする
+		terrainData[3][15][15] = 5;
 	}
 	const Mesh mesh = Mesh::CreateFromTerrainData(terrainData);
 

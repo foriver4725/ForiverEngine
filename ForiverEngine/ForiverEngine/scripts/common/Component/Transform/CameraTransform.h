@@ -15,7 +15,6 @@ namespace ForiverEngine
 
 		Vector3 position;
 		Vector3 lookDirection; // 必ず正規化されている前提
-		Vector3 up = Vector3::Up(); // 必ず正規化されている前提
 
 		float nearClip; // near > 0
 		float farClip; // far > near
@@ -29,14 +28,15 @@ namespace ForiverEngine
 		/// </summary>
 		Matrix4x4 CalculateViewMatrix() const noexcept
 		{
-			// up ベクトルが視線ベクトルと平行 → 別の軸をupにする
-			Vector3 up = this->up;
-			if (std::abs(Vector3::Dot(lookDirection, up)) > 1.0f - Epsilon)
-			{
-				up = (std::abs(lookDirection.y) < 0.5f)
-					? Vector3::Up()
-					: Vector3::Forward();
-			}
+			// 上方向のベクトルを適切に算出する
+			// 基本はワールド座標系の上方向ベクトル
+			Vector3 up = Vector3::Up();
+			// 上を向いているなら、後方向ベクトル
+			if (lookDirection == Vector3::Up())
+				up = Vector3::Backward();
+			// 下を向いているなら、前方向ベクトル
+			else if (lookDirection == Vector3::Down())
+				up = Vector3::Forward();
 
 			// カメラ座標系の基底ベクトル
 			Vector3 cameraX, cameraY, cameraZ;
