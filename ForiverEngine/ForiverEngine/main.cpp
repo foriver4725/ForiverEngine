@@ -86,21 +86,16 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	{
 		Matrix4x4 Matrix_M_IT; // M の逆→転置行列
 		Matrix4x4 Matrix_MVP; // MVP
-		int TextureIndex; // 使用するテクスチャのインデックス (仮)
-		int UseUpperUV; // 上半分のUVを使うかどうか (仮). 1=true:上半分, 0=false:下半分
 	};
 
 	CBData0 cbData0 =
 	{
 		.Matrix_M_IT = transform.CalculateModelMatrixInversed().Transposed(),
 		.Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(transform, cameraTransform),
-		.TextureIndex = 0,
-		.UseUpperUV = true,
 	};
 
 	// CBV 用バッファ
-	CBData0* cbData0VirtualPtr = nullptr;
-	const GraphicsBuffer cbvBuffer = D3D12BasicFlow::InitCBVBuffer<CBData0>(device, cbData0, false, &cbData0VirtualPtr);
+	const GraphicsBuffer cbvBuffer = D3D12BasicFlow::InitCBVBuffer<CBData0>(device, cbData0);
 
 	// SRV 用バッファ
 	const auto srvBufferAndData = D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue,
@@ -123,26 +118,6 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 
 	BEGIN_FRAME;
 	{
-#if true
-		// 適当に、立方体を回転させる
-		if (InputHelper::GetKeyInfo(Key::Space).pressed)
-		{
-			transform.rotation = Quaternion::FromAxisAngle(Vector3::Up(), 180.0f * DegToRad * WindowHelper::GetDeltaSeconds()) * transform.rotation;
-			cbData0VirtualPtr->Matrix_M_IT = transform.CalculateModelMatrixInversed().Transposed();
-			cbData0VirtualPtr->Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(transform, cameraTransform);
-		}
-		// 適当に、テクスチャを切り替える
-		if (InputHelper::GetKeyInfo(Key::N1).pressedNow)
-		{
-			cbData0VirtualPtr->TextureIndex = (cbData0VirtualPtr->TextureIndex + 1) % textureArrayMetadata.sliceCount;
-		}
-		// 適当に、使うUVを切り替える
-		if (InputHelper::GetKeyInfo(Key::N2).pressedNow)
-		{
-			cbData0VirtualPtr->UseUpperUV = 1 - cbData0VirtualPtr->UseUpperUV;
-		}
-#endif
-
 		const int currentBackBufferIndex = D3D12Helper::GetCurrentBackBufferIndex(swapChain);
 		const GraphicsBuffer currentBackBuffer = rtBufferGetter(currentBackBufferIndex);
 		const DescriptorHeapHandleAtCPU currentBackBufferRTV = rtvGetter(currentBackBufferIndex);
