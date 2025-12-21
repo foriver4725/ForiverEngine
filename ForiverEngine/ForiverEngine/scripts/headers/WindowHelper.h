@@ -135,7 +135,12 @@ namespace ForiverEngine
 		/// <summary>
 		/// 前フレームからの経過時間 [s]
 		/// </summary>
-		static double GetDeltaSeconds() { return deltaTime * 0.001; } // [ms] → [s]
+		static float GetDeltaSeconds() { return static_cast<float>(deltaTime * 0.001); } // [ms] → [s]
+
+		/// <summary>
+		/// 前フレームからの経過時間 [s]
+		/// </summary>
+		static double GetDeltaSecondsAsDouble() { return deltaTime * 0.001; } // [ms] → [s]
 
 		/// <summary>
 		/// ウィンドウを初期化する
