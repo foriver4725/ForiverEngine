@@ -22,7 +22,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		= D3D12BasicFlow::CreateStandardObjects(hwnd, WindowWidth, WindowHeight);
 
 	const RootParameter rootParameter = RootParameter::CreateBasic(1, 1, 0);
-	const SamplerConfig samplerConfig = SamplerConfig::CreateBasic(AddressingMode::Wrap, Filter::Point);
+	const SamplerConfig samplerConfig = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
 	const auto [shaderVS, shaderPS] = D3D12BasicFlow::CompileShader_VS_PS("./shaders/Basic.hlsl");
 	const auto [rootSignature, graphicsPipelineState]
 		= D3D12BasicFlow::CreateRootSignatureAndGraphicsPipelineState(
@@ -31,8 +31,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	const auto [rtBufferGetter, rtvGetter] = D3D12BasicFlow::InitRTV(device, swapChain, 2, false);
 	const DescriptorHeapHandleAtCPU dsv = D3D12BasicFlow::InitDSV(device, WindowWidth, WindowHeight, DepthBufferClearValue);
 
-	const Mesh mesh = Mesh::CreateCube();
-
+	// ボクセルなので、この値がデフォルト値から変化することはないはず
 	Transform transform =
 	{
 		.parent = nullptr,
@@ -52,6 +51,35 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		.fov = 60.0f * DegToRad,
 		.aspectRatio = 1.0f * WindowWidth / WindowHeight,
 	};
+
+	// 地形データ
+	std::vector<std::vector<std::vector<std::uint32_t>>> terrainData;
+	{
+		// 取り合えず 16x16x16 の空間
+		terrainData =
+			std::vector<std::vector<std::vector<std::uint32_t>>>(
+				16,
+				std::vector<std::vector<std::uint32_t>>(
+					16,
+					std::vector<std::uint32_t>(
+						16,
+						0 // 初期値は空気
+					)
+				)
+			);
+
+		for (int y = 0; y < 3; ++y)
+		{
+			for (int z = 0; z < 16; ++z)
+			{
+				for (int x = 0; x < 16; ++x)
+				{
+					terrainData[y][z][x] = 2; // 取り合えず草で埋める
+				}
+			}
+		}
+	}
+	const Mesh mesh = Mesh::CreateFromTerrainData(terrainData);
 
 	// b0 レジスタに渡すデータ
 	struct alignas(256) CBData0
@@ -77,6 +105,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	// SRV 用バッファ
 	const auto srvBufferAndData = D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue,
 		{
+			"assets/textures/air_invalid.png",
 			"assets/textures/grass_stone.png",
 			"assets/textures/dirt_sand.png",
 		});

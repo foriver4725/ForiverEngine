@@ -64,8 +64,8 @@ namespace ForiverEngine
 		const int vertexSize = static_cast<int>(sizeof(vertices[0]));            // 要素1つ分のメモリサイズ
 		const int verticesSize = static_cast<int>(vertices.size() * vertexSize); // 全体のメモリサイズ
 
-		const std::vector<std::uint16_t>& indices = mesh.indices;                // メッシュのプロパティ
-		const std::uint16_t* indicesPtr = indices.data();                        // 先頭ポインタ
+		const std::vector<std::uint32_t>& indices = mesh.indices;                // メッシュのプロパティ
+		const std::uint32_t* indicesPtr = indices.data();                        // 先頭ポインタ
 		const int indexSize = static_cast<int>(sizeof(indices[0]));              // 要素1つ分のメモリサイズ
 		const int indicesSize = static_cast<int>(indices.size() * indexSize);    // 全体のメモリサイズ
 

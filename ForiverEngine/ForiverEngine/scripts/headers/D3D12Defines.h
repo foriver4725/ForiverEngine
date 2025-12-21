@@ -281,6 +281,7 @@ public: \
 		ForiverEngine::Vector4 pos; // モデル座標系
 		ForiverEngine::Vector2 uv; // 左上が原点
 		ForiverEngine::Vector3 normal; // 法線ベクトル (単位ベクトル)
+		std::uint32_t texIndex; // 使用するテクスチャのインデックス (偶数ならテクスチャの上半分、奇数なら下半分となるはず)
 	};
 
 	// 頂点レイアウト 単品
@@ -294,8 +295,9 @@ public: \
 	const std::vector<VertexLayout> VertexLayouts =
 	{
 		{ "POSITION", Format::RGBA_F32 },
-		{ "TEXCOORD", Format::RG_F32 },
-		{ "NORMAL", Format::RGB_F32 },
+		{ "TEXCOORD", Format::RG_F32   },
+		{ "NORMAL"  , Format::RGB_F32  },
+		{ "TEXINDEX", Format::R_U32    },
 	};
 
 	// ビューポートとシザー矩形
