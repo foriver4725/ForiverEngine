@@ -164,6 +164,9 @@
     <ClInclude Include="scripts\common\Math\Defines.h" />
     <ClInclude Include="scripts\common\Math\Include.h" />
     <ClInclude Include="scripts\common\Math\LinearAlgebra\Include.h" />
+    <ClInclude Include="scripts\common\Math\LinearAlgebra\Lattice2.h" />
+    <ClInclude Include="scripts\common\Math\LinearAlgebra\Lattice3.h" />
+    <ClInclude Include="scripts\common\Math\LinearAlgebra\Lattice4.h" />
     <ClInclude Include="scripts\common\Math\LinearAlgebra\Matrix2x2.h" />
     <ClInclude Include="scripts\common\Math\LinearAlgebra\Matrix3x3.h" />
     <ClInclude Include="scripts\common\Math\LinearAlgebra\Matrix4x4.h" />

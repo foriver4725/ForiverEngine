@@ -1,5 +1,8 @@
 ﻿#pragma once
 
+#include "./Lattice2.h"
+#include "./Lattice3.h"
+#include "./Lattice4.h"
 #include "./Vector2.h"
 #include "./Vector3.h"
 #include "./Vector4.h"

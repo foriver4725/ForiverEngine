@@ -138,6 +138,15 @@
     <ClInclude Include="scripts\headers\InputHelper.h">
       <Filter>scripts\headers</Filter>
     </ClInclude>
+    <ClInclude Include="scripts\common\Math\LinearAlgebra\Lattice2.h">
+      <Filter>scripts\common\Math\LinearAlgebra</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\common\Math\LinearAlgebra\Lattice3.h">
+      <Filter>scripts\common\Math\LinearAlgebra</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\common\Math\LinearAlgebra\Lattice4.h">
+      <Filter>scripts\common\Math\LinearAlgebra</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shaders\Basic.hlsl">
