@@ -156,8 +156,8 @@ namespace ForiverEngine
 #undef RETURN_TRUE
 	}
 
-	std::tuple<bool, std::wstring, std::tuple<Texture, GraphicsBuffer>>
-		D3D12BasicFlow::InitTextures_Impl(
+	std::tuple<bool, std::wstring, std::tuple<GraphicsBuffer, Texture>>
+		D3D12BasicFlow::InitSRVBuffer_Impl(
 			const Device& device,
 			const CommandList& commandList,
 			const CommandQueue& commandQueue,
@@ -168,9 +168,9 @@ namespace ForiverEngine
 		GraphicsBuffer textureArrayBuffer = GraphicsBuffer();
 
 #define RETURN_FALSE(errorMessage) \
-	return { false, errorMessage, { textureArray, textureArrayBuffer } };
+	return { false, errorMessage, { textureArrayBuffer, textureArray } };
 #define RETURN_TRUE() \
-	return { true, L"", { textureArray, textureArrayBuffer } };
+	return { true, L"", { textureArrayBuffer, textureArray } };
 
 		textureArray = AssetLoader::LoadTextureArray(paths);
 		if (!textureArray.IsValid())

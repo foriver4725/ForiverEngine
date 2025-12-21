@@ -103,19 +103,37 @@ namespace ForiverEngine
 		}
 
 		/// <summary>
-		/// <para>- 複数のテクスチャを、テクスチャ配列としてロードする</para>
-		/// <para>- GraphicsBuffer を作成して GPU にアップロードする</para>
-		/// <para>- テクスチャのメタデータ・GraphicsBuffer を返す</para>
+		/// <para>GraphicsBuffer を作成して、任意の値を GPU にアップロードする</para>
+		/// <para>作成したバッファを返す</para>
+		/// <para>CBV を作る用のバッファ</para>
 		/// </summary>
-		static std::tuple<Texture, GraphicsBuffer>
-			InitTextures(
+		template<typename T>
+		static GraphicsBuffer
+			InitCBVBuffer(
+				const Device& device,
+				const T& data,
+				bool unmapOnEnd = true,
+				T** outBufferVirtualPtr = nullptr
+			)
+		{
+			return Check(InitCBVBuffer_Impl(device, data, unmapOnEnd, outBufferVirtualPtr));
+		}
+
+		/// <summary>
+		/// <para>GraphicsBuffer を作成して、テクスチャデータを GPU にアップロードする</para>
+		/// <para>テクスチャは与えられたパスからロードし、パスが複数あるならテクスチャ配列として処理される</para>
+		/// <para>作成したバッファと、ロードしたテクスチャのメタデータを返す</para>
+		/// <para>SRV を作る用のバッファ</para>
+		/// </summary>
+		static std::tuple<GraphicsBuffer, Texture>
+			InitSRVBuffer(
 				const Device& device,
 				const CommandList& commandList,
 				const CommandQueue& commandQueue,
 				const std::vector<std::string>& paths
 			)
 		{
-			return Check(InitTextures_Impl(device, commandList, commandQueue, paths));
+			return Check(InitSRVBuffer_Impl(device, commandList, commandQueue, paths));
 		}
 
 		/// <summary>
@@ -290,12 +308,52 @@ namespace ForiverEngine
 			);
 
 		/// <summary>
-		/// <para>- 複数のテクスチャを、テクスチャ配列としてロードする</para>
-		/// <para>- GraphicsBuffer を作成して GPU にアップロードする</para>
-		/// <para>- テクスチャのメタデータ・GraphicsBuffer を返す</para>
+		/// <para>GraphicsBuffer を作成して、任意の値を GPU にアップロードする</para>
+		/// <para>作成したバッファを返す</para>
+		/// <para>CBV を作る用のバッファ</para>
 		/// </summary>
-		static std::tuple<bool, std::wstring, std::tuple<Texture, GraphicsBuffer>>
-			InitTextures_Impl(
+		template<typename T>
+		static std::tuple<bool, std::wstring, std::tuple<GraphicsBuffer>>
+			InitCBVBuffer_Impl(
+				const Device& device,
+				const T& data,
+				bool unmapOnEnd = true,
+				T** outBufferVirtualPtr = nullptr
+			)
+		{
+			if (outBufferVirtualPtr)
+				*outBufferVirtualPtr = nullptr;
+
+			GraphicsBuffer buffer = GraphicsBuffer();
+
+#define RETURN_FALSE(errorMessage) \
+			return { false, errorMessage, { buffer } };
+#define RETURN_TRUE() \
+			return { true, L"", { buffer } };
+
+			// 256 アラインメントにする必要がある
+			buffer = D3D12Helper::CreateGraphicsBuffer1D(device, GetAlignmentedSize(sizeof(T), 256), true);
+			if (!buffer)
+				RETURN_FALSE(L"定数バッファーの作成に失敗しました");
+
+			if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer1D(
+				buffer, &data, sizeof(T), unmapOnEnd, reinterpret_cast<void**>(outBufferVirtualPtr)))
+				RETURN_FALSE(L"定数バッファーへのデータ転送に失敗しました");
+
+			RETURN_TRUE();
+
+#undef RETURN_FALSE
+#undef RETURN_TRUE
+		}
+
+		/// <summary>
+		/// <para>GraphicsBuffer を作成して、テクスチャデータを GPU にアップロードする</para>
+		/// <para>テクスチャは与えられたパスからロードし、パスが複数あるならテクスチャ配列として処理される</para>
+		/// <para>作成したバッファと、ロードしたテクスチャのメタデータを返す</para>
+		/// <para>SRV を作る用のバッファ</para>
+		/// </summary>
+		static std::tuple<bool, std::wstring, std::tuple<GraphicsBuffer, Texture>>
+			InitSRVBuffer_Impl(
 				const Device& device,
 				const CommandList& commandList,
 				const CommandQueue& commandQueue,

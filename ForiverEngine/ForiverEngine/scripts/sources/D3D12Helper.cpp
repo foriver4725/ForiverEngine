@@ -698,7 +698,8 @@ namespace ForiverEngine
 		if (unmapOnEnd)
 			graphicsBuffer->Unmap(0, nullptr);
 		else
-			*outBufferVirtualPtr = bufferVirtualPtr;
+			if (outBufferVirtualPtr)
+				*outBufferVirtualPtr = bufferVirtualPtr;
 		return true;
 	}
 

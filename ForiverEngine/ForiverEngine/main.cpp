@@ -70,18 +70,12 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		.UseUpperUV = true,
 	};
 
-	// 定数バッファー (サイズは256バイトにアラインメントする必要がある!!)
-	const GraphicsBuffer constantBuffer = D3D12Helper::CreateGraphicsBuffer1D(device, GetAlignmentedSize(sizeof(cbData0), 256), true);
-	if (!constantBuffer)
-		ShowError(L"定数バッファーの作成に失敗しました");
-	// 定数バッファーにデータを書き込む
-	// Unmap しないでおく
+	// CBV 用バッファ
 	CBData0* cbData0VirtualPtr = nullptr;
-	if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer1D(constantBuffer, &cbData0, sizeof(cbData0),
-		false, reinterpret_cast<void**>(&cbData0VirtualPtr)))
-		ShowError(L"定数バッファーへのデータ転送に失敗しました");
+	const GraphicsBuffer cbvBuffer = D3D12BasicFlow::InitCBVBuffer<CBData0>(device, cbData0, false, &cbData0VirtualPtr);
 
-	const auto [textureArray, textureArrayBuffer] = D3D12BasicFlow::InitTextures(device, commandList, commandQueue,
+	// SRV 用バッファ
+	const auto [srvBuffer, textureArrayMetadata] = D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue,
 		{
 			"assets/textures/grass_stone.png",
 			"assets/textures/dirt_sand.png",
@@ -91,8 +85,8 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	const DescriptorHeap descriptorHeapBasic = D3D12Helper::CreateDescriptorHeap(device, DescriptorHeapType::CBV_SRV_UAV, 2, true);
 	if (!descriptorHeapBasic)
 		ShowError(L"CBV/SRV/UAV 用 DescriptorHeap の作成に失敗しました");
-	D3D12Helper::CreateCBVAndRegistToDescriptorHeap(device, descriptorHeapBasic, constantBuffer, 0);
-	D3D12Helper::CreateSRVAndRegistToDescriptorHeap(device, descriptorHeapBasic, textureArrayBuffer, 1, textureArray);
+	D3D12Helper::CreateCBVAndRegistToDescriptorHeap(device, descriptorHeapBasic, cbvBuffer, 0);
+	D3D12Helper::CreateSRVAndRegistToDescriptorHeap(device, descriptorHeapBasic, srvBuffer, 1, textureArrayMetadata);
 
 	const auto [vertexBufferView, indexBufferView]
 		= D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, mesh);
@@ -113,7 +107,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		// 適当に、テクスチャを切り替える
 		if (InputHelper::GetKeyInfo(Key::N1).pressedNow)
 		{
-			cbData0VirtualPtr->TextureIndex = (cbData0VirtualPtr->TextureIndex + 1) % textureArray.sliceCount;
+			cbData0VirtualPtr->TextureIndex = (cbData0VirtualPtr->TextureIndex + 1) % textureArrayMetadata.sliceCount;
 		}
 		// 適当に、使うUVを切り替える
 		if (InputHelper::GetKeyInfo(Key::N2).pressedNow)
