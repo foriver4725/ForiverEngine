@@ -42,8 +42,8 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 
 	CameraTransform cameraTransform =
 	{
-		.position = Vector3(0, 3, -5),
-		.target = Vector3::Zero(),
+		.position = Vector3(6, 4, 6),
+		.lookDirection = Vector3(0, -1, 1).Normed(),
 		.up = Vector3::Up(),
 		.nearClip = 0.1f,
 		.farClip = 1000.0f,
@@ -68,7 +68,8 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 				)
 			);
 
-		for (int y = 0; y < 3; ++y)
+		// y=3 以下が地面
+		for (int y = 0; y <= 3; ++y)
 		{
 			for (int z = 0; z < 16; ++z)
 			{

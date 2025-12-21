@@ -14,8 +14,8 @@ namespace ForiverEngine
 		// 親子関係にはならない
 
 		Vector3 position;
-		Vector3 target;
-		Vector3 up = Vector3::Up();
+		Vector3 lookDirection; // 必ず正規化されている前提
+		Vector3 up = Vector3::Up(); // 必ず正規化されている前提
 
 		float nearClip; // near > 0
 		float farClip; // far > near
@@ -29,21 +29,20 @@ namespace ForiverEngine
 		/// </summary>
 		Matrix4x4 CalculateViewMatrix() const noexcept
 		{
-			const Vector3 toTarget = target - position;
+			// up ベクトルが視線ベクトルと平行 → 別の軸をupにする
 			Vector3 up = this->up;
-
-			// 注視点に近すぎる → 単位行列を返す
-			if (toTarget.LenSq() < Epsilon)
-				return Matrix4x4::Identity();
-			// up ベクトルが視線ベクトルに近すぎる → 別の軸をupにする
-			if (Vector3::Dot(toTarget.Normed(), up.Normed()) > 1.0f - Epsilon)
-				up = (std::abs(toTarget.y) < 0.9f) ? Vector3::Up() : Vector3::Right();
+			if (std::abs(Vector3::Dot(lookDirection, up)) > 1.0f - Epsilon)
+			{
+				up = (std::abs(lookDirection.y) < 0.9f)
+					? Vector3::Up()
+					: Vector3::Right();
+			}
 
 			// カメラ座標系の基底ベクトル
 			Vector3 cameraX, cameraY, cameraZ;
 			{
-				cameraZ = toTarget.Normed();
-				cameraY = up.Normed(); // 仮
+				cameraZ = lookDirection;
+				cameraY = up; // 仮
 				cameraX = Vector3::Cross(cameraY, cameraZ).Normed();
 				cameraY = Vector3::Cross(cameraZ, cameraX).Normed();
 			}
