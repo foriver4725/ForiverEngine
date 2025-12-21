@@ -46,32 +46,10 @@ namespace ForiverEngine
 		/// </summary>
 		Matrix4x4 CalculateViewMatrix() const noexcept
 		{
-			// 視線ベクトル
-			const Vector3 lookDirection = GetForward();
-
-			// 上方向のベクトルを適切に算出する
-			// 基本はワールド座標系の上方向ベクトル
-			Vector3 up = Vector3::Up();
-			// 上を向いているなら、後方向ベクトル
-			if (lookDirection == Vector3::Up())
-				up = Vector3::Backward();
-			// 下を向いているなら、前方向ベクトル
-			else if (lookDirection == Vector3::Down())
-				up = Vector3::Forward();
-
-			// カメラ座標系の基底ベクトル
-			Vector3 cameraX, cameraY, cameraZ;
-			{
-				cameraZ = lookDirection;
-				cameraY = up; // 仮
-				cameraX = Vector3::Cross(cameraY, cameraZ).Normed();
-				cameraY = Vector3::Cross(cameraZ, cameraX).Normed();
-			}
-
 			const Matrix4x4 rotateInversed = Matrix4x4::FromRowVectors(
-				Vector4(cameraX, 0.0f),
-				Vector4(cameraY, 0.0f),
-				Vector4(cameraZ, 0.0f),
+				Vector4(GetRight(), 0.0f),
+				Vector4(GetUp(), 0.0f),
+				Vector4(GetForward(), 0.0f),
 				Vector4(0.0f, 0.0f, 0.0f, 1.0f)
 			);
 			const Matrix4x4 tranlateInversed = Matrix4x4::Translate(-position);
