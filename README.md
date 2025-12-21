@@ -3,6 +3,10 @@ DirectX12 を用いてフルスクラッチで制作した、自作ゲームエ�
 
 ## 進捗
 
+<details>
+
+<summary>過去</summary>
+
 画面を黄色にして表示する
 
 <img width="50%" alt="image" src="https://github.com/user-attachments/assets/46cca266-f217-414f-88f9-3a084312d3cf" />
@@ -69,6 +73,14 @@ https://github.com/user-attachments/assets/c85485b3-ea79-44a8-9014-86f93b563cf1
 ターゲットFPSに合わせて、フレームループを回す
 
 <img width="30%" alt="image" src="https://github.com/user-attachments/assets/1cd4f815-8151-4b2e-8363-4671e94c1977" />
+
+</details>
+
+---
+地形データを作成し、表面に出ているフェースのみをメッシュ結合して描画する  
+また、入力を受け取ってカメラを動かす  
+
+https://github.com/user-attachments/assets/df66a750-5a09-4159-a8b8-933a0f391615
 
 ## OSS
 | 名前 | ライセンス |
