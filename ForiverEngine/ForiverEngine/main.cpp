@@ -81,17 +81,11 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		false, reinterpret_cast<void**>(&cbData0VirtualPtr)))
 		ShowError(L"定数バッファーへのデータ転送に失敗しました");
 
-	const Texture textureArray = AssetLoader::LoadTextureArray(
+	const auto [textureArray, textureArrayBuffer] = D3D12BasicFlow::InitTextures(device, commandList, commandQueue,
 		{
 			"assets/textures/grass_stone.png",
 			"assets/textures/dirt_sand.png",
 		});
-	if (!textureArray.IsValid())
-		ShowError(L"テクスチャ群のロードに失敗しました");
-	const GraphicsBuffer textureArrayBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, textureArray);
-	if (!textureArrayBuffer)
-		ShowError(L"テクスチャ配列バッファの作成に失敗しました");
-	D3D12BasicFlow::UploadTextureToGPU(commandList, commandQueue, device, textureArrayBuffer, textureArray);
 
 	// CBV, SRV から成る DescriptorHeap
 	const DescriptorHeap descriptorHeapBasic = D3D12Helper::CreateDescriptorHeap(device, DescriptorHeapType::CBV_SRV_UAV, 2, true);

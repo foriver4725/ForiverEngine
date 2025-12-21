@@ -103,6 +103,22 @@ namespace ForiverEngine
 		}
 
 		/// <summary>
+		/// <para>- 複数のテクスチャを、テクスチャ配列としてロードする</para>
+		/// <para>- GraphicsBuffer を作成して GPU にアップロードする</para>
+		/// <para>- テクスチャのメタデータ・GraphicsBuffer を返す</para>
+		/// </summary>
+		static std::tuple<Texture, GraphicsBuffer>
+			InitTextures(
+				const Device& device,
+				const CommandList& commandList,
+				const CommandQueue& commandQueue,
+				const std::vector<std::string>& paths
+			)
+		{
+			return Check(InitTextures_Impl(device, commandList, commandQueue, paths));
+		}
+
+		/// <summary>
 		/// <para>専用の DescriptorHeap を作成し、複数個の RTV をその DescriptorHeap の中に作成して返す</para>
 		/// <para>戻り値は関数で、インデックスを基に、バッファとビューを取得出来る</para>
 		/// </summary>
@@ -271,6 +287,19 @@ namespace ForiverEngine
 				const std::vector<VertexLayout>& vertexLayouts,
 				FillMode fillMode,
 				CullMode cullMode
+			);
+
+		/// <summary>
+		/// <para>- 複数のテクスチャを、テクスチャ配列としてロードする</para>
+		/// <para>- GraphicsBuffer を作成して GPU にアップロードする</para>
+		/// <para>- テクスチャのメタデータ・GraphicsBuffer を返す</para>
+		/// </summary>
+		static std::tuple<bool, std::wstring, std::tuple<Texture, GraphicsBuffer>>
+			InitTextures_Impl(
+				const Device& device,
+				const CommandList& commandList,
+				const CommandQueue& commandQueue,
+				const std::vector<std::string>& paths
 			);
 
 		/// <summary>

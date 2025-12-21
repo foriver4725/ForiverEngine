@@ -156,6 +156,38 @@ namespace ForiverEngine
 #undef RETURN_TRUE
 	}
 
+	std::tuple<bool, std::wstring, std::tuple<Texture, GraphicsBuffer>>
+		D3D12BasicFlow::InitTextures_Impl(
+			const Device& device,
+			const CommandList& commandList,
+			const CommandQueue& commandQueue,
+			const std::vector<std::string>& paths
+		)
+	{
+		Texture textureArray = Texture();
+		GraphicsBuffer textureArrayBuffer = GraphicsBuffer();
+
+#define RETURN_FALSE(errorMessage) \
+	return { false, errorMessage, { textureArray, textureArrayBuffer } };
+#define RETURN_TRUE() \
+	return { true, L"", { textureArray, textureArrayBuffer } };
+
+		textureArray = AssetLoader::LoadTextureArray(paths);
+		if (!textureArray.IsValid())
+			RETURN_FALSE(L"テクスチャ群のロードに失敗しました");
+
+		textureArrayBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, textureArray);
+		if (!textureArrayBuffer)
+			RETURN_FALSE(L"テクスチャ配列バッファの作成に失敗しました");
+
+		D3D12BasicFlow::UploadTextureToGPU(commandList, commandQueue, device, textureArrayBuffer, textureArray);
+
+		RETURN_TRUE();
+
+#undef RETURN_FALSE
+#undef RETURN_TRUE
+	}
+
 	std::tuple<bool, std::wstring, std::tuple<std::function<GraphicsBuffer(int)>, std::function<DescriptorHeapHandleAtCPU(int)>>>
 		D3D12BasicFlow::InitRTV_Impl(
 			const Device& device,
