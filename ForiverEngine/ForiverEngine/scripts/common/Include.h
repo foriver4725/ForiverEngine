@@ -15,6 +15,7 @@
 #include <iostream>
 #define NOMINMAX
 #include <Windows.h>
+#include <windowsx.h>
 
 #include "./Math/Include.h"
 #include "./Component/Include.h"

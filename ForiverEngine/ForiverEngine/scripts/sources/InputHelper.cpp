@@ -40,6 +40,17 @@ namespace ForiverEngine
 		}
 	}
 
+	void InputHelper::OnMouseMove(LPARAM lparam)
+	{
+		const int x = GET_X_LPARAM(lparam);
+		const int y = GET_Y_LPARAM(lparam);
+		const Vector2 position = Vector2(static_cast<float>(x), static_cast<float>(y));
+
+		MousePosition = position;
+		MouseDelta = MousePosition - MousePositionPrev;
+		MousePositionPrev = MousePosition;
+	}
+
 	Key InputHelper::ConvertVKToKey(WPARAM wparam, LPARAM lparam)
 	{
 		switch (wparam)

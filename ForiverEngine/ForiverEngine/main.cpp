@@ -17,6 +17,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 #endif
 
 	WindowHelper::SetTargetFps(60);
+	WindowHelper::SetCursorEnabled(false);
 
 	const auto [factory, device, commandAllocator, commandList, commandQueue, swapChain]
 		= D3D12BasicFlow::CreateStandardObjects(hwnd, WindowWidth, WindowHeight);
@@ -112,7 +113,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	const ViewportScissorRect viewportScissorRect
 		= ViewportScissorRect::CreateFullSized(WindowWidth, WindowHeight);
 
-	BEGIN_FRAME;
+	BEGIN_FRAME(hwnd);
 	{
 		// キー入力でカメラを移動・回転させる
 		{
@@ -122,15 +123,10 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 			constexpr float cameraRotateVSpeed = 180.0f * DegToRad; // rad/s (上下方向)
 
 			// 回転
-			Quaternion cameraRotateAmount = Quaternion::Identity();
-			if (InputHelper::GetKeyInfo(Key::Right).pressed)
-				cameraRotateAmount = Quaternion::FromAxisAngle(Vector3::Up(), cameraRotateSpeed * WindowHelper::GetDeltaSeconds()) * cameraRotateAmount;
-			if (InputHelper::GetKeyInfo(Key::Left).pressed)
-				cameraRotateAmount = Quaternion::FromAxisAngle(Vector3::Up(), -cameraRotateSpeed * WindowHelper::GetDeltaSeconds()) * cameraRotateAmount;
-			if (InputHelper::GetKeyInfo(Key::Up).pressed)
-				cameraRotateAmount = Quaternion::FromAxisAngle(cameraTransform.GetRight(), -cameraRotateVSpeed * WindowHelper::GetDeltaSeconds()) * cameraRotateAmount;
-			if (InputHelper::GetKeyInfo(Key::Down).pressed)
-				cameraRotateAmount = Quaternion::FromAxisAngle(cameraTransform.GetRight(), cameraRotateVSpeed * WindowHelper::GetDeltaSeconds()) * cameraRotateAmount;
+			const Vector2 mouseDelta = InputHelper::GetMouseDelta().Normed();
+			const Quaternion cameraRotateAmount =
+				Quaternion::FromAxisAngle(Vector3::Up(), mouseDelta.x * cameraRotateSpeed * WindowHelper::GetDeltaSeconds())
+				* Quaternion::FromAxisAngle(cameraTransform.GetRight(), mouseDelta.y * cameraRotateVSpeed * WindowHelper::GetDeltaSeconds());
 			Quaternion newRotation = cameraRotateAmount * cameraTransform.rotation;
 			if (std::abs((newRotation * Vector3::Forward()).y) < 0.99f) // 上下回転の制限 (前方向ベクトルのy成分で判定. 判定は大きく)
 				cameraTransform.rotation = newRotation;

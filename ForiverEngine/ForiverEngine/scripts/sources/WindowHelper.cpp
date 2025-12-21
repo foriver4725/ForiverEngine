@@ -43,6 +43,30 @@ namespace ForiverEngine
 			return 0;
 		}
 
+		// マウス移動
+		case WM_MOUSEMOVE:
+		{
+			InputHelper::OnMouseMove(lparam);
+
+			return 0;
+		}
+
+		case WM_SETFOCUS:
+		{
+			// カーソルを無効化する
+			SetCursorEnabled(false);
+
+			return 0;
+		}
+
+		case WM_KILLFOCUS:
+		{
+			// カーソルを有効化する
+			SetCursorEnabled(true);
+
+			return 0;
+		}
+
 		// ウィンドウが破棄されたら呼ばれる
 		case WM_DESTROY:
 		{
@@ -68,6 +92,37 @@ namespace ForiverEngine
 		}
 
 		return 0;
+	}
+
+	void WindowHelper::SetCursorEnabled(bool enabled)
+	{
+		if (enabled && !isCursorEnabled)
+		{
+			// カーソルを表示
+			ShowCursor(TRUE);
+			isCursorEnabled = true;
+		}
+		else if (!enabled && isCursorEnabled)
+		{
+			// カーソルを非表示
+			ShowCursor(FALSE);
+			isCursorEnabled = false;
+		}
+	}
+
+	void WindowHelper::FixCursorAtCenter(HWND hwnd)
+	{
+		RECT rect;
+		GetClientRect(hwnd, &rect);
+
+		POINT center =
+		{
+			(rect.right - rect.left) / 2,
+			(rect.bottom - rect.top) / 2
+		};
+
+		ClientToScreen(hwnd, &center);
+		SetCursorPos(center.x, center.y);
 	}
 
 	void WindowHelper::SetTargetFps(int fps)

@@ -96,7 +96,7 @@ int WindowMain(hInstance) \
 #endif
 
 	// フレーム処理のマクロ 開始
-#define BEGIN_FRAME \
+#define BEGIN_FRAME(HwndName) \
 MSG msg = {}; \
 while (true) \
 { \
@@ -111,6 +111,10 @@ while (true) \
     /* WM_QUIT メッセージが来たらループを抜ける */ \
 	if (ForiverEngine::WindowHelper::HandleAllMessages(msg) < 0) \
 		return 0; \
+\
+    /* カーソルが無効なら、ウィンドウ中央に固定する */ \
+	if (!ForiverEngine::WindowHelper::IsCursorEnabled()) \
+		ForiverEngine::WindowHelper::FixCursorAtCenter(HwndName); \
 
 // フレーム処理のマクロ 終了
 #define END_FRAME \
@@ -126,6 +130,11 @@ namespace ForiverEngine
 	{
 	public:
 		DELETE_DEFAULT_METHODS(WindowHelper);
+
+	private:
+		inline static bool isCursorEnabled = true;
+	public:
+		static bool IsCursorEnabled() { return isCursorEnabled; }
 
 		/// <summary>
 		/// ターゲットFPS
@@ -167,6 +176,17 @@ namespace ForiverEngine
 		/// <para>それ以外の場合、0 を返す</para>
 		/// </summary>
 		static int HandleAllMessages(MSG& msg);
+
+		/// <summary>
+		/// <para>カーソルの表示・非表示を切り替える</para>
+		/// <para>重複実行でもOK</para>
+		/// </summary>
+		static void SetCursorEnabled(bool enabled);
+
+		/// <summary>
+		/// <para>カーソルをウィンドウ中央に固定する</para>
+		/// </summary>
+		static void FixCursorAtCenter(HWND hwnd);
 
 		/// <summary>
 		/// ターゲットFPSを設定する
