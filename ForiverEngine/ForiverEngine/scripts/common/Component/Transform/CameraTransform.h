@@ -33,9 +33,9 @@ namespace ForiverEngine
 			Vector3 up = this->up;
 			if (std::abs(Vector3::Dot(lookDirection, up)) > 1.0f - Epsilon)
 			{
-				up = (std::abs(lookDirection.y) < 0.9f)
+				up = (std::abs(lookDirection.y) < 0.5f)
 					? Vector3::Up()
-					: Vector3::Right();
+					: Vector3::Forward();
 			}
 
 			// カメラ座標系の基底ベクトル
