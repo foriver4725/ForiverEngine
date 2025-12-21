@@ -119,6 +119,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 			constexpr float cameraMoveSpeed = 3.0f; // m/s
 			constexpr float cameraMoveVSpeed = 2.0f; // m/s (上下方向)
 			constexpr float cameraRotateSpeed = 180.0f * DegToRad; // rad/s
+			constexpr float cameraRotateVSpeed = 180.0f * DegToRad; // rad/s (上下方向)
 
 			// 回転
 			Quaternion cameraRotateAmount = Quaternion::Identity();
@@ -126,7 +127,13 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 				cameraRotateAmount = Quaternion::FromAxisAngle(Vector3::Up(), cameraRotateSpeed * WindowHelper::GetDeltaSeconds()) * cameraRotateAmount;
 			if (InputHelper::GetKeyInfo(Key::Left).pressed)
 				cameraRotateAmount = Quaternion::FromAxisAngle(Vector3::Up(), -cameraRotateSpeed * WindowHelper::GetDeltaSeconds()) * cameraRotateAmount;
-			cameraTransform.rotation = cameraRotateAmount * cameraTransform.rotation;
+			if (InputHelper::GetKeyInfo(Key::Up).pressed)
+				cameraRotateAmount = Quaternion::FromAxisAngle(cameraTransform.GetRight(), -cameraRotateVSpeed * WindowHelper::GetDeltaSeconds()) * cameraRotateAmount;
+			if (InputHelper::GetKeyInfo(Key::Down).pressed)
+				cameraRotateAmount = Quaternion::FromAxisAngle(cameraTransform.GetRight(), cameraRotateVSpeed * WindowHelper::GetDeltaSeconds()) * cameraRotateAmount;
+			Quaternion newRotation = cameraRotateAmount * cameraTransform.rotation;
+			if (std::abs((newRotation * Vector3::Forward()).y) < 0.99f) // 上下回転の制限 (前方向ベクトルのy成分で判定. 判定は大きく)
+				cameraTransform.rotation = newRotation;
 
 			// 移動
 			Vector3 cameraMoveDirection = Vector3::Zero(); // ローカル座標系
