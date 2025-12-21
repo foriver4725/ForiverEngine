@@ -18,13 +18,6 @@ namespace ForiverEngine
 
 		constexpr Color(const Vector4& vec) noexcept : r(vec.x), g(vec.y), b(vec.z), a(vec.w) {}
 		constexpr Color(const Vector3& vec, float a = 1.0f) noexcept : r(vec.x), g(vec.y), b(vec.z), a(a) {}
-		constexpr Color(std::uint8_t r, std::uint8_t g, std::uint8_t b, std::uint8_t a = 0xff) noexcept :
-			r(1.0f * r / 0xff),
-			g(1.0f * g / 0xff),
-			b(1.0f * b / 0xff),
-			a(1.0f * a / 0xff)
-		{
-		}
 
 		static constexpr Color Transparent() noexcept { return Color(0.0f, 0.0f, 0.0f, 0.0f); }
 		static constexpr Color Black() noexcept { return Color(0.0f, 0.0f, 0.0f, 1.0f); }
@@ -35,6 +28,16 @@ namespace ForiverEngine
 		static constexpr Color Yellow() noexcept { return Color(1.0f, 1.0f, 0.0f, 1.0f); }
 		static constexpr Color Magenta() noexcept { return Color(1.0f, 0.0f, 1.0f, 1.0f); }
 		static constexpr Color Cyan() noexcept { return Color(0.0f, 1.0f, 1.0f, 1.0f); }
+
+		static constexpr Color CreateFromUint8(std::uint8_t r, std::uint8_t g, std::uint8_t b, std::uint8_t a = 0xff) noexcept
+		{
+			return Color(
+				1.0f * r / 0xff,
+				1.0f * g / 0xff,
+				1.0f * b / 0xff,
+				1.0f * a / 0xff
+			);
+		}
 
 		Color& operator=(const Color& other) noexcept
 		{

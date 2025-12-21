@@ -163,7 +163,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 			commandList, commandQueue, commandAllocator, device,
 			rootSignature, graphicsPipelineState, currentBackBuffer,
 			currentBackBufferRTV, dsv, descriptorHeapBasic, { vertexBufferView }, indexBufferView,
-			viewportScissorRect, PrimitiveTopology::TriangleList, Color::Black(), DepthBufferClearValue,
+			viewportScissorRect, PrimitiveTopology::TriangleList, Color::CreateFromUint8(60, 150, 210), DepthBufferClearValue,
 			static_cast<int>(mesh.indices.size())
 		);
 		if (!D3D12Helper::Present(swapChain))
