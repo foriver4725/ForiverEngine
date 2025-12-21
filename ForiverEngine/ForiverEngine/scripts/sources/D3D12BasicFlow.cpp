@@ -82,7 +82,7 @@ namespace ForiverEngine
 			RETURN_FALSE(L"インデックスバッファーの作成に失敗しました");
 		if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer1D(indexBuffer, static_cast<const void*>(indicesPtr), indicesSize))
 			RETURN_FALSE(L"インデックスバッファーを GPU 側にコピーすることに失敗しました");
-		indexBufferView = D3D12Helper::CreateIndexBufferView(indexBuffer, indicesSize, Format::R_U16);
+		indexBufferView = D3D12Helper::CreateIndexBufferView(indexBuffer, indicesSize, Format::R_U32);
 
 		RETURN_TRUE();
 
