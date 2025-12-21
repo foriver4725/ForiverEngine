@@ -138,6 +138,23 @@ namespace ForiverEngine
 		}
 
 		/// <summary>
+		/// <para>- CBV/SRV/UAV 用の DescriptorHeap を作成する (UAV は設定できない)</para>
+		/// <para>- CBV,SRV の順、さらに配列の前のものから順に、バッファからビューを作成して DescriptorHeap に登録する</para>
+		/// <para>- 作成した DescriptorHeap を返す</para>
+		/// <para>※ バッファの個数は、ルートパラメーターで登録したものと同じにすること</para>
+		/// <para>※ シェーダーからは見える</para>
+		/// </summary>
+		static DescriptorHeap
+			InitDescriptorHeapBasic(
+				const Device& device,
+				const std::vector<GraphicsBuffer>& cbvBuffers,
+				const std::vector<std::tuple<GraphicsBuffer, Texture>>& srvBuffers
+			)
+		{
+			return Check(InitDescriptorHeapBasic_Impl(device, cbvBuffers, srvBuffers));
+		}
+
+		/// <summary>
 		/// <para>専用の DescriptorHeap を作成し、複数個の RTV をその DescriptorHeap の中に作成して返す</para>
 		/// <para>戻り値は関数で、インデックスを基に、バッファとビューを取得出来る</para>
 		/// </summary>
@@ -359,6 +376,20 @@ namespace ForiverEngine
 				const CommandList& commandList,
 				const CommandQueue& commandQueue,
 				const std::vector<std::string>& paths
+			);
+
+		/// <summary>
+		/// <para>- CBV/SRV/UAV 用の DescriptorHeap を作成する (UAV は設定できない)</para>
+		/// <para>- CBV,SRV の順、さらに配列の前のものから順に、バッファからビューを作成して DescriptorHeap に登録する</para>
+		/// <para>- 作成した DescriptorHeap を返す</para>
+		/// <para>※ バッファの個数は、ルートパラメーターで登録したものと同じにすること</para>
+		/// <para>※ シェーダーからは見える</para>
+		/// </summary>
+		static std::tuple<bool, std::wstring, std::tuple<DescriptorHeap>>
+			InitDescriptorHeapBasic_Impl(
+				const Device& device,
+				const std::vector<GraphicsBuffer>& cbvBuffers,
+				const std::vector<std::tuple<GraphicsBuffer, Texture>>& srvBuffers
 			);
 
 		/// <summary>

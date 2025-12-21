@@ -188,6 +188,36 @@ namespace ForiverEngine
 #undef RETURN_TRUE
 	}
 
+	std::tuple<bool, std::wstring, std::tuple<DescriptorHeap>>
+		D3D12BasicFlow::InitDescriptorHeapBasic_Impl(
+			const Device& device,
+			const std::vector<GraphicsBuffer>& cbvBuffers,
+			const std::vector<std::tuple<GraphicsBuffer, Texture>>& srvBuffers
+		)
+	{
+		const int cbvBufferCount = static_cast<int>(cbvBuffers.size());
+		const int srvBufferCount = static_cast<int>(srvBuffers.size());
+		const int bufferTotalCount = cbvBufferCount + srvBufferCount;
+
+		const DescriptorHeap descriptorHeapBasic =
+			D3D12Helper::CreateDescriptorHeap(device, DescriptorHeapType::CBV_SRV_UAV, bufferTotalCount, true);
+		if (!descriptorHeapBasic)
+			return { false, L"DescriptorHeap (CBV_SRV_UAV) の作成に失敗しました", { DescriptorHeap() } };
+
+		for (int i = 0; i < cbvBufferCount; ++i)
+		{
+			const auto& buffer = cbvBuffers[i];
+			D3D12Helper::CreateCBVAndRegistToDescriptorHeap(device, descriptorHeapBasic, buffer, i);
+		}
+		for (int i = 0; i < srvBufferCount; ++i)
+		{
+			const auto& [buffer, textureAsMetadata] = srvBuffers[i];
+			D3D12Helper::CreateSRVAndRegistToDescriptorHeap(device, descriptorHeapBasic, buffer, cbvBufferCount + i, textureAsMetadata);
+		}
+
+		return { true, L"", { descriptorHeapBasic } };
+	}
+
 	std::tuple<bool, std::wstring, std::tuple<std::function<GraphicsBuffer(int)>, std::function<DescriptorHeapHandleAtCPU(int)>>>
 		D3D12BasicFlow::InitRTV_Impl(
 			const Device& device,

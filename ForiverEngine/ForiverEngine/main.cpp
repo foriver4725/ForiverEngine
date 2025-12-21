@@ -75,18 +75,16 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	const GraphicsBuffer cbvBuffer = D3D12BasicFlow::InitCBVBuffer<CBData0>(device, cbData0, false, &cbData0VirtualPtr);
 
 	// SRV 用バッファ
-	const auto [srvBuffer, textureArrayMetadata] = D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue,
+	const auto srvBufferAndData = D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue,
 		{
 			"assets/textures/grass_stone.png",
 			"assets/textures/dirt_sand.png",
 		});
+	const Texture textureArrayMetadata = std::get<1>(srvBufferAndData);
 
-	// CBV, SRV から成る DescriptorHeap
-	const DescriptorHeap descriptorHeapBasic = D3D12Helper::CreateDescriptorHeap(device, DescriptorHeapType::CBV_SRV_UAV, 2, true);
-	if (!descriptorHeapBasic)
-		ShowError(L"CBV/SRV/UAV 用 DescriptorHeap の作成に失敗しました");
-	D3D12Helper::CreateCBVAndRegistToDescriptorHeap(device, descriptorHeapBasic, cbvBuffer, 0);
-	D3D12Helper::CreateSRVAndRegistToDescriptorHeap(device, descriptorHeapBasic, srvBuffer, 1, textureArrayMetadata);
+	// DescriptorHeap に登録
+	const DescriptorHeap descriptorHeapBasic
+		= D3D12BasicFlow::InitDescriptorHeapBasic(device, { cbvBuffer }, { srvBufferAndData });
 
 	const auto [vertexBufferView, indexBufferView]
 		= D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, mesh);
