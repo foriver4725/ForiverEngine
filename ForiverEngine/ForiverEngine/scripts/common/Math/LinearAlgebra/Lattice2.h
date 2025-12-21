@@ -20,6 +20,13 @@ namespace ForiverEngine
 		{
 		}
 
+		static constexpr Lattice2 Zero() noexcept { return Lattice2(0, 0); }
+		static constexpr Lattice2 One() noexcept { return Lattice2(1, 1); }
+		static constexpr Lattice2 Right() noexcept { return Lattice2(1, 0); }
+		static constexpr Lattice2 Left() noexcept { return Lattice2(-1, 0); }
+		static constexpr Lattice2 Up() noexcept { return Lattice2(0, 1); }
+		static constexpr Lattice2 Down() noexcept { return Lattice2(0, -1); }
+
 		Lattice2& operator=(const Lattice2& other) noexcept
 		{
 			if (this != &other)
