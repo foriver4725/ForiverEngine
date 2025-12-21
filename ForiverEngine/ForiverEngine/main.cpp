@@ -29,7 +29,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 			device, rootParameter, samplerConfig, shaderVS, shaderPS, VertexLayouts, FillMode::Solid, CullMode::None);
 
 	const auto [rtBufferGetter, rtvGetter] = D3D12BasicFlow::InitRTV(device, swapChain, 2, false);
-	const DescriptorHeapHandleAtCPU dsv = D3D12BasicFlow::InitDSV(device, WindowWidth, WindowHeight, 1.0f);
+	const DescriptorHeapHandleAtCPU dsv = D3D12BasicFlow::InitDSV(device, WindowWidth, WindowHeight, DepthBufferClearValue);
 
 	const Mesh mesh = Mesh::CreateCube();
 
@@ -124,7 +124,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 			commandList, commandQueue, commandAllocator, device,
 			rootSignature, graphicsPipelineState, currentBackBuffer,
 			currentBackBufferRTV, dsv, descriptorHeapBasic, { vertexBufferView }, indexBufferView,
-			viewportScissorRect, PrimitiveTopology::TriangleList, Color::Black(), 1.0f,
+			viewportScissorRect, PrimitiveTopology::TriangleList, Color::Black(), DepthBufferClearValue,
 			static_cast<int>(mesh.indices.size())
 		);
 		if (!D3D12Helper::Present(swapChain))

@@ -33,6 +33,9 @@ namespace ForiverEngine
 #define ShaderTargetVS "vs_5_1"
 #define ShaderTargetPS "ps_5_1"
 
+	// 深度バッファのクリア値
+	constexpr float DepthBufferClearValue = 1.0f;
+
 	// ラッパークラスを定義
 	// TODO: <wrl.h> の ComPtr を使うようにしたい
 #define DEFINE_POINTER_WRAPPER_STRUCT(WrapperStructName, OriginalPointerType) \
