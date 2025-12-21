@@ -19,6 +19,19 @@ namespace ForiverEngine
 		Quaternion rotation;
 		Vector3 scale;
 
+		Vector3 GetRight() const noexcept
+		{
+			return rotation * Vector3::Right();
+		}
+		Vector3 GetUp() const noexcept
+		{
+			return rotation * Vector3::Up();
+		}
+		Vector3 GetForward() const noexcept
+		{
+			return rotation * Vector3::Forward();
+		}
+
 		/// <summary>
 		/// <para>Model行列を計算</para>
 		/// </summary>

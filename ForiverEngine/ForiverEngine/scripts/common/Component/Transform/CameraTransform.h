@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <scripts/common/Math/Include.h>
+#include "./Transform.h"
 
 namespace ForiverEngine
 {
@@ -9,12 +10,9 @@ namespace ForiverEngine
 	/// <para>左手系</para>
 	/// <para>X-右, Y-上, Z-奥</para>
 	/// </summary>
-	struct CameraTransform
+	struct CameraTransform : public Transform
 	{
 		// 親子関係にはならない
-
-		Vector3 position;
-		Vector3 lookDirection; // 必ず正規化されている前提
 
 		float nearClip; // near > 0
 		float farClip; // far > near
@@ -23,11 +21,34 @@ namespace ForiverEngine
 		float fov; // 垂直視野角 (ラジアン)
 		float aspectRatio; // 幅 / 高さ
 
+		static CameraTransform CreateBasic(const Vector3& position, const Quaternion& rotation, float fov, float aspectRatio) noexcept
+		{
+			CameraTransform cameraTransform = {};
+
+			// Transform
+			cameraTransform.parent = nullptr;
+			cameraTransform.position = position;
+			cameraTransform.rotation = rotation;
+			cameraTransform.scale = Vector3::One();
+
+			// CameraTransform
+			cameraTransform.nearClip = 0.1f;
+			cameraTransform.farClip = 1000.0f;
+			cameraTransform.isPerspective = true;
+			cameraTransform.fov = fov;
+			cameraTransform.aspectRatio = aspectRatio;
+
+			return cameraTransform;
+		}
+
 		/// <summary>
 		/// <para>View行列を計算</para>
 		/// </summary>
 		Matrix4x4 CalculateViewMatrix() const noexcept
 		{
+			// 視線ベクトル
+			const Vector3 lookDirection = GetForward();
+
 			// 上方向のベクトルを適切に算出する
 			// 基本はワールド座標系の上方向ベクトル
 			Vector3 up = Vector3::Up();

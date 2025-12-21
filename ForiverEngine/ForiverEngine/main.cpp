@@ -40,16 +40,8 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		.scale = Vector3::One(),
 	};
 
-	CameraTransform cameraTransform =
-	{
-		.position = Vector3(0, 20, 0),
-		.lookDirection = Vector3(0, -1, 0).Normed(),
-		.nearClip = 0.1f,
-		.farClip = 1000.0f,
-		.isPerspective = true,
-		.fov = 60.0f * DegToRad,
-		.aspectRatio = 1.0f * WindowWidth / WindowHeight,
-	};
+	CameraTransform cameraTransform = CameraTransform::CreateBasic(
+		Vector3(5, 4, 5), Quaternion::Identity(), 60.0f * DegToRad, 1.0f * WindowWidth / WindowHeight);
 
 	// 地形データ
 	std::vector<std::vector<std::vector<std::uint32_t>>> terrainData;
@@ -98,7 +90,8 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	};
 
 	// CBV 用バッファ
-	const GraphicsBuffer cbvBuffer = D3D12BasicFlow::InitCBVBuffer<CBData0>(device, cbData0);
+	CBData0* cbvBufferVirtualPtr = nullptr;
+	const GraphicsBuffer cbvBuffer = D3D12BasicFlow::InitCBVBuffer<CBData0>(device, cbData0, false, &cbvBufferVirtualPtr);
 
 	// SRV 用バッファ
 	const auto srvBufferAndData = D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue,
@@ -121,6 +114,45 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 
 	BEGIN_FRAME;
 	{
+		// キー入力でカメラを移動・回転させる
+		{
+			constexpr float cameraMoveSpeed = 3.0f; // m/s
+			constexpr float cameraMoveVSpeed = 2.0f; // m/s (上下方向)
+			constexpr float cameraRotateSpeed = 180.0f * DegToRad; // rad/s
+
+			// 回転
+			Quaternion cameraRotateAmount = Quaternion::Identity();
+			if (InputHelper::GetKeyInfo(Key::Right).pressed)
+				cameraRotateAmount = Quaternion::FromAxisAngle(Vector3::Up(), cameraRotateSpeed * WindowHelper::GetDeltaSeconds()) * cameraRotateAmount;
+			if (InputHelper::GetKeyInfo(Key::Left).pressed)
+				cameraRotateAmount = Quaternion::FromAxisAngle(Vector3::Up(), -cameraRotateSpeed * WindowHelper::GetDeltaSeconds()) * cameraRotateAmount;
+			cameraTransform.rotation = cameraRotateAmount * cameraTransform.rotation;
+
+			// 移動
+			Vector3 cameraMoveDirection = Vector3::Zero(); // ローカル座標系
+			Vector3 cameraMoveVAmount = Vector3::Zero(); // 上下方向の移動 (別個に計算)
+			if (InputHelper::GetKeyInfo(Key::W).pressed)
+				cameraMoveDirection += Vector3::Forward();
+			if (InputHelper::GetKeyInfo(Key::S).pressed)
+				cameraMoveDirection += Vector3::Backward();
+			if (InputHelper::GetKeyInfo(Key::D).pressed)
+				cameraMoveDirection += Vector3::Right();
+			if (InputHelper::GetKeyInfo(Key::A).pressed)
+				cameraMoveDirection += Vector3::Left();
+			cameraMoveDirection.Norm();
+			Vector3 cameraMoveDirectionWorld = cameraTransform.rotation * cameraMoveDirection; // ワールド座標系に変換 (yは0のはず)
+
+			if (InputHelper::GetKeyInfo(Key::Space).pressed)
+				cameraMoveVAmount += Vector3::Up() * (cameraMoveVSpeed * WindowHelper::GetDeltaSeconds());
+			if (InputHelper::GetKeyInfo(Key::LShift).pressed)
+				cameraMoveVAmount += Vector3::Down() * (cameraMoveVSpeed * WindowHelper::GetDeltaSeconds());
+
+			cameraTransform.position += cameraMoveDirectionWorld * (cameraMoveSpeed * WindowHelper::GetDeltaSeconds()) + cameraMoveVAmount;
+
+			// これだけ再計算すれば良い
+			cbvBufferVirtualPtr->Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(transform, cameraTransform);
+		}
+
 		const int currentBackBufferIndex = D3D12Helper::GetCurrentBackBufferIndex(swapChain);
 		const GraphicsBuffer currentBackBuffer = rtBufferGetter(currentBackBufferIndex);
 		const DescriptorHeapHandleAtCPU currentBackBufferRTV = rtvGetter(currentBackBufferIndex);
