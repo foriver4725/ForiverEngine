@@ -8,6 +8,9 @@
 
 namespace ForiverEngine
 {
+	inline static const std::string ShaderEntryFuncVS = "VSMain";
+	inline static const std::string ShaderEntryFuncPS = "PSMain";
+
 	class D3D12BasicFlow final
 	{
 	public:
@@ -70,8 +73,6 @@ namespace ForiverEngine
 			return Check(CreateVertexAndIndexBufferViews_Impl(device, mesh));
 		}
 
-		inline static const std::string ShaderEntryFuncVS = "VSMain";
-		inline static const std::string ShaderEntryFuncPS = "PSMain";
 		/// <summary>
 		/// シェーダーをロードして、頂点シェーダーとピクセルシェーダーにコンパイルする
 		/// </summary>
