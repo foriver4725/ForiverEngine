@@ -211,6 +211,12 @@ namespace ForiverEngine
 						}
 					}
 
+			// 頂点が1つも無い場合、ダミーで何か入れておく
+			if (mesh.vertices.size() <= 0)
+			{
+				mesh = CreateCube(0); // 空気なので、表示はされない
+			}
+
 			return mesh;
 		}
 	};
