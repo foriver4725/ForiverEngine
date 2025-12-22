@@ -38,7 +38,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 		.parent = nullptr,
 		.position = Vector3::Zero(),
 		.rotation = Quaternion::Identity(),
-		.scale = Vector3::One() * 2, // TODO: なぜか全体のスケールが半分になってしまうので、ここで無理矢理補正する!
+		.scale = Vector3::One(),
 	};
 
 	CameraTransform cameraTransform = CameraTransform::CreateBasic(
