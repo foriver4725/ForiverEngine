@@ -19,6 +19,17 @@ namespace ForiverEngine
 		Quaternion rotation;
 		Vector3 scale;
 
+		static constexpr Transform Identity() noexcept
+		{
+			return Transform
+			{
+				.parent = nullptr,
+				.position = Vector3::Zero(),
+				.rotation = Quaternion::Identity(),
+				.scale = Vector3::One(),
+			};
+		}
+
 		Vector3 GetRight() const noexcept
 		{
 			return rotation * Vector3::Right();

@@ -32,15 +32,7 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	const auto [rtBufferGetter, rtvGetter] = D3D12BasicFlow::InitRTV(device, swapChain, 2, false);
 	const DescriptorHeapHandleAtCPU dsv = D3D12BasicFlow::InitDSV(device, WindowWidth, WindowHeight, DepthBufferClearValue);
 
-	// ボクセルなので、この値がデフォルト値から変化することはないはず
-	Transform transform =
-	{
-		.parent = nullptr,
-		.position = Vector3::Zero(),
-		.rotation = Quaternion::Identity(),
-		.scale = Vector3::One(),
-	};
-
+	constexpr Transform terrainTransform = Transform::Identity();
 	CameraTransform cameraTransform = CameraTransform::CreateBasic(
 		Vector3(5, 4, 5), Quaternion::Identity(), 60.0f * DegToRad, 1.0f * WindowWidth / WindowHeight);
 
@@ -86,8 +78,8 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 
 	CBData0 cbData0 =
 	{
-		.Matrix_M_IT = transform.CalculateModelMatrixInversed().Transposed(),
-		.Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(transform, cameraTransform),
+		.Matrix_M_IT = terrainTransform.CalculateModelMatrixInversed().Transposed(),
+		.Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(terrainTransform, cameraTransform),
 	};
 
 	// CBV 用バッファ
@@ -117,15 +109,15 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 	{
 		// キー入力でカメラを移動・回転させる
 		{
-			constexpr float cameraMoveSpeed = 3.0f; // m/s
-			constexpr float cameraMoveVSpeed = 2.0f; // m/s (上下方向)
-			constexpr float cameraRotateSpeed = 180.0f * DegToRad; // rad/s
-			constexpr float cameraRotateVSpeed = 180.0f * DegToRad; // rad/s (上下方向)
+			constexpr float cameraMoveHSpeed = 3.0f; // m/s
+			constexpr float cameraMoveVSpeed = 2.0f; // m/s
+			constexpr float cameraRotateHSpeed = 180.0f * DegToRad; // rad/s
+			constexpr float cameraRotateVSpeed = 90.0f * DegToRad; // rad/s
 
 			// 回転
 			const Vector2 rotateInput = InputHelper::GetAsAxis2D(Key::Up, Key::Down, Key::Left, Key::Right);
 			const Quaternion cameraRotateAmount =
-				Quaternion::FromAxisAngle(Vector3::Up(), rotateInput.x * cameraRotateSpeed * WindowHelper::GetDeltaSeconds()) *
+				Quaternion::FromAxisAngle(Vector3::Up(), rotateInput.x * cameraRotateHSpeed * WindowHelper::GetDeltaSeconds()) *
 				Quaternion::FromAxisAngle(cameraTransform.GetRight(), -rotateInput.y * cameraRotateVSpeed * WindowHelper::GetDeltaSeconds());
 			Quaternion newRotation = cameraRotateAmount * cameraTransform.rotation;
 			if (std::abs((newRotation * Vector3::Forward()).y) < 0.99f) // 上下回転の制限 (前方向ベクトルのy成分で判定. 判定は大きく)
@@ -137,11 +129,11 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 			cameraMoveHDirection.y = 0.0f; // 水平成分のみ
 			cameraMoveHDirection.Norm(); // 最後に正規化する
 			float cameraMoveVInput = InputHelper::GetAsAxis1D(Key::Space, Key::LShift);
-			cameraTransform.position += cameraMoveHDirection * (cameraMoveSpeed * WindowHelper::GetDeltaSeconds())
+			cameraTransform.position += cameraMoveHDirection * (cameraMoveHSpeed * WindowHelper::GetDeltaSeconds())
 				+ Vector3::Up() * (cameraMoveVInput * cameraMoveVSpeed * WindowHelper::GetDeltaSeconds());
 
 			// これだけ再計算すれば良い
-			cbvBufferVirtualPtr->Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(transform, cameraTransform);
+			cbvBufferVirtualPtr->Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(terrainTransform, cameraTransform);
 		}
 
 		const int currentBackBufferIndex = D3D12Helper::GetCurrentBackBufferIndex(swapChain);
