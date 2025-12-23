@@ -46,7 +46,12 @@ namespace ForiverEngine
 		// マウス移動
 		case WM_MOUSEMOVE:
 		{
-			InputHelper::OnMouseMove(lparam);
+			const int x = GET_X_LPARAM(lparam);
+			const int y = GET_Y_LPARAM(lparam);
+			const Lattice2 position = Lattice2(x, y);
+
+			if (position != GetScreenCenter(hwnd))
+				InputHelper::OnMouseMove(position);
 
 			return 0;
 		}
@@ -110,7 +115,7 @@ namespace ForiverEngine
 		}
 	}
 
-	void WindowHelper::FixCursorAtCenter(HWND hwnd)
+	Lattice2 WindowHelper::GetScreenCenter(HWND hwnd)
 	{
 		RECT rect;
 		GetClientRect(hwnd, &rect);
@@ -122,6 +127,12 @@ namespace ForiverEngine
 		};
 
 		ClientToScreen(hwnd, &center);
+		return Lattice2(static_cast<int>(center.x), static_cast<int>(center.y));
+	}
+
+	void WindowHelper::FixCursorAtCenter(HWND hwnd)
+	{
+		const Lattice2 center = GetScreenCenter(hwnd);
 		SetCursorPos(center.x, center.y);
 	}
 

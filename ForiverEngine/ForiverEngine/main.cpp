@@ -123,34 +123,22 @@ BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeig
 			constexpr float cameraRotateVSpeed = 180.0f * DegToRad; // rad/s (上下方向)
 
 			// 回転
-			const Vector2 mouseDelta = InputHelper::GetMouseDelta().Normed();
+			const Vector2 rotateInput = InputHelper::GetAsAxis2D(Key::Up, Key::Down, Key::Left, Key::Right);
 			const Quaternion cameraRotateAmount =
-				Quaternion::FromAxisAngle(Vector3::Up(), mouseDelta.x * cameraRotateSpeed * WindowHelper::GetDeltaSeconds())
-				* Quaternion::FromAxisAngle(cameraTransform.GetRight(), mouseDelta.y * cameraRotateVSpeed * WindowHelper::GetDeltaSeconds());
+				Quaternion::FromAxisAngle(Vector3::Up(), rotateInput.x * cameraRotateSpeed * WindowHelper::GetDeltaSeconds()) *
+				Quaternion::FromAxisAngle(cameraTransform.GetRight(), -rotateInput.y * cameraRotateVSpeed * WindowHelper::GetDeltaSeconds());
 			Quaternion newRotation = cameraRotateAmount * cameraTransform.rotation;
 			if (std::abs((newRotation * Vector3::Forward()).y) < 0.99f) // 上下回転の制限 (前方向ベクトルのy成分で判定. 判定は大きく)
 				cameraTransform.rotation = newRotation;
 
 			// 移動
-			Vector3 cameraMoveDirection = Vector3::Zero(); // ローカル座標系
-			Vector3 cameraMoveVAmount = Vector3::Zero(); // 上下方向の移動 (別個に計算)
-			if (InputHelper::GetKeyInfo(Key::W).pressed)
-				cameraMoveDirection += Vector3::Forward();
-			if (InputHelper::GetKeyInfo(Key::S).pressed)
-				cameraMoveDirection += Vector3::Backward();
-			if (InputHelper::GetKeyInfo(Key::D).pressed)
-				cameraMoveDirection += Vector3::Right();
-			if (InputHelper::GetKeyInfo(Key::A).pressed)
-				cameraMoveDirection += Vector3::Left();
-			cameraMoveDirection.Norm();
-			Vector3 cameraMoveDirectionWorld = cameraTransform.rotation * cameraMoveDirection; // ワールド座標系に変換 (yは0のはず)
-
-			if (InputHelper::GetKeyInfo(Key::Space).pressed)
-				cameraMoveVAmount += Vector3::Up() * (cameraMoveVSpeed * WindowHelper::GetDeltaSeconds());
-			if (InputHelper::GetKeyInfo(Key::LShift).pressed)
-				cameraMoveVAmount += Vector3::Down() * (cameraMoveVSpeed * WindowHelper::GetDeltaSeconds());
-
-			cameraTransform.position += cameraMoveDirectionWorld * (cameraMoveSpeed * WindowHelper::GetDeltaSeconds()) + cameraMoveVAmount;
+			Vector2 cameraMoveHInput = InputHelper::GetAsAxis2D(Key::W, Key::S, Key::A, Key::D);
+			Vector3 cameraMoveHDirection = cameraTransform.rotation * Vector3(cameraMoveHInput.x, 0.0f, cameraMoveHInput.y);
+			cameraMoveHDirection.y = 0.0f; // 水平成分のみ
+			cameraMoveHDirection.Norm(); // 最後に正規化する
+			float cameraMoveVInput = InputHelper::GetAsAxis1D(Key::Space, Key::LShift);
+			cameraTransform.position += cameraMoveHDirection * (cameraMoveSpeed * WindowHelper::GetDeltaSeconds())
+				+ Vector3::Up() * (cameraMoveVInput * cameraMoveVSpeed * WindowHelper::GetDeltaSeconds());
 
 			// これだけ再計算すれば良い
 			cbvBufferVirtualPtr->Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(transform, cameraTransform);

@@ -40,15 +40,9 @@ namespace ForiverEngine
 		}
 	}
 
-	void InputHelper::OnMouseMove(LPARAM lparam)
+	void InputHelper::OnMouseMove(const Lattice2& position)
 	{
-		const int x = GET_X_LPARAM(lparam);
-		const int y = GET_Y_LPARAM(lparam);
-		const Vector2 position = Vector2(static_cast<float>(x), static_cast<float>(y));
-
 		MousePosition = position;
-		MouseDelta = MousePosition - MousePositionPrev;
-		MousePositionPrev = MousePosition;
 	}
 
 	Key InputHelper::ConvertVKToKey(WPARAM wparam, LPARAM lparam)
@@ -177,5 +171,46 @@ namespace ForiverEngine
 	KeyInfo InputHelper::GetKeyInfo(Key key)
 	{
 		return KeyTable[static_cast<KeyEnumInt>(key)];
+	}
+
+	Lattice2 InputHelper::GetMousePosition()
+	{
+		return MousePosition;
+	}
+
+	float InputHelper::GetAsAxis1D(Key positiveKey, Key negativeKey)
+	{
+		const bool positivePressed = GetKeyInfo(positiveKey).pressed;
+		const bool negativePressed = GetKeyInfo(negativeKey).pressed;
+
+		float value = 0.0f;
+		if (positivePressed)
+			value += 1.0f;
+		if (negativePressed)
+			value -= 1.0f;
+		value = std::clamp(value, -1.0f, 1.0f);
+
+		return value;
+	}
+
+	Vector2 InputHelper::GetAsAxis2D(Key upKey, Key downKey, Key leftKey, Key rightKey)
+	{
+		const bool upPressed = GetKeyInfo(upKey).pressed;
+		const bool downPressed = GetKeyInfo(downKey).pressed;
+		const bool leftPressed = GetKeyInfo(leftKey).pressed;
+		const bool rightPressed = GetKeyInfo(rightKey).pressed;
+
+		Vector2 value = Vector2::Zero();
+		if (upPressed)
+			value.y += 1.0f;
+		if (downPressed)
+			value.y -= 1.0f;
+		if (leftPressed)
+			value.x -= 1.0f;
+		if (rightPressed)
+			value.x += 1.0f;
+		value.Norm();
+
+		return value;
 	}
 }

@@ -61,9 +61,7 @@ namespace ForiverEngine
 	inline std::array<KeyInfo, static_cast<std::size_t>(Key::Count)> KeyTable = {};
 
 	// マウスの移動を記録する変数
-	inline Vector2 MousePositionPrev = Vector2::Zero();
-	inline Vector2 MousePosition = Vector2::Zero();
-	inline Vector2 MouseDelta = Vector2::Zero();
+	inline Lattice2 MousePosition = Lattice2::Zero();
 
 	class InputHelper final
 	{
@@ -95,7 +93,7 @@ namespace ForiverEngine
 		/// <summary>
 		/// <para>ウィンドウプロシージャ内で、WM_MOUSEMOVE メッセージを受け取ったときに呼び出すこと</para>
 		/// </summary>
-		static void OnMouseMove(LPARAM lparam);
+		static void OnMouseMove(const Lattice2& position);
 
 		/// <summary>
 		/// <para>仮想キーコード (WPARAM) を Key 列挙型に変換して返す</para>
@@ -110,11 +108,18 @@ namespace ForiverEngine
 		/// <summary>
 		/// <para>マウスの現在位置を取得する</para>
 		/// </summary>
-		static Vector2 GetMousePosition() { return MousePosition; }
+		static Lattice2 GetMousePosition();
 
 		/// <summary>
-		/// <para>マウスがフレーム間で動いた値を取得する</para>
+		/// <para>複数のキーを1つの1D入力として扱う</para>
+		/// <para>正規化して返す</para>
 		/// </summary>
-		static Vector2 GetMouseDelta() { return MouseDelta; }
+		static float GetAsAxis1D(Key positiveKey, Key negativeKey);
+
+		/// <summary>
+		/// <para>複数のキーを1つの2D入力として扱う</para>
+		/// <para>正規化して返す</para>
+		/// </summary>
+		static Vector2 GetAsAxis2D(Key upKey, Key downKey, Key leftKey, Key rightKey);
 	};
 }

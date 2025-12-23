@@ -184,6 +184,11 @@ namespace ForiverEngine
 		static void SetCursorEnabled(bool enabled);
 
 		/// <summary>
+		/// <para>ウィンドウ中央のスクリーン座標を返す</para>
+		/// </summary>
+		static Lattice2 GetScreenCenter(HWND hwnd);
+
+		/// <summary>
 		/// <para>カーソルをウィンドウ中央に固定する</para>
 		/// </summary>
 		static void FixCursorAtCenter(HWND hwnd);
