@@ -2,6 +2,7 @@
 
 #include "scripts/headers/D3D12BasicFlow.h"
 #include "scripts/headers/Terrain.h"
+#include "scripts/headers/PlayerControl.h"
 
 constexpr int WindowWidth = 1344;
 constexpr int WindowHeight = 756;
@@ -77,11 +78,14 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	const ViewportScissorRect viewportScissorRect
 		= ViewportScissorRect::CreateFullSized(WindowWidth, WindowHeight);
 
-	bool onGround = false; // 地面に接地しているか
-	float velocity = 0; // 鉛直速度
-	constexpr float jumpHeight = 2.0f; // ジャンプ高さ (m)
-	constexpr float eyeHeight = 1.6f; // 目の高さ (m)
-	constexpr float footOffset = 0.1f; // 足元のオフセット (地面判定用)
+	constexpr Vector3 PlayerCollisionSize = Vector3(0.5f, 1.8f, 0.5f);
+	constexpr float SpeedH = 3.0f; // 水平移動速度 (m/s)
+	constexpr float DashSpeedH = 6.0f; // ダッシュ時の水平移動速度 (m/s)
+	constexpr float MinVelocityV = -50.0f; // 最大落下速度 (m/s)
+	constexpr float JumpHeight = 1.1f; // ジャンプ高さ (m)
+	constexpr float EyeHeight = 1.6f; // 目の高さ (m)
+	constexpr float GroundedCheckOffset = 0.1f; // 接地判定のオフセット (m). 埋まっている判定と区別するため、少しずらす
+	float velocityV = 0; // 鉛直速度
 
 	BEGIN_FRAME(hwnd);
 	{
@@ -89,66 +93,75 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		if (InputHelper::GetKeyInfo(Key::Escape).pressedNow)
 			return 0;
 
+		// 回転
+		PlayerControl::Rotate(
+			cameraTransform,
+			InputHelper::GetAsAxis2D(Key::Up, Key::Down, Key::Left, Key::Right),
+			Vector2(180.0f, 90.0f) * DegToRad,
+			WindowHelper::GetDeltaSeconds()
+		);
+
+		// 移動前の座標を保存しておく
+		Vector3 positionBeforeMove = cameraTransform.position;
+
 		// 落下とジャンプ
 		{
-			if (onGround)
+			// 設置判定
+			int surfaceY = PlayerControl::GetFootSurfaceHeight(
+				terrain,
+				PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight),
+				PlayerCollisionSize);
+			bool isGrounded = (cameraTransform.position.y - EyeHeight <= surfaceY + 0.5f + GroundedCheckOffset);
+
+			if (isGrounded)
 			{
+				if (velocityV < 0)
+					velocityV = 0;
+
+				// 地面へのめり込みを補正する
+				float standY = surfaceY + 0.5f + EyeHeight;
+				if (cameraTransform.position.y < standY)
+					cameraTransform.position.y = standY;
+
 				if (InputHelper::GetKeyInfo(Key::Space).pressedNow)
-				{
-					onGround = false;
-					velocity += std::sqrt(2.0f * G * jumpHeight);
-				}
+					velocityV = std::sqrt(2.0f * G * JumpHeight);
+			}
+			else
+			{
+				velocityV -= G * WindowHelper::GetDeltaSeconds();
+				velocityV = std::max(velocityV, MinVelocityV);
 			}
 
-			Vector3 positionBeforeMoveV = cameraTransform.position;
-			if (!onGround)
-			{
-				velocity -= G * WindowHelper::GetDeltaSeconds();
-				cameraTransform.position += Vector3::Up() * (velocity * WindowHelper::GetDeltaSeconds());
-			}
-
-			if (velocity <= 0.0f)
-			{
-				Lattice3 footPosition = Lattice3(cameraTransform.position - Vector3::Up() * (eyeHeight + footOffset));
-				if (terrain.GetBlock(footPosition) != Block::Air)
-				{
-					// 着地
-					onGround = true;
-					velocity = 0;
-					cameraTransform.position = positionBeforeMoveV;
-				}
-			}
+			if (std::abs(velocityV) > 0.01f)
+				cameraTransform.position += Vector3::Up() * (velocityV * WindowHelper::GetDeltaSeconds());
 		}
 
-		// キー入力でカメラを移動・回転させる
+		// 移動
 		{
-			constexpr float cameraMoveHSpeed = 3.0f; // m/s
-			constexpr float DashSpeedMultiplier = 2.0f; // ダッシュ時の速度倍率
-			constexpr float cameraRotateHSpeed = 180.0f * DegToRad; // rad/s
-			constexpr float cameraRotateVSpeed = 90.0f * DegToRad; // rad/s
+			const Vector2 moveInput = InputHelper::GetAsAxis2D(Key::W, Key::S, Key::A, Key::D);
+			const bool canDash = moveInput.y > 0.5f; // 前進しているときのみダッシュ可能
 
-			// 回転
-			const Vector2 rotateInput = InputHelper::GetAsAxis2D(Key::Up, Key::Down, Key::Left, Key::Right);
-			const Quaternion cameraRotateAmount =
-				Quaternion::FromAxisAngle(Vector3::Up(), rotateInput.x * cameraRotateHSpeed * WindowHelper::GetDeltaSeconds()) *
-				Quaternion::FromAxisAngle(cameraTransform.GetRight(), -rotateInput.y * cameraRotateVSpeed * WindowHelper::GetDeltaSeconds());
-			Quaternion newRotation = cameraRotateAmount * cameraTransform.rotation;
-			if (std::abs((newRotation * Vector3::Forward()).y) < 0.99f) // 上下回転の制限 (前方向ベクトルのy成分で判定. 判定は大きく)
-				cameraTransform.rotation = newRotation;
-
-			// 移動
-			Vector2 cameraMoveHInput = InputHelper::GetAsAxis2D(Key::W, Key::S, Key::A, Key::D);
-			Vector3 cameraMoveHDirection = cameraTransform.rotation * Vector3(cameraMoveHInput.x, 0.0f, cameraMoveHInput.y);
-			cameraMoveHDirection.y = 0.0f; // 水平成分のみ
-			cameraMoveHDirection.Norm(); // 最後に正規化する
-			float speed = cameraMoveHSpeed;
-			if (InputHelper::GetKeyInfo(Key::LShift).pressed)
-				speed *= DashSpeedMultiplier;
-			cameraTransform.position += cameraMoveHDirection * (speed * WindowHelper::GetDeltaSeconds());
-
-			// これだけ再計算すれば良い
-			cbvBufferVirtualPtr->Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(terrainTransform, cameraTransform);
+			PlayerControl::MoveH(
+				cameraTransform,
+				moveInput,
+				(canDash && InputHelper::GetKeyInfo(Key::LShift).pressed) ? DashSpeedH : SpeedH,
+				WindowHelper::GetDeltaSeconds()
+			);
 		}
+
+		// 当たり判定 (主に水平)
+		if (PlayerControl::IsOverlappingWithTerrain(
+			terrain,
+			PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight),
+			PlayerCollisionSize))
+		{
+			// 衝突していたら移動前の位置に戻す
+			// XZ 平面のみ戻す
+			cameraTransform.position = Vector3(positionBeforeMove.x, cameraTransform.position.y, positionBeforeMove.z);
+		}
+
+		// これだけ再計算すれば良い
+		cbvBufferVirtualPtr->Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(terrainTransform, cameraTransform);
 
 		const int currentBackBufferIndex = D3D12Helper::GetCurrentBackBufferIndex(swapChain);
 		const GraphicsBuffer currentBackBuffer = rtBufferGetter(currentBackBufferIndex);

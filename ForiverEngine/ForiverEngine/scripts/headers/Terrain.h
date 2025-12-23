@@ -116,6 +116,24 @@ namespace ForiverEngine
 			data[position.y][position.z][position.x] = block;
 		}
 
+		/// <summary>
+		/// 地表ブロックの高さを取得する (無いなら -1)
+		/// </summary>
+		int GetSurfaceHeight(int x, int z) const
+		{
+			for (int y = static_cast<int>(data.size()) - 1; y >= 0; --y)
+			{
+				if (data[y][z][x] != Block::Air)
+					return y;
+			}
+
+			return -1; // 地面が無い
+		}
+		int GetSurfaceHeight(const Lattice2& position) const
+		{
+			return GetSurfaceHeight(position.x, position.y);
+		}
+
 	private:
 		// y, z, x の順番
 		std::vector<std::vector<std::vector<Block>>> data;

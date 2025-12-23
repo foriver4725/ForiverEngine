@@ -156,6 +156,9 @@
     <ClInclude Include="scripts\headers\Terrain.h">
       <Filter>scripts\headers</Filter>
     </ClInclude>
+    <ClInclude Include="scripts\headers\PlayerControl.h">
+      <Filter>scripts\headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shaders\Basic.hlsl">
