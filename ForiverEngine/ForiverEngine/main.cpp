@@ -1,6 +1,7 @@
 ﻿//#define ENABLE_CUI_CONSOLE
 
 #include "scripts/headers/D3D12BasicFlow.h"
+#include "scripts/headers/Terrain.h"
 
 constexpr int WindowWidth = 1344;
 constexpr int WindowHeight = 756;
@@ -34,40 +35,16 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 
 	constexpr Transform terrainTransform = Transform::Identity();
 	CameraTransform cameraTransform = CameraTransform::CreateBasic(
-		Vector3(5, 6, 5), Quaternion::Identity(), 60.0f * DegToRad, 1.0f * WindowWidth / WindowHeight);
+		Vector3(12, 6, 12), Quaternion::Identity(), 60.0f * DegToRad, 1.0f * WindowWidth / WindowHeight);
 
 	// 地形データ
-	std::vector<std::vector<std::vector<std::uint32_t>>> terrainData;
-	{
-		// 取り合えず 16x16x16 の空間
-		terrainData =
-			std::vector<std::vector<std::vector<std::uint32_t>>>(
-				16,
-				std::vector<std::vector<std::uint32_t>>(
-					16,
-					std::vector<std::uint32_t>(
-						16,
-						0 // 初期値は空気
-					)
-				)
-			);
-
-		// y=3 以下が地面
-		for (int y = 0; y <= 3; ++y)
-		{
-			for (int z = 0; z < 16; ++z)
-			{
-				for (int x = 0; x < 16; ++x)
-				{
-					terrainData[y][z][x] = 2; // 取り合えず草で埋める
-				}
-			}
-		}
-
-		// (15,15) だけ砂にする
-		terrainData[3][15][15] = 5;
-	}
-	const Mesh mesh = Mesh::CreateFromTerrainData(terrainData);
+	Terrain terrain = Terrain(64, 64, 64);
+	for (int x = 0; x < 64; ++x)
+		for (int z = 0; z < 64; ++z)
+			for (int y = 0; y <= 3; ++y)
+				terrain.SetBlock({ x, y, z }, Block::Grass);
+	terrain.SetBlock({ 15, 3, 15 }, Block::Sand);
+	const Mesh mesh = terrain.CreateMesh();
 
 	// b0 レジスタに渡すデータ
 	struct alignas(256) CBData0
@@ -138,7 +115,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 			if (velocity <= 0.0f)
 			{
 				Lattice3 footPosition = Lattice3(cameraTransform.position - Vector3::Up() * (eyeHeight + footOffset));
-				if (terrainData[footPosition.y][footPosition.z][footPosition.x] != 0)
+				if (terrain.GetBlock(footPosition) != Block::Air)
 				{
 					// 着地
 					onGround = true;

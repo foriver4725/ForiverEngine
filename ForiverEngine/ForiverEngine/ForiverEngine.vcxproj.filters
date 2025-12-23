@@ -153,6 +153,9 @@
     <ClInclude Include="scripts\common\Utils\Include.h">
       <Filter>scripts\common\Utils</Filter>
     </ClInclude>
+    <ClInclude Include="scripts\headers\Terrain.h">
+      <Filter>scripts\headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shaders\Basic.hlsl">

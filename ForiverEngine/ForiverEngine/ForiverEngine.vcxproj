@@ -182,6 +182,7 @@
     <ClInclude Include="scripts\headers\D3D12Defines.h" />
     <ClInclude Include="scripts\headers\D3D12Helper.h" />
     <ClInclude Include="scripts\headers\InputHelper.h" />
+    <ClInclude Include="scripts\headers\Terrain.h" />
     <ClInclude Include="scripts\headers\WindowHelper.h" />
   </ItemGroup>
   <ItemGroup>
