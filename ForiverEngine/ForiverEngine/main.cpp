@@ -34,7 +34,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 
 	constexpr Transform terrainTransform = Transform::Identity();
 	CameraTransform cameraTransform = CameraTransform::CreateBasic(
-		Vector3(5, 4, 5), Quaternion::Identity(), 60.0f * DegToRad, 1.0f * WindowWidth / WindowHeight);
+		Vector3(5, 6, 5), Quaternion::Identity(), 60.0f * DegToRad, 1.0f * WindowWidth / WindowHeight);
 
 	// 地形データ
 	std::vector<std::vector<std::vector<std::uint32_t>>> terrainData;
@@ -108,6 +108,8 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	bool onGround = false; // 地面に接地しているか
 	float velocity = 0; // 鉛直速度
 	constexpr float jumpHeight = 1.5f; // ジャンプ高さ (m)
+	constexpr float eyeHeight = 1.6f; // 目の高さ (m)
+	constexpr float footOffset = 0.1f; // 足元のオフセット (地面判定用)
 
 	BEGIN_FRAME(hwnd);
 	{
@@ -125,20 +127,24 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 					velocity += std::sqrt(2.0f * G * jumpHeight);
 				}
 			}
-			else
+
+			Vector3 positionBeforeMoveV = cameraTransform.position;
+			if (!onGround)
 			{
 				velocity -= G * WindowHelper::GetDeltaSeconds();
-				Vector3 prePosition = cameraTransform.position;
-				Vector3 newPosition = prePosition + Vector3::Up() * (velocity * WindowHelper::GetDeltaSeconds());
-				Lattice3 newPositionAsLattice = Lattice3(newPosition);
-				if (terrainData[newPositionAsLattice.y][newPositionAsLattice.z][newPositionAsLattice.x] != 0)
+				cameraTransform.position += Vector3::Up() * (velocity * WindowHelper::GetDeltaSeconds());
+			}
+
+			if (velocity <= 0.0f)
+			{
+				Lattice3 footPosition = Lattice3(cameraTransform.position - Vector3::Up() * (eyeHeight + footOffset));
+				if (terrainData[footPosition.y][footPosition.z][footPosition.x] != 0)
 				{
 					// 着地
 					onGround = true;
 					velocity = 0;
-					newPosition = prePosition;
+					cameraTransform.position = positionBeforeMoveV;
 				}
-				cameraTransform.position = newPosition;
 			}
 		}
 
