@@ -17,20 +17,77 @@ namespace ForiverEngine
 	class Terrain
 	{
 	public:
-		Terrain(int xSize, int ySize, int zSize)
-			: data(
-				std::vector<std::vector<std::vector<Block>>>(
-					ySize,
-					std::vector<std::vector<Block>>(
-						zSize,
-						std::vector<Block>(
-							xSize,
-							Block::Air // 初期値は空気
-						)
+		/// <summary>
+		/// 何もない空気のみで作成する
+		/// </summary>
+		static Terrain CreateVoid(int xSize, int ySize, int zSize)
+		{
+			Terrain terrain;
+
+			terrain.data = std::vector<std::vector<std::vector<Block>>>(
+				ySize,
+				std::vector<std::vector<Block>>(
+					zSize,
+					std::vector<Block>(
+						xSize,
+						Block::Air // 初期値は空気
 					)
 				)
-			)
+			);
+
+			return terrain;
+		}
+		/// <summary>
+		/// 何もない空気のみで作成する
+		/// </summary>
+		static Terrain CreateVoid(const Lattice3& size)
 		{
+			return CreateVoid(size.x, size.y, size.z);
+		}
+
+		/// <summary>
+		/// <para>ノイズを用いて地形を生成する</para>
+		/// <para>高度に応じて 砂, 草/土, 石 とブロックが変化していく</para>
+		/// <para>草/土 について、基本は土で、土が最上段で終わっているならそれが草になる</para>
+		/// </summary>
+		/// <param name="size">地形のサイズ</param>
+		/// <param name="noiseScale">ノイズのスケール (x: 水平スケール, y: 垂直スケール)</param>
+		/// <param name="heightBulk">この高さ分かさ増しする</param>
+		/// <param name="minDirtHeight">土が出てくる最低高度</param>
+		/// <param name="minStoneHeight">石が出てくる最低高度</param>
+		/// <returns></returns>
+		static Terrain CreateFromNoise(int size, const Vector2& noiseScale, int heightBulk, int minDirtHeight, int minStoneHeight)
+		{
+			Terrain terrain = CreateVoid(size, size, size);
+
+			for (int x = 0; x < size; ++x)
+				for (int z = 0; z < size; ++z)
+				{
+					const float noise = Noise::Simplex2D(1.0f * x * noiseScale.x, 1.0f * z * noiseScale.x);
+					const float heightNormed = (noise + 1.0f) * 0.5f; // [0, 1] に正規化
+					const int height = std::clamp(heightBulk + static_cast<int>(heightNormed * noiseScale.y), 0, size - 1);
+
+					for (int y = 0; y <= height; ++y)
+					{
+						if (y >= minStoneHeight)
+						{
+							terrain.SetBlock(x, y, z, Block::Stone);
+						}
+						else if (y >= minDirtHeight)
+						{
+							if (y == height)
+								terrain.SetBlock(x, y, z, Block::Grass); // 最上段は草
+							else
+								terrain.SetBlock(x, y, z, Block::Dirt);
+						}
+						else
+						{
+							terrain.SetBlock(x, y, z, Block::Sand);
+						}
+					}
+				}
+
+			return terrain;
 		}
 
 		Mesh CreateMesh() const

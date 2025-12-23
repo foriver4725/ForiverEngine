@@ -35,15 +35,10 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 
 	constexpr Transform terrainTransform = Transform::Identity();
 	CameraTransform cameraTransform = CameraTransform::CreateBasic(
-		Vector3(12, 6, 12), Quaternion::Identity(), 60.0f * DegToRad, 1.0f * WindowWidth / WindowHeight);
+		Vector3(12, 32, 12), Quaternion::Identity(), 60.0f * DegToRad, 1.0f * WindowWidth / WindowHeight);
 
 	// 地形データ
-	Terrain terrain = Terrain(64, 64, 64);
-	for (int x = 0; x < 64; ++x)
-		for (int z = 0; z < 64; ++z)
-			for (int y = 0; y <= 3; ++y)
-				terrain.SetBlock({ x, y, z }, Block::Grass);
-	terrain.SetBlock({ 15, 3, 15 }, Block::Sand);
+	Terrain terrain = Terrain::CreateFromNoise(64, { 0.02f, 12.0f }, 16, 18, 24);
 	const Mesh mesh = terrain.CreateMesh();
 
 	// b0 レジスタに渡すデータ
