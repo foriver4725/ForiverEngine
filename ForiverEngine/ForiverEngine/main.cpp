@@ -105,16 +105,46 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	const ViewportScissorRect viewportScissorRect
 		= ViewportScissorRect::CreateFullSized(WindowWidth, WindowHeight);
 
+	bool onGround = false; // 地面に接地しているか
+	float velocity = 0; // 鉛直速度
+	constexpr float jumpHeight = 1.5f; // ジャンプ高さ (m)
+
 	BEGIN_FRAME(hwnd);
 	{
 		// Escape でゲーム終了
 		if (InputHelper::GetKeyInfo(Key::Escape).pressedNow)
 			return 0;
 
+		// 落下とジャンプ
+		{
+			if (onGround)
+			{
+				if (InputHelper::GetKeyInfo(Key::Space).pressedNow)
+				{
+					onGround = false;
+					velocity += std::sqrt(2.0f * G * jumpHeight);
+				}
+			}
+			else
+			{
+				velocity -= G * WindowHelper::GetDeltaSeconds();
+				Vector3 prePosition = cameraTransform.position;
+				Vector3 newPosition = prePosition + Vector3::Up() * (velocity * WindowHelper::GetDeltaSeconds());
+				Lattice3 newPositionAsLattice = Lattice3(newPosition);
+				if (terrainData[newPositionAsLattice.y][newPositionAsLattice.z][newPositionAsLattice.x] != 0)
+				{
+					// 着地
+					onGround = true;
+					velocity = 0;
+					newPosition = prePosition;
+				}
+				cameraTransform.position = newPosition;
+			}
+		}
+
 		// キー入力でカメラを移動・回転させる
 		{
 			constexpr float cameraMoveHSpeed = 3.0f; // m/s
-			constexpr float cameraMoveVSpeed = 2.0f; // m/s
 			constexpr float cameraRotateHSpeed = 180.0f * DegToRad; // rad/s
 			constexpr float cameraRotateVSpeed = 90.0f * DegToRad; // rad/s
 
@@ -132,9 +162,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 			Vector3 cameraMoveHDirection = cameraTransform.rotation * Vector3(cameraMoveHInput.x, 0.0f, cameraMoveHInput.y);
 			cameraMoveHDirection.y = 0.0f; // 水平成分のみ
 			cameraMoveHDirection.Norm(); // 最後に正規化する
-			float cameraMoveVInput = InputHelper::GetAsAxis1D(Key::Space, Key::LShift);
-			cameraTransform.position += cameraMoveHDirection * (cameraMoveHSpeed * WindowHelper::GetDeltaSeconds())
-				+ Vector3::Up() * (cameraMoveVInput * cameraMoveVSpeed * WindowHelper::GetDeltaSeconds());
+			cameraTransform.position += cameraMoveHDirection * (cameraMoveHSpeed * WindowHelper::GetDeltaSeconds());
 
 			// これだけ再計算すれば良い
 			cbvBufferVirtualPtr->Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(terrainTransform, cameraTransform);
