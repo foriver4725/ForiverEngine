@@ -74,13 +74,19 @@ https://github.com/user-attachments/assets/c85485b3-ea79-44a8-9014-86f93b563cf1
 
 <img width="30%" alt="image" src="https://github.com/user-attachments/assets/1cd4f815-8151-4b2e-8363-4671e94c1977" />
 
-</details>
-
 ---
 地形データを作成し、表面に出ているフェースのみをメッシュ結合して描画する  
 また、入力を受け取ってカメラを動かす  
 
 https://github.com/user-attachments/assets/df66a750-5a09-4159-a8b8-933a0f391615
+
+</details>
+
+---
+基本的な3D操作を実装する
+地形のデータ外に出ると、エラーが出る
+
+https://github.com/user-attachments/assets/2dadb94c-5942-4264-a9eb-628961f666d0
 
 ## OSS
 | 名前 | ライセンス |
