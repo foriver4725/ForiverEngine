@@ -107,7 +107,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 
 	bool onGround = false; // 地面に接地しているか
 	float velocity = 0; // 鉛直速度
-	constexpr float jumpHeight = 1.5f; // ジャンプ高さ (m)
+	constexpr float jumpHeight = 2.0f; // ジャンプ高さ (m)
 	constexpr float eyeHeight = 1.6f; // 目の高さ (m)
 	constexpr float footOffset = 0.1f; // 足元のオフセット (地面判定用)
 
@@ -151,6 +151,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		// キー入力でカメラを移動・回転させる
 		{
 			constexpr float cameraMoveHSpeed = 3.0f; // m/s
+			constexpr float DashSpeedMultiplier = 2.0f; // ダッシュ時の速度倍率
 			constexpr float cameraRotateHSpeed = 180.0f * DegToRad; // rad/s
 			constexpr float cameraRotateVSpeed = 90.0f * DegToRad; // rad/s
 
@@ -168,7 +169,10 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 			Vector3 cameraMoveHDirection = cameraTransform.rotation * Vector3(cameraMoveHInput.x, 0.0f, cameraMoveHInput.y);
 			cameraMoveHDirection.y = 0.0f; // 水平成分のみ
 			cameraMoveHDirection.Norm(); // 最後に正規化する
-			cameraTransform.position += cameraMoveHDirection * (cameraMoveHSpeed * WindowHelper::GetDeltaSeconds());
+			float speed = cameraMoveHSpeed;
+			if (InputHelper::GetKeyInfo(Key::LShift).pressed)
+				speed *= DashSpeedMultiplier;
+			cameraTransform.position += cameraMoveHDirection * (speed * WindowHelper::GetDeltaSeconds());
 
 			// これだけ再計算すれば良い
 			cbvBufferVirtualPtr->Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(terrainTransform, cameraTransform);
