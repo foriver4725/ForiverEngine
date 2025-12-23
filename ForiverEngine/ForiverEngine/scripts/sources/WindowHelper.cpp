@@ -15,8 +15,16 @@ namespace ForiverEngine
 
 	HWND WindowHelper::CreateTheWindow(const wchar_t* className, const wchar_t* title, int width, int height)
 	{
+		// スクリーンサイズ取得
+		const int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+		const int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+
+		// スクリーン中央になるべき位置を計算
+		const int x = (screenWidth - width) / 2;
+		const int y = (screenHeight - height) / 2;
+
 		return CreateWindowW(className, title, WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-			CW_USEDEFAULT, CW_USEDEFAULT, width, height, nullptr, nullptr, nullptr, nullptr);
+			x, y, width, height, nullptr, nullptr, nullptr, nullptr);
 	}
 
 	LRESULT WindowHelper::OnWindowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
