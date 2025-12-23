@@ -81,6 +81,8 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	constexpr Vector3 PlayerCollisionSize = Vector3(0.5f, 1.8f, 0.5f);
 	constexpr float SpeedH = 3.0f; // 水平移動速度 (m/s)
 	constexpr float DashSpeedH = 6.0f; // ダッシュ時の水平移動速度 (m/s)
+	constexpr float CameraSensitivityH = 180.0f; // 水平感度 (度/s)
+	constexpr float CameraSensitivityV = 90.0f; // 垂直感度 (度/s)
 	constexpr float MinVelocityV = -50.0f; // 最大落下速度 (m/s)
 	constexpr float JumpHeight = 1.1f; // ジャンプ高さ (m)
 	constexpr float EyeHeight = 1.6f; // 目の高さ (m)
@@ -97,21 +99,21 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		PlayerControl::Rotate(
 			cameraTransform,
 			InputHelper::GetAsAxis2D(Key::Up, Key::Down, Key::Left, Key::Right),
-			Vector2(180.0f, 90.0f) * DegToRad,
+			Vector2(CameraSensitivityH, CameraSensitivityV) * DegToRad,
 			WindowHelper::GetDeltaSeconds()
 		);
 
 		// 移動前の座標を保存しておく
-		Vector3 positionBeforeMove = cameraTransform.position;
+		const Vector3 positionBeforeMove = cameraTransform.position;
 
 		// 落下とジャンプ
 		{
 			// 設置判定
-			int surfaceY = PlayerControl::GetFootSurfaceHeight(
+			const int surfaceY = PlayerControl::GetFootSurfaceHeight(
 				terrain,
 				PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight),
 				PlayerCollisionSize);
-			bool isGrounded = (cameraTransform.position.y - EyeHeight <= surfaceY + 0.5f + GroundedCheckOffset);
+			const bool isGrounded = (cameraTransform.position.y - EyeHeight <= surfaceY + 0.5f + GroundedCheckOffset);
 
 			if (isGrounded)
 			{
@@ -119,7 +121,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 					velocityV = 0;
 
 				// 地面へのめり込みを補正する
-				float standY = surfaceY + 0.5f + EyeHeight;
+				const float standY = surfaceY + 0.5f + EyeHeight;
 				if (cameraTransform.position.y < standY)
 					cameraTransform.position.y = standY;
 
