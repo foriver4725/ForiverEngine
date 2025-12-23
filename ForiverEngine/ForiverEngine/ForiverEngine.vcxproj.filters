@@ -55,18 +55,15 @@
     <Filter Include="scripts\common\Component\Transform">
       <UniqueIdentifier>{722f7aff-d51c-43c5-8061-2e27b20653bf}</UniqueIdentifier>
     </Filter>
+    <Filter Include="scripts\common\Utils">
+      <UniqueIdentifier>{90ab1ae7-0392-4389-bfcf-1153c9a647a2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="oss\SimplexNoise.h">
       <Filter>oss</Filter>
     </ClInclude>
     <ClInclude Include="scripts\common\Include.h">
-      <Filter>scripts\common</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\common\Noise.h">
-      <Filter>scripts\common</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\common\StringUtils.h">
       <Filter>scripts\common</Filter>
     </ClInclude>
     <ClInclude Include="scripts\headers\AssetLoader.h">
@@ -146,6 +143,15 @@
     </ClInclude>
     <ClInclude Include="scripts\common\Math\LinearAlgebra\Lattice4.h">
       <Filter>scripts\common\Math\LinearAlgebra</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\common\Math\Noise.h">
+      <Filter>scripts\common\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\common\Utils\StringUtils.h">
+      <Filter>scripts\common\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\common\Utils\Include.h">
+      <Filter>scripts\common\Utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

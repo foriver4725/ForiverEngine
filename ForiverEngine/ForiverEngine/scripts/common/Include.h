@@ -19,8 +19,7 @@
 
 #include "./Math/Include.h"
 #include "./Component/Include.h"
-#include "./StringUtils.h"
-#include "./Noise.h"
+#include "./Utils/Include.h"
 
 // コンストラクタとデストラクタ、代入演算子を削除するマクロ
 // - デフォルトコンストラクタ
