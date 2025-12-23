@@ -107,6 +107,10 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 
 	BEGIN_FRAME(hwnd);
 	{
+		// Escape でゲーム終了
+		if (InputHelper::GetKeyInfo(Key::Escape).pressedNow)
+			return 0;
+
 		// キー入力でカメラを移動・回転させる
 		{
 			constexpr float cameraMoveHSpeed = 3.0f; // m/s
