@@ -2,10 +2,10 @@
 
 #include "scripts/headers/D3D12BasicFlow.h"
 
-constexpr int WindowWidth = 960;
-constexpr int WindowHeight = 540;
+constexpr int WindowWidth = 1344;
+constexpr int WindowHeight = 756;
 
-BEGIN_INITIALIZE(L"DX12Sample", L"DX12 テスト", hwnd, WindowWidth, WindowHeight);
+BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHeight);
 {
 	using namespace ForiverEngine;
 
