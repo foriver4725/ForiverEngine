@@ -56,14 +56,24 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	// b0 レジスタに渡すデータ
 	struct alignas(256) CBData0
 	{
+		Matrix4x4 Matrix_M; // M
 		Matrix4x4 Matrix_M_IT; // M の逆→転置行列
 		Matrix4x4 Matrix_MVP; // MVP
+
+		Vector3 SelectingBlockPosition; // 選択中のブロック位置 (ワールド座標)
+		float IsSelectingAnyBlock; // ブロックを選択中かどうか (bool 型として扱う)
+		Color SelectColor; // 選択中のブロックの乗算色 (a でブレンド率を指定)
 	};
 
 	CBData0 cbData0 =
 	{
+		.Matrix_M = terrainTransform.CalculateModelMatrix(),
 		.Matrix_M_IT = terrainTransform.CalculateModelMatrixInversed().Transposed(),
 		.Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(terrainTransform, cameraTransform),
+
+		.SelectingBlockPosition = Vector3::Zero(),
+		.IsSelectingAnyBlock = 0,
+		.SelectColor = Color::CreateFromUint8(255, 255, 0, 100),
 	};
 
 	// CBV 用バッファ
@@ -111,6 +121,10 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	constexpr float EyeHeight = 1.6f; // 目の高さ (m)
 	constexpr float GroundedCheckOffset = 0.1f; // 接地判定のオフセット (m). 埋まっている判定と区別するため、少しずらす
 	float velocityV = 0; // 鉛直速度
+
+	// 向いているブロックを選択
+	constexpr float ReachDistance = 5.0f; // 選択可能な最大距離 (m)
+	constexpr float ReachDetectStep = 0.1f; // レイキャストの刻み幅 (m)
 
 	BEGIN_FRAME(hwnd);
 	{
@@ -187,6 +201,55 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 
 		// これだけ再計算すれば良い
 		cbvBufferVirtualPtr->Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(terrainTransform, cameraTransform);
+
+		// 視線方向にレイを飛ばす
+		{
+			const Vector3 rayOrigin = cameraTransform.position;
+			const Vector3 rayDirection = cameraTransform.GetForward().Normed();
+
+			Block hitBlock = Block::Air;
+			Lattice3 hitPosition = Lattice3::Zero();
+			for (float d = 0.0f; d <= ReachDistance; d += ReachDetectStep)
+			{
+				const Vector3 rayPosition = rayOrigin + rayDirection * d;
+				const Lattice3 rayPositionAsLattice = Lattice3(
+					static_cast<int>(std::round(rayPosition.x)),
+					static_cast<int>(std::round(rayPosition.y)),
+					static_cast<int>(std::round(rayPosition.z))
+				);
+
+				const Lattice2 chunkIndex = PlayerControl::GetChunkIndexAtPosition(rayPosition);
+				if (chunkIndex.x < 0 || chunkIndex.x >= ChunkCount
+					|| chunkIndex.y < 0 || chunkIndex.y >= ChunkCount)
+				{
+					continue; // チャンク外
+				}
+				const Terrain& targetTerrain = terrains[chunkIndex.x][chunkIndex.y];
+				const Lattice3 rayLocalPosition = Lattice3(
+					std::clamp(rayPositionAsLattice.x - chunkIndex.x * Terrain::ChunkSize, 0, Terrain::ChunkSize - 1),
+					std::clamp(rayPositionAsLattice.y, 0, Terrain::ChunkHeight - 1),
+					std::clamp(rayPositionAsLattice.z - chunkIndex.y * Terrain::ChunkSize, 0, Terrain::ChunkSize - 1)
+				);
+
+				const Block blockAtRay = targetTerrain.GetBlock(rayLocalPosition);
+				if (blockAtRay != Block::Air)
+				{
+					hitBlock = blockAtRay;
+					hitPosition = rayPositionAsLattice;
+					break;
+				}
+			}
+
+			cbvBufferVirtualPtr->IsSelectingAnyBlock = (hitBlock != Block::Air) ? 1.0f : 0.0f;
+			if (hitBlock != Block::Air)
+			{
+				cbvBufferVirtualPtr->SelectingBlockPosition = Vector3(
+					static_cast<float>(hitPosition.x),
+					static_cast<float>(hitPosition.y),
+					static_cast<float>(hitPosition.z)
+				);
+			}
+		}
 
 		const int currentBackBufferIndex = D3D12Helper::GetCurrentBackBufferIndex(swapChain);
 		const GraphicsBuffer currentBackBuffer = rtBufferGetter(currentBackBufferIndex);

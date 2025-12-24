@@ -59,9 +59,9 @@ namespace ForiverEngine
 			}
 			const Terrain& terrain = terrainChunks[chunkIndex.x][chunkIndex.y];
 			const Vector3 localPosition = position - Vector3(
-				chunkIndex.x * Terrain::ChunkSize,
+				static_cast<float>(chunkIndex.x * Terrain::ChunkSize),
 				0.0f,
-				chunkIndex.y * Terrain::ChunkSize
+				static_cast<float>(chunkIndex.y * Terrain::ChunkSize)
 			);
 
 			const int minX = std::clamp(static_cast<int>(std::round(localPosition.x - size.x * 0.5f)), 0, Terrain::ChunkSize - 1);
@@ -92,9 +92,9 @@ namespace ForiverEngine
 			}
 			const Terrain& terrain = terrainChunks[chunkIndex.x][chunkIndex.y];
 			const Vector3 localPosition = position - Vector3(
-				chunkIndex.x * Terrain::ChunkSize,
+				static_cast<float>(chunkIndex.x * Terrain::ChunkSize),
 				0.0f,
-				chunkIndex.y * Terrain::ChunkSize
+				static_cast<float>(chunkIndex.y * Terrain::ChunkSize)
 			);
 
 			const int minX = std::clamp(static_cast<int>(std::round(localPosition.x - size.x * 0.5f)), 0, Terrain::ChunkSize - 1);

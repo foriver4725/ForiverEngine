@@ -14,6 +14,9 @@ namespace ForiverEngine
 		Sand = 5,
 	};
 
+	/// <summary>
+	/// チャンク単位の地形データ
+	/// </summary>
 	class Terrain
 	{
 	public:
