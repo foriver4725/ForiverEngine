@@ -36,7 +36,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 
 	constexpr Transform terrainTransform = Transform::Identity();
 	CameraTransform cameraTransform = CameraTransform::CreateBasic(
-		Vector3(12, 32, 12), Quaternion::Identity(), 60.0f * DegToRad, 1.0f * WindowWidth / WindowHeight);
+		Vector3(64, 32, 64), Quaternion::Identity(), 60.0f * DegToRad, 1.0f * WindowWidth / WindowHeight);
 
 	// 地形データ
 	constexpr int TerrainSeed = 0x2961E3B1;
@@ -46,7 +46,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	for (int chunkX = 0; chunkX < ChunkCount; ++chunkX)
 		for (int chunkZ = 0; chunkZ < ChunkCount; ++chunkZ)
 		{
-			const Terrain terrain = Terrain::CreateFromNoise({ chunkX, chunkZ }, { 0.02f, 12.0f }, TerrainSeed, 16, 18, 24);
+			const Terrain terrain = Terrain::CreateFromNoise({ chunkX, chunkZ }, { 0.015f, 12.0f }, TerrainSeed, 16, 18, 24);
 			terrains[chunkX][chunkZ] = terrain;
 
 			const Lattice2 localOffset = Lattice2(chunkX * Terrain::ChunkSize, chunkZ * Terrain::ChunkSize);
