@@ -101,12 +101,17 @@ https://github.com/user-attachments/assets/109e7838-61ae-4900-9f60-24a9c9b0964c
 
 https://github.com/user-attachments/assets/9626a7e3-f360-4ce9-975c-0f16392d2aff
 
-</details>
-
 ---
 向いているブロックの色を変える
 
 https://github.com/user-attachments/assets/944b3c8a-25db-41ae-80a7-41a8348059d6
+
+</details>
+
+---
+ブロックを壊す
+
+https://github.com/user-attachments/assets/a7f54352-877b-468c-a954-d8399b68ff76
 
 ## OSS
 | 名前 | ライセンス |
