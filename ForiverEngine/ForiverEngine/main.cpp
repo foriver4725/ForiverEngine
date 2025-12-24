@@ -202,7 +202,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		// これだけ再計算すれば良い
 		cbvBufferVirtualPtr->Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(terrainTransform, cameraTransform);
 
-		// 視線方向にレイを飛ばす
+		// ブロックを選択する
 		{
 			const Vector3 rayOrigin = cameraTransform.position;
 			const Vector3 rayDirection = cameraTransform.GetForward().Normed();
@@ -248,6 +248,38 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 					static_cast<float>(hitPosition.y),
 					static_cast<float>(hitPosition.z)
 				);
+			}
+		}
+
+		// ブロックを壊す
+		{
+			if (InputHelper::GetKeyInfo(Key::Enter).pressedNow)
+			{
+				if (cbvBufferVirtualPtr->IsSelectingAnyBlock > 0.5f)
+				{
+					const Lattice3 blockPositionAsLattice = Lattice3(cbvBufferVirtualPtr->SelectingBlockPosition);
+					const Lattice2 chunkIndex = PlayerControl::GetChunkIndexAtPosition(cbvBufferVirtualPtr->SelectingBlockPosition);
+
+					// 地形データとメッシュを更新
+					terrains[chunkIndex.x][chunkIndex.y].SetBlock(
+						Lattice3(
+							blockPositionAsLattice.x - chunkIndex.x * Terrain::ChunkSize,
+							blockPositionAsLattice.y,
+							blockPositionAsLattice.z - chunkIndex.y * Terrain::ChunkSize
+						),
+						Block::Air);
+					const Lattice2 localOffset = Lattice2(
+						chunkIndex.x * Terrain::ChunkSize,
+						chunkIndex.y * Terrain::ChunkSize);
+					terrainMeshes[chunkIndex.x][chunkIndex.y] = terrains[chunkIndex.x][chunkIndex.y].CreateMesh(localOffset);
+
+					// 頂点バッファーとインデックスバッファーを再作成
+					const int index = chunkIndex.x * ChunkCount + chunkIndex.y;
+					std::tie(vertexBufferViews[index], indexBufferViews[index])
+						= D3D12BasicFlow::CreateVertexAndIndexBufferViews(
+							device, terrainMeshes[chunkIndex.x][chunkIndex.y]);
+					indexCounts[index] = static_cast<int>(terrainMeshes[chunkIndex.x][chunkIndex.y].indices.size());
+				}
 			}
 		}
 
