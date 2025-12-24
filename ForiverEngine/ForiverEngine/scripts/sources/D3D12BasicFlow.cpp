@@ -337,56 +337,6 @@ namespace ForiverEngine
 		return { true, L"" };
 	}
 
-	std::tuple<bool, std::wstring>
-		D3D12BasicFlow::CommandBasicLoop_Impl(
-			const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator,
-			const Device& device,
-			const RootSignature& rootSignature, const PipelineState& graphicsPipelineState, const GraphicsBuffer& currentBackBuffer,
-			const DescriptorHeapHandleAtCPU& currentBackBufferRTV, const DescriptorHeapHandleAtCPU& dsv,
-			const DescriptorHeap& descriptorHeapBasic,
-			const std::vector<VertexBufferView>& vertexBufferViews, const IndexBufferView& indexBufferView,
-			const ViewportScissorRect& viewportScissorRect, PrimitiveTopology primitiveTopology,
-			Color rtvClearColor, float depthClearValue,
-			int indexTotalCount
-		)
-	{
-		D3D12Helper::CommandInvokeResourceBarrierAsTransition(commandList, currentBackBuffer,
-			GraphicsBufferState::Present, GraphicsBufferState::RenderTarget, false);
-		{
-			D3D12Helper::CommandSetRT(commandList, currentBackBufferRTV, dsv);
-			D3D12Helper::CommandClearRT(commandList, currentBackBufferRTV, dsv, rtvClearColor, depthClearValue);
-
-			D3D12Helper::CommandSetRootSignature(commandList, rootSignature);
-			D3D12Helper::CommandSetGraphicsPipelineState(commandList, graphicsPipelineState);
-			D3D12Helper::CommandSetDescriptorHeaps(commandList, { descriptorHeapBasic });
-
-			// ルートパラメーターは1つだけなので、インデックス0にリンクすれば良い
-			D3D12Helper::CommandLinkDescriptorHeapToRootSignature(
-				commandList,
-				D3D12Helper::CreateDescriptorHeapHandleAtGPUIndicatingDescriptorByIndex(
-					device, descriptorHeapBasic, DescriptorHeapType::CBV_SRV_UAV, 0),
-				0
-			);
-
-			D3D12Helper::CommandIASetVertexBuffer(commandList, vertexBufferViews);
-			D3D12Helper::CommandIASetIndexBuffer(commandList, indexBufferView);
-			D3D12Helper::CommandIASetPrimitiveTopology(commandList, primitiveTopology);
-
-			D3D12Helper::CommandRSSetViewportAndScissorRect(commandList, viewportScissorRect);
-
-			D3D12Helper::CommandDrawIndexedInstanced(commandList, indexTotalCount);
-		}
-		D3D12Helper::CommandInvokeResourceBarrierAsTransition(commandList, currentBackBuffer,
-			GraphicsBufferState::RenderTarget, GraphicsBufferState::Present, false);
-
-		D3D12BasicFlow::CommandCloseAndWaitForCompletion(commandList, commandQueue, device);
-		// コマンドを実行し終わってから、クリアする
-		if (!D3D12Helper::ClearCommandAllocatorAndList(commandAllocator, commandList))
-			return { false, L"CommandAllocator, CommandList のクリアに失敗しました" };
-
-		return { true, L"" };
-	}
-
 	std::tuple<bool, std::wstring, std::tuple<Matrix4x4>>
 		D3D12BasicFlow::CalculateMVPMatrix_Impl(
 			const Transform& transform,

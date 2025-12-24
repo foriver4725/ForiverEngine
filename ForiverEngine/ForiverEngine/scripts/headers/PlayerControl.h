@@ -15,6 +15,13 @@ namespace ForiverEngine
 			return position - Vector3::Up() * eyeHeight;
 		}
 
+		static Lattice2 GetChunkIndexAtPosition(const Vector3& position)
+		{
+			const int chunkX = static_cast<int>(std::floor(position.x / Terrain::ChunkSize));
+			const int chunkZ = static_cast<int>(std::floor(position.z / Terrain::ChunkSize));
+			return Lattice2(chunkX, chunkZ);
+		}
+
 		static void Rotate(Transform& transform, const Vector2& rotateInput, const Vector2& rotateSpeed, float deltaSeconds)
 		{
 			const Quaternion rotationAmount =
@@ -37,16 +44,30 @@ namespace ForiverEngine
 		}
 
 		// 足元にある中で、最も高い地面の高さを取得する
+		template<std::uint32_t ChunkSize>
 		static int GetFootSurfaceHeight(
-			const Terrain& terrain,
+			const std::array<std::array<Terrain, ChunkSize>, ChunkSize>& terrainChunks,
 			const Vector3& position, // 足元の座標
 			const Vector3& size // コリジョンのサイズ
 		)
 		{
-			const int minX = static_cast<int>(std::round(position.x - size.x * 0.5f));
-			const int maxX = static_cast<int>(std::round(position.x + size.x * 0.5f));
-			const int minZ = static_cast<int>(std::round(position.z - size.z * 0.5f));
-			const int maxZ = static_cast<int>(std::round(position.z + size.z * 0.5f));
+			const Lattice2 chunkIndex = GetChunkIndexAtPosition(position);
+			if (chunkIndex.x < 0 || chunkIndex.x >= static_cast<int>(ChunkSize)
+				|| chunkIndex.y < 0 || chunkIndex.y >= static_cast<int>(ChunkSize))
+			{
+				return -1; // チャンク外
+			}
+			const Terrain& terrain = terrainChunks[chunkIndex.x][chunkIndex.y];
+			const Vector3 localPosition = position - Vector3(
+				chunkIndex.x * Terrain::ChunkSize,
+				0.0f,
+				chunkIndex.y * Terrain::ChunkSize
+			);
+
+			const int minX = std::clamp(static_cast<int>(std::round(localPosition.x - size.x * 0.5f)), 0, Terrain::ChunkSize - 1);
+			const int maxX = std::clamp(static_cast<int>(std::round(localPosition.x + size.x * 0.5f)), 0, Terrain::ChunkSize - 1);
+			const int minZ = std::clamp(static_cast<int>(std::round(localPosition.z - size.z * 0.5f)), 0, Terrain::ChunkSize - 1);
+			const int maxZ = std::clamp(static_cast<int>(std::round(localPosition.z + size.z * 0.5f)), 0, Terrain::ChunkSize - 1);
 
 			int surfaceY = -1;
 			for (int z = minZ; z <= maxZ; ++z)
@@ -56,18 +77,32 @@ namespace ForiverEngine
 			return surfaceY;
 		}
 
+		template<std::uint32_t ChunkSize>
 		static bool IsOverlappingWithTerrain(
-			const Terrain& terrain,
+			const std::array<std::array<Terrain, ChunkSize>, ChunkSize>& terrainChunks,
 			const Vector3& position, // 足元の座標
 			const Vector3& size // コリジョンのサイズ
 		)
 		{
-			const int minX = static_cast<int>(std::round(position.x - size.x * 0.5f));
-			const int maxX = static_cast<int>(std::round(position.x + size.x * 0.5f));
-			const int minY = static_cast<int>(std::round(position.y));
-			const int maxY = static_cast<int>(std::round(position.y + size.y));
-			const int minZ = static_cast<int>(std::round(position.z - size.z * 0.5f));
-			const int maxZ = static_cast<int>(std::round(position.z + size.z * 0.5f));
+			const Lattice2 chunkIndex = GetChunkIndexAtPosition(position);
+			if (chunkIndex.x < 0 || chunkIndex.x >= static_cast<int>(ChunkSize)
+				|| chunkIndex.y < 0 || chunkIndex.y >= static_cast<int>(ChunkSize))
+			{
+				return false; // チャンク外
+			}
+			const Terrain& terrain = terrainChunks[chunkIndex.x][chunkIndex.y];
+			const Vector3 localPosition = position - Vector3(
+				chunkIndex.x * Terrain::ChunkSize,
+				0.0f,
+				chunkIndex.y * Terrain::ChunkSize
+			);
+
+			const int minX = std::clamp(static_cast<int>(std::round(localPosition.x - size.x * 0.5f)), 0, Terrain::ChunkSize - 1);
+			const int maxX = std::clamp(static_cast<int>(std::round(localPosition.x + size.x * 0.5f)), 0, Terrain::ChunkSize - 1);
+			const int minY = std::clamp(static_cast<int>(std::round(localPosition.y)), 0, Terrain::ChunkHeight - 1);
+			const int maxY = std::clamp(static_cast<int>(std::round(localPosition.y + size.y)), 0, Terrain::ChunkHeight - 1);
+			const int minZ = std::clamp(static_cast<int>(std::round(localPosition.z - size.z * 0.5f)), 0, Terrain::ChunkSize - 1);
+			const int maxZ = std::clamp(static_cast<int>(std::round(localPosition.z + size.z * 0.5f)), 0, Terrain::ChunkSize - 1);
 
 			for (int y = minY; y <= maxY; ++y)
 				for (int z = minZ; z <= maxZ; ++z)

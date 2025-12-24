@@ -17,6 +17,9 @@ namespace ForiverEngine
 	class Terrain
 	{
 	public:
+		static constexpr int ChunkSize = 16; // チャンクの1辺のサイズ (ブロック数)
+		static constexpr int ChunkHeight = 256; // チャンクの高さ (ブロック数)
+
 		/// <summary>
 		/// 何もない空気のみで作成する
 		/// </summary>
@@ -57,20 +60,21 @@ namespace ForiverEngine
 		/// <param name="minStoneHeight">石が出てくる最低高度</param>
 		/// <param name="seed">シード値</param>
 		/// <returns></returns>
-		static Terrain CreateFromNoise(int size, const Vector2& noiseScale, int heightBulk, int minDirtHeight, int minStoneHeight, int seed)
+		static Terrain CreateFromNoise(const Lattice2& chunkIndex, const Vector2& noiseScale, int seed,
+			int heightBulk, int minDirtHeight, int minStoneHeight)
 		{
-			Terrain terrain = CreateVoid(size, size, size);
+			Terrain terrain = CreateVoid(ChunkSize, ChunkHeight, ChunkSize);
 
 			// [-32768, 32767]
-			const float seedX = static_cast<float>((seed & 0xFFFF0000) >> 16);
-			const float seedZ = static_cast<float>(seed & 0x0000FFFF);
+			const int seedX = (seed & 0xFFFF0000) >> 16;
+			const int seedZ = seed & 0x0000FFFF;
 
-			for (int x = 0; x < size; ++x)
-				for (int z = 0; z < size; ++z)
+			for (int x = 0; x < ChunkSize; ++x)
+				for (int z = 0; z < ChunkSize; ++z)
 				{
-					const float noise = Noise::Simplex2D(1.0f * (x + seedX) * noiseScale.x, 1.0f * (z + seedZ) * noiseScale.x);
+					const float noise = Noise::Simplex2D(1.0f * (x + ChunkSize * chunkIndex.x + seedX) * noiseScale.x, 1.0f * (z + ChunkSize * chunkIndex.y + seedZ) * noiseScale.x);
 					const float heightNormed = (noise + 1.0f) * 0.5f; // [0, 1] に正規化
-					const int height = std::clamp(heightBulk + static_cast<int>(heightNormed * noiseScale.y), 0, size - 1);
+					const int height = std::clamp(heightBulk + static_cast<int>(heightNormed * noiseScale.y), 0, ChunkHeight - 1);
 
 					for (int y = 0; y <= height; ++y)
 					{
@@ -95,12 +99,12 @@ namespace ForiverEngine
 			return terrain;
 		}
 
-		Mesh CreateMesh() const
+		Mesh CreateMesh(const Lattice2& localOffset) const
 		{
 			const std::vector<std::vector<std::vector<Block>>>* dataPtr = &data;
 			const std::vector<std::vector<std::vector<std::uint32_t>>>* dataPtrAsUint
 				= reinterpret_cast<const std::vector<std::vector<std::vector<std::uint32_t>>>*>(dataPtr);
-			return Mesh::CreateFromTerrainData(*dataPtrAsUint);
+			return Mesh::CreateFromTerrainData(*dataPtrAsUint, localOffset);
 		}
 
 		Block GetBlock(int x, int y, int z) const

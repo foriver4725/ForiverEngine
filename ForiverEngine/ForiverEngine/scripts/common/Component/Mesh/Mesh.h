@@ -77,11 +77,12 @@ namespace ForiverEngine
 
 		// インデックスは y,z,x の順にアクセスする
 		// 各要素の値はブロックの識別値で、現在はテクスチャインデックスと同じにする
-		static Mesh CreateFromTerrainData(const std::vector<std::vector<std::vector<std::uint32_t>>>& terrainData)
+		static Mesh CreateFromTerrainData(const std::vector<std::vector<std::vector<std::uint32_t>>>& terrainData, const Lattice2& localOffset)
 		{
 			struct Local
 			{
 				// ブロックのフェースが遮られているかチェックする
+				// ローカル座標
 				static bool IsBlockFaceOccluded(
 					const std::vector<std::vector<std::vector<std::uint32_t>>>& terrain,
 					Lattice3 position, Lattice3 faceNormal
@@ -110,6 +111,7 @@ namespace ForiverEngine
 
 				// 指定されたフェースをメッシュに追加する
 				// ワールドから見た向きで、テクスチャの配置は固定する
+				// ワールド座標
 				static void AddFace(
 					Mesh& mesh,
 					Lattice3 position, Lattice3 faceNormal, std::uint32_t textureIndex
@@ -216,7 +218,8 @@ namespace ForiverEngine
 						if (block == 0) continue; // ブロックが無いならスキップ
 
 						// ブロックの座標 (格子点なので、配列のインデックスと同義)
-						const Lattice3 position = Lattice3(x, y, z);
+						const Lattice3 localPosition = Lattice3(x, y, z);
+						const Lattice3 worldPosition = localPosition + Lattice3(localOffset.x, 0, localOffset.y);
 
 						// 面一覧 (具体的には、面の法線ベクトル)
 						constexpr Lattice3 faceNormals[] =
@@ -231,9 +234,9 @@ namespace ForiverEngine
 
 						for (const auto& faceNormal : faceNormals)
 						{
-							if (!Local::IsBlockFaceOccluded(terrainData, position, faceNormal))
+							if (!Local::IsBlockFaceOccluded(terrainData, localPosition, faceNormal))
 							{
-								Local::AddFace(mesh, position, faceNormal, block);
+								Local::AddFace(mesh, worldPosition, faceNormal, block);
 							}
 						}
 					}

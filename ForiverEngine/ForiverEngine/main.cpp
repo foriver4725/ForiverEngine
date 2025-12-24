@@ -40,8 +40,18 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 
 	// 地形データ
 	constexpr int TerrainSeed = 0x2961E3B1;
-	Terrain terrain = Terrain::CreateFromNoise(64, { 0.02f, 12.0f }, 16, 18, 24, TerrainSeed);
-	const Mesh mesh = terrain.CreateMesh();
+	constexpr int ChunkCount = 16; // ワールドのチャンク数 (ChunkCount x ChunkCount 個)
+	std::array<std::array<Terrain, ChunkCount>, ChunkCount> terrains = {}; // チャンクの配列
+	std::array<std::array<Mesh, ChunkCount>, ChunkCount> terrainMeshes = {}; // 地形の結合メッシュ
+	for (int chunkX = 0; chunkX < ChunkCount; ++chunkX)
+		for (int chunkZ = 0; chunkZ < ChunkCount; ++chunkZ)
+		{
+			const Terrain terrain = Terrain::CreateFromNoise({ chunkX, chunkZ }, { 0.02f, 12.0f }, TerrainSeed, 16, 18, 24);
+			terrains[chunkX][chunkZ] = terrain;
+
+			const Lattice2 localOffset = Lattice2(chunkX * Terrain::ChunkSize, chunkZ * Terrain::ChunkSize);
+			terrainMeshes[chunkX][chunkZ] = terrain.CreateMesh(localOffset);
+		}
 
 	// b0 レジスタに渡すデータ
 	struct alignas(256) CBData0
@@ -73,8 +83,20 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	const DescriptorHeap descriptorHeapBasic
 		= D3D12BasicFlow::InitDescriptorHeapBasic(device, { cbvBuffer }, { srvBufferAndData });
 
-	const auto [vertexBufferView, indexBufferView]
-		= D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, mesh);
+	std::array<VertexBufferView, (ChunkCount* ChunkCount)> vertexBufferViews = {};
+	std::array<IndexBufferView, (ChunkCount* ChunkCount)> indexBufferViews = {};
+	std::array<int, (ChunkCount* ChunkCount)> indexCounts = {};
+	for (int chunkX = 0; chunkX < ChunkCount; ++chunkX)
+		for (int chunkZ = 0; chunkZ < ChunkCount; ++chunkZ)
+		{
+			const int index = chunkX * ChunkCount + chunkZ;
+
+			std::tie(vertexBufferViews[index], indexBufferViews[index])
+				= D3D12BasicFlow::CreateVertexAndIndexBufferViews(
+					device, terrainMeshes[chunkX][chunkZ]);
+
+			indexCounts[index] = static_cast<int>(terrainMeshes[chunkX][chunkZ].indices.size());
+		}
 
 	const ViewportScissorRect viewportScissorRect
 		= ViewportScissorRect::CreateFullSized(WindowWidth, WindowHeight);
@@ -111,10 +133,10 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		{
 			// 設置判定
 			const int surfaceY = PlayerControl::GetFootSurfaceHeight(
-				terrain,
+				terrains,
 				PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight),
 				PlayerCollisionSize);
-			const bool isGrounded = (cameraTransform.position.y - EyeHeight <= surfaceY + 0.5f + GroundedCheckOffset);
+			const bool isGrounded = surfaceY > 0 ? (cameraTransform.position.y - EyeHeight <= surfaceY + 0.5f + GroundedCheckOffset) : false;
 
 			if (isGrounded)
 			{
@@ -154,7 +176,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 
 		// 当たり判定 (主に水平)
 		if (PlayerControl::IsOverlappingWithTerrain(
-			terrain,
+			terrains,
 			PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight),
 			PlayerCollisionSize))
 		{
@@ -172,12 +194,12 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		if (!currentBackBuffer)
 			ShowError(L"現在のバックバッファーの取得に失敗しました");
 
-		D3D12BasicFlow::CommandBasicLoop(
+		D3D12BasicFlow::CommandBasicLoop<ChunkCount* ChunkCount>(
 			commandList, commandQueue, commandAllocator, device,
 			rootSignature, graphicsPipelineState, currentBackBuffer,
-			currentBackBufferRTV, dsv, descriptorHeapBasic, { vertexBufferView }, indexBufferView,
+			currentBackBufferRTV, dsv, descriptorHeapBasic, vertexBufferViews, indexBufferViews,
 			viewportScissorRect, PrimitiveTopology::TriangleList, Color::CreateFromUint8(60, 150, 210), DepthBufferClearValue,
-			static_cast<int>(mesh.indices.size())
+			indexCounts
 		);
 		if (!D3D12Helper::Present(swapChain))
 			ShowError(L"画面のフリップに失敗しました");
