@@ -57,13 +57,13 @@ int WindowMain(hInstance) \
 		return -1; \
 	} \
 \
+	HWND HwndName = ForiverEngine::WindowHelper::CreateTheWindow((WindowClassName), (WindowTitle), (WindowWidth), (WindowHeight)); \
+\
     /* キー入力を初期化 */ \
 	ForiverEngine::InputHelper::InitKeyTable(); \
 \
 	/* 時間計測を初期化 */ \
-	ForiverEngine::WindowHelper::InitTime(); \
-\
-	HWND HwndName = ForiverEngine::WindowHelper::CreateTheWindow((WindowClassName), (WindowTitle), (WindowWidth), (WindowHeight));
+	ForiverEngine::WindowHelper::InitTime();
 
 #endif
 
