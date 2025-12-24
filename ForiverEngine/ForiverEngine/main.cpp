@@ -39,7 +39,8 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		Vector3(12, 32, 12), Quaternion::Identity(), 60.0f * DegToRad, 1.0f * WindowWidth / WindowHeight);
 
 	// 地形データ
-	Terrain terrain = Terrain::CreateFromNoise(64, { 0.02f, 12.0f }, 16, 18, 24);
+	constexpr int TerrainSeed = 0x2961E3B1;
+	Terrain terrain = Terrain::CreateFromNoise(64, { 0.02f, 12.0f }, 16, 18, 24, TerrainSeed);
 	const Mesh mesh = terrain.CreateMesh();
 
 	// b0 レジスタに渡すデータ

@@ -55,15 +55,20 @@ namespace ForiverEngine
 		/// <param name="heightBulk">この高さ分かさ増しする</param>
 		/// <param name="minDirtHeight">土が出てくる最低高度</param>
 		/// <param name="minStoneHeight">石が出てくる最低高度</param>
+		/// <param name="seed">シード値</param>
 		/// <returns></returns>
-		static Terrain CreateFromNoise(int size, const Vector2& noiseScale, int heightBulk, int minDirtHeight, int minStoneHeight)
+		static Terrain CreateFromNoise(int size, const Vector2& noiseScale, int heightBulk, int minDirtHeight, int minStoneHeight, int seed)
 		{
 			Terrain terrain = CreateVoid(size, size, size);
+
+			// [-32768, 32767]
+			const float seedX = static_cast<float>((seed & 0xFFFF0000) >> 16);
+			const float seedZ = static_cast<float>(seed & 0x0000FFFF);
 
 			for (int x = 0; x < size; ++x)
 				for (int z = 0; z < size; ++z)
 				{
-					const float noise = Noise::Simplex2D(1.0f * x * noiseScale.x, 1.0f * z * noiseScale.x);
+					const float noise = Noise::Simplex2D(1.0f * (x + seedX) * noiseScale.x, 1.0f * (z + seedZ) * noiseScale.x);
 					const float heightNormed = (noise + 1.0f) * 0.5f; // [0, 1] に正規化
 					const int height = std::clamp(heightBulk + static_cast<int>(heightNormed * noiseScale.y), 0, size - 1);
 
