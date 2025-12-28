@@ -158,7 +158,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		.mipLevels = 1,
 	};
 
-	const RootParameter rootParameterPP = RootParameter::CreateBasic(0, 1, 0);
+	const RootParameter rootParameterPP = RootParameter::CreateBasic(1, 1, 0);
 	const SamplerConfig samplerConfigPP = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
 	const auto [shaderVSPP, shaderPSPP] = D3D12BasicFlow::CompileShader_VS_PS("./shaders/PP.hlsl");
 	const auto [rootSignaturePP, graphicsPipelineStatePP]
@@ -176,9 +176,26 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	const auto [vertexBufferViewPP, indexBufferViewPP]
 		= D3D12BasicFlow::CreateVertexAndIndexBufferViewsPP(device, meshPP);
 
+	// CB 0
+	struct alignas(256) CBData0PP
+	{
+		std::uint32_t WindowWidth;
+		std::uint32_t WindowHeight;
+		float LimitLuminance; // [0.0f, 1.0f]. 輝度の差がこれ以上ないと、端にあるとみなさない
+		float AAPower; // アンチエイリアスの強さ (1.0f で普通. それより小さいと元ピクセルの影響が強くなる)
+	};
+	CBData0PP cbData0PP =
+	{
+		.WindowWidth = WindowWidth,
+		.WindowHeight = WindowHeight,
+		.LimitLuminance = 0.5f,
+		.AAPower = 8.0f,
+	};
+	const GraphicsBuffer cbvBufferPP = D3D12BasicFlow::InitCBVBuffer<CBData0PP>(device, cbData0PP);
+
 	// DescriptorHeap
 	const DescriptorHeap descriptorHeapBasicPP
-		= D3D12BasicFlow::InitDescriptorHeapBasic(device, {}, { {ppGraphicsBuffer, ppTextureMetadata} });
+		= D3D12BasicFlow::InitDescriptorHeapBasic(device, { cbvBufferPP }, { {ppGraphicsBuffer, ppTextureMetadata} });
 
 	//////////////////////////////
 
