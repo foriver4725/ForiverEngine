@@ -50,7 +50,7 @@ PSOutput PSMain(V2P input)
     aaParams.LimitLuminance = _LimitLuminance;
     aaParams.AAPower = _AAPower;
     
-    output.color = CalcAA(aaParams);
+    output.color = PSCalcAA(aaParams);
     
     return output;
 }

@@ -21,7 +21,7 @@ float CalcLuminance(float4 color)
 
 // 計算部
 // FXAA っぽい何か
-float4 CalcAA(AAParams params)
+float4 PSCalcAA(AAParams params)
 {
     // 近傍のピクセル値を取得する
     const float4 pixels[9] =
