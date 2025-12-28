@@ -129,10 +129,10 @@ namespace ForiverEngine
 		}
 
 		/// <summary>
-		/// <para>地表ブロックの高さを取得する (無いなら -1)</para>
+		/// <para>地表ブロックのY座標を取得する (降順にY座標を見る. 無いならチャンクの高さの最小値-1)</para>
 		/// <para>ただし、Y座標の探索については、maxY 以下しか地表候補としてみない (地中でも正しく判定するため)</para>
 		/// </summary>
-		int GetSurfaceHeight(int x, int z, int maxY = ChunkHeight - 1) const
+		int GetFloorHeight(int x, int z, int maxY = ChunkHeight - 1) const
 		{
 			for (int y = maxY; y >= 0; --y)
 			{
@@ -142,9 +142,27 @@ namespace ForiverEngine
 
 			return -1; // 地面が無い
 		}
-		int GetSurfaceHeight(const Lattice2& position, int maxY = ChunkHeight - 1) const
+		int GetFloorHeight(const Lattice2& position, int maxY = ChunkHeight - 1) const
 		{
-			return GetSurfaceHeight(position.x, position.y, maxY);
+			return GetFloorHeight(position.x, position.y, maxY);
+		}
+
+		/// <summary>
+		/// <para>天井ブロックのY座標を取得する (昇順にY座標を見る. 無いならチャンクの高さの最大値+1)</para>
+		/// <para>ただし、Y座標の探索については、minY 以上しか天井候補としてみない (地中でも正しく判定するため)</para>
+		/// </summary>
+		int GetCeilHeight(int x, int z, int minY = 0) const
+		{
+			for (int y = minY; y <= ChunkHeight - 1; ++y)
+			{
+				if (data[y][z][x] != Block::Air)
+					return y;
+			}
+			return ChunkHeight; // 天井が無い
+		}
+		int GetCeilHeight(const Lattice2& position, int minY = 0) const
+		{
+			return GetCeilHeight(position.x, position.y, minY);
 		}
 
 	private:

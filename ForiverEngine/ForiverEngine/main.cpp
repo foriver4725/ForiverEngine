@@ -175,8 +175,8 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		{
 			// 設置判定
 			const Vector3 playerFootPosition = PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight);
-			const int surfaceY = PlayerControl::GetFootSurfaceHeight(terrains, playerFootPosition, PlayerCollisionSize);
-			const bool isGrounded = surfaceY > 0 ? (cameraTransform.position.y - EyeHeight <= surfaceY + 0.5f + GroundedCheckOffset) : false;
+			const int floorY = PlayerControl::GetFloorHeight(terrains, playerFootPosition, PlayerCollisionSize);
+			const bool isGrounded = (floorY >= 0) ? (cameraTransform.position.y - EyeHeight <= floorY + 0.5f + GroundedCheckOffset) : false;
 
 			if (isGrounded)
 			{
@@ -184,7 +184,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 					velocityV = 0;
 
 				// 地面へのめり込みを補正する
-				const float standY = surfaceY + 0.5f + EyeHeight;
+				const float standY = floorY + 0.5f + EyeHeight;
 				if (cameraTransform.position.y < standY)
 					cameraTransform.position.y = standY;
 
@@ -199,6 +199,24 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 
 			if (std::abs(velocityV) > 0.01f)
 				cameraTransform.position += Vector3::Up() * (velocityV * WindowHelper::GetDeltaSeconds());
+		}
+
+		// 頭上にブロックがあって頭を打ったら、上方向の速度を無くす
+		{
+			const int ceilY = PlayerControl::GetCeilHeight(terrains, cameraTransform.position, PlayerCollisionSize);
+			const bool isOverlappingCeil = (ceilY <= Terrain::ChunkHeight - 1) ? (cameraTransform.position.y - EyeHeight + PlayerCollisionSize.y >= ceilY - 0.5f) : false;
+
+			if (isOverlappingCeil)
+			{
+				// 上方向の速度を無くす
+				if (velocityV > 0)
+					velocityV = 0;
+
+				// 天井へのめり込みを補正する
+				const float headY = ceilY - 0.5f + EyeHeight - PlayerCollisionSize.y;
+				if (cameraTransform.position.y > headY)
+					cameraTransform.position.y = headY;
+			}
 		}
 
 		// 移動
