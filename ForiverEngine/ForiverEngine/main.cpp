@@ -161,13 +161,15 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 			return 0;
 
 		// 回転
-		const Quaternion rotateAmount = PlayerControl::GetRotateAmount(
+		PlayerControl::Rotate(
 			cameraTransform,
 			InputHelper::GetAsAxis2D(Key::Up, Key::Down, Key::Left, Key::Right),
 			Vector2(CameraSensitivityH, CameraSensitivityV) * DegToRad,
 			WindowHelper::GetDeltaSeconds()
 		);
-		cameraTransform.rotation = rotateAmount * cameraTransform.rotation;
+
+		// 移動前の座標を保存しておく
+		const Vector3 positionBeforeMove = cameraTransform.position;
 
 		// 落下とジャンプ
 		{
@@ -200,70 +202,27 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		}
 
 		// 移動
-		const Vector3 positionBeforeMove = cameraTransform.position;
-		Vector3 moveHAmount = Vector3::Zero();
 		{
 			const Vector2 moveInput = InputHelper::GetAsAxis2D(Key::W, Key::S, Key::A, Key::D);
 			const bool canDash = moveInput.y > 0.5f; // 前進しているときのみダッシュ可能
 
-			moveHAmount = PlayerControl::GetMoveHAmount(
+			PlayerControl::MoveH(
 				cameraTransform,
 				moveInput,
 				(canDash && InputHelper::GetKeyInfo(Key::LShift).pressed) ? DashSpeedH : SpeedH,
 				WindowHelper::GetDeltaSeconds()
 			);
-			cameraTransform.position += moveHAmount;
 		}
 
-		// 当たり判定 (水平)
-		std::vector<std::tuple<Lattice3, Vector3>> collisionInfo = {};
-		if (PlayerControl::IsOverlappingWithTerrainXZ(
+		// 当たり判定 (主に水平)
+		if (PlayerControl::IsOverlappingWithTerrain(
 			terrains,
 			PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight),
-			PlayerCollisionSize,
-			collisionInfo
-		))
+			PlayerCollisionSize))
 		{
-			// 最も浅く衝突した分だけ元に戻す
-			// X,Z 軸それぞれで行う
-
-			// 最も浅く衝突した情報を探す
-			bool hasMinOverlapX = false;
-			bool hasMinOverlapZ = false;
-			Vector3 minOverlapAmount = Vector3(std::numeric_limits<float>::max(), 0.0f, std::numeric_limits<float>::max()); // Y は使わない
-			Vector3 pushOutAmount = Vector3::Zero(); // Y は使わない
-			for (const auto& info : collisionInfo)
-			{
-				const Lattice3& collisionedBlockPosition = std::get<0>(info);
-				const Vector3& collisionedAmount = std::get<1>(info);
-
-				// X
-				if (0.0f < collisionedAmount.x && collisionedAmount.x < minOverlapAmount.x)
-				{
-					hasMinOverlapX |= true;
-					minOverlapAmount.x = collisionedAmount.x;
-					pushOutAmount.x = (cameraTransform.position.x < collisionedBlockPosition.x) ?
-						-collisionedAmount.x : collisionedAmount.x;
-				}
-
-				// Z
-				if (0.0f < collisionedAmount.z && collisionedAmount.z < minOverlapAmount.z)
-				{
-					hasMinOverlapZ |= true;
-					minOverlapAmount.z = collisionedAmount.z;
-					pushOutAmount.z = (cameraTransform.position.z < collisionedBlockPosition.z) ?
-						-collisionedAmount.z : collisionedAmount.z;
-				}
-			}
-
-			// 押し戻す
-			Vector3 pushAmountReal = Vector3::Zero();
-			if (hasMinOverlapX)
-				pushAmountReal.x = pushOutAmount.x;
-			if (hasMinOverlapZ)
-				pushAmountReal.z = pushOutAmount.z;
-			if (pushAmountReal != Vector3::Zero())
-				cameraTransform.position += pushAmountReal + pushAmountReal.Normed() * 0.001f; // 再衝突防止のため、少し余分に押し戻す
+			// 衝突していたら移動前の位置に戻す
+			// XZ 平面のみ戻す
+			cameraTransform.position = Vector3(positionBeforeMove.x, cameraTransform.position.y, positionBeforeMove.z);
 		}
 
 		// これだけ再計算すれば良い
