@@ -116,8 +116,8 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		.IsSelectingAnyBlock = 0,
 		.SelectColor = Color::CreateFromUint8(255, 255, 0, 100),
 
-		.DirectionalLightDirection = Vector3::One().Normed(),
-		.DirectionalLightColor = Color::White() * 1.8f,
+		.DirectionalLightDirection = Vector3(1.0f, -1.0f, 1.0f).Normed(),
+		.DirectionalLightColor = Color::White() * 1.2f,
 		.AmbientLightColor = Color::White() * 0.5f,
 	};
 
