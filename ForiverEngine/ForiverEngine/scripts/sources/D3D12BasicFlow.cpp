@@ -173,7 +173,8 @@ namespace ForiverEngine
 			const Blob& shaderPS,
 			const std::vector<VertexLayout>& vertexLayouts,
 			FillMode fillMode,
-			CullMode cullMode
+			CullMode cullMode,
+			bool useDSV
 		)
 	{
 		RootSignature rootSignature = RootSignature();
@@ -191,7 +192,7 @@ namespace ForiverEngine
 			RETURN_FALSE(errorMessage.c_str());
 
 		graphicsPipelineState = D3D12Helper::CreateGraphicsPipelineState(
-			device, rootSignature, shaderVS, shaderPS, vertexLayouts, fillMode, cullMode);
+			device, rootSignature, shaderVS, shaderPS, vertexLayouts, fillMode, cullMode, useDSV);
 		if (!graphicsPipelineState)
 			RETURN_FALSE(L"GraphicsPipelineState の作成に失敗しました");
 
@@ -206,6 +207,7 @@ namespace ForiverEngine
 			const Device& device,
 			const CommandList& commandList,
 			const CommandQueue& commandQueue,
+			const CommandAllocator& commandAllocator,
 			const std::vector<std::string>& paths
 		)
 	{
@@ -225,7 +227,7 @@ namespace ForiverEngine
 		if (!textureArrayBuffer)
 			RETURN_FALSE(L"テクスチャ配列バッファの作成に失敗しました");
 
-		D3D12BasicFlow::UploadTextureToGPU(commandList, commandQueue, device, textureArrayBuffer, textureArray);
+		D3D12BasicFlow::UploadTextureToGPU(commandList, commandQueue, commandAllocator, device, textureArrayBuffer, textureArray);
 
 		RETURN_TRUE();
 
@@ -382,6 +384,7 @@ namespace ForiverEngine
 		D3D12BasicFlow::UploadTextureToGPU_Impl(
 			const CommandList& commandList,
 			const CommandQueue& commandQueue,
+			const CommandAllocator& commandAllocator,
 			const Device& device,
 			const GraphicsBuffer& textureBuffer,
 			const Texture& textureAsMetadata
@@ -407,6 +410,9 @@ namespace ForiverEngine
 			GraphicsBufferState::CopyDestination, GraphicsBufferState::PixelShaderResource, false);
 
 		D3D12BasicFlow::CommandCloseAndWaitForCompletion(commandList, commandQueue, device);
+		// コマンドを実行し終わってから、クリアする
+		if (!D3D12Helper::ClearCommandAllocatorAndList(commandAllocator, commandList))
+			return { false, L"CommandAllocator, CommandList のクリアに失敗しました" };
 
 		return { true, L"" };
 	}

@@ -108,11 +108,12 @@ namespace ForiverEngine
 				const Blob& shaderPS,
 				const std::vector<VertexLayout>& vertexLayouts,
 				FillMode fillMode,
-				CullMode cullMode
+				CullMode cullMode,
+				bool useDSV
 			)
 		{
 			return Check(CreateRootSignatureAndGraphicsPipelineState_Impl(
-				device, rootParameter, samplerConfig, shaderVS, shaderPS, vertexLayouts, fillMode, cullMode));
+				device, rootParameter, samplerConfig, shaderVS, shaderPS, vertexLayouts, fillMode, cullMode, useDSV));
 		}
 
 		/// <summary>
@@ -143,10 +144,11 @@ namespace ForiverEngine
 				const Device& device,
 				const CommandList& commandList,
 				const CommandQueue& commandQueue,
+				const CommandAllocator& commandAllocator,
 				const std::vector<std::string>& paths
 			)
 		{
-			return Check(InitSRVBuffer_Impl(device, commandList, commandQueue, paths));
+			return Check(InitSRVBuffer_Impl(device, commandList, commandQueue, commandAllocator, paths));
 		}
 
 		/// <summary>
@@ -232,13 +234,14 @@ namespace ForiverEngine
 			UploadTextureToGPU(
 				const CommandList& commandList,
 				const CommandQueue& commandQueue,
+				const CommandAllocator& commandAllocator,
 				const Device& device,
 				const GraphicsBuffer& textureBuffer,
 				const Texture& textureAsMetadata
 			)
 		{
 			Check(UploadTextureToGPU_Impl(
-				commandList, commandQueue, device, textureBuffer, textureAsMetadata));
+				commandList, commandQueue, commandAllocator, device, textureBuffer, textureAsMetadata));
 		}
 
 		/// <summary>
@@ -254,7 +257,7 @@ namespace ForiverEngine
 		/// <param name="graphicsPipelineState">Graphics PipelineState</param>
 		/// <param name="rt">RT</param>
 		/// <param name="rtv">RTV</param>
-		/// <param name="dsv">DSV</param>
+		/// <param name="dsv">DSV (nullptr ならば、使わないものとみなす)</param>
 		/// <param name="descriptorHeapBasics">CBV/SRV/UAV 用 DescriptorHeap (0番目のルートパラメーターに紐づける想定なので、1つしか渡せない)</param>
 		/// <param name="vertexBufferViewArray">頂点バッファビュー (サイズはドローコール数と同じ!)</param>
 		/// <param name="indexBufferViewArray">インデックスバッファビュー (サイズはドローコール数と同じ!)</param>
@@ -363,7 +366,8 @@ namespace ForiverEngine
 				const Blob& shaderPS,
 				const std::vector<VertexLayout>& vertexLayouts,
 				FillMode fillMode,
-				CullMode cullMode
+				CullMode cullMode,
+				bool useDSV
 			);
 
 		/// <summary>
@@ -416,6 +420,7 @@ namespace ForiverEngine
 				const Device& device,
 				const CommandList& commandList,
 				const CommandQueue& commandQueue,
+				const CommandAllocator& commandAllocator,
 				const std::vector<std::string>& paths
 			);
 
@@ -487,6 +492,7 @@ namespace ForiverEngine
 			UploadTextureToGPU_Impl(
 				const CommandList& commandList,
 				const CommandQueue& commandQueue,
+				const CommandAllocator& commandAllocator,
 				const Device& device,
 				const GraphicsBuffer& textureBuffer,
 				const Texture& textureAsMetadata
@@ -505,7 +511,7 @@ namespace ForiverEngine
 		/// <param name="graphicsPipelineState">Graphics PipelineState</param>
 		/// <param name="rt">RT</param>
 		/// <param name="rtv">RTV</param>
-		/// <param name="dsv">DSV</param>
+		/// <param name="dsv">DSV (nullptr ならば、使わないものとみなす)</param>
 		/// <param name="descriptorHeapBasics">CBV/SRV/UAV 用 DescriptorHeap (0番目のルートパラメーターに紐づける想定なので、1つしか渡せない)</param>
 		/// <param name="vertexBufferViewArray">頂点バッファビュー (サイズはドローコール数と同じ!)</param>
 		/// <param name="indexBufferViewArray">インデックスバッファビュー (サイズはドローコール数と同じ!)</param>

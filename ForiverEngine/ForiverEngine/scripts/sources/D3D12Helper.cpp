@@ -99,17 +99,12 @@ namespace ForiverEngine
 			descriptorRangesReal.push_back(Construct(rootParameter.descriptorRanges[i]));
 		}
 
-		// Descriptor の総数を算出する
-		int totalDescriptorAmount = 0;
-		for (const auto& range : rootParameter.descriptorRanges)
-			totalDescriptorAmount += range.amount;
-
 		const D3D12_ROOT_PARAMETER rootParameterReal =
 		{
 			.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE,
 			.DescriptorTable =
 			{
-				.NumDescriptorRanges = static_cast<UINT>(totalDescriptorAmount),
+				.NumDescriptorRanges = static_cast<UINT>(descriptorRangesReal.size()),
 				.pDescriptorRanges = descriptorRangesReal.data()
 			},
 			.ShaderVisibility = static_cast<D3D12_SHADER_VISIBILITY>(rootParameter.shaderVisibility)
@@ -163,7 +158,7 @@ namespace ForiverEngine
 
 	PipelineState D3D12Helper::CreateGraphicsPipelineState(
 		const Device& device, const RootSignature& rootSignature, const Blob& vs, const Blob& ps,
-		const std::vector<VertexLayout>& vertexLayouts, FillMode fillMode, CullMode cullMode)
+		const std::vector<VertexLayout>& vertexLayouts, FillMode fillMode, CullMode cullMode, bool useDSV)
 	{
 		std::vector<D3D12_INPUT_ELEMENT_DESC> vertexLayoutsReal = std::vector<D3D12_INPUT_ELEMENT_DESC>(vertexLayouts.size(), {});
 		for (int i = 0; i < static_cast<int>(vertexLayouts.size()); ++i)
@@ -199,16 +194,17 @@ namespace ForiverEngine
 			{
 				.FillMode = static_cast<D3D12_FILL_MODE>(fillMode), // 塗りつぶし or ワイヤーフレーム
 				.CullMode = static_cast<D3D12_CULL_MODE>(cullMode), // カリング (None, Front, Back)
-				.DepthClipEnable = true, // 深度クリッピング有効
+				.DepthClipEnable = useDSV, // 深度クリッピング
 				.MultisampleEnable = false, // まだアンチエイリアスは使わないので...
 			},
-			.DepthStencilState =
+			.DepthStencilState = useDSV ?
+			D3D12_DEPTH_STENCIL_DESC
 			{
 				.DepthEnable = true,
 				.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL, // 深度値を書き込む
 				.DepthFunc = D3D12_COMPARISON_FUNC_LESS, // 深度値がより小さいなら、描画して良い (手前にあるので)
 				.StencilEnable = false, // ステンシルは使わない!
-			},
+			} : D3D12_DEPTH_STENCIL_DESC {.DepthEnable = false },
 			.InputLayout = // 頂点レイアウト
 			{
 				.pInputElementDescs = vertexLayoutsReal.data(),
@@ -224,7 +220,7 @@ namespace ForiverEngine
 
 				// [1] ~ [7]
 			},
-			.DSVFormat = static_cast<DXGI_FORMAT>(Format::D_F32),
+			.DSVFormat = static_cast<DXGI_FORMAT>(useDSV ? Format::D_F32 : Format::Unknown),
 			.SampleDesc = {.Count = 1, .Quality = 0 }, // アンチエイリアシングはしない (1ピクセルあたり1回サンプリング)
 			.NodeMask = 0, // アダプターが1つなので...
 			.CachedPSO = {}, // 高速化出来るけど、今は使わない
@@ -924,7 +920,7 @@ namespace ForiverEngine
 			1, // 今のところ、一回の描画における RTV は1つのみ
 			Reinterpret(const_cast<DescriptorHeapHandleAtCPU*>(&rtv)),
 			false, // 規定値
-			Reinterpret(const_cast<DescriptorHeapHandleAtCPU*>(&dsv))
+			(dsv.ptr) ? Reinterpret(const_cast<DescriptorHeapHandleAtCPU*>(&dsv)) : nullptr
 		);
 	}
 
@@ -939,13 +935,16 @@ namespace ForiverEngine
 			0, nullptr // 全範囲をクリアするので、指定しない
 		);
 
-		commandList->ClearDepthStencilView(
-			*Reinterpret(const_cast<DescriptorHeapHandleAtCPU*>(&dsv)),
-			D3D12_CLEAR_FLAG_DEPTH, // 深度値のみクリア
-			dsvClearValue,
-			0, // ステンシル値はクリアしないので、0でOK
-			0, nullptr // 全範囲をクリアするので、指定しない
-		);
+		if (dsv.ptr)
+		{
+			commandList->ClearDepthStencilView(
+				*Reinterpret(const_cast<DescriptorHeapHandleAtCPU*>(&dsv)),
+				D3D12_CLEAR_FLAG_DEPTH, // 深度値のみクリア
+				dsvClearValue,
+				0, // ステンシル値はクリアしないので、0でOK
+				0, nullptr // 全範囲をクリアするので、指定しない
+			);
+		}
 	}
 
 	void D3D12Helper::CommandSetRootSignature(const CommandList& commandList, const RootSignature& rootSignature)

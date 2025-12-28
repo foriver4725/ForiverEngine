@@ -31,7 +31,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	const auto [shaderVS, shaderPS] = D3D12BasicFlow::CompileShader_VS_PS("./shaders/Basic.hlsl");
 	const auto [rootSignature, graphicsPipelineState]
 		= D3D12BasicFlow::CreateRootSignatureAndGraphicsPipelineState(
-			device, rootParameter, samplerConfig, shaderVS, shaderPS, VertexLayouts, FillMode::Solid, CullMode::None);
+			device, rootParameter, samplerConfig, shaderVS, shaderPS, VertexLayouts, FillMode::Solid, CullMode::None, true);
 
 	const auto [rtGetter, rtvGetter] = D3D12BasicFlow::InitRTV(device, swapChain, 2, false);
 	const DescriptorHeapHandleAtCPU dsv = D3D12BasicFlow::InitDSV(device, WindowWidth, WindowHeight, DepthBufferClearValue);
@@ -76,8 +76,8 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	std::vector<IndexBufferView> drawingIndexBufferViews; drawingIndexBufferViews.reserve(ChunkDrawMaxCount);
 	std::vector<int> drawingIndexCounts; drawingIndexCounts.reserve(ChunkDrawMaxCount);
 	{
-		for (int chunkX = chunkDrawIndexXMin; chunkX < chunkDrawIndexXMax; ++chunkX)
-			for (int chunkZ = chunkDrawIndexZMin; chunkZ < chunkDrawIndexZMax; ++chunkZ)
+		for (int chunkX = chunkDrawIndexXMin; chunkX <= chunkDrawIndexXMax; ++chunkX)
+			for (int chunkZ = chunkDrawIndexZMin; chunkZ <= chunkDrawIndexZMax; ++chunkZ)
 			{
 				const auto [vertexBufferView, indexBufferView]
 					= D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, terrainMeshes[chunkX][chunkZ]);
@@ -126,7 +126,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	const GraphicsBuffer cbvBuffer = D3D12BasicFlow::InitCBVBuffer<CBData0>(device, cbData0, false, &cbvBufferVirtualPtr);
 
 	// SRV 用バッファ
-	const auto srvBufferAndData = D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue,
+	const auto srvBufferAndData = D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue, commandAllocator,
 		{
 			"assets/textures/air_invalid.png",
 			"assets/textures/grass_stone.png",
@@ -163,10 +163,11 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	const auto [shaderVSPP, shaderPSPP] = D3D12BasicFlow::CompileShader_VS_PS("./shaders/PP.hlsl");
 	const auto [rootSignaturePP, graphicsPipelineStatePP]
 		= D3D12BasicFlow::CreateRootSignatureAndGraphicsPipelineState(
-			device, rootParameterPP, samplerConfigPP, shaderVSPP, shaderPSPP, VertexLayoutsPP, FillMode::Solid, CullMode::Back);
+			device, rootParameterPP, samplerConfigPP, shaderVSPP, shaderPSPP, VertexLayoutsPP, FillMode::Solid, CullMode::Back, false);
 
 	// RTVのみ作成
 	const DescriptorHeapHandleAtCPU rtvPP = D3D12BasicFlow::InitRTVPP(device, ppGraphicsBuffer);
+	const DescriptorHeapHandleAtCPU dsvPP_Dummy = DescriptorHeapHandleAtCPU{ .ptr = NULL };
 
 	// 板ポリのメッシュ
 	const MeshPP meshPP = MeshPP::CreateFullSized();
@@ -439,13 +440,23 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		if (!currentBackRT)
 			ShowError(L"現在のバックレンダーターゲットの取得に失敗しました");
 
+		// メインレンダリング
 		D3D12BasicFlow::CommandBasicLoop(
 			commandList, commandQueue, commandAllocator, device,
-			rootSignature, graphicsPipelineState, currentBackRT,
-			currentBackRTV, dsv, descriptorHeapBasic, drawingVertexBufferViews, drawingIndexBufferViews,
-			GraphicsBufferState::Present, GraphicsBufferState::RenderTarget,
+			rootSignature, graphicsPipelineState, ppGraphicsBuffer,
+			rtvPP, dsv, descriptorHeapBasic, drawingVertexBufferViews, drawingIndexBufferViews,
+			GraphicsBufferState::PixelShaderResource, GraphicsBufferState::RenderTarget,
 			viewportScissorRect, PrimitiveTopology::TriangleList, RTClearColor, DepthBufferClearValue,
 			drawingIndexCounts
+		);
+		// ポストプロセス
+		D3D12BasicFlow::CommandBasicLoop(
+			commandList, commandQueue, commandAllocator, device,
+			rootSignaturePP, graphicsPipelineStatePP, currentBackRT,
+			currentBackRTV, dsvPP_Dummy, descriptorHeapBasicPP, { vertexBufferViewPP }, { indexBufferViewPP },
+			GraphicsBufferState::Present, GraphicsBufferState::RenderTarget,
+			viewportScissorRect, PrimitiveTopology::TriangleList, RTClearColor, DepthBufferClearValue,
+			{ static_cast<int>(meshPP.indices.size()) }
 		);
 		if (!D3D12Helper::Present(swapChain))
 			ShowError(L"画面のフリップに失敗しました");

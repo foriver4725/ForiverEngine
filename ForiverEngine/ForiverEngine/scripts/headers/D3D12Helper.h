@@ -32,7 +32,7 @@ namespace ForiverEngine
 		/// </summary>
 		static PipelineState CreateGraphicsPipelineState(
 			const Device& device, const RootSignature& rootSignature, const Blob& vs, const Blob& ps,
-			const std::vector<VertexLayout>& vertexLayouts, FillMode fillMode, CullMode cullMode);
+			const std::vector<VertexLayout>& vertexLayouts, FillMode fillMode, CullMode cullMode, bool useDSV);
 
 		/// <summary>
 		/// CommandAllocator を作成して返す (失敗したら nullptr)
@@ -222,6 +222,7 @@ namespace ForiverEngine
 		/// <summary>
 		/// <para>[Command]</para>
 		/// <para>RTV, DSV を、RT として出力ステージに設定する</para>
+		/// <para>DSV について、nullptr が渡された場合、DSV を設定しない</para>
 		/// </summary>
 		static void CommandSetRT(const CommandList& commandList,
 			const DescriptorHeapHandleAtCPU& rtv, const DescriptorHeapHandleAtCPU& dsv);
@@ -230,6 +231,7 @@ namespace ForiverEngine
 		/// <para>[Command]</para>
 		/// <para>RT をクリアする</para>
 		/// <para>DSV について、ステンシルは使っていないので、深度のみのクリアをしている</para>
+		/// <para>DSV について、nullptr が渡された場合、DSV をクリアしない</para>
 		/// </summary>
 		static void CommandClearRT(
 			const CommandList& commandList, const DescriptorHeapHandleAtCPU& rtv, const DescriptorHeapHandleAtCPU& dsv,

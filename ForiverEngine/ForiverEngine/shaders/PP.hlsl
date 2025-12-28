@@ -1,4 +1,4 @@
-Texture2DArray<float4> _Texture : register(t0);
+Texture2D<float4> _Texture : register(t0);
 SamplerState _Sampler : register(s0);
 
 struct VSInput
@@ -32,8 +32,8 @@ PSOutput PSMain(V2P input)
 {
     PSOutput output;
     
-    // 仮
-    output.color = (input.uv, 1, 1);
+    float4 color = _Texture.Sample(_Sampler, input.uv);
+    output.color = color;
     
     return output;
 }
