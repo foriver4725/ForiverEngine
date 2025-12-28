@@ -106,12 +106,17 @@ https://github.com/user-attachments/assets/9626a7e3-f360-4ce9-975c-0f16392d2aff
 
 https://github.com/user-attachments/assets/944b3c8a-25db-41ae-80a7-41a8348059d6
 
-</details>
-
 ---
 ブロックを壊す
 
 https://github.com/user-attachments/assets/a7f54352-877b-468c-a954-d8399b68ff76
+
+</details>
+
+---
+簡易ライティング (正規化ランバートと環境光) を実装
+
+<img width="50%" alt="image" src="https://github.com/user-attachments/assets/245b3668-1689-4797-8391-5f55ba24376e" />
 
 ## OSS
 | 名前 | ライセンス |
