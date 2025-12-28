@@ -40,9 +40,11 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 
 	// 地形データ
 	constexpr int TerrainSeed = 0x2961E3B1;
-	constexpr int ChunkCount = 16; // ワールドのチャンク数 (ChunkCount x ChunkCount 個)
+	constexpr int ChunkCount = 32; // ワールドのチャンク数 (ChunkCount x ChunkCount 個)
 	std::array<std::array<Terrain, ChunkCount>, ChunkCount> terrains = {}; // チャンクの配列
 	std::array<std::array<Mesh, ChunkCount>, ChunkCount> terrainMeshes = {}; // 地形の結合メッシュ
+	std::array<std::array<VertexBufferView, ChunkCount>, ChunkCount> terrainVertexBufferViews = {}; // 頂点バッファビュー (全部)
+	std::array<std::array<IndexBufferView, ChunkCount>, ChunkCount> terrainIndexBufferViews = {}; // インデックスバッファビュー (全部)
 	for (int chunkX = 0; chunkX < ChunkCount; ++chunkX)
 		for (int chunkZ = 0; chunkZ < ChunkCount; ++chunkZ)
 		{
@@ -51,7 +53,39 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 
 			const Lattice2 localOffset = Lattice2(chunkX * Terrain::ChunkSize, chunkZ * Terrain::ChunkSize);
 			terrainMeshes[chunkX][chunkZ] = terrain.CreateMesh(localOffset);
+
+			const auto [vertexBufferView, indexBufferView]
+				= D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, terrainMeshes[chunkX][chunkZ]);
+			terrainVertexBufferViews[chunkX][chunkZ] = vertexBufferView;
+			terrainIndexBufferViews[chunkX][chunkZ] = indexBufferView;
 		}
+	constexpr int ChunkDrawDistance = 8; // 描画チャンク数 (プレイヤーを中心に 半径 ChunkDrawDistance の矩形内のチャンクのみ描画する)
+	constexpr int ChunkDrawMaxCount = (ChunkDrawDistance * 2 + 1) * (ChunkDrawDistance * 2 + 1);
+	// 描画するチャンクが変化した時、ビューを再作成する
+	Lattice2 chunkIndex = PlayerControl::GetChunkIndexAtPosition(cameraTransform.position);
+	int chunkDrawIndexXMin = std::max(0, chunkIndex.x - ChunkDrawDistance);
+	int chunkDrawIndexXMax = std::min(ChunkCount - 1, chunkIndex.x + ChunkDrawDistance);
+	int chunkDrawIndexZMin = std::max(0, chunkIndex.y - ChunkDrawDistance);
+	int chunkDrawIndexZMax = std::min(ChunkCount - 1, chunkIndex.y + ChunkDrawDistance);
+	// 一応計算しておく (<= chunkDrawMaxCount)
+	int chunkDrawCount = (chunkDrawIndexXMax - chunkDrawIndexXMin + 1) * (chunkDrawIndexZMax - chunkDrawIndexZMin + 1);
+	// 描画するビューとインデックス (初回作成)
+	std::vector<VertexBufferView> drawingVertexBufferViews; drawingVertexBufferViews.reserve(ChunkDrawMaxCount);
+	std::vector<IndexBufferView> drawingIndexBufferViews; drawingIndexBufferViews.reserve(ChunkDrawMaxCount);
+	std::vector<int> drawingIndexCounts; drawingIndexCounts.reserve(ChunkDrawMaxCount);
+	{
+		for (int chunkX = chunkDrawIndexXMin; chunkX < chunkDrawIndexXMax; ++chunkX)
+			for (int chunkZ = chunkDrawIndexZMin; chunkZ < chunkDrawIndexZMax; ++chunkZ)
+			{
+				const auto [vertexBufferView, indexBufferView]
+					= D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, terrainMeshes[chunkX][chunkZ]);
+				const int indexCount = static_cast<int>(terrainMeshes[chunkX][chunkZ].indices.size());
+
+				drawingVertexBufferViews.push_back(vertexBufferView);
+				drawingIndexBufferViews.push_back(indexBufferView);
+				drawingIndexCounts.push_back(indexCount);
+			}
+	}
 
 	// b0 レジスタに渡すデータ
 	struct alignas(256) CBData0
@@ -101,21 +135,6 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	// DescriptorHeap に登録
 	const DescriptorHeap descriptorHeapBasic
 		= D3D12BasicFlow::InitDescriptorHeapBasic(device, { cbvBuffer }, { srvBufferAndData });
-
-	std::array<VertexBufferView, (ChunkCount* ChunkCount)> vertexBufferViews = {};
-	std::array<IndexBufferView, (ChunkCount* ChunkCount)> indexBufferViews = {};
-	std::array<int, (ChunkCount* ChunkCount)> indexCounts = {};
-	for (int chunkX = 0; chunkX < ChunkCount; ++chunkX)
-		for (int chunkZ = 0; chunkZ < ChunkCount; ++chunkZ)
-		{
-			const int index = chunkX * ChunkCount + chunkZ;
-
-			std::tie(vertexBufferViews[index], indexBufferViews[index])
-				= D3D12BasicFlow::CreateVertexAndIndexBufferViews(
-					device, terrainMeshes[chunkX][chunkZ]);
-
-			indexCounts[index] = static_cast<int>(terrainMeshes[chunkX][chunkZ].indices.size());
-		}
 
 	const ViewportScissorRect viewportScissorRect
 		= ViewportScissorRect::CreateFullSized(WindowWidth, WindowHeight);
@@ -261,11 +280,15 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		}
 
 		// ブロックを壊す
+		// この場合、描画チャンクを必ず更新する
+		bool hasBrokenBlock = false;
 		{
 			if (InputHelper::GetKeyInfo(Key::Enter).pressedNow)
 			{
 				if (cbvBufferVirtualPtr->IsSelectingAnyBlock > 0.5f)
 				{
+					hasBrokenBlock = true;
+
 					const Lattice3 blockPositionAsLattice = Lattice3(cbvBufferVirtualPtr->SelectingBlockPosition);
 					const Lattice2 chunkIndex = PlayerControl::GetChunkIndexAtPosition(cbvBufferVirtualPtr->SelectingBlockPosition);
 
@@ -282,13 +305,73 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 						chunkIndex.y * Terrain::ChunkSize);
 					terrainMeshes[chunkIndex.x][chunkIndex.y] = terrains[chunkIndex.x][chunkIndex.y].CreateMesh(localOffset);
 
-					// 頂点バッファーとインデックスバッファーを再作成
-					const int index = chunkIndex.x * ChunkCount + chunkIndex.y;
-					std::tie(vertexBufferViews[index], indexBufferViews[index])
-						= D3D12BasicFlow::CreateVertexAndIndexBufferViews(
-							device, terrainMeshes[chunkIndex.x][chunkIndex.y]);
-					indexCounts[index] = static_cast<int>(terrainMeshes[chunkIndex.x][chunkIndex.y].indices.size());
+					// 頂点バッファビューとインデックスバッファビューを更新
+					const auto [vertexBufferView, indexBufferView]
+						= D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, terrainMeshes[chunkIndex.x][chunkIndex.y]);
+					terrainVertexBufferViews[chunkIndex.x][chunkIndex.y] = vertexBufferView;
+					terrainIndexBufferViews[chunkIndex.x][chunkIndex.y] = indexBufferView;
 				}
+			}
+		}
+
+		// 描画距離内のチャンクのみ、描画する配列に追加
+		// プレイヤーの存在するチャンクが変化した、またはブロックを壊した場合に更新する
+		{
+			// 存在するチャンクが変化したかチェック
+			const Lattice2 currentChunkIndex = PlayerControl::GetChunkIndexAtPosition(cameraTransform.position);
+			const bool hasExistingChunkChanged = (currentChunkIndex != chunkIndex);
+
+			// 結局配列を更新する必要があるのか?
+			const bool shouldUpdateDrawChunks = hasExistingChunkChanged || hasBrokenBlock;
+
+			if (shouldUpdateDrawChunks)
+			{
+				// パラメータを更新
+				chunkIndex = currentChunkIndex;
+				chunkDrawIndexXMin = std::max(0, chunkIndex.x - ChunkDrawDistance);
+				chunkDrawIndexXMax = std::min(ChunkCount - 1, chunkIndex.x + ChunkDrawDistance);
+				chunkDrawIndexZMin = std::max(0, chunkIndex.y - ChunkDrawDistance);
+				chunkDrawIndexZMax = std::min(ChunkCount - 1, chunkIndex.y + ChunkDrawDistance);
+				// この後配列を更新するので、サイズが変わったかどうか保存しておく
+				const int currentChunkDrawCount = (chunkDrawIndexXMax - chunkDrawIndexXMin + 1) * (chunkDrawIndexZMax - chunkDrawIndexZMin + 1);
+				const int chunkDrawCountDiff = currentChunkDrawCount - chunkDrawCount;
+				chunkDrawCount = currentChunkDrawCount;
+
+				// ビューとインデックスを再作成
+
+				// 配列のサイズ数が減ったなら、その分を削除しておく
+				if (chunkDrawCountDiff < 0)
+				{
+					drawingVertexBufferViews.resize(drawingVertexBufferViews.size() + chunkDrawCountDiff);
+					drawingIndexBufferViews.resize(drawingIndexBufferViews.size() + chunkDrawCountDiff);
+					drawingIndexCounts.resize(drawingIndexCounts.size() + chunkDrawCountDiff);
+				}
+
+				// 配列の要素を更新していく
+				// 増えた分は push_back で追加していく
+				int index = 0;
+				for (int chunkX = chunkDrawIndexXMin; chunkX <= chunkDrawIndexXMax; ++chunkX)
+					for (int chunkZ = chunkDrawIndexZMin; chunkZ <= chunkDrawIndexZMax; ++chunkZ)
+					{
+						const VertexBufferView vertexBufferView = terrainVertexBufferViews[chunkX][chunkZ];
+						const IndexBufferView indexBufferView = terrainIndexBufferViews[chunkX][chunkZ];
+						const int indexCount = static_cast<int>(terrainMeshes[chunkX][chunkZ].indices.size());
+
+						if (index < drawingIndexCounts.size())
+						{
+							drawingVertexBufferViews[index] = vertexBufferView;
+							drawingIndexBufferViews[index] = indexBufferView;
+							drawingIndexCounts[index] = indexCount;
+						}
+						else
+						{
+							drawingVertexBufferViews.push_back(vertexBufferView);
+							drawingIndexBufferViews.push_back(indexBufferView);
+							drawingIndexCounts.push_back(indexCount);
+						}
+
+						++index;
+					}
 			}
 		}
 
@@ -298,12 +381,12 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		if (!currentBackBuffer)
 			ShowError(L"現在のバックバッファーの取得に失敗しました");
 
-		D3D12BasicFlow::CommandBasicLoop<ChunkCount* ChunkCount>(
+		D3D12BasicFlow::CommandBasicLoop(
 			commandList, commandQueue, commandAllocator, device,
 			rootSignature, graphicsPipelineState, currentBackBuffer,
-			currentBackBufferRTV, dsv, descriptorHeapBasic, vertexBufferViews, indexBufferViews,
+			currentBackBufferRTV, dsv, descriptorHeapBasic, drawingVertexBufferViews, drawingIndexBufferViews,
 			viewportScissorRect, PrimitiveTopology::TriangleList, Color::CreateFromUint8(60, 150, 210), DepthBufferClearValue,
-			indexCounts
+			drawingIndexCounts
 		);
 		if (!D3D12Helper::Present(swapChain))
 			ShowError(L"画面のフリップに失敗しました");

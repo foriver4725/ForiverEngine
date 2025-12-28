@@ -219,8 +219,8 @@ namespace ForiverEngine
 		/// <summary>
 		/// <para>[Command]</para>
 		/// <para>ループ内の、基本的なコマンド系処理を実行する</para>
+		/// <para>配列の要素数はドローコール数と同じ!</para>
 		/// </summary>
-		/// <typeparam name="DrawCount">ドローコールの回数</typeparam>
 		/// <param name="commandList">CommandList</param>
 		/// <param name="commandQueue">CommandQueue</param>
 		/// <param name="commandAllocator">CommandAllocator</param>
@@ -231,14 +231,13 @@ namespace ForiverEngine
 		/// <param name="currentBackBufferRTV">現在のバックバッファの RTV</param>
 		/// <param name="dsv">DSV</param>
 		/// <param name="descriptorHeapBasics">CBV/SRV/UAV 用 DescriptorHeap (0番目のルートパラメーターに紐づける想定なので、1つしか渡せない)</param>
-		/// <param name="vertexBufferViewArray">頂点バッファビュー (ドローコール分の配列)</param>
-		/// <param name="indexBufferViewArray">インデックスバッファビュー (ドローコール分の配列)</param>
+		/// <param name="vertexBufferViewArray">頂点バッファビュー (サイズはドローコール数と同じ!)</param>
+		/// <param name="indexBufferViewArray">インデックスバッファビュー (サイズはドローコール数と同じ!)</param>
 		/// <param name="viewportScissorRect">ビューポートとシザー矩形</param>
 		/// <param name="primitiveTopology">プリミティブのトポロジー</param>
 		/// <param name="rtvClearColor">RTV のクリアカラー</param>
 		/// <param name="depthClearValue">DSV のクリア深度値 (ステンシルは使わないので、深度値のみ. [0, 1])</param>
-		/// <param name="indexTotalCountArray">ドローコール時のインデックス総数 (ドローコール分の配列)</param>
-		template<std::uint32_t DrawCount>
+		/// <param name="indexTotalCountArray">ドローコール時のインデックス総数 (サイズはドローコール数と同じ!)</param>
 		static void
 			CommandBasicLoop(
 				// 基本オブジェクト
@@ -249,13 +248,13 @@ namespace ForiverEngine
 				// Descriptor
 				const DescriptorHeapHandleAtCPU& currentBackBufferRTV, const DescriptorHeapHandleAtCPU& dsv,
 				const DescriptorHeap& descriptorHeapBasic,
-				const std::array<VertexBufferView, DrawCount>& vertexBufferViewArray,
-				const std::array<IndexBufferView, DrawCount>& indexBufferViewArray,
+				const std::vector<VertexBufferView>& vertexBufferViewArray,
+				const std::vector<IndexBufferView>& indexBufferViewArray,
 				// 数値情報
 				const ViewportScissorRect& viewportScissorRect, PrimitiveTopology primitiveTopology,
 				Color rtvClearColor, float depthClearValue,
 				// ドローコール関連
-				const std::array<int, DrawCount>& indexTotalCountArray
+				const std::vector<int>& indexTotalCountArray
 			)
 		{
 			Check(CommandBasicLoop_Impl(
@@ -447,8 +446,8 @@ namespace ForiverEngine
 		/// <summary>
 		/// <para>[Command]</para>
 		/// <para>ループ内の、基本的なコマンド系処理を実行する</para>
+		/// <para>配列の要素数はドローコール数と同じ!</para>
 		/// </summary>
-		/// <typeparam name="DrawCount">ドローコールの回数</typeparam>
 		/// <param name="commandList">CommandList</param>
 		/// <param name="commandQueue">CommandQueue</param>
 		/// <param name="commandAllocator">CommandAllocator</param>
@@ -459,14 +458,13 @@ namespace ForiverEngine
 		/// <param name="currentBackBufferRTV">現在のバックバッファの RTV</param>
 		/// <param name="dsv">DSV</param>
 		/// <param name="descriptorHeapBasics">CBV/SRV/UAV 用 DescriptorHeap (0番目のルートパラメーターに紐づける想定なので、1つしか渡せない)</param>
-		/// <param name="vertexBufferViewArray">頂点バッファビュー (ドローコール分の配列)</param>
-		/// <param name="indexBufferViewArray">インデックスバッファビュー (ドローコール分の配列)</param>
+		/// <param name="vertexBufferViewArray">頂点バッファビュー (サイズはドローコール数と同じ!)</param>
+		/// <param name="indexBufferViewArray">インデックスバッファビュー (サイズはドローコール数と同じ!)</param>
 		/// <param name="viewportScissorRect">ビューポートとシザー矩形</param>
 		/// <param name="primitiveTopology">プリミティブのトポロジー</param>
 		/// <param name="rtvClearColor">RTV のクリアカラー</param>
 		/// <param name="depthClearValue">DSV のクリア深度値 (ステンシルは使わないので、深度値のみ. [0, 1])</param>
-		/// <param name="indexTotalCountArray">ドローコール時のインデックス総数 (ドローコール分の配列)</param>
-		template<std::uint32_t DrawCount>
+		/// <param name="indexTotalCountArray">ドローコール時のインデックス総数 (サイズはドローコール数と同じ!)</param>
 		static std::tuple<bool, std::wstring>
 			CommandBasicLoop_Impl(
 				// 基本オブジェクト
@@ -477,55 +475,14 @@ namespace ForiverEngine
 				// Descriptor
 				const DescriptorHeapHandleAtCPU& currentBackBufferRTV, const DescriptorHeapHandleAtCPU& dsv,
 				const DescriptorHeap& descriptorHeapBasic,
-				const std::array<VertexBufferView, DrawCount>& vertexBufferViewArray,
-				const std::array<IndexBufferView, DrawCount>& indexBufferViewArray,
+				const std::vector<VertexBufferView>& vertexBufferViewArray,
+				const std::vector<IndexBufferView>& indexBufferViewArray,
 				// 数値情報
 				const ViewportScissorRect& viewportScissorRect, PrimitiveTopology primitiveTopology,
 				Color rtvClearColor, float depthClearValue,
 				// ドローコール関連
-				const std::array<int, DrawCount>& indexTotalCountArray
-			)
-		{
-			D3D12Helper::CommandInvokeResourceBarrierAsTransition(commandList, currentBackBuffer,
-				GraphicsBufferState::Present, GraphicsBufferState::RenderTarget, false);
-			{
-				D3D12Helper::CommandSetRT(commandList, currentBackBufferRTV, dsv);
-				D3D12Helper::CommandClearRT(commandList, currentBackBufferRTV, dsv, rtvClearColor, depthClearValue);
-
-				D3D12Helper::CommandSetRootSignature(commandList, rootSignature);
-				D3D12Helper::CommandSetGraphicsPipelineState(commandList, graphicsPipelineState);
-				D3D12Helper::CommandSetDescriptorHeaps(commandList, { descriptorHeapBasic });
-
-				// ルートパラメーターは1つだけなので、インデックス0にリンクすれば良い
-				D3D12Helper::CommandLinkDescriptorHeapToRootSignature(
-					commandList,
-					D3D12Helper::CreateDescriptorHeapHandleAtGPUIndicatingDescriptorByIndex(
-						device, descriptorHeapBasic, DescriptorHeapType::CBV_SRV_UAV, 0),
-					0
-				);
-
-				D3D12Helper::CommandIASetPrimitiveTopology(commandList, primitiveTopology);
-				D3D12Helper::CommandRSSetViewportAndScissorRect(commandList, viewportScissorRect);
-
-				// ドローコール分ループ
-				for (std::uint32_t i = 0; i < DrawCount; ++i)
-				{
-					D3D12Helper::CommandIASetVertexBuffer(commandList, { vertexBufferViewArray[i] });
-					D3D12Helper::CommandIASetIndexBuffer(commandList, indexBufferViewArray[i]);
-
-					D3D12Helper::CommandDrawIndexedInstanced(commandList, indexTotalCountArray[i]);
-				}
-			}
-			D3D12Helper::CommandInvokeResourceBarrierAsTransition(commandList, currentBackBuffer,
-				GraphicsBufferState::RenderTarget, GraphicsBufferState::Present, false);
-
-			D3D12BasicFlow::CommandCloseAndWaitForCompletion(commandList, commandQueue, device);
-			// コマンドを実行し終わってから、クリアする
-			if (!D3D12Helper::ClearCommandAllocatorAndList(commandAllocator, commandList))
-				return { false, L"CommandAllocator, CommandList のクリアに失敗しました" };
-
-			return { true, L"" };
-		}
+				const std::vector<int>& indexTotalCountArray
+			);
 
 		/// <summary>
 		/// MVP行列を計算して返す

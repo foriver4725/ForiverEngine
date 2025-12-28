@@ -337,6 +337,74 @@ namespace ForiverEngine
 		return { true, L"" };
 	}
 
+	std::tuple<bool, std::wstring>
+		D3D12BasicFlow::CommandBasicLoop_Impl(
+			// 基本オブジェクト
+			const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator,
+			const Device& device,
+			// パイプライン関連
+			const RootSignature& rootSignature, const PipelineState& graphicsPipelineState, const GraphicsBuffer& currentBackBuffer,
+			// Descriptor
+			const DescriptorHeapHandleAtCPU& currentBackBufferRTV, const DescriptorHeapHandleAtCPU& dsv,
+			const DescriptorHeap& descriptorHeapBasic,
+			const std::vector<VertexBufferView>& vertexBufferViewArray,
+			const std::vector<IndexBufferView>& indexBufferViewArray,
+			// 数値情報
+			const ViewportScissorRect& viewportScissorRect, PrimitiveTopology primitiveTopology,
+			Color rtvClearColor, float depthClearValue,
+			// ドローコール関連
+			const std::vector<int>& indexTotalCountArray
+		)
+	{
+		// ドローコール数を取得
+		// 要素数が等しいかも、ついでにチェック
+		const std::uint32_t drawCount = static_cast<std::uint32_t>(indexTotalCountArray.size());
+		if (drawCount != static_cast<std::uint32_t>(vertexBufferViewArray.size()))
+			return { false, L"頂点バッファビューの数と、ドローコール数が一致しません" };
+		if (drawCount != static_cast<std::uint32_t>(indexBufferViewArray.size()))
+			return { false, L"インデックスバッファビューの数と、ドローコール数が一致しません" };
+
+		D3D12Helper::CommandInvokeResourceBarrierAsTransition(commandList, currentBackBuffer,
+			GraphicsBufferState::Present, GraphicsBufferState::RenderTarget, false);
+		{
+			D3D12Helper::CommandSetRT(commandList, currentBackBufferRTV, dsv);
+			D3D12Helper::CommandClearRT(commandList, currentBackBufferRTV, dsv, rtvClearColor, depthClearValue);
+
+			D3D12Helper::CommandSetRootSignature(commandList, rootSignature);
+			D3D12Helper::CommandSetGraphicsPipelineState(commandList, graphicsPipelineState);
+			D3D12Helper::CommandSetDescriptorHeaps(commandList, { descriptorHeapBasic });
+
+			// ルートパラメーターは1つだけなので、インデックス0にリンクすれば良い
+			D3D12Helper::CommandLinkDescriptorHeapToRootSignature(
+				commandList,
+				D3D12Helper::CreateDescriptorHeapHandleAtGPUIndicatingDescriptorByIndex(
+					device, descriptorHeapBasic, DescriptorHeapType::CBV_SRV_UAV, 0),
+				0
+			);
+
+			D3D12Helper::CommandIASetPrimitiveTopology(commandList, primitiveTopology);
+			D3D12Helper::CommandRSSetViewportAndScissorRect(commandList, viewportScissorRect);
+
+			// ドローコール分ループ
+			for (std::uint32_t i = 0; i < drawCount; ++i)
+			{
+				D3D12Helper::CommandIASetVertexBuffer(commandList, { vertexBufferViewArray[i] });
+				D3D12Helper::CommandIASetIndexBuffer(commandList, indexBufferViewArray[i]);
+
+				D3D12Helper::CommandDrawIndexedInstanced(commandList, indexTotalCountArray[i]);
+			}
+		}
+		D3D12Helper::CommandInvokeResourceBarrierAsTransition(commandList, currentBackBuffer,
+			GraphicsBufferState::RenderTarget, GraphicsBufferState::Present, false);
+
+		D3D12BasicFlow::CommandCloseAndWaitForCompletion(commandList, commandQueue, device);
+		// コマンドを実行し終わってから、クリアする
+		if (!D3D12Helper::ClearCommandAllocatorAndList(commandAllocator, commandList))
+			return { false, L"CommandAllocator, CommandList のクリアに失敗しました" };
+
+		return { true, L"" };
+	}
+
 	std::tuple<bool, std::wstring, std::tuple<Matrix4x4>>
 		D3D12BasicFlow::CalculateMVPMatrix_Impl(
 			const Transform& transform,
