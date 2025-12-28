@@ -80,19 +80,37 @@ namespace ForiverEngine
 
 		/// <summary>
 		/// <para>GPU側のメモリ領域を確保し、その GraphicsBuffer を返す (失敗したら nullptr)</para>
+		/// <para>2次元テクスチャ用</para>
+		/// <para>オフスクリーンレンダリング用で、レンダーターゲット (RT) とシェーダーリソース (SR) で切り替えて用いる</para>
+		/// <para>sRGB の設定不可. 最初は SR として作成する</para>
+		/// <para>GPU内でのみ用いる想定で、CPUからのマップ不可</para>
+		/// </summary>
+		static GraphicsBuffer CreateGraphicsBufferTexture2DForRTAndSR(const Device& device, int width, int height, const Color& clearValue);
+
+		/// <summary>
+		/// <para>GPU側のメモリ領域を確保し、その GraphicsBuffer を返す (失敗したら nullptr)</para>
 		/// <para>デプスバッファ用 (ステンシルは用いず、32bit 深度のみとする)</para>
 		/// <para>GPU内でのみ用いる想定で、CPUからのマップ不可</para>
 		/// </summary>
 		static GraphicsBuffer CreateGraphicsBufferTexture2DAsDepthBuffer(const Device& device, int width, int height, float clearValue);
 
 		/// <summary>
-		/// <para>RTV を作成し、RTV 用 DescriptorHeap に登録する</para>
+		/// <para>RTV を作成し、RTV 用 DescriptorHeap に登録する (基本)</para>
 		/// <para>swapChain からレンダーターゲットバッファ群を取得し、それぞれに対して RTV を作成する</para>
 		/// <para>全て成功したら true, 1つでも失敗したら false を返す (失敗した瞬間に処理を中断する)<para>
 		/// <para>戻り値として取得することは出来ない!</para>
 		/// </summary>
 		static bool CreateRenderTargetViews(
 			const Device& device, const DescriptorHeap& descriptorHeapRTV, const SwapChain& swapChain, bool sRGB);
+
+		/// <summary>
+		/// <para>RTV を作成し、RTV 用 DescriptorHeap に登録する (ポストプロセス用)</para>
+		/// <para>RT を基に RTV を作成し、 DescriptorHeap の index 番目に登録する</para>
+		/// <para>1つだけ作成する. sRGB 不可.</para>
+		/// <para>戻り値として取得することは出来ない!</para>
+		/// </summary>
+		static void CreateRenderTargetViewPP(
+			const Device& device, const DescriptorHeap& descriptorHeapRTV, const GraphicsBuffer& rt, int index);
 
 		/// <summary>
 		/// <para>DSV を作成し、DSV 用 DescriptorHeap に登録する</para>

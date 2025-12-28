@@ -21,6 +21,8 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	WindowHelper::SetTargetFps(60);
 	WindowHelper::SetCursorEnabled(false);
 
+	constexpr Color RTClearColor = Color::CreateFromUint8(60, 150, 210); // 空色
+
 	const auto [factory, device, commandAllocator, commandList, commandQueue, swapChain]
 		= D3D12BasicFlow::CreateStandardObjects(hwnd, WindowWidth, WindowHeight);
 
@@ -31,7 +33,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		= D3D12BasicFlow::CreateRootSignatureAndGraphicsPipelineState(
 			device, rootParameter, samplerConfig, shaderVS, shaderPS, VertexLayouts, FillMode::Solid, CullMode::None);
 
-	const auto [rtBufferGetter, rtvGetter] = D3D12BasicFlow::InitRTV(device, swapChain, 2, false);
+	const auto [rtGetter, rtvGetter] = D3D12BasicFlow::InitRTV(device, swapChain, 2, false);
 	const DescriptorHeapHandleAtCPU dsv = D3D12BasicFlow::InitDSV(device, WindowWidth, WindowHeight, DepthBufferClearValue);
 
 	constexpr Transform terrainTransform = Transform::Identity();
@@ -138,6 +140,46 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 
 	const ViewportScissorRect viewportScissorRect
 		= ViewportScissorRect::CreateFullSized(WindowWidth, WindowHeight);
+
+	//////////////////////////////
+	// ポストプロセス
+
+	// RT, SR で切り替えて使う 2D テクスチャ
+	const GraphicsBuffer ppGraphicsBuffer = D3D12Helper::CreateGraphicsBufferTexture2DForRTAndSR(device, WindowWidth, WindowHeight, RTClearColor);
+	const Texture ppTextureMetadata = Texture
+	{
+		.textureType = GraphicsBufferType::Texture2D,
+		.format = Format::RGBA_U8_01, // RT と同じ. sRGB 不可.
+		.width = WindowWidth,
+		.height = WindowHeight,
+		.rowSize = WindowWidth * 4, // RGBA なので...
+		.sliceSize = WindowWidth * WindowHeight * 4,
+		.sliceCount = 1,
+		.mipLevels = 1,
+	};
+
+	const RootParameter rootParameterPP = RootParameter::CreateBasic(0, 1, 0);
+	const SamplerConfig samplerConfigPP = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
+	const auto [shaderVSPP, shaderPSPP] = D3D12BasicFlow::CompileShader_VS_PS("./shaders/PP.hlsl");
+	const auto [rootSignaturePP, graphicsPipelineStatePP]
+		= D3D12BasicFlow::CreateRootSignatureAndGraphicsPipelineState(
+			device, rootParameterPP, samplerConfigPP, shaderVSPP, shaderPSPP, VertexLayoutsPP, FillMode::Solid, CullMode::Back);
+
+	// RTVのみ作成
+	const DescriptorHeapHandleAtCPU rtvPP = D3D12BasicFlow::InitRTVPP(device, ppGraphicsBuffer);
+
+	// 板ポリのメッシュ
+	const MeshPP meshPP = MeshPP::CreateFullSized();
+
+	// 頂点バッファビューとインデックスバッファビュー
+	const auto [vertexBufferViewPP, indexBufferViewPP]
+		= D3D12BasicFlow::CreateVertexAndIndexBufferViewsPP(device, meshPP);
+
+	// DescriptorHeap
+	const DescriptorHeap descriptorHeapBasicPP
+		= D3D12BasicFlow::InitDescriptorHeapBasic(device, {}, { {ppGraphicsBuffer, ppTextureMetadata} });
+
+	//////////////////////////////
 
 	constexpr Vector3 PlayerCollisionSize = Vector3(0.5f, 1.8f, 0.5f);
 	constexpr float SpeedH = 3.0f; // 水平移動速度 (m/s)
@@ -391,17 +433,17 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 			}
 		}
 
-		const int currentBackBufferIndex = D3D12Helper::GetCurrentBackBufferIndex(swapChain);
-		const GraphicsBuffer currentBackBuffer = rtBufferGetter(currentBackBufferIndex);
-		const DescriptorHeapHandleAtCPU currentBackBufferRTV = rtvGetter(currentBackBufferIndex);
-		if (!currentBackBuffer)
-			ShowError(L"現在のバックバッファーの取得に失敗しました");
+		const int currentBackRTIndex = D3D12Helper::GetCurrentBackBufferIndex(swapChain);
+		const GraphicsBuffer currentBackRT = rtGetter(currentBackRTIndex);
+		const DescriptorHeapHandleAtCPU currentBackRTV = rtvGetter(currentBackRTIndex);
+		if (!currentBackRT)
+			ShowError(L"現在のバックレンダーターゲットの取得に失敗しました");
 
 		D3D12BasicFlow::CommandBasicLoop(
 			commandList, commandQueue, commandAllocator, device,
-			rootSignature, graphicsPipelineState, currentBackBuffer,
-			currentBackBufferRTV, dsv, descriptorHeapBasic, drawingVertexBufferViews, drawingIndexBufferViews,
-			viewportScissorRect, PrimitiveTopology::TriangleList, Color::CreateFromUint8(60, 150, 210), DepthBufferClearValue,
+			rootSignature, graphicsPipelineState, currentBackRT,
+			currentBackRTV, dsv, descriptorHeapBasic, drawingVertexBufferViews, drawingIndexBufferViews,
+			viewportScissorRect, PrimitiveTopology::TriangleList, RTClearColor, DepthBufferClearValue,
 			drawingIndexCounts
 		);
 		if (!D3D12Helper::Present(swapChain))

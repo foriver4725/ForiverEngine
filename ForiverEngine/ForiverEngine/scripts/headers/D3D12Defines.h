@@ -275,7 +275,7 @@ public: \
 		}
 	};
 
-	// 頂点データ 単品
+	// 頂点データ (ブロック)
 	struct VertexData
 	{
 		ForiverEngine::Vector4 pos; // モデル座標系
@@ -285,6 +285,13 @@ public: \
 		std::uint32_t texIndex; // 使用するテクスチャのインデックス (偶数ならテクスチャの上半分、奇数なら下半分となるはず)
 	};
 
+	// 頂点データ (ポストプロセス用板ポリ)
+	struct VertexDataPP
+	{
+		ForiverEngine::Vector4 pos; // 画面座標系. [-1, 1]. Z は使わないので、0固定とかでOK
+		ForiverEngine::Vector2 uv; // 左上が原点
+	};
+
 	// 頂点レイアウト 単品
 	struct VertexLayout
 	{
@@ -292,7 +299,7 @@ public: \
 		Format Format;
 	};
 
-	// 頂点レイアウト (不変値の想定)
+	// 頂点レイアウト (ブロック)
 	const std::vector<VertexLayout> VertexLayouts =
 	{
 		{ "POSITION" , Format::RGBA_F32 },
@@ -300,6 +307,13 @@ public: \
 		{ "NORMAL"   , Format::RGB_F32  },
 		{ "CENTERPOS", Format::RGB_F32  },
 		{ "TEXINDEX" , Format::R_U32    },
+	};
+
+	// 頂点レイアウト (ポストプロセス用板ポリ)
+	const std::vector<VertexLayout> VertexLayoutsPP =
+	{
+		{ "POSITION" , Format::RGBA_F32 },
+		{ "TEXCOORD" , Format::RG_F32   },
 	};
 
 	// ビューポートとシザー矩形

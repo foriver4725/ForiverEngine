@@ -90,6 +90,51 @@ namespace ForiverEngine
 #undef RETURN_TRUE
 	}
 
+	std::tuple<bool, std::wstring, std::tuple<VertexBufferView, IndexBufferView>>
+		D3D12BasicFlow::CreateVertexAndIndexBufferViewsPP_Impl(
+			const Device& device,
+			const MeshPP& mesh
+		)
+	{
+		VertexBufferView vertexBufferView = VertexBufferView();
+		IndexBufferView indexBufferView = IndexBufferView();
+
+#define RETURN_FALSE(errorMessage) \
+	return { false, errorMessage, { vertexBufferView, indexBufferView } };
+#define RETURN_TRUE() \
+	return { true, L"", { vertexBufferView, indexBufferView } };
+
+		const std::vector<VertexDataPP>& vertices = mesh.vertices;               // メッシュのプロパティ
+		const VertexDataPP* verticesPtr = vertices.data();                       // 先頭ポインタ
+		const int vertexSize = static_cast<int>(sizeof(vertices[0]));            // 要素1つ分のメモリサイズ
+		const int verticesSize = static_cast<int>(vertices.size() * vertexSize); // 全体のメモリサイズ
+
+		const std::vector<std::uint32_t>& indices = mesh.indices;                // メッシュのプロパティ
+		const std::uint32_t* indicesPtr = indices.data();                        // 先頭ポインタ
+		const int indexSize = static_cast<int>(sizeof(indices[0]));              // 要素1つ分のメモリサイズ
+		const int indicesSize = static_cast<int>(indices.size() * indexSize);    // 全体のメモリサイズ
+
+		GraphicsBuffer vertexBuffer = GraphicsBuffer();
+		GraphicsBuffer indexBuffer = GraphicsBuffer();
+
+		if (!(vertexBuffer = D3D12Helper::CreateGraphicsBuffer1D(device, verticesSize, true)))
+			RETURN_FALSE(L"頂点バッファーの作成に失敗しました");
+		if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer1D(vertexBuffer, static_cast<const void*>(verticesPtr), verticesSize))
+			RETURN_FALSE(L"頂点バッファーを GPU 側にコピーすることに失敗しました");
+		vertexBufferView = D3D12Helper::CreateVertexBufferView(vertexBuffer, verticesSize, vertexSize);
+
+		if (!(indexBuffer = D3D12Helper::CreateGraphicsBuffer1D(device, indicesSize, true)))
+			RETURN_FALSE(L"インデックスバッファーの作成に失敗しました");
+		if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer1D(indexBuffer, static_cast<const void*>(indicesPtr), indicesSize))
+			RETURN_FALSE(L"インデックスバッファーを GPU 側にコピーすることに失敗しました");
+		indexBufferView = D3D12Helper::CreateIndexBufferView(indexBuffer, indicesSize, Format::R_U32);
+
+		RETURN_TRUE();
+
+#undef RETURN_FALSE
+#undef RETURN_TRUE
+	}
+
 	std::tuple<bool, std::wstring, std::tuple<Blob, Blob>>
 		D3D12BasicFlow::CompileShader_VS_PS_Impl(
 			const std::string& path
@@ -254,6 +299,35 @@ namespace ForiverEngine
 	}
 
 	std::tuple<bool, std::wstring, std::tuple<DescriptorHeapHandleAtCPU>>
+		D3D12BasicFlow::InitRTVPP_Impl(
+			const Device& device,
+			const GraphicsBuffer& rt
+		)
+	{
+		DescriptorHeapHandleAtCPU rtv = DescriptorHeapHandleAtCPU();
+
+#define RETURN_FALSE(errorMessage) \
+	return { false, errorMessage, { rtv } };
+#define RETURN_TRUE() \
+	return { true, L"", { rtv } };
+
+		const DescriptorHeap descriptorHeapRTV = D3D12Helper::CreateDescriptorHeap(device, DescriptorHeapType::RTV, 1, false);
+		if (!descriptorHeapRTV)
+			RETURN_FALSE(L"DescriptorHeap (RTV) の作成に失敗しました");
+
+		D3D12Helper::CreateRenderTargetViewPP(device, descriptorHeapRTV, rt, 0);
+
+		rtv = D3D12Helper::CreateDescriptorHeapHandleAtCPUIndicatingDescriptorByIndex(
+			device, descriptorHeapRTV, DescriptorHeapType::RTV, 0
+		);
+
+		RETURN_TRUE();
+
+#undef RETURN_FALSE
+#undef RETURN_TRUE
+	}
+
+	std::tuple<bool, std::wstring, std::tuple<DescriptorHeapHandleAtCPU>>
 		D3D12BasicFlow::InitDSV_Impl(
 			const Device& device,
 			int width,
@@ -343,9 +417,9 @@ namespace ForiverEngine
 			const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator,
 			const Device& device,
 			// パイプライン関連
-			const RootSignature& rootSignature, const PipelineState& graphicsPipelineState, const GraphicsBuffer& currentBackBuffer,
+			const RootSignature& rootSignature, const PipelineState& graphicsPipelineState, const GraphicsBuffer& rt,
 			// Descriptor
-			const DescriptorHeapHandleAtCPU& currentBackBufferRTV, const DescriptorHeapHandleAtCPU& dsv,
+			const DescriptorHeapHandleAtCPU& rtv, const DescriptorHeapHandleAtCPU& dsv,
 			const DescriptorHeap& descriptorHeapBasic,
 			const std::vector<VertexBufferView>& vertexBufferViewArray,
 			const std::vector<IndexBufferView>& indexBufferViewArray,
@@ -364,11 +438,11 @@ namespace ForiverEngine
 		if (drawCount != static_cast<std::uint32_t>(indexBufferViewArray.size()))
 			return { false, L"インデックスバッファビューの数と、ドローコール数が一致しません" };
 
-		D3D12Helper::CommandInvokeResourceBarrierAsTransition(commandList, currentBackBuffer,
+		D3D12Helper::CommandInvokeResourceBarrierAsTransition(commandList, rt,
 			GraphicsBufferState::Present, GraphicsBufferState::RenderTarget, false);
 		{
-			D3D12Helper::CommandSetRT(commandList, currentBackBufferRTV, dsv);
-			D3D12Helper::CommandClearRT(commandList, currentBackBufferRTV, dsv, rtvClearColor, depthClearValue);
+			D3D12Helper::CommandSetRT(commandList, rtv, dsv);
+			D3D12Helper::CommandClearRT(commandList, rtv, dsv, rtvClearColor, depthClearValue);
 
 			D3D12Helper::CommandSetRootSignature(commandList, rootSignature);
 			D3D12Helper::CommandSetGraphicsPipelineState(commandList, graphicsPipelineState);
@@ -394,7 +468,7 @@ namespace ForiverEngine
 				D3D12Helper::CommandDrawIndexedInstanced(commandList, indexTotalCountArray[i]);
 			}
 		}
-		D3D12Helper::CommandInvokeResourceBarrierAsTransition(commandList, currentBackBuffer,
+		D3D12Helper::CommandInvokeResourceBarrierAsTransition(commandList, rt,
 			GraphicsBufferState::RenderTarget, GraphicsBufferState::Present, false);
 
 		D3D12BasicFlow::CommandCloseAndWaitForCompletion(commandList, commandQueue, device);

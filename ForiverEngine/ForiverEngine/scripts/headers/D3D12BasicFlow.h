@@ -74,6 +74,18 @@ namespace ForiverEngine
 		}
 
 		/// <summary>
+		/// 頂点バッファビューとインデックスバッファビューを一括で作成する (ポストプロセス用板ポリ)
+		/// </summary>
+		static std::tuple<VertexBufferView, IndexBufferView>
+			CreateVertexAndIndexBufferViewsPP(
+				const Device& device,
+				const MeshPP& mesh
+			)
+		{
+			return Check(CreateVertexAndIndexBufferViewsPP_Impl(device, mesh));
+		}
+
+		/// <summary>
 		/// シェーダーをロードして、頂点シェーダーとピクセルシェーダーにコンパイルする
 		/// </summary>
 		static std::tuple<Blob, Blob>
@@ -155,7 +167,7 @@ namespace ForiverEngine
 		}
 
 		/// <summary>
-		/// <para>専用の DescriptorHeap を作成し、複数個の RTV をその DescriptorHeap の中に作成して返す</para>
+		/// <para>専用の DescriptorHeap を作成し、複数個の RTV をその DescriptorHeap の中に作成して返す (基本)</para>
 		/// <para>戻り値は関数で、インデックスを基に、バッファとビューを取得出来る</para>
 		/// </summary>
 		static std::tuple<std::function<GraphicsBuffer(int)>, std::function<DescriptorHeapHandleAtCPU(int)>>
@@ -167,6 +179,19 @@ namespace ForiverEngine
 			)
 		{
 			return Check(InitRTV_Impl(device, swapChain, amount, sRGB));
+		}
+
+		/// <summary>
+		/// <para>与えられた RT に対して、専用の DescriptorHeap を作成し、1つの RTV をその DescriptorHeap の中に作成して返す (ポストプロセス用)</para>
+		/// <para>作成した RTV を返す</para>
+		/// </summary>
+		static DescriptorHeapHandleAtCPU
+			InitRTVPP(
+				const Device& device,
+				const GraphicsBuffer& rt
+			)
+		{
+			return Check(InitRTVPP_Impl(device, rt));
 		}
 
 		/// <summary>
@@ -227,8 +252,8 @@ namespace ForiverEngine
 		/// <param name="device">Device</param>
 		/// <param name="rootSignature">RootSignature</param>
 		/// <param name="graphicsPipelineState">Graphics PipelineState</param>
-		/// <param name="currentBackBuffer">現在のバックバッファ</param>
-		/// <param name="currentBackBufferRTV">現在のバックバッファの RTV</param>
+		/// <param name="rt">RT</param>
+		/// <param name="rtv">RTV</param>
 		/// <param name="dsv">DSV</param>
 		/// <param name="descriptorHeapBasics">CBV/SRV/UAV 用 DescriptorHeap (0番目のルートパラメーターに紐づける想定なので、1つしか渡せない)</param>
 		/// <param name="vertexBufferViewArray">頂点バッファビュー (サイズはドローコール数と同じ!)</param>
@@ -244,9 +269,9 @@ namespace ForiverEngine
 				const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator,
 				const Device& device,
 				// パイプライン関連
-				const RootSignature& rootSignature, const PipelineState& graphicsPipelineState, const GraphicsBuffer& currentBackBuffer,
+				const RootSignature& rootSignature, const PipelineState& graphicsPipelineState, const GraphicsBuffer& rt,
 				// Descriptor
-				const DescriptorHeapHandleAtCPU& currentBackBufferRTV, const DescriptorHeapHandleAtCPU& dsv,
+				const DescriptorHeapHandleAtCPU& rtv, const DescriptorHeapHandleAtCPU& dsv,
 				const DescriptorHeap& descriptorHeapBasic,
 				const std::vector<VertexBufferView>& vertexBufferViewArray,
 				const std::vector<IndexBufferView>& indexBufferViewArray,
@@ -259,8 +284,8 @@ namespace ForiverEngine
 		{
 			Check(CommandBasicLoop_Impl(
 				commandList, commandQueue, commandAllocator, device,
-				rootSignature, graphicsPipelineState, currentBackBuffer,
-				currentBackBufferRTV, dsv, descriptorHeapBasic, vertexBufferViewArray, indexBufferViewArray,
+				rootSignature, graphicsPipelineState, rt,
+				rtv, dsv, descriptorHeapBasic, vertexBufferViewArray, indexBufferViewArray,
 				viewportScissorRect, primitiveTopology, rtvClearColor, depthClearValue, indexTotalCountArray));
 		}
 
@@ -296,12 +321,21 @@ namespace ForiverEngine
 			);
 
 		/// <summary>
-		/// 頂点バッファビューとインデックスバッファビューを一括で作成する
+		/// 頂点バッファビューとインデックスバッファビューを一括で作成する (ブロック)
 		/// </summary>
 		static std::tuple<bool, std::wstring, std::tuple<VertexBufferView, IndexBufferView>>
 			CreateVertexAndIndexBufferViews_Impl(
 				const Device& device,
 				const Mesh& mesh
+			);
+
+		/// <summary>
+		/// 頂点バッファビューとインデックスバッファビューを一括で作成する (ポストプロセス用板ポリ)
+		/// </summary>
+		static std::tuple<bool, std::wstring, std::tuple<VertexBufferView, IndexBufferView>>
+			CreateVertexAndIndexBufferViewsPP_Impl(
+				const Device& device,
+				const MeshPP& mesh
 			);
 
 		/// <summary>
@@ -395,7 +429,7 @@ namespace ForiverEngine
 			);
 
 		/// <summary>
-		/// <para>専用の DescriptorHeap を作成し、複数個の RTV をその DescriptorHeap の中に作成して返す</para>
+		/// <para>専用の DescriptorHeap を作成し、複数個の RTV をその DescriptorHeap の中に作成して返す (基本)</para>
 		/// <para>戻り値は関数で、インデックスを基に、バッファとビューを取得出来る</para>
 		/// </summary>
 		static std::tuple<bool, std::wstring, std::tuple<std::function<GraphicsBuffer(int)>, std::function<DescriptorHeapHandleAtCPU(int)>>>
@@ -404,6 +438,16 @@ namespace ForiverEngine
 				const SwapChain& swapChain,
 				int amount,
 				bool sRGB
+			);
+
+		/// <summary>
+		/// <para>与えられた RT に対して、専用の DescriptorHeap を作成し、1つの RTV をその DescriptorHeap の中に作成して返す (ポストプロセス用)</para>
+		/// <para>作成した RTV を返す</para>
+		/// </summary>
+		static std::tuple<bool, std::wstring, std::tuple<DescriptorHeapHandleAtCPU>>
+			InitRTVPP_Impl(
+				const Device& device,
+				const GraphicsBuffer& rt
 			);
 
 		/// <summary>
@@ -454,8 +498,8 @@ namespace ForiverEngine
 		/// <param name="device">Device</param>
 		/// <param name="rootSignature">RootSignature</param>
 		/// <param name="graphicsPipelineState">Graphics PipelineState</param>
-		/// <param name="currentBackBuffer">現在のバックバッファ</param>
-		/// <param name="currentBackBufferRTV">現在のバックバッファの RTV</param>
+		/// <param name="rt">RT</param>
+		/// <param name="rtv">RTV</param>
 		/// <param name="dsv">DSV</param>
 		/// <param name="descriptorHeapBasics">CBV/SRV/UAV 用 DescriptorHeap (0番目のルートパラメーターに紐づける想定なので、1つしか渡せない)</param>
 		/// <param name="vertexBufferViewArray">頂点バッファビュー (サイズはドローコール数と同じ!)</param>
@@ -471,9 +515,9 @@ namespace ForiverEngine
 				const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator,
 				const Device& device,
 				// パイプライン関連
-				const RootSignature& rootSignature, const PipelineState& graphicsPipelineState, const GraphicsBuffer& currentBackBuffer,
+				const RootSignature& rootSignature, const PipelineState& graphicsPipelineState, const GraphicsBuffer& rt,
 				// Descriptor
-				const DescriptorHeapHandleAtCPU& currentBackBufferRTV, const DescriptorHeapHandleAtCPU& dsv,
+				const DescriptorHeapHandleAtCPU& rtv, const DescriptorHeapHandleAtCPU& dsv,
 				const DescriptorHeap& descriptorHeapBasic,
 				const std::vector<VertexBufferView>& vertexBufferViewArray,
 				const std::vector<IndexBufferView>& indexBufferViewArray,

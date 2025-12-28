@@ -90,9 +90,14 @@ namespace ForiverEngine
 		const Device& device, const RootParameter& rootParameter, const SamplerConfig& samplerConfig, std::wstring& outErrorMessage)
 	{
 		// 同じ種類の Descriptor が複数連続している場合、まとめて指定できるようにするためのもの
-		std::vector<D3D12_DESCRIPTOR_RANGE> descriptorRangesReal = std::vector<D3D12_DESCRIPTOR_RANGE>(rootParameter.descriptorRanges.size(), {});
+		std::vector<D3D12_DESCRIPTOR_RANGE> descriptorRangesReal = {};
+		descriptorRangesReal.reserve(rootParameter.descriptorRanges.size());
 		for (int i = 0; i < static_cast<int>(rootParameter.descriptorRanges.size()); ++i)
-			descriptorRangesReal[i] = Construct(rootParameter.descriptorRanges[i]);
+		{
+			if (rootParameter.descriptorRanges[i].amount <= 0)
+				continue;
+			descriptorRangesReal.push_back(Construct(rootParameter.descriptorRanges[i]));
+		}
 
 		// Descriptor の総数を算出する
 		int totalDescriptorAmount = 0;
@@ -450,6 +455,53 @@ namespace ForiverEngine
 		return GraphicsBuffer();
 	}
 
+	GraphicsBuffer D3D12Helper::CreateGraphicsBufferTexture2DForRTAndSR(const Device& device, int width, int height, const Color& clearValue)
+	{
+		const D3D12_HEAP_PROPERTIES heapProperties =
+		{
+			.Type = D3D12_HEAP_TYPE_DEFAULT, // テクスチャ用
+			.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN, // 規定値
+			.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN, // 規定値
+			.CreationNodeMask = 0, // アダプターが1つなので...
+			.VisibleNodeMask = 0, // アダプターが1つなので...
+		};
+
+		const D3D12_RESOURCE_DESC resourceDesc =
+		{
+			.Dimension = static_cast<D3D12_RESOURCE_DIMENSION>(GraphicsBufferType::Texture2D),
+			.Alignment = 0, // 既定値でOK
+			.Width = static_cast<UINT64>(width),
+			.Height = static_cast<UINT>(height),
+			.DepthOrArraySize = 1,
+			.MipLevels = 0, // 規定値
+			.Format = static_cast<DXGI_FORMAT>(Format::RGBA_U8_01),
+			.SampleDesc = {.Count = 1, .Quality = 0 }, // 通常テクスチャなのでアンチエイリアシングはしない (クオリティは最低)
+			.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN, // 決定しない
+			.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET, // RT として使えるようにする!
+		};
+
+		const D3D12_CLEAR_VALUE clearValueReal =
+		{
+			.Format = static_cast<DXGI_FORMAT>(Format::RGBA_U8_01),
+			.Color = { clearValue.r, clearValue.g,  clearValue.b,  clearValue.a }
+		};
+
+		ID3D12Resource* ptr = nullptr;
+		if (SUCCEEDED(device->CreateCommittedResource(
+			&heapProperties,
+			D3D12_HEAP_FLAG_NONE, // 指定なし
+			&resourceDesc,
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, // 最初は SR として使う
+			&clearValueReal,
+			IID_PPV_ARGS(&ptr)
+		)))
+		{
+			return GraphicsBuffer(ptr);
+		}
+
+		return GraphicsBuffer();
+	}
+
 	GraphicsBuffer D3D12Helper::CreateGraphicsBufferTexture2DAsDepthBuffer(const Device& device, int width, int height, float clearValue)
 	{
 		const D3D12_HEAP_PROPERTIES heapProperties =
@@ -532,6 +584,25 @@ namespace ForiverEngine
 		}
 
 		return true;
+	}
+
+	void D3D12Helper::CreateRenderTargetViewPP(
+		const Device& device, const DescriptorHeap& descriptorHeapRTV, const GraphicsBuffer& rt, int index)
+	{
+		const D3D12_RENDER_TARGET_VIEW_DESC desc =
+		{
+			.Format = static_cast<DXGI_FORMAT>(Format::RGBA_U8_01),
+			.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D,
+		};
+
+		const DescriptorHeapHandleAtCPU handleRTV = CreateDescriptorHeapHandleAtCPUIndicatingDescriptorByIndex(
+			device, descriptorHeapRTV, DescriptorHeapType::RTV, index);
+
+		device->CreateRenderTargetView(
+			rt.Ptr,
+			&desc,
+			*Reinterpret(&handleRTV)
+		);
 	}
 
 	void D3D12Helper::CreateDepthStencilView(

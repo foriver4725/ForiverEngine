@@ -159,9 +159,15 @@
     <ClInclude Include="scripts\headers\PlayerControl.h">
       <Filter>scripts\headers</Filter>
     </ClInclude>
+    <ClInclude Include="scripts\common\Component\Mesh\MeshPP.h">
+      <Filter>scripts\common\Component\Mesh</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shaders\Basic.hlsl">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\PP.hlsl">
       <Filter>shaders</Filter>
     </FxCompile>
   </ItemGroup>
