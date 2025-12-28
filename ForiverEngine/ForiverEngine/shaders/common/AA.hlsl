@@ -1,3 +1,5 @@
+#include <common/Defines.hlsl>
+
 // ポストプロセスでAAを適用する
 
 struct AAParams

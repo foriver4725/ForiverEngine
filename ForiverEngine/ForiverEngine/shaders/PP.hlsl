@@ -26,7 +26,7 @@ struct PSOutput
     float4 color : SV_TARGET;
 };
 
-#include "./common/AA.hlsl"
+#include <common/AA.hlsl>
 
 V2P VSMain(VSInput input)
 {
@@ -47,7 +47,7 @@ PSOutput PSMain(V2P input)
     aaParams.Sampler = _Sampler;
     aaParams.UV = input.uv;
     aaParams.UVPerPixel = float2(1.0 / _WindowWidth, 1.0 / _WindowHeight); // ポストプロセスなので、これでOK
-    aaParams.LimitLuminance = _LimitLuminance;
+    aaParams.LimitLuminance = saturate(_LimitLuminance);
     aaParams.AAPower = _AAPower;
     
     output.color = PSCalcAA(aaParams);

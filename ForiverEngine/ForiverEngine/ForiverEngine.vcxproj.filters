@@ -176,5 +176,11 @@
     <FxCompile Include="shaders\common\AA.hlsl">
       <Filter>shaders\common</Filter>
     </FxCompile>
+    <FxCompile Include="shaders\common\Lighting.hlsl">
+      <Filter>shaders\common</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\common\Defines.hlsl">
+      <Filter>shaders\common</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

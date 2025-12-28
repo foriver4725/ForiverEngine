@@ -13,8 +13,6 @@ cbuffer _0 : register(b0)
     float4 _AmbientLightColor;
 }
 
-static const float PI = 3.14159265359;
-
 Texture2DArray<float4> _Texture : register(t0);
 SamplerState _Sampler : register(s0);
 
@@ -42,6 +40,8 @@ struct PSOutput
     float4 color : SV_TARGET;
 };
 
+#include <common/Lighting.hlsl>
+
 float PSCheckIsSelectedBlock(float3 centerWorldPos)
 {
     // そもそも選択中のブロックが無い
@@ -55,20 +55,6 @@ float PSCheckIsSelectedBlock(float3 centerWorldPos)
         return 1.0;
     }
     return 0.0;
-}
-
-float3 PSCalcLighting(float3 normal)
-{
-    // 太陽光
-    const float NdotL = saturate(dot(normal, -_DirectionalLightDirection));
-    const float3 directionalLight = _DirectionalLightColor.rgb * NdotL / PI;
-    
-    // 環境光
-    const float3 ambientLight = _AmbientLightColor.rgb;
-    
-    // 光の影響を合成して返す
-    const float3 light = directionalLight + ambientLight;
-    return light;
 }
 
 V2P VSMain(VSInput input)
@@ -99,7 +85,12 @@ PSOutput PSMain(V2P input)
     if (PSCheckIsSelectedBlock(input.centerWorldPos) > 0.5)
         color.rgb = lerp(color.rgb, _SelectColor.rgb, _SelectColor.a);
     
-    color.rgb *= PSCalcLighting(input.normal);
+    LightingParams lightingParams;
+    lightingParams.Normal = normalize(input.normal);
+    lightingParams.SunDirection = normalize(_DirectionalLightDirection);
+    lightingParams.SunColor = _DirectionalLightColor.rgb;
+    lightingParams.AmbientColor = _AmbientLightColor.rgb;
+    color.rgb *= PSCalcLighting(lightingParams);
     
     output.color = color;
     
