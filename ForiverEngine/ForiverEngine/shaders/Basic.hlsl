@@ -7,7 +7,13 @@ cbuffer _0 : register(b0)
     float3 _SelectingBlockPosition;
     float _IsSelectingAnyBlock;
     float4 _SelectColor;
+    
+    float3 _DirectionalLightDirection;
+    float4 _DirectionalLightColor;
+    float4 _AmbientLightColor;
 }
+
+static const float PI = 3.14159265359;
 
 Texture2DArray<float4> _Texture : register(t0);
 SamplerState _Sampler : register(s0);
@@ -51,6 +57,20 @@ float PSCheckIsSelectedBlock(float3 centerWorldPos)
     return 0.0;
 }
 
+float3 PSCalcLighting(float3 normal)
+{
+    // 太陽光
+    const float NdotL = saturate(dot(normal, -_DirectionalLightDirection));
+    const float3 directionalLight = _DirectionalLightColor.rgb * NdotL / PI;
+    
+    // 環境光
+    const float3 ambientLight = _AmbientLightColor.rgb;
+    
+    // 光の影響を合成して返す
+    const float3 light = directionalLight + ambientLight;
+    return light;
+}
+
 V2P VSMain(VSInput input)
 {
     V2P output;
@@ -78,6 +98,8 @@ PSOutput PSMain(V2P input)
     float4 color = _Texture.Sample(_Sampler, float3(uvReal, texIndexReal));
     if (PSCheckIsSelectedBlock(input.centerWorldPos) > 0.5)
         color.rgb = lerp(color.rgb, _SelectColor.rgb, _SelectColor.a);
+    
+    color.rgb *= PSCalcLighting(input.normal);
     
     output.color = color;
     

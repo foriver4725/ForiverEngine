@@ -63,6 +63,11 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		Vector3 SelectingBlockPosition; // 選択中のブロック位置 (ワールド座標)
 		float IsSelectingAnyBlock; // ブロックを選択中かどうか (bool 型として扱う)
 		Color SelectColor; // 選択中のブロックの乗算色 (a でブレンド率を指定)
+
+		Vector3 DirectionalLightDirection; // 太陽光の向き (正規化済み)
+		float Pad0;
+		Color DirectionalLightColor; // 太陽光の色 (a は使わない)
+		Color AmbientLightColor; // 環境光の色 (a は使わない)
 	};
 
 	CBData0 cbData0 =
@@ -74,6 +79,10 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		.SelectingBlockPosition = Vector3::Zero(),
 		.IsSelectingAnyBlock = 0,
 		.SelectColor = Color::CreateFromUint8(255, 255, 0, 100),
+
+		.DirectionalLightDirection = Vector3::One().Normed(),
+		.DirectionalLightColor = Color::White() * 1.8f,
+		.AmbientLightColor = Color::White() * 0.5f,
 	};
 
 	// CBV 用バッファ
@@ -117,7 +126,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	constexpr float CameraSensitivityH = 180.0f; // 水平感度 (度/s)
 	constexpr float CameraSensitivityV = 90.0f; // 垂直感度 (度/s)
 	constexpr float MinVelocityV = -50.0f; // 最大落下速度 (m/s)
-	constexpr float JumpHeight = 1.1f; // ジャンプ高さ (m)
+	constexpr float JumpHeight = 1.05f; // ジャンプ高さ (m)
 	constexpr float EyeHeight = 1.6f; // 目の高さ (m)
 	constexpr float GroundedCheckOffset = 0.1f; // 接地判定のオフセット (m). 埋まっている判定と区別するため、少しずらす
 	float velocityV = 0; // 鉛直速度
