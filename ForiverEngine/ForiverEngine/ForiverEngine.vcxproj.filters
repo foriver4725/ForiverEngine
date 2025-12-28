@@ -58,6 +58,9 @@
     <Filter Include="scripts\common\Utils">
       <UniqueIdentifier>{90ab1ae7-0392-4389-bfcf-1153c9a647a2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="shaders\common">
+      <UniqueIdentifier>{5f68b7dd-70b4-4ffd-abed-f240d8631c01}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="oss\SimplexNoise.h">
@@ -169,6 +172,9 @@
     </FxCompile>
     <FxCompile Include="shaders\PP.hlsl">
       <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\common\AA.hlsl">
+      <Filter>shaders\common</Filter>
     </FxCompile>
   </ItemGroup>
 </Project>

@@ -181,8 +181,8 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	{
 		std::uint32_t WindowWidth;
 		std::uint32_t WindowHeight;
-		float LimitLuminance; // [0.0f, 1.0f]. 輝度の差がこれ以上ないと、端にあるとみなさない
-		float AAPower; // アンチエイリアスの強さ (1.0f で普通. それより小さいと元ピクセルの影響が強くなる)
+		float LimitLuminance; // ピクセルがモデルの端にあると判断する輝度差の閾値 ([0.0, 1.0]. 小さいほどAAが多くかかる)
+		float AAPower; // アンチエイリアスの強さ (大きいほどAAが強くかかる)
 	};
 	CBData0PP cbData0PP =
 	{
