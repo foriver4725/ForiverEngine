@@ -116,12 +116,17 @@ https://github.com/user-attachments/assets/a7f54352-877b-468c-a954-d8399b68ff76
 
 <img width="50%" alt="image" src="https://github.com/user-attachments/assets/245b3668-1689-4797-8391-5f55ba24376e" />
 
-</details>
-
 ---
 描画距離を設定し、その範囲内の地形についてだけ、ドローコールを発行する
 
 https://github.com/user-attachments/assets/6990580c-cd22-4d50-ab5d-8f627ca79271
+
+</details>
+
+---
+地中の当たり判定を実装
+
+https://github.com/user-attachments/assets/c2fc2e4c-d963-4b22-aefe-aff62fdff570
 
 ## OSS
 | 名前 | ライセンス |
