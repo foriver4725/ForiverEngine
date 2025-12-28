@@ -174,10 +174,8 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		// 落下とジャンプ
 		{
 			// 設置判定
-			const int surfaceY = PlayerControl::GetFootSurfaceHeight(
-				terrains,
-				PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight),
-				PlayerCollisionSize);
+			const Vector3 playerFootPosition = PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight);
+			const int surfaceY = PlayerControl::GetFootSurfaceHeight(terrains, playerFootPosition, PlayerCollisionSize);
 			const bool isGrounded = surfaceY > 0 ? (cameraTransform.position.y - EyeHeight <= surfaceY + 0.5f + GroundedCheckOffset) : false;
 
 			if (isGrounded)

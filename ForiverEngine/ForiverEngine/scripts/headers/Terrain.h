@@ -129,11 +129,12 @@ namespace ForiverEngine
 		}
 
 		/// <summary>
-		/// 地表ブロックの高さを取得する (無いなら -1)
+		/// <para>地表ブロックの高さを取得する (無いなら -1)</para>
+		/// <para>ただし、Y座標の探索については、maxY 以下しか地表候補としてみない (地中でも正しく判定するため)</para>
 		/// </summary>
-		int GetSurfaceHeight(int x, int z) const
+		int GetSurfaceHeight(int x, int z, int maxY = ChunkHeight - 1) const
 		{
-			for (int y = static_cast<int>(data.size()) - 1; y >= 0; --y)
+			for (int y = maxY; y >= 0; --y)
 			{
 				if (data[y][z][x] != Block::Air)
 					return y;
@@ -141,9 +142,9 @@ namespace ForiverEngine
 
 			return -1; // 地面が無い
 		}
-		int GetSurfaceHeight(const Lattice2& position) const
+		int GetSurfaceHeight(const Lattice2& position, int maxY = ChunkHeight - 1) const
 		{
-			return GetSurfaceHeight(position.x, position.y);
+			return GetSurfaceHeight(position.x, position.y, maxY);
 		}
 
 	private:

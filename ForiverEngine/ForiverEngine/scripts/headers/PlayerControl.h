@@ -43,11 +43,11 @@ namespace ForiverEngine
 			transform.position += moveDirection * (moveSpeed * deltaSeconds);
 		}
 
-		// 足元にある中で、最も高い地面の高さを取得する
+		// 足元より下である中で、最も高い地面の高さを取得する
 		template<std::uint32_t ChunkSize>
 		static int GetFootSurfaceHeight(
 			const std::array<std::array<Terrain, ChunkSize>, ChunkSize>& terrainChunks,
-			const Vector3& position, // 足元の座標
+			const Vector3& position, // 足元の座標 (地面の高さはこれより大きくなることはない)
 			const Vector3& size // コリジョンのサイズ
 		)
 		{
@@ -66,13 +66,17 @@ namespace ForiverEngine
 
 			const int minX = std::clamp(static_cast<int>(std::round(localPosition.x - size.x * 0.5f)), 0, Terrain::ChunkSize - 1);
 			const int maxX = std::clamp(static_cast<int>(std::round(localPosition.x + size.x * 0.5f)), 0, Terrain::ChunkSize - 1);
+			const int maxY = std::clamp(static_cast<int>(std::floor(localPosition.y)), 0, Terrain::ChunkHeight - 1);
 			const int minZ = std::clamp(static_cast<int>(std::round(localPosition.z - size.z * 0.5f)), 0, Terrain::ChunkSize - 1);
 			const int maxZ = std::clamp(static_cast<int>(std::round(localPosition.z + size.z * 0.5f)), 0, Terrain::ChunkSize - 1);
 
 			int surfaceY = -1;
 			for (int z = minZ; z <= maxZ; ++z)
 				for (int x = minX; x <= maxX; ++x)
-					surfaceY = std::max(surfaceY, terrain.GetSurfaceHeight(x, z));
+				{
+					const int height = terrain.GetSurfaceHeight(x, z, maxY);
+					surfaceY = std::max(surfaceY, height);
+				}
 
 			return surfaceY;
 		}
