@@ -443,6 +443,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 			commandList, commandQueue, commandAllocator, device,
 			rootSignature, graphicsPipelineState, currentBackRT,
 			currentBackRTV, dsv, descriptorHeapBasic, drawingVertexBufferViews, drawingIndexBufferViews,
+			GraphicsBufferState::Present, GraphicsBufferState::RenderTarget,
 			viewportScissorRect, PrimitiveTopology::TriangleList, RTClearColor, DepthBufferClearValue,
 			drawingIndexCounts
 		);

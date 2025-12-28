@@ -258,6 +258,8 @@ namespace ForiverEngine
 		/// <param name="descriptorHeapBasics">CBV/SRV/UAV 用 DescriptorHeap (0番目のルートパラメーターに紐づける想定なので、1つしか渡せない)</param>
 		/// <param name="vertexBufferViewArray">頂点バッファビュー (サイズはドローコール数と同じ!)</param>
 		/// <param name="indexBufferViewArray">インデックスバッファビュー (サイズはドローコール数と同じ!)</param>
+		/// <param name="rtStateOutsideRender">レンダー外の RT の状態</param>
+		/// <param name="rtStateInsideRender">レンダー内の RT の状態</param>
 		/// <param name="viewportScissorRect">ビューポートとシザー矩形</param>
 		/// <param name="primitiveTopology">プリミティブのトポロジー</param>
 		/// <param name="rtvClearColor">RTV のクリアカラー</param>
@@ -276,6 +278,7 @@ namespace ForiverEngine
 				const std::vector<VertexBufferView>& vertexBufferViewArray,
 				const std::vector<IndexBufferView>& indexBufferViewArray,
 				// 数値情報
+				GraphicsBufferState rtStateOutsideRender, GraphicsBufferState rtStateInsideRender,
 				const ViewportScissorRect& viewportScissorRect, PrimitiveTopology primitiveTopology,
 				Color rtvClearColor, float depthClearValue,
 				// ドローコール関連
@@ -286,7 +289,9 @@ namespace ForiverEngine
 				commandList, commandQueue, commandAllocator, device,
 				rootSignature, graphicsPipelineState, rt,
 				rtv, dsv, descriptorHeapBasic, vertexBufferViewArray, indexBufferViewArray,
-				viewportScissorRect, primitiveTopology, rtvClearColor, depthClearValue, indexTotalCountArray));
+				rtStateOutsideRender, rtStateInsideRender,
+				viewportScissorRect, primitiveTopology, rtvClearColor, depthClearValue,
+				indexTotalCountArray));
 		}
 
 		/// <summary>
@@ -504,6 +509,8 @@ namespace ForiverEngine
 		/// <param name="descriptorHeapBasics">CBV/SRV/UAV 用 DescriptorHeap (0番目のルートパラメーターに紐づける想定なので、1つしか渡せない)</param>
 		/// <param name="vertexBufferViewArray">頂点バッファビュー (サイズはドローコール数と同じ!)</param>
 		/// <param name="indexBufferViewArray">インデックスバッファビュー (サイズはドローコール数と同じ!)</param>
+		/// <param name="rtStateOutsideRender">レンダー外の RT の状態</param>
+		/// <param name="rtStateInsideRender">レンダー内の RT の状態</param>
 		/// <param name="viewportScissorRect">ビューポートとシザー矩形</param>
 		/// <param name="primitiveTopology">プリミティブのトポロジー</param>
 		/// <param name="rtvClearColor">RTV のクリアカラー</param>
@@ -522,6 +529,7 @@ namespace ForiverEngine
 				const std::vector<VertexBufferView>& vertexBufferViewArray,
 				const std::vector<IndexBufferView>& indexBufferViewArray,
 				// 数値情報
+				GraphicsBufferState rtStateOutsideRender, GraphicsBufferState rtStateInsideRender,
 				const ViewportScissorRect& viewportScissorRect, PrimitiveTopology primitiveTopology,
 				Color rtvClearColor, float depthClearValue,
 				// ドローコール関連

@@ -424,6 +424,7 @@ namespace ForiverEngine
 			const std::vector<VertexBufferView>& vertexBufferViewArray,
 			const std::vector<IndexBufferView>& indexBufferViewArray,
 			// 数値情報
+			GraphicsBufferState rtStateOutsideRender, GraphicsBufferState rtStateInsideRender,
 			const ViewportScissorRect& viewportScissorRect, PrimitiveTopology primitiveTopology,
 			Color rtvClearColor, float depthClearValue,
 			// ドローコール関連
@@ -438,8 +439,7 @@ namespace ForiverEngine
 		if (drawCount != static_cast<std::uint32_t>(indexBufferViewArray.size()))
 			return { false, L"インデックスバッファビューの数と、ドローコール数が一致しません" };
 
-		D3D12Helper::CommandInvokeResourceBarrierAsTransition(commandList, rt,
-			GraphicsBufferState::Present, GraphicsBufferState::RenderTarget, false);
+		D3D12Helper::CommandInvokeResourceBarrierAsTransition(commandList, rt, rtStateOutsideRender, rtStateInsideRender, false);
 		{
 			D3D12Helper::CommandSetRT(commandList, rtv, dsv);
 			D3D12Helper::CommandClearRT(commandList, rtv, dsv, rtvClearColor, depthClearValue);
@@ -468,8 +468,7 @@ namespace ForiverEngine
 				D3D12Helper::CommandDrawIndexedInstanced(commandList, indexTotalCountArray[i]);
 			}
 		}
-		D3D12Helper::CommandInvokeResourceBarrierAsTransition(commandList, rt,
-			GraphicsBufferState::RenderTarget, GraphicsBufferState::Present, false);
+		D3D12Helper::CommandInvokeResourceBarrierAsTransition(commandList, rt, rtStateInsideRender, rtStateOutsideRender, false);
 
 		D3D12BasicFlow::CommandCloseAndWaitForCompletion(commandList, commandQueue, device);
 		// コマンドを実行し終わってから、クリアする
