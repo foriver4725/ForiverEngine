@@ -32,37 +32,27 @@ float PSCalcLuminance(float4 color)
     return dot(color.rgb, float3(0.299, 0.587, 0.114));
 }
 
-V2P VSMain(VSInput input)
+// アンチエイリアスを計算する
+// FXAA っぽい何か
+float4 PSCalcAA(float2 uv)
 {
-    V2P output;
-    
-    output.pos = input.pos;
-    output.uv = input.uv;
-    
-    return output;
-}
-
-PSOutput PSMain(V2P input)
-{
-    PSOutput output;
-    
     // ポストプロセスなので、この計算で OK
     const float2 uvPerPixel = float2(1.0 / _WindowWidth, 1.0 / _WindowHeight);
     
     // 近傍のピクセル値を取得する
     const float4 pixels[9] =
     {
-        _Texture.Sample(_Sampler, input.uv + uvPerPixel * float2(-1, -1)), // 左上
-        _Texture.Sample(_Sampler, input.uv + uvPerPixel * float2(0, -1)), // 上
-        _Texture.Sample(_Sampler, input.uv + uvPerPixel * float2(1, -1)), // 右上
+        _Texture.Sample(_Sampler, uv + uvPerPixel * float2(-1, -1)), // 左上
+        _Texture.Sample(_Sampler, uv + uvPerPixel * float2(0, -1)), // 上
+        _Texture.Sample(_Sampler, uv + uvPerPixel * float2(1, -1)), // 右上
         
-        _Texture.Sample(_Sampler, input.uv + uvPerPixel * float2(-1, 0)), // 左
-        _Texture.Sample(_Sampler, input.uv + uvPerPixel * float2(0, 0)), // 中央
-        _Texture.Sample(_Sampler, input.uv + uvPerPixel * float2(1, 0)), // 右
+        _Texture.Sample(_Sampler, uv + uvPerPixel * float2(-1, 0)), // 左
+        _Texture.Sample(_Sampler, uv + uvPerPixel * float2(0, 0)), // 中央
+        _Texture.Sample(_Sampler, uv + uvPerPixel * float2(1, 0)), // 右
         
-        _Texture.Sample(_Sampler, input.uv + uvPerPixel * float2(-1, 1)), // 左下
-        _Texture.Sample(_Sampler, input.uv + uvPerPixel * float2(0, 1)), // 下
-        _Texture.Sample(_Sampler, input.uv + uvPerPixel * float2(1, 1)), // 右下
+        _Texture.Sample(_Sampler, uv + uvPerPixel * float2(-1, 1)), // 左下
+        _Texture.Sample(_Sampler, uv + uvPerPixel * float2(0, 1)), // 下
+        _Texture.Sample(_Sampler, uv + uvPerPixel * float2(1, 1)), // 右下
     };
     
     // 近傍のピクセルの輝度を計算する
@@ -155,8 +145,7 @@ PSOutput PSMain(V2P input)
     if (maxDiffIndex == -1)
     {
         // 輝度差が一定以下なら AA をかけない
-        output.color = pixels[4]; // 中央のピクセル値
-        return output;
+        return pixels[4]; // 中央のピクセル値
     }
     
     // 輝度の差を何乗かして重みを決定する
@@ -183,7 +172,24 @@ PSOutput PSMain(V2P input)
         aa = lerp(pixelMeans[11], pixelMeans[10], aaWeight); // 斜め 左下-中央
     
     // a値は、元の値をそのまま使う
-    output.color = float4(aa.rgb, pixels[4].a);
+    return float4(aa.rgb, pixels[4].a);
+}
+
+V2P VSMain(VSInput input)
+{
+    V2P output;
+    
+    output.pos = input.pos;
+    output.uv = input.uv;
+    
+    return output;
+}
+
+PSOutput PSMain(V2P input)
+{
+    PSOutput output;
+    
+    output.color = PSCalcAA(input.uv);
     
     return output;
 }
