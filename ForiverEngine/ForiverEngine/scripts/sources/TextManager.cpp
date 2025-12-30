@@ -11,6 +11,9 @@ namespace ForiverEngine
 	void TextManager::Init(const Device& device, const std::string& fontPath,
 		const DescriptorHeapHandleAtCPU& descriptorAtCPU, const DescriptorHeapHandleAtGPU& descriptorAtGPU)
 	{
+		if (TextManager::hasInitialized) return;
+		TextManager::hasInitialized = true;
+
 		TextManager::graphicsMemory = new DirectX::GraphicsMemory(device.Ptr);
 
 		DirectX::ResourceUploadBatch resourceUploadBatch(device.Ptr);
