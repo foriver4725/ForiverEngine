@@ -75,8 +75,8 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		for (int chunkX = chunkDrawIndexXMin; chunkX <= chunkDrawIndexXMax; ++chunkX)
 			for (int chunkZ = chunkDrawIndexZMin; chunkZ <= chunkDrawIndexZMax; ++chunkZ)
 			{
-				const auto [vertexBufferView, indexBufferView]
-					= D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, terrainMeshes[chunkX][chunkZ]);
+				const VertexBufferView vertexBufferView = terrainVertexBufferViews[chunkX][chunkZ];
+				const IndexBufferView indexBufferView = terrainIndexBufferViews[chunkX][chunkZ];
 				const int indexCount = static_cast<int>(terrainMeshes[chunkX][chunkZ].indices.size());
 
 				drawingVertexBufferViews.push_back(vertexBufferView);
