@@ -148,4 +148,20 @@ namespace ForiverEngine
 			.mipLevels = 1, // ミップマップなし
 		};
 	}
+
+	Texture TextureLoader::CreateManuallyAsMetadata(std::size_t texelSize, int width, int height, Format format)
+	{
+		return Texture
+		{
+			.data = {}, // 生データなし
+			.textureType = GraphicsBufferType::Texture2D,
+			.format = format,
+			.width = width,
+			.height = height,
+			.rowSize = static_cast<int>(texelSize * width),
+			.sliceSize = static_cast<int>(texelSize * width * height),
+			.sliceCount = 1,
+			.mipLevels = 1, // ミップマップなし
+		};
+	}
 }

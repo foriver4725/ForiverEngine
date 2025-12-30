@@ -142,17 +142,8 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 
 	// RT, SR で切り替えて使う 2D テクスチャ
 	const GraphicsBuffer ppGraphicsBuffer = D3D12Helper::CreateGraphicsBufferTexture2DForRTAndSR(device, WindowWidth, WindowHeight, RTClearColor);
-	const Texture ppTextureMetadata = Texture
-	{
-		.textureType = GraphicsBufferType::Texture2D,
-		.format = Format::RGBA_U8_01, // RT と同じ. sRGB 不可.
-		.width = WindowWidth,
-		.height = WindowHeight,
-		.rowSize = WindowWidth * 4, // RGBA なので...
-		.sliceSize = WindowWidth * WindowHeight * 4,
-		.sliceCount = 1,
-		.mipLevels = 1,
-	};
+	// RT と同じ. sRGB 不可.
+	const Texture ppTextureMetadata = TextureLoader::CreateManuallyAsMetadata(4, WindowWidth, WindowHeight, Format::RGBA_U8_01);
 
 	const RootParameter rootParameterPP = RootParameter::CreateBasic(1, 1, 0);
 	const SamplerConfig samplerConfigPP = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
@@ -197,21 +188,11 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 
 	//////////////////////////////
 	// テキスト描画 (ポストプロセスの後)
-	// 1文字の幅 16x16 px
 
 	// RT, SR で切り替えて使う 2D テクスチャ
 	const GraphicsBuffer textGraphicsBuffer = D3D12Helper::CreateGraphicsBufferTexture2DForRTAndSR(device, WindowWidth, WindowHeight, RTClearColor);
-	const Texture textTextureMetadata = Texture
-	{
-		.textureType = GraphicsBufferType::Texture2D,
-		.format = Format::RGBA_U8_01, // RT と同じ. sRGB 不可.
-		.width = WindowWidth,
-		.height = WindowHeight,
-		.rowSize = WindowWidth * 4, // RGBA なので...
-		.sliceSize = WindowWidth * WindowHeight * 4,
-		.sliceCount = 1,
-		.mipLevels = 1,
-	};
+	// RT と同じ. sRGB 不可.
+	const Texture textTextureMetadata = TextureLoader::CreateManuallyAsMetadata(4, WindowWidth, WindowHeight, Format::RGBA_U8_01);
 
 	// 頂点レイアウト
 	const std::vector<VertexLayout> VertexLayoutsText =
