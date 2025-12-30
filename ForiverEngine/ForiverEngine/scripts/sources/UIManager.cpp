@@ -1,0 +1,35 @@
+﻿#include "../headers/UIManager.h"
+
+// テキスト用
+#if _DEBUG
+#pragma comment(lib, "DirectXTK12_x64_Debug.lib")
+#else
+#pragma comment(lib, "DirectXTK12_x64_Release.lib")
+#endif
+
+namespace ForiverEngine
+{
+	void UIManager::InitText(const Device& device, const std::string& fontPath,
+		const DescriptorHeapHandleAtCPU& descriptorAtCPU, const DescriptorHeapHandleAtGPU& descriptorAtGPU)
+	{
+		UIManager::graphicsMemory = new DirectX::GraphicsMemory(device.Ptr);
+
+		DirectX::ResourceUploadBatch resourceUploadBatch(device.Ptr);
+		resourceUploadBatch.Begin();
+
+		const DirectX::RenderTargetState renderTargetState(
+			static_cast<DXGI_FORMAT>(Format::RGBA_U8_01), // RT のフォーマット
+			static_cast<DXGI_FORMAT>(Format::D_F32) // DS のフォーマット
+		);
+		const DirectX::SpriteBatchPipelineStateDescription spriteBatchPipelineStateDesc(renderTargetState);
+		UIManager::spriteBatch = new DirectX::SpriteBatch(device.Ptr, resourceUploadBatch, spriteBatchPipelineStateDesc);
+
+		UIManager::spriteFont = new DirectX::SpriteFont(
+			device.Ptr,
+			resourceUploadBatch,
+			StringUtils::UTF8ToUTF16(fontPath).c_str(),
+			descriptorAtCPU,
+			descriptorAtGPU
+		);
+	}
+}
