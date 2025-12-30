@@ -136,12 +136,17 @@ https://github.com/user-attachments/assets/c2fc2e4c-d963-4b22-aefe-aff62fdff570
 
 <img width="50%" alt="image" src="https://github.com/user-attachments/assets/84aa542a-3b84-41b4-b725-baec4ab001c0" />
 
-</details>
-
 ---
 テキストを画面に描画する (初期化以降の変更不可)
 
 <img width="50%" alt="image" src="https://github.com/user-attachments/assets/b3974110-1ddd-4aed-8121-5fdd90a6cb49" />
+
+</details>
+
+---
+画面に出るテキストを、いつでも変更できるようにした
+
+https://github.com/user-attachments/assets/966930bb-87e3-4a83-8b32-b89a23176837
 
 ## OSS
 | 名前 | ライセンス |
