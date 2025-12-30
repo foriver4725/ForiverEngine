@@ -46,7 +46,7 @@ PSOutput PSMain(V2P input)
     aaParams.Texture = _Texture;
     aaParams.Sampler = _Sampler;
     aaParams.UV = input.uv;
-    aaParams.UVPerPixel = float2(1.0 / _WindowWidth, 1.0 / _WindowHeight); // ポストプロセスなので、これでOK
+    aaParams.UVPerPixel = float2(1.0 / _WindowWidth, 1.0 / _WindowHeight); // 繝昴せ繝医�励Ο繧ｻ繧ｹ縺ｪ縺ｮ縺ｧ縲√％繧後〒OK
     aaParams.LimitLuminance = saturate(_LimitLuminance);
     aaParams.AAPower = _AAPower;
     

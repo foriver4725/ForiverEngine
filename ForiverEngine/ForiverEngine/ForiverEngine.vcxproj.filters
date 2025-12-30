@@ -188,5 +188,8 @@
     <FxCompile Include="shaders\Text.hlsl">
       <Filter>shaders</Filter>
     </FxCompile>
+    <FxCompile Include="shaders\common\TextSampling.hlsl">
+      <Filter>shaders\common</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

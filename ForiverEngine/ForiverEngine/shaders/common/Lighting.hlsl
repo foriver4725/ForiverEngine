@@ -1,27 +1,27 @@
 #include <common/Defines.hlsl>
 
-// ƒ‰ƒCƒeƒBƒ“ƒO
+// ãƒ©ã‚¤ãƒ†ã‚£ãƒ³ã‚°
 
 struct LightingParams
 {
-    float3 Normal; // À•W•ÏŠ·Œã‚Ì–@üƒxƒNƒgƒ‹ (³‹K‰»Ï‚İ)
+    float3 Normal; // åº§æ¨™å¤‰æ›å¾Œã®æ³•ç·šãƒ™ã‚¯ãƒˆãƒ« (æ­£è¦åŒ–æ¸ˆã¿)
     
-    float3 SunDirection; // ‘¾—zŒõ(•½sŒõŒ¹) ‚Ì•ûŒü (³‹K‰»Ï‚İ)
-    float3 SunColor; // ‘¾—zŒõ(•½sŒõŒ¹) ‚ÌF
+    float3 SunDirection; // å¤ªé™½å…‰(å¹³è¡Œå…‰æº) ã®æ–¹å‘ (æ­£è¦åŒ–æ¸ˆã¿)
+    float3 SunColor; // å¤ªé™½å…‰(å¹³è¡Œå…‰æº) ã®è‰²
     
-    float3 AmbientColor; // ŠÂ‹«Œõ‚ÌF
+    float3 AmbientColor; // ç’°å¢ƒå…‰ã®è‰²
 };
 
 float3 PSCalcLighting(LightingParams params)
 {
-    // ‘¾—zŒõ
+    // å¤ªé™½å…‰
     const float NdotL = saturate(dot(params.Normal, -params.SunDirection));
     const float3 sun = params.SunColor * NdotL / PI;
     
-    // ŠÂ‹«Œõ
+    // ç’°å¢ƒå…‰
     const float3 ambient = params.AmbientColor;
     
-    // Œõ‚Ì‰e‹¿‚ğ‡¬‚µ‚Ä•Ô‚·
+    // å…‰ã®å½±éŸ¿ã‚’åˆæˆã—ã¦è¿”ã™
     const float3 light = sun + ambient;
     return light;
 }

@@ -1,6 +1,6 @@
 #include <common/Defines.hlsl>
 
-// ƒ|ƒXƒgƒvƒƒZƒX‚ÅAA‚ğ“K—p‚·‚é
+// ãƒã‚¹ãƒˆãƒ—ãƒ­ã‚»ã‚¹ã§AAã‚’é©ç”¨ã™ã‚‹
 
 struct AAParams
 {
@@ -10,109 +10,109 @@ struct AAParams
     float2 UV;
     float2 UVPerPixel;
     
-    float LimitLuminance; // ƒsƒNƒZƒ‹‚ªƒ‚ƒfƒ‹‚Ì’[‚É‚ ‚é‚Æ”»’f‚·‚é‹P“x·‚Ìè‡’l ([0.0, 1.0]. ¬‚³‚¢‚Ù‚ÇAA‚ª‘½‚­‚©‚©‚é)
-    float AAPower; // ƒAƒ“ƒ`ƒGƒCƒŠƒAƒX‚Ì‹­‚³ (‘å‚«‚¢‚Ù‚ÇAA‚ª‹­‚­‚©‚©‚é)
+    float LimitLuminance; // ãƒ”ã‚¯ã‚»ãƒ«ãŒãƒ¢ãƒ‡ãƒ«ã®ç«¯ã«ã‚ã‚‹ã¨åˆ¤æ–­ã™ã‚‹è¼åº¦å·®ã®é–¾å€¤ ([0.0, 1.0]. å°ã•ã„ã»ã©AAãŒå¤šãã‹ã‹ã‚‹)
+    float AAPower; // ã‚¢ãƒ³ãƒã‚¨ã‚¤ãƒªã‚¢ã‚¹ã®å¼·ã• (å¤§ãã„ã»ã©AAãŒå¼·ãã‹ã‹ã‚‹)
 };
 
-// ‹P“x‚ğŒvZ‚·‚é
+// è¼åº¦ã‚’è¨ˆç®—ã™ã‚‹
 float CalcLuminance(float4 color)
 {
     static const float3 LuminanceWeights = float3(0.299, 0.587, 0.114);
     return dot(color.rgb, LuminanceWeights);
 }
 
-// ŒvZ•”
-// FXAA ‚Á‚Û‚¢‰½‚©
+// è¨ˆç®—éƒ¨
+// FXAA ã£ã½ã„ä½•ã‹
 float4 PSCalcAA(AAParams params)
 {
-    // ‹ß–T‚ÌƒsƒNƒZƒ‹’l‚ğæ“¾‚·‚é
+    // è¿‘å‚ã®ãƒ”ã‚¯ã‚»ãƒ«å€¤ã‚’å–å¾—ã™ã‚‹
     const float4 pixels[9] =
     {
-        params.Texture.Sample(params.Sampler, params.UV + params.UVPerPixel * float2(-1, -1)), // ¶ã
-        params.Texture.Sample(params.Sampler, params.UV + params.UVPerPixel * float2(0, -1)), // ã
-        params.Texture.Sample(params.Sampler, params.UV + params.UVPerPixel * float2(1, -1)), // ‰Eã
+        params.Texture.Sample(params.Sampler, params.UV + params.UVPerPixel * float2(-1, -1)), // å·¦ä¸Š
+        params.Texture.Sample(params.Sampler, params.UV + params.UVPerPixel * float2(0, -1)), // ä¸Š
+        params.Texture.Sample(params.Sampler, params.UV + params.UVPerPixel * float2(1, -1)), // å³ä¸Š
         
-        params.Texture.Sample(params.Sampler, params.UV + params.UVPerPixel * float2(-1, 0)), // ¶
-        params.Texture.Sample(params.Sampler, params.UV + params.UVPerPixel * float2(0, 0)), // ’†‰›
-        params.Texture.Sample(params.Sampler, params.UV + params.UVPerPixel * float2(1, 0)), // ‰E
+        params.Texture.Sample(params.Sampler, params.UV + params.UVPerPixel * float2(-1, 0)), // å·¦
+        params.Texture.Sample(params.Sampler, params.UV + params.UVPerPixel * float2(0, 0)), // ä¸­å¤®
+        params.Texture.Sample(params.Sampler, params.UV + params.UVPerPixel * float2(1, 0)), // å³
         
-        params.Texture.Sample(params.Sampler, params.UV + params.UVPerPixel * float2(-1, 1)), // ¶‰º
-        params.Texture.Sample(params.Sampler, params.UV + params.UVPerPixel * float2(0, 1)), // ‰º
-        params.Texture.Sample(params.Sampler, params.UV + params.UVPerPixel * float2(1, 1)), // ‰E‰º
+        params.Texture.Sample(params.Sampler, params.UV + params.UVPerPixel * float2(-1, 1)), // å·¦ä¸‹
+        params.Texture.Sample(params.Sampler, params.UV + params.UVPerPixel * float2(0, 1)), // ä¸‹
+        params.Texture.Sample(params.Sampler, params.UV + params.UVPerPixel * float2(1, 1)), // å³ä¸‹
     };
     
-    // ‹ß–T‚ÌƒsƒNƒZƒ‹‚Ì‹P“x‚ğŒvZ‚·‚é
+    // è¿‘å‚ã®ãƒ”ã‚¯ã‚»ãƒ«ã®è¼åº¦ã‚’è¨ˆç®—ã™ã‚‹
     // [0.0, 1.0]
     const float luminances[9] =
     {
-        CalcLuminance(pixels[0]), // ¶ã
-        CalcLuminance(pixels[1]), // ã
-        CalcLuminance(pixels[2]), // ‰Eã
+        CalcLuminance(pixels[0]), // å·¦ä¸Š
+        CalcLuminance(pixels[1]), // ä¸Š
+        CalcLuminance(pixels[2]), // å³ä¸Š
         
-        CalcLuminance(pixels[3]), // ¶
-        CalcLuminance(pixels[4]), // ’†‰›
-        CalcLuminance(pixels[5]), // ‰E
+        CalcLuminance(pixels[3]), // å·¦
+        CalcLuminance(pixels[4]), // ä¸­å¤®
+        CalcLuminance(pixels[5]), // å³
         
-        CalcLuminance(pixels[6]), // ¶‰º
-        CalcLuminance(pixels[7]), // ‰º
-        CalcLuminance(pixels[8]), // ‰E‰º
+        CalcLuminance(pixels[6]), // å·¦ä¸‹
+        CalcLuminance(pixels[7]), // ä¸‹
+        CalcLuminance(pixels[8]), // å³ä¸‹
     };
     
-    // AA‚Ì’l‚ğŒˆ’è‚·‚é‚½‚ßAã‰º¶‰EÎ‚ß•ûŒü‚É‰ˆ‚Á‚ÄA3ƒsƒNƒZƒ‹’PˆÊ‚ÅƒsƒNƒZƒ‹’l‚Ì•½‹Ï‚ğ‹‚ß‚é
+    // AAã®å€¤ã‚’æ±ºå®šã™ã‚‹ãŸã‚ã€ä¸Šä¸‹å·¦å³æ–œã‚æ–¹å‘ã«æ²¿ã£ã¦ã€3ãƒ”ã‚¯ã‚»ãƒ«å˜ä½ã§ãƒ”ã‚¯ã‚»ãƒ«å€¤ã®å¹³å‡ã‚’æ±‚ã‚ã‚‹
     const float4 pixelMeans[12] =
     {
-        (pixels[0] + pixels[1] + pixels[2]) / 3.0, // ã
-        (pixels[3] + pixels[4] + pixels[5]) / 3.0, // ’†‰› ‰¡
-        (pixels[6] + pixels[7] + pixels[8]) / 3.0, // ‰º
+        (pixels[0] + pixels[1] + pixels[2]) / 3.0, // ä¸Š
+        (pixels[3] + pixels[4] + pixels[5]) / 3.0, // ä¸­å¤® æ¨ª
+        (pixels[6] + pixels[7] + pixels[8]) / 3.0, // ä¸‹
         
-        (pixels[0] + pixels[3] + pixels[6]) / 3.0, // ¶
-        (pixels[1] + pixels[4] + pixels[7]) / 3.0, // ’†‰› c
-        (pixels[2] + pixels[5] + pixels[8]) / 3.0, // ‰E
+        (pixels[0] + pixels[3] + pixels[6]) / 3.0, // å·¦
+        (pixels[1] + pixels[4] + pixels[7]) / 3.0, // ä¸­å¤® ç¸¦
+        (pixels[2] + pixels[5] + pixels[8]) / 3.0, // å³
         
-        (pixels[0] + pixels[3] + pixels[1]) / 3.0, // Î‚ß ¶ã
-        (pixels[6] + pixels[4] + pixels[2]) / 3.0, // Î‚ß ’†‰› ‰Eã-¶‰º
-        (pixels[7] + pixels[5] + pixels[8]) / 3.0, // Î‚ß ‰E‰º
+        (pixels[0] + pixels[3] + pixels[1]) / 3.0, // æ–œã‚ å·¦ä¸Š
+        (pixels[6] + pixels[4] + pixels[2]) / 3.0, // æ–œã‚ ä¸­å¤® å³ä¸Š-å·¦ä¸‹
+        (pixels[7] + pixels[5] + pixels[8]) / 3.0, // æ–œã‚ å³ä¸‹
         
-        (pixels[2] + pixels[1] + pixels[5]) / 3.0, // Î‚ß ‰Eã
-        (pixels[0] + pixels[4] + pixels[8]) / 3.0, // Î‚ß ’†‰› ¶ã-‰E‰º
-        (pixels[3] + pixels[7] + pixels[6]) / 3.0, // Î‚ß ¶‰º
+        (pixels[2] + pixels[1] + pixels[5]) / 3.0, // æ–œã‚ å³ä¸Š
+        (pixels[0] + pixels[4] + pixels[8]) / 3.0, // æ–œã‚ ä¸­å¤® å·¦ä¸Š-å³ä¸‹
+        (pixels[3] + pixels[7] + pixels[6]) / 3.0, // æ–œã‚ å·¦ä¸‹
     };
     
-    // AA‚Ì•ûŒü‚ğŒˆ’è‚·‚é‚½‚ßAã‰º¶‰E•ûŒü‚É‰ˆ‚Á‚ÄA3ƒsƒNƒZƒ‹’PˆÊ‚ÅƒsƒNƒZƒ‹‚Ì‹P“x‚Ì•½‹Ï‚ğ‹‚ß‚é
+    // AAã®æ–¹å‘ã‚’æ±ºå®šã™ã‚‹ãŸã‚ã€ä¸Šä¸‹å·¦å³æ–¹å‘ã«æ²¿ã£ã¦ã€3ãƒ”ã‚¯ã‚»ãƒ«å˜ä½ã§ãƒ”ã‚¯ã‚»ãƒ«ã®è¼åº¦ã®å¹³å‡ã‚’æ±‚ã‚ã‚‹
     // [0.0, 1.0]
     const float luminanceMeans[12] =
     {
-        (luminances[0] + luminances[1] + luminances[2]) / 3.0, // ã
-        (luminances[3] + luminances[4] + luminances[5]) / 3.0, // ’†‰› ‰¡
-        (luminances[6] + luminances[7] + luminances[8]) / 3.0, // ‰º
+        (luminances[0] + luminances[1] + luminances[2]) / 3.0, // ä¸Š
+        (luminances[3] + luminances[4] + luminances[5]) / 3.0, // ä¸­å¤® æ¨ª
+        (luminances[6] + luminances[7] + luminances[8]) / 3.0, // ä¸‹
         
-        (luminances[0] + luminances[3] + luminances[6]) / 3.0, // ¶
-        (luminances[1] + luminances[4] + luminances[7]) / 3.0, // ’†‰› c
-        (luminances[2] + luminances[5] + luminances[8]) / 3.0, // ‰E
+        (luminances[0] + luminances[3] + luminances[6]) / 3.0, // å·¦
+        (luminances[1] + luminances[4] + luminances[7]) / 3.0, // ä¸­å¤® ç¸¦
+        (luminances[2] + luminances[5] + luminances[8]) / 3.0, // å³
         
-        (luminances[0] + luminances[3] + luminances[1]) / 3.0, // Î‚ß ¶ã
-        (luminances[6] + luminances[4] + luminances[2]) / 3.0, // Î‚ß ’†‰› ‰Eã-¶‰º
-        (luminances[7] + luminances[5] + luminances[8]) / 3.0, // Î‚ß ‰E‰º
+        (luminances[0] + luminances[3] + luminances[1]) / 3.0, // æ–œã‚ å·¦ä¸Š
+        (luminances[6] + luminances[4] + luminances[2]) / 3.0, // æ–œã‚ ä¸­å¤® å³ä¸Š-å·¦ä¸‹
+        (luminances[7] + luminances[5] + luminances[8]) / 3.0, // æ–œã‚ å³ä¸‹
         
-        (luminances[2] + luminances[1] + luminances[5]) / 3.0, // Î‚ß ‰Eã
-        (luminances[0] + luminances[4] + luminances[8]) / 3.0, // Î‚ß ’†‰› ¶ã-‰E‰º
-        (luminances[3] + luminances[7] + luminances[6]) / 3.0, // Î‚ß ¶‰º
+        (luminances[2] + luminances[1] + luminances[5]) / 3.0, // æ–œã‚ å³ä¸Š
+        (luminances[0] + luminances[4] + luminances[8]) / 3.0, // æ–œã‚ ä¸­å¤® å·¦ä¸Š-å³ä¸‹
+        (luminances[3] + luminances[7] + luminances[6]) / 3.0, // æ–œã‚ å·¦ä¸‹
     };
     
-    // ‹P“x‚Ì·‚ªˆê’èˆÈãA‚©‚ÂÅ‚à‘å‚«‚¢•ûŒü‚É‚Â‚¢‚ÄA“K“–‚ÈŒW”‚ğ—p‚¢‚Ä AA ‚ğ‚©‚¯‚é
+    // è¼åº¦ã®å·®ãŒä¸€å®šä»¥ä¸Šã€ã‹ã¤æœ€ã‚‚å¤§ãã„æ–¹å‘ã«ã¤ã„ã¦ã€é©å½“ãªä¿‚æ•°ã‚’ç”¨ã„ã¦ AA ã‚’ã‹ã‘ã‚‹
     
-    // ‹P“x‚ªÅ‘å‚Ì•ûŒü‚ğ’²‚×‚é
+    // è¼åº¦ãŒæœ€å¤§ã®æ–¹å‘ã‚’èª¿ã¹ã‚‹
     const float luminanceMeanDiffs[8] =
     {
-        abs(luminanceMeans[0] - luminanceMeans[1]), // ã-’†‰›
-        abs(luminanceMeans[2] - luminanceMeans[1]), // ‰º-’†‰›
-        abs(luminanceMeans[3] - luminanceMeans[4]), // ¶-’†‰›
-        abs(luminanceMeans[5] - luminanceMeans[4]), // ‰E-’†‰›
+        abs(luminanceMeans[0] - luminanceMeans[1]), // ä¸Š-ä¸­å¤®
+        abs(luminanceMeans[2] - luminanceMeans[1]), // ä¸‹-ä¸­å¤®
+        abs(luminanceMeans[3] - luminanceMeans[4]), // å·¦-ä¸­å¤®
+        abs(luminanceMeans[5] - luminanceMeans[4]), // å³-ä¸­å¤®
         
-        abs(luminanceMeans[6] - luminanceMeans[7]), // Î‚ß ¶ã-’†‰›
-        abs(luminanceMeans[8] - luminanceMeans[7]), // Î‚ß ‰E‰º-’†‰›
-        abs(luminanceMeans[9] - luminanceMeans[10]), // Î‚ß ‰Eã-’†‰›
-        abs(luminanceMeans[11] - luminanceMeans[10]), // Î‚ß ¶‰º-’†‰›
+        abs(luminanceMeans[6] - luminanceMeans[7]), // æ–œã‚ å·¦ä¸Š-ä¸­å¤®
+        abs(luminanceMeans[8] - luminanceMeans[7]), // æ–œã‚ å³ä¸‹-ä¸­å¤®
+        abs(luminanceMeans[9] - luminanceMeans[10]), // æ–œã‚ å³ä¸Š-ä¸­å¤®
+        abs(luminanceMeans[11] - luminanceMeans[10]), // æ–œã‚ å·¦ä¸‹-ä¸­å¤®
     };
     uint maxDiffIndex = -1;
     float maxDiff = 0.0;
@@ -130,33 +130,33 @@ float4 PSCalcAA(AAParams params)
     
     if (maxDiffIndex == -1)
     {
-        // ‹P“x·‚ªˆê’èˆÈ‰º‚È‚ç AA ‚ğ‚©‚¯‚È‚¢
-        return pixels[4]; // ’†‰›‚ÌƒsƒNƒZƒ‹’l
+        // è¼åº¦å·®ãŒä¸€å®šä»¥ä¸‹ãªã‚‰ AA ã‚’ã‹ã‘ãªã„
+        return pixels[4]; // ä¸­å¤®ã®ãƒ”ã‚¯ã‚»ãƒ«å€¤
     }
     
-    // ‹P“x‚Ì·‚ğ‰½æ‚©‚µ‚Äd‚İ‚ğŒˆ’è‚·‚é
-    // ‚±‚Ì’l‚ğAü•ÓƒsƒNƒZƒ‹‚Ì•û‚ÌŒW”’l‚Æ‚·‚é
+    // è¼åº¦ã®å·®ã‚’ä½•ä¹—ã‹ã—ã¦é‡ã¿ã‚’æ±ºå®šã™ã‚‹
+    // ã“ã®å€¤ã‚’ã€å‘¨è¾ºãƒ”ã‚¯ã‚»ãƒ«ã®æ–¹ã®ä¿‚æ•°å€¤ã¨ã™ã‚‹
     const float aaWeight = pow(maxDiff, params.AAPower);
     
-    // AA ‚ğ‚©‚¯‚½Œ‹‰Ê‚ğŒvZ‚·‚é
+    // AA ã‚’ã‹ã‘ãŸçµæœã‚’è¨ˆç®—ã™ã‚‹
     float4 aa;
     if (maxDiffIndex == 0)
-        aa = lerp(pixelMeans[0], pixelMeans[1], aaWeight); // ã-’†‰›
+        aa = lerp(pixelMeans[0], pixelMeans[1], aaWeight); // ä¸Š-ä¸­å¤®
     else if (maxDiffIndex == 1)
-        aa = lerp(pixelMeans[2], pixelMeans[1], aaWeight); // ‰º-’†‰›
+        aa = lerp(pixelMeans[2], pixelMeans[1], aaWeight); // ä¸‹-ä¸­å¤®
     else if (maxDiffIndex == 2)
-        aa = lerp(pixelMeans[3], pixelMeans[4], aaWeight); // ¶-’†‰›
+        aa = lerp(pixelMeans[3], pixelMeans[4], aaWeight); // å·¦-ä¸­å¤®
     else if (maxDiffIndex == 3)
-        aa = lerp(pixelMeans[5], pixelMeans[4], aaWeight); // ‰E-’†‰›
+        aa = lerp(pixelMeans[5], pixelMeans[4], aaWeight); // å³-ä¸­å¤®
     else if (maxDiffIndex == 4)
-        aa = lerp(pixelMeans[6], pixelMeans[7], aaWeight); // Î‚ß ¶ã-’†‰›
+        aa = lerp(pixelMeans[6], pixelMeans[7], aaWeight); // æ–œã‚ å·¦ä¸Š-ä¸­å¤®
     else if (maxDiffIndex == 5)
-        aa = lerp(pixelMeans[8], pixelMeans[7], aaWeight); // Î‚ß ‰E‰º-’†‰›
+        aa = lerp(pixelMeans[8], pixelMeans[7], aaWeight); // æ–œã‚ å³ä¸‹-ä¸­å¤®
     else if (maxDiffIndex == 6)
-        aa = lerp(pixelMeans[9], pixelMeans[10], aaWeight); // Î‚ß ‰Eã-’†‰›
+        aa = lerp(pixelMeans[9], pixelMeans[10], aaWeight); // æ–œã‚ å³ä¸Š-ä¸­å¤®
     else // maxDiffIndex == 7
-        aa = lerp(pixelMeans[11], pixelMeans[10], aaWeight); // Î‚ß ¶‰º-’†‰›
+        aa = lerp(pixelMeans[11], pixelMeans[10], aaWeight); // æ–œã‚ å·¦ä¸‹-ä¸­å¤®
     
-    // a’l‚ÍAŒ³‚Ì’l‚ğ‚»‚Ì‚Ü‚Üg‚¤
+    // aå€¤ã¯ã€å…ƒã®å€¤ã‚’ãã®ã¾ã¾ä½¿ã†
     return float4(aa.rgb, pixels[4].a);
 }

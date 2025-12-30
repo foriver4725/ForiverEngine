@@ -28,40 +28,7 @@ struct PSOutput
     float4 color : SV_TARGET;
 };
 
-// –ß‚è’l‚Ì a ‚Í0/1 ‚Ì2’l‚ÅAƒeƒLƒXƒg‚ð•`‰æ‚·‚é‚©‚Ç‚¤‚©‚ðŽ¦‚·
-float4 PSGetTextColor(float2 pos)
-{
-    // ‰æ–Ê‚ÌƒsƒNƒZƒ‹À•W (‰æ–Ê‚¢‚Á‚Ï‚¢‚Ì”Âƒ|ƒŠ‚È‚Ì‚ÅA‚±‚ê‚Å—Ç‚¢‚Í‚¸)
-    const uint2 posAsInt = (uint2) pos;
-    
-    // ƒtƒHƒ“ƒg‚ÌŽí—Þ‚ð”»•Ê
-    const uint2 windowTextIndex = posAsInt / _FontSingleLength;
-    const uint4 windowTextData = _WindowTextTexture.Load(int3(windowTextIndex, 0));
-    const uint windowTextIndexValue = windowTextData.a;
-    const float3 windowTextColorValue = uint3(windowTextData.r, windowTextData.g, windowTextData.b) / 255.0;
-    // ‰æ–ÊŠO‚È‚Ì‚ÅA‚±‚±‚ÅI—¹
-    if (any(windowTextIndex < 0 || _WindowTextTextureSize <= windowTextIndex))
-        return float4(0, 0, 0, 0);
-    // ƒeƒLƒXƒg‚ð•`‰æ‚µ‚È‚¢‚Ì‚ÅA‚±‚±‚ÅI—¹
-    if (windowTextIndexValue == _TextNothingIndex)
-        return float4(0, 0, 0, 0);
-    
-    // ƒtƒHƒ“ƒgƒeƒNƒXƒ`ƒƒ‚É‚¨‚¯‚éAƒtƒHƒ“ƒgƒCƒ“ƒfƒbƒNƒX‚ÌÅ‘å’l‚ðŽZo (ƒsƒNƒZƒ‹À•W)
-    const uint2 FontPixelIndexSize = _FontTextureSize / _FontSingleLength;
-    // •`‰æ‚·‚éƒtƒHƒ“ƒg‚ÌAƒeƒNƒXƒ`ƒƒ“à‚É‚¨‚¯‚éUVÀ•W‚ðŽZo (ƒsƒNƒZƒ‹À•W. [0, _FontTextureSize-1])
-    const uint2 fontPixelUV = uint2(windowTextIndexValue % FontPixelIndexSize.x, windowTextIndexValue / FontPixelIndexSize.x) * _FontSingleLength;
-    // ‚³‚ç‚ÉA‚»‚Ì’†‚Å‚¢‚­‚çƒIƒtƒZƒbƒg‚µ‚Ä‚¢‚é‚©‚ðŽZo (ƒsƒNƒZƒ‹À•W. [0, _FontSingleLength-1])
-    const uint2 fontPixelUVOffset = posAsInt % _FontSingleLength;
-    // ŽÀÛ‚É•`‰æ‚·‚é‚×‚«ƒeƒNƒZƒ‹’l‚ðŽæ“¾
-    const float4 font = _FontTexture.Load(int3(fontPixelUV + fontPixelUVOffset, 0));
-    
-    // “§–¾‰ÓŠ‚¾‚Á‚½‚çA•`‰æ‚µ‚È‚¢‚Ì‚Å‚±‚±‚ÅI—¹
-    if (font.a < 0.01)
-        return float4(0, 0, 0, 0);
-    
-    // F‚ð•Ô‚·
-    return float4(windowTextColorValue, 1);
-}
+#include <common/TextSampling.hlsl>
 
 V2P VSMain(VSInput input)
 {
@@ -78,9 +45,19 @@ PSOutput PSMain(V2P input)
     PSOutput output;
     
     const float4 originalColor = _Texture.Sample(_Sampler, input.uv);
-    const float4 textColor = PSGetTextColor(input.pos.xy);
     
-    // ƒeƒLƒXƒgŽ©‘Ì‚ª•s“§–¾‚É‚È‚é‚±‚Æ‚Í–³‚¢‚Ì‚ÅA‹­§“I‚Éã‘‚«‚µ‚Ä‚µ‚Ü‚¤
+    TextSamplingParams textSamplingParams;
+    textSamplingParams.FontTexture = _FontTexture;
+    textSamplingParams.WindowTextTexture = _WindowTextTexture;
+    textSamplingParams.Sampler = _Sampler;
+    textSamplingParams.FontTextureSize = _FontTextureSize;
+    textSamplingParams.WindowTextTextureSize = _WindowTextTextureSize;
+    textSamplingParams.PixelPos = uint2(input.pos.xy);
+    textSamplingParams.TextNothingIndex = _TextNothingIndex;
+    textSamplingParams.FontSingleLength = _FontSingleLength;
+    
+    const float4 textColor = PSSampleText(textSamplingParams);
+    // ãƒ†ã‚­ã‚¹ãƒˆè‡ªä½“ãŒä¸é€æ˜Žã«ãªã‚‹ã“ã¨ã¯ç„¡ã„ã®ã§ã€å¼·åˆ¶çš„ã«ä¸Šæ›¸ãã—ã¦ã—ã¾ã†
     output.color = textColor.a > 0.5 ? textColor : originalColor;
     
     return output;
