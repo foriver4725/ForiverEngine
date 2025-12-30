@@ -1,6 +1,4 @@
-﻿//#define ENABLE_CUI_CONSOLE
-
-#include "scripts/headers/D3D12BasicFlow.h"
+﻿#include "scripts/headers/D3D12BasicFlow.h"
 #include "scripts/headers/Terrain.h"
 #include "scripts/headers/PlayerControl.h"
 #include "scripts/headers/WindowText.h"
@@ -11,8 +9,6 @@ constexpr int WindowHeight = 756;
 BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHeight);
 {
 	using namespace ForiverEngine;
-
-	//Print("Hello, World!\n");
 
 #ifdef _DEBUG
 	if (!D3D12Helper::EnableDebugLayer())
