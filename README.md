@@ -141,12 +141,19 @@ https://github.com/user-attachments/assets/c2fc2e4c-d963-4b22-aefe-aff62fdff570
 
 <img width="50%" alt="image" src="https://github.com/user-attachments/assets/b3974110-1ddd-4aed-8121-5fdd90a6cb49" />
 
-</details>
-
 ---
 画面に出るテキストを、いつでも変更できるようにした
 
 https://github.com/user-attachments/assets/966930bb-87e3-4a83-8b32-b89a23176837
+
+</details>
+
+---
+描画チャンク更新時に、未生成のチャンクがあるならば新規生成するようにした  
+地形データとメッシュの作成は並列処理で行い、頂点・インデックスバッファビューはメインスレッドで1フレームで処理している  
+これによって、地形の動的無限生成が理論上可能になり、起動時のロード時間が大幅に短縮された
+
+https://github.com/user-attachments/assets/6cca3cdb-92a6-4fc9-ad82-9b307a505bd3
 
 ## OSS
 | 名前 | ライセンス |
