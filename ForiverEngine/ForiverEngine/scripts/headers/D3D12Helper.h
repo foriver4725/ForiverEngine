@@ -318,13 +318,6 @@ namespace ForiverEngine
 		static bool WaitForGPUEventCompletion(const Fence& fence, const CommandQueue& commandQueue);
 
 		/// <summary>
-		/// <para>[Command]</para>
-		/// <para>コマンドリストをクローズして実行し、GPUの処理が完了するまで待機する</para>
-		/// エラーが起きて中断されたら false を, 正常に完了したら true を返す (失敗した瞬間に処理を中断する)
-		/// </summary>
-		static bool CommandCloseAndWaitForCompletion(const Device& device, const CommandQueue& commandQueue, const CommandList& commandList);
-
-		/// <summary>
 		/// <para>スワップ(フリップ) を実行させる</para>
 		/// 成功したら true, 失敗したら false を返す
 		/// </summary>
@@ -346,55 +339,6 @@ namespace ForiverEngine
 			Blob& outVS, Blob& outPS,
 			std::wstring& outErrorMessage
 		);
-
-		//////////////////////////////////////////////////
-		// テキスト表示
-
-		// シングルトンオブジェクトを作る必要がある
-	private:
-		inline static bool hasInitializedText = false;
-		inline static DirectX::DX12::GraphicsMemory* textGraphicsMemory = nullptr;
-		inline static DirectX::DX12::SpriteBatch* textSpriteBatch = nullptr;
-		inline static DirectX::DX12::SpriteFont* textSpriteFont = nullptr;
-
-	public:
-
-		/// <summary>
-		/// <para>テキストの初期化</para>
-		/// <para>最初に1回だけ呼び出すこと</para>
-		/// テキスト用に作成された DescriptorHeap を返す (失敗したら nullptr)
-		/// </summary>
-		static DescriptorHeap InitText(
-			const Device& device, const ViewportScissorRect& viewportScissorRect,
-			const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator,
-			const std::string& fontPath
-		);
-
-		/// <summary>
-		/// <para>[Command]</para>
-		/// テキスト描画 (RegistTextDraw) の開始前に実行すること
-		/// </summary>
-		static void CommandBeginTextDraw(const DescriptorHeap& descriptorHeap, const CommandList& commandList);
-
-		/// <summary>
-		/// テキスト描画を予約する (テキスト描画で呼び出すもの)
-		/// </summary>
-		static void RegistTextDraw(const std::string& text, const Lattice2& position, const Color& color);
-
-		/// <summary>
-		/// テキスト描画 (RegistTextDraw) の終了後に実行すること
-		/// </summary>
-		static void EndTextDraw();
-
-		/// <summary>
-		/// <para>全てのコマンドを実行後に呼び出すこと</para>
-		/// <para>Present() の直後とかが望ましい</para>
-		/// メモリリークを防止するため
-		/// </summary>
-		/// <param name="commandQueue"></param>
-		static void FinalizeTextDrawAfterCommandExecution(const CommandQueue& commandQueue);
-
-		//////////////////////////////////////////////////
 
 #ifdef _DEBUG
 		/// <summary>

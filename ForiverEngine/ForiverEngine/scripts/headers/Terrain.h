@@ -17,9 +17,11 @@ namespace ForiverEngine
 	/// <summary>
 	/// チャンク単位の地形データ
 	/// </summary>
-	class Terrain
+	class Terrain final
 	{
 	public:
+		DELETE_DEFAULT_METHODS(Terrain);
+
 		static constexpr int ChunkSize = 16; // チャンクの1辺のサイズ (ブロック数)
 		static constexpr int ChunkHeight = 256; // チャンクの高さ (ブロック数)
 

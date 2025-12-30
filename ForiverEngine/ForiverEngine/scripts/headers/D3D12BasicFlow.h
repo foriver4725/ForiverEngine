@@ -5,6 +5,7 @@
 #include "./WindowHelper.h"
 #include "./D3D12Helper.h"
 #include "./TextureLoader.h"
+#include "./TextManager.h"
 
 namespace ForiverEngine
 {
@@ -213,6 +214,20 @@ namespace ForiverEngine
 		}
 
 		/// <summary>
+		/// <para>[Command]</para>
+		/// <para>コマンドリストをクローズして実行し、GPUの処理が完了するまで待機する</para>
+		/// </summary>
+		static void
+			CommandCloseAndWaitForCompletion(
+				const CommandList& commandList,
+				const CommandQueue& commandQueue,
+				const Device& device
+			)
+		{
+			Check(CommandCloseAndWaitForCompletion_Impl(commandList, commandQueue, device));
+		}
+
+		/// <summary>
 		/// <para>テクスチャデータを GPU 側にアップロードする</para>
 		/// <para>内部で中間バッファを作成し、転送する</para>
 		/// </summary>
@@ -293,6 +308,18 @@ namespace ForiverEngine
 			)
 		{
 			return Check(CalculateMVPMatrix_Impl(transform, cameraTransform));
+		}
+
+		/// <summary>
+		/// テキスト表示の初期化
+		/// </summary>
+		static void
+			InitText(
+				const Device& device,
+				const std::string& fontPath
+			)
+		{
+			Check(InitText_Impl(device, fontPath));
 		}
 
 #pragma endregion
@@ -460,6 +487,17 @@ namespace ForiverEngine
 			);
 
 		/// <summary>
+		/// <para>[Command]</para>
+		/// <para>コマンドリストをクローズして実行し、GPUの処理が完了するまで待機する</para>
+		/// </summary>
+		static std::tuple<bool, std::wstring>
+			CommandCloseAndWaitForCompletion_Impl(
+				const CommandList& commandList,
+				const CommandQueue& commandQueue,
+				const Device& device
+			);
+
+		/// <summary>
 		/// <para>テクスチャデータを GPU 側にアップロードする</para>
 		/// <para>内部で中間バッファを作成し、転送する</para>
 		/// </summary>
@@ -524,6 +562,15 @@ namespace ForiverEngine
 			CalculateMVPMatrix_Impl(
 				const Transform& transform,
 				const CameraTransform& cameraTransform
+			);
+
+		/// <summary>
+		/// テキスト表示の初期化
+		/// </summary>
+		static std::tuple<bool, std::wstring>
+			InitText_Impl(
+				const Device& device,
+				const std::string& fontPath
 			);
 
 #pragma endregion

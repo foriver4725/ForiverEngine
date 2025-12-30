@@ -176,6 +176,7 @@
     <ClCompile Include="scripts\sources\D3D12BasicFlow.cpp" />
     <ClCompile Include="scripts\sources\D3D12Helper.cpp" />
     <ClCompile Include="scripts\sources\InputHelper.cpp" />
+    <ClCompile Include="scripts\sources\TextManager.cpp" />
     <ClCompile Include="scripts\sources\WindowHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -212,6 +213,7 @@
     <ClInclude Include="scripts\headers\InputHelper.h" />
     <ClInclude Include="scripts\headers\PlayerControl.h" />
     <ClInclude Include="scripts\headers\Terrain.h" />
+    <ClInclude Include="scripts\headers\TextManager.h" />
     <ClInclude Include="scripts\headers\WindowHelper.h" />
   </ItemGroup>
   <ItemGroup>
