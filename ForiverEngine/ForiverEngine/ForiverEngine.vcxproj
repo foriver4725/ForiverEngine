@@ -213,6 +213,7 @@
     <ClInclude Include="scripts\headers\PlayerControl.h" />
     <ClInclude Include="scripts\headers\Terrain.h" />
     <ClInclude Include="scripts\headers\WindowHelper.h" />
+    <ClInclude Include="scripts\headers\WindowText.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shaders\Basic.hlsl">

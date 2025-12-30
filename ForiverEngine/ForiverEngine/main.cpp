@@ -3,6 +3,7 @@
 #include "scripts/headers/D3D12BasicFlow.h"
 #include "scripts/headers/Terrain.h"
 #include "scripts/headers/PlayerControl.h"
+#include "scripts/headers/WindowText.h"
 
 constexpr int WindowWidth = 1344;
 constexpr int WindowHeight = 756;
@@ -158,8 +159,6 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		.mipLevels = 1,
 	};
 
-
-
 	const RootParameter rootParameterPP = RootParameter::CreateBasic(1, 1, 0);
 	const SamplerConfig samplerConfigPP = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
 	const auto [shaderVSPP, shaderPSPP] = D3D12BasicFlow::CompileShader_VS_PS("./shaders/PP.hlsl");
@@ -186,7 +185,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		float LimitLuminance; // ピクセルがモデルの端にあると判断する輝度差の閾値 ([0.0, 1.0]. 小さいほどAAが多くかかる)
 		float AAPower; // アンチエイリアスの強さ (大きいほどAAが強くかかる)
 	};
-	CBData0PP cbData0PP =
+	const CBData0PP cbData0PP =
 	{
 		.WindowWidth = WindowWidth,
 		.WindowHeight = WindowHeight,
@@ -244,12 +243,27 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	const auto [vertexBufferViewText, indexBufferViewText]
 		= D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, meshText);
 
+	// ウィンドウ上のテキストデータ
+	WindowText windowText = WindowText::CreateEmpty(
+		Lattice2(WindowWidth / WindowText::FontSingleLength, WindowHeight / WindowText::FontSingleLength));
+	// 何か入れておく
+	windowText.SetTexts(Lattice2(0, 0), "Hello, World!");
+
 	// b0
 	struct alignas(256) CBData0Text
 	{
+		Vector4 UVLimit;
 	};
-	CBData0Text cbData0Text =
+	constexpr float uvDiff = (WindowWidth > WindowHeight) ?
+		(1.0f * ((WindowWidth - WindowHeight) >> 1) / WindowWidth) :
+		(1.0f * ((WindowHeight - WindowWidth) >> 1) / WindowHeight);
+	const CBData0Text cbData0Text =
+		WindowWidth > WindowHeight ? CBData0Text
 	{
+		.UVLimit = Vector4(uvDiff, 0.0f, 1.0f - uvDiff, 1.0f),
+	} : CBData0Text
+	{
+		.UVLimit = Vector4(0.0f, uvDiff, 1.0f, 1.0f - uvDiff),
 	};
 	const GraphicsBuffer cbvBufferText = D3D12BasicFlow::InitCBVBuffer<CBData0Text>(device, cbData0Text);
 
