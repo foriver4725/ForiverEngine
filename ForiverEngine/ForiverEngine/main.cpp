@@ -39,13 +39,20 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	// 地形データ
 	constexpr int TerrainSeed = 0x2961E3B1;
 	constexpr int ChunkCount = 32; // ワールドのチャンク数 (ChunkCount x ChunkCount 個)
+	constexpr int ChunkDrawDistance = 8; // 描画チャンク数 (プレイヤーを中心に 半径 ChunkDrawDistance の矩形内のチャンクのみ描画する)
+	constexpr int ChunkDrawMaxCount = (ChunkDrawDistance * 2 + 1) * (ChunkDrawDistance * 2 + 1);
+	std::array<std::array<bool, ChunkCount>, ChunkCount> hasCreatedTerrainChunks = {}; // チャンク作成済みフラグ (デフォルト:false)
 	std::array<std::array<Terrain, ChunkCount>, ChunkCount> terrains = {}; // チャンクの配列
 	std::array<std::array<Mesh, ChunkCount>, ChunkCount> terrainMeshes = {}; // 地形の結合メッシュ
 	std::array<std::array<VertexBufferView, ChunkCount>, ChunkCount> terrainVertexBufferViews = {}; // 頂点バッファビュー (全部)
 	std::array<std::array<IndexBufferView, ChunkCount>, ChunkCount> terrainIndexBufferViews = {}; // インデックスバッファビュー (全部)
-	for (int chunkX = 0; chunkX < ChunkCount; ++chunkX)
-		for (int chunkZ = 0; chunkZ < ChunkCount; ++chunkZ)
+	// 地形のデータ・メッシュ・頂点とインデックスのバッファビューを作成し、キャッシュしておく関数
+	std::function<void(int, int)> CreateTerrainChunk = [&](int chunkX, int chunkZ)
 		{
+			// 既に作成済みなら何もしない
+			if (hasCreatedTerrainChunks[chunkX][chunkZ]) return;
+			hasCreatedTerrainChunks[chunkX][chunkZ] = true;
+
 			const Terrain terrain = Terrain::CreateFromNoise({ chunkX, chunkZ }, { 0.015f, 12.0f }, TerrainSeed, 16, 18, 24);
 			terrains[chunkX][chunkZ] = terrain;
 
@@ -56,9 +63,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 				= D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, terrainMeshes[chunkX][chunkZ]);
 			terrainVertexBufferViews[chunkX][chunkZ] = vertexBufferView;
 			terrainIndexBufferViews[chunkX][chunkZ] = indexBufferView;
-		}
-	constexpr int ChunkDrawDistance = 8; // 描画チャンク数 (プレイヤーを中心に 半径 ChunkDrawDistance の矩形内のチャンクのみ描画する)
-	constexpr int ChunkDrawMaxCount = (ChunkDrawDistance * 2 + 1) * (ChunkDrawDistance * 2 + 1);
+		};
 	// 描画するチャンクが変化した時、ビューを再作成する
 	Lattice2 chunkIndex = PlayerControl::GetChunkIndexAtPosition(cameraTransform.position);
 	int chunkDrawIndexXMin = std::max(0, chunkIndex.x - ChunkDrawDistance);
@@ -67,14 +72,18 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	int chunkDrawIndexZMax = std::min(ChunkCount - 1, chunkIndex.y + ChunkDrawDistance);
 	// 一応計算しておく (<= chunkDrawMaxCount)
 	int chunkDrawCount = (chunkDrawIndexXMax - chunkDrawIndexXMin + 1) * (chunkDrawIndexZMax - chunkDrawIndexZMin + 1);
-	// 描画するビューとインデックス (初回作成)
+	// 描画するビューとインデックス
 	std::vector<VertexBufferView> drawingVertexBufferViews; drawingVertexBufferViews.reserve(ChunkDrawMaxCount);
 	std::vector<IndexBufferView> drawingIndexBufferViews; drawingIndexBufferViews.reserve(ChunkDrawMaxCount);
 	std::vector<int> drawingIndexCounts; drawingIndexCounts.reserve(ChunkDrawMaxCount);
+
+	// 地形の初回作成
 	{
 		for (int chunkX = chunkDrawIndexXMin; chunkX <= chunkDrawIndexXMax; ++chunkX)
 			for (int chunkZ = chunkDrawIndexZMin; chunkZ <= chunkDrawIndexZMax; ++chunkZ)
 			{
+				CreateTerrainChunk(chunkX, chunkZ);
+
 				const VertexBufferView vertexBufferView = terrainVertexBufferViews[chunkX][chunkZ];
 				const IndexBufferView indexBufferView = terrainIndexBufferViews[chunkX][chunkZ];
 				const int indexCount = static_cast<int>(terrainMeshes[chunkX][chunkZ].indices.size());
@@ -453,6 +462,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 
 		// 描画距離内のチャンクのみ、描画する配列に追加
 		// プレイヤーの存在するチャンクが変化した、またはブロックを壊した場合に更新する
+		// 更新時、そのチャンクがまだ未作成ならば、その作成をまず行う
 		{
 			// 存在するチャンクが変化したかチェック
 			const Lattice2 currentChunkIndex = PlayerControl::GetChunkIndexAtPosition(cameraTransform.position);
@@ -490,6 +500,12 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 				for (int chunkX = chunkDrawIndexXMin; chunkX <= chunkDrawIndexXMax; ++chunkX)
 					for (int chunkZ = chunkDrawIndexZMin; chunkZ <= chunkDrawIndexZMax; ++chunkZ)
 					{
+						// チャンクが未作成ならば、まず作成する
+						if (!hasCreatedTerrainChunks[chunkX][chunkZ])
+						{
+							CreateTerrainChunk(chunkX, chunkZ);
+						}
+
 						const VertexBufferView vertexBufferView = terrainVertexBufferViews[chunkX][chunkZ];
 						const IndexBufferView indexBufferView = terrainIndexBufferViews[chunkX][chunkZ];
 						const int indexCount = static_cast<int>(terrainMeshes[chunkX][chunkZ].indices.size());
