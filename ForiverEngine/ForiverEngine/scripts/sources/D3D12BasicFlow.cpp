@@ -219,7 +219,7 @@ namespace ForiverEngine
 #define RETURN_TRUE() \
 	return { true, L"", { textureArrayBuffer, textureArray } };
 
-		textureArray = AssetLoader::LoadTextureArray(paths);
+		textureArray = TextureLoader::LoadTextureArray(paths);
 		if (!textureArray.IsValid())
 			RETURN_FALSE(L"テクスチャ群のロードに失敗しました");
 

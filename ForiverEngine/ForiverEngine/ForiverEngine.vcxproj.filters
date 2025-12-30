@@ -5,9 +5,6 @@
     <ClCompile Include="oss\SimplexNoise.cpp">
       <Filter>oss</Filter>
     </ClCompile>
-    <ClCompile Include="scripts\sources\AssetLoader.cpp">
-      <Filter>scripts\sources</Filter>
-    </ClCompile>
     <ClCompile Include="scripts\sources\D3D12BasicFlow.cpp">
       <Filter>scripts\sources</Filter>
     </ClCompile>
@@ -18,6 +15,9 @@
       <Filter>scripts\sources</Filter>
     </ClCompile>
     <ClCompile Include="scripts\sources\InputHelper.cpp">
+      <Filter>scripts\sources</Filter>
+    </ClCompile>
+    <ClCompile Include="scripts\sources\TextureLoader.cpp">
       <Filter>scripts\sources</Filter>
     </ClCompile>
   </ItemGroup>
@@ -68,9 +68,6 @@
     </ClInclude>
     <ClInclude Include="scripts\common\Include.h">
       <Filter>scripts\common</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\headers\AssetLoader.h">
-      <Filter>scripts\headers</Filter>
     </ClInclude>
     <ClInclude Include="scripts\headers\D3D12BasicFlow.h">
       <Filter>scripts\headers</Filter>
@@ -164,6 +161,9 @@
     </ClInclude>
     <ClInclude Include="scripts\common\Component\Mesh\MeshPP.h">
       <Filter>scripts\common\Component\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\headers\TextureLoader.h">
+      <Filter>scripts\headers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

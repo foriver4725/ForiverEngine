@@ -172,7 +172,7 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="oss\SimplexNoise.cpp" />
-    <ClCompile Include="scripts\sources\AssetLoader.cpp" />
+    <ClCompile Include="scripts\sources\TextureLoader.cpp" />
     <ClCompile Include="scripts\sources\D3D12BasicFlow.cpp" />
     <ClCompile Include="scripts\sources\D3D12Helper.cpp" />
     <ClCompile Include="scripts\sources\InputHelper.cpp" />
@@ -205,7 +205,7 @@
     <ClInclude Include="scripts\common\Math\Noise.h" />
     <ClInclude Include="scripts\common\Utils\Include.h" />
     <ClInclude Include="scripts\common\Utils\StringUtils.h" />
-    <ClInclude Include="scripts\headers\AssetLoader.h" />
+    <ClInclude Include="scripts\headers\TextureLoader.h" />
     <ClInclude Include="scripts\headers\D3D12BasicFlow.h" />
     <ClInclude Include="scripts\headers\D3D12Defines.h" />
     <ClInclude Include="scripts\headers\D3D12Helper.h" />
