@@ -1,4 +1,4 @@
-﻿#include "../headers/TextureLoader.h"
+﻿#include "../headers/AssetLoader.h"
 
 #include <DirectXTex.h>
 
@@ -10,7 +10,7 @@
 
 namespace ForiverEngine
 {
-	Texture TextureLoader::LoadTexture(const std::string& path)
+	Texture AssetLoader::LoadTexture(const std::string& path)
 	{
 		DirectX::TexMetadata metadata = {};
 		DirectX::ScratchImage scratchImage = {};
@@ -50,7 +50,7 @@ namespace ForiverEngine
 		};
 	}
 
-	Texture TextureLoader::LoadTextureArray(const std::vector<std::string>& paths)
+	Texture AssetLoader::LoadTextureArray(const std::vector<std::string>& paths)
 	{
 		if (paths.empty())
 			return Texture{};

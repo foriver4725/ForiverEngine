@@ -5,10 +5,10 @@
 
 namespace ForiverEngine
 {
-	class TextureLoader final
+	class AssetLoader final
 	{
 	public:
-		DELETE_DEFAULT_METHODS(TextureLoader);
+		DELETE_DEFAULT_METHODS(AssetLoader);
 
 		/// <summary>
 		/// <para>テクスチャをロードして返す (失敗したら空の Texture を返す)</para>
