@@ -36,33 +36,72 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	CameraTransform cameraTransform = CameraTransform::CreateBasic(
 		Vector3(64, 32, 64), Quaternion::Identity(), 60.0f * DegToRad, 1.0f * WindowWidth / WindowHeight);
 
+	// 地形チャンクの作成進捗状態
+	enum class ChunkCreationState : std::uint8_t
+	{
+		NotYet, // 未作成
+		CreatingParallel, // 並列処理中
+		FinishedParallel, // 並列処理完了済み
+		FinishedAll, // 全部完了済み
+	};
+
 	// 地形データ
 	constexpr int TerrainSeed = 0x2961E3B1;
 	constexpr int ChunkCount = 32; // ワールドのチャンク数 (ChunkCount x ChunkCount 個)
 	constexpr int ChunkDrawDistance = 8; // 描画チャンク数 (プレイヤーを中心に 半径 ChunkDrawDistance の矩形内のチャンクのみ描画する)
 	constexpr int ChunkDrawMaxCount = (ChunkDrawDistance * 2 + 1) * (ChunkDrawDistance * 2 + 1);
-	std::array<std::array<bool, ChunkCount>, ChunkCount> hasCreatedTerrainChunks = {}; // チャンク作成済みフラグ (デフォルト:false)
+	std::array<std::array<std::atomic<ChunkCreationState>, ChunkCount>, ChunkCount> terrainChunkCreationStates = {}; // チャンク作成状態 (デフォルト:NotYet)
 	std::array<std::array<Terrain, ChunkCount>, ChunkCount> terrains = {}; // チャンクの配列
 	std::array<std::array<Mesh, ChunkCount>, ChunkCount> terrainMeshes = {}; // 地形の結合メッシュ
 	std::array<std::array<VertexBufferView, ChunkCount>, ChunkCount> terrainVertexBufferViews = {}; // 頂点バッファビュー (全部)
 	std::array<std::array<IndexBufferView, ChunkCount>, ChunkCount> terrainIndexBufferViews = {}; // インデックスバッファビュー (全部)
-	// 地形のデータ・メッシュ・頂点とインデックスのバッファビューを作成し、キャッシュしておく関数
-	std::function<void(int, int)> CreateTerrainChunk = [&](int chunkX, int chunkZ)
+	// 地形のデータ・メッシュを作成し、キャッシュしておく関数 (並列処理可能. 最初にこっちを実行する)
+	std::function<void(int, int)> CreateTerrainChunkCanParallel = [&](int chunkX, int chunkZ)
 		{
-			// 既に作成済みなら何もしない
-			if (hasCreatedTerrainChunks[chunkX][chunkZ]) return;
-			hasCreatedTerrainChunks[chunkX][chunkZ] = true;
-
 			const Terrain terrain = Terrain::CreateFromNoise({ chunkX, chunkZ }, { 0.015f, 12.0f }, TerrainSeed, 16, 18, 24);
 			terrains[chunkX][chunkZ] = terrain;
 
 			const Lattice2 localOffset = Lattice2(chunkX * Terrain::ChunkSize, chunkZ * Terrain::ChunkSize);
 			terrainMeshes[chunkX][chunkZ] = terrain.CreateMesh(localOffset);
 
+			terrainChunkCreationStates[chunkX][chunkZ].store(ChunkCreationState::FinishedParallel, std::memory_order_release);
+		};
+	// ↑の並列処理を実行開始する関数
+	std::function<void(int, int)> TryStartCreateTerrainChunkCanParallel = [&](int chunkX, int chunkZ)
+		{
+			ChunkCreationState expectedState = ChunkCreationState::NotYet;
+
+			if (!terrainChunkCreationStates[chunkX][chunkZ]
+				.compare_exchange_strong(
+					expectedState,
+					ChunkCreationState::CreatingParallel,
+					std::memory_order_acq_rel))
+			{
+				// 既に該当処理が開始済みなので、何もしない
+				return;
+			}
+
+			std::thread([=]()
+				{
+					CreateTerrainChunkCanParallel(chunkX, chunkZ);
+				}).detach();
+		};
+	// 地形の頂点・インデックスバッファビューを作成し、キャッシュしておく関数 (GPUが絡むので並列処理不可. 並列処理の方が完了した後、メインスレッドで実行する)
+	std::function<void(int, int)> CreateTerrainChunkCannotParallel = [&](int chunkX, int chunkZ)
+		{
+			if (terrainChunkCreationStates[chunkX][chunkZ]
+				.load(std::memory_order_acquire)
+				!= ChunkCreationState::FinishedParallel)
+				return;
+
 			const auto [vertexBufferView, indexBufferView]
 				= D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, terrainMeshes[chunkX][chunkZ]);
 			terrainVertexBufferViews[chunkX][chunkZ] = vertexBufferView;
 			terrainIndexBufferViews[chunkX][chunkZ] = indexBufferView;
+
+			// メインスレッドで1フレーム内で終わらせるので、この状態更新でOK
+			terrainChunkCreationStates[chunkX][chunkZ]
+				.store(ChunkCreationState::FinishedAll, std::memory_order_release);
 		};
 	// 描画するチャンクが変化した時、ビューを再作成する
 	Lattice2 chunkIndex = PlayerControl::GetChunkIndexAtPosition(cameraTransform.position);
@@ -77,12 +116,21 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	std::vector<IndexBufferView> drawingIndexBufferViews; drawingIndexBufferViews.reserve(ChunkDrawMaxCount);
 	std::vector<int> drawingIndexCounts; drawingIndexCounts.reserve(ChunkDrawMaxCount);
 
+	// チャンク作成状態の初期化
+	{
+		for (auto& zArray : terrainChunkCreationStates)
+			for (auto& value : zArray)
+				value.store(ChunkCreationState::NotYet);
+	}
+
 	// 地形の初回作成
 	{
 		for (int chunkX = chunkDrawIndexXMin; chunkX <= chunkDrawIndexXMax; ++chunkX)
 			for (int chunkZ = chunkDrawIndexZMin; chunkZ <= chunkDrawIndexZMax; ++chunkZ)
 			{
-				CreateTerrainChunk(chunkX, chunkZ);
+				// 初回は、メインスレッドで1フレームで全て終わらせる
+				CreateTerrainChunkCanParallel(chunkX, chunkZ);
+				CreateTerrainChunkCannotParallel(chunkX, chunkZ);
 
 				const VertexBufferView vertexBufferView = terrainVertexBufferViews[chunkX][chunkZ];
 				const IndexBufferView indexBufferView = terrainIndexBufferViews[chunkX][chunkZ];
@@ -501,10 +549,8 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 					for (int chunkZ = chunkDrawIndexZMin; chunkZ <= chunkDrawIndexZMax; ++chunkZ)
 					{
 						// チャンクが未作成ならば、まず作成する
-						if (!hasCreatedTerrainChunks[chunkX][chunkZ])
-						{
-							CreateTerrainChunk(chunkX, chunkZ);
-						}
+						TryStartCreateTerrainChunkCanParallel(chunkX, chunkZ);
+						CreateTerrainChunkCannotParallel(chunkX, chunkZ);
 
 						const VertexBufferView vertexBufferView = terrainVertexBufferViews[chunkX][chunkZ];
 						const IndexBufferView indexBufferView = terrainIndexBufferViews[chunkX][chunkZ];

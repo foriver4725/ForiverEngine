@@ -13,6 +13,10 @@
 #include <functional>
 #include <utility>
 
+#include <thread>
+#include <mutex>
+#include <atomic>
+
 #include <iostream>
 #define NOMINMAX
 #include <Windows.h>
