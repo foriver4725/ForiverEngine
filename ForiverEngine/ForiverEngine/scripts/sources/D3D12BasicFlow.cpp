@@ -219,7 +219,7 @@ namespace ForiverEngine
 #define RETURN_TRUE() \
 	return { true, L"", { textureArrayBuffer, textureArray } };
 
-		textureArray = AssetLoader::LoadTextureArray(paths);
+		textureArray = TextureLoader::LoadTextureArray(paths);
 		if (!textureArray.IsValid())
 			RETURN_FALSE(L"テクスチャ群のロードに失敗しました");
 
@@ -497,5 +497,23 @@ namespace ForiverEngine
 		const Matrix4x4 mvp = p * v * m;
 
 		return { true, L"", { mvp } };
+	}
+
+	std::tuple<bool, std::wstring>
+		D3D12BasicFlow::InitText_Impl(
+			const Device& device,
+			const std::string& fontPath
+		)
+	{
+		const DescriptorHeap descriptorHeap = D3D12Helper::CreateDescriptorHeap(device, DescriptorHeapType::CBV_SRV_UAV, 1, true);
+
+		TextManager::Init(
+			device,
+			fontPath,
+			D3D12Helper::CreateDescriptorHeapHandleAtCPUIndicatingDescriptorByIndex(device, descriptorHeap, DescriptorHeapType::CBV_SRV_UAV, 0),
+			D3D12Helper::CreateDescriptorHeapHandleAtGPUIndicatingDescriptorByIndex(device, descriptorHeap, DescriptorHeapType::CBV_SRV_UAV, 0)
+		);
+
+		return { true, L"" };
 	}
 }

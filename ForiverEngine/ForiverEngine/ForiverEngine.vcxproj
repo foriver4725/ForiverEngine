@@ -172,11 +172,11 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="oss\SimplexNoise.cpp" />
-    <ClCompile Include="scripts\sources\AssetLoader.cpp" />
+    <ClCompile Include="scripts\sources\TextureLoader.cpp" />
     <ClCompile Include="scripts\sources\D3D12BasicFlow.cpp" />
     <ClCompile Include="scripts\sources\D3D12Helper.cpp" />
     <ClCompile Include="scripts\sources\InputHelper.cpp" />
-    <ClCompile Include="scripts\sources\UIManager.cpp" />
+    <ClCompile Include="scripts\sources\TextManager.cpp" />
     <ClCompile Include="scripts\sources\WindowHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -206,14 +206,14 @@
     <ClInclude Include="scripts\common\Math\Noise.h" />
     <ClInclude Include="scripts\common\Utils\Include.h" />
     <ClInclude Include="scripts\common\Utils\StringUtils.h" />
-    <ClInclude Include="scripts\headers\AssetLoader.h" />
+    <ClInclude Include="scripts\headers\TextureLoader.h" />
     <ClInclude Include="scripts\headers\D3D12BasicFlow.h" />
     <ClInclude Include="scripts\headers\D3D12Defines.h" />
     <ClInclude Include="scripts\headers\D3D12Helper.h" />
     <ClInclude Include="scripts\headers\InputHelper.h" />
     <ClInclude Include="scripts\headers\PlayerControl.h" />
     <ClInclude Include="scripts\headers\Terrain.h" />
-    <ClInclude Include="scripts\headers\UIManager.h" />
+    <ClInclude Include="scripts\headers\TextManager.h" />
     <ClInclude Include="scripts\headers\WindowHelper.h" />
   </ItemGroup>
   <ItemGroup>

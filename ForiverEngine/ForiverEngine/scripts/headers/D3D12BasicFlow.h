@@ -4,7 +4,8 @@
 
 #include "./WindowHelper.h"
 #include "./D3D12Helper.h"
-#include "./AssetLoader.h"
+#include "./TextureLoader.h"
+#include "./TextManager.h"
 
 namespace ForiverEngine
 {
@@ -309,6 +310,18 @@ namespace ForiverEngine
 			return Check(CalculateMVPMatrix_Impl(transform, cameraTransform));
 		}
 
+		/// <summary>
+		/// テキスト表示の初期化
+		/// </summary>
+		static void
+			InitText(
+				const Device& device,
+				const std::string& fontPath
+			)
+		{
+			Check(InitText_Impl(device, fontPath));
+		}
+
 #pragma endregion
 
 #pragma region Implementation
@@ -549,6 +562,15 @@ namespace ForiverEngine
 			CalculateMVPMatrix_Impl(
 				const Transform& transform,
 				const CameraTransform& cameraTransform
+			);
+
+		/// <summary>
+		/// テキスト表示の初期化
+		/// </summary>
+		static std::tuple<bool, std::wstring>
+			InitText_Impl(
+				const Device& device,
+				const std::string& fontPath
 			);
 
 #pragma endregion
