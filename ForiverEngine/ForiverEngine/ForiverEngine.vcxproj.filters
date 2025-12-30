@@ -20,8 +20,8 @@
     <ClCompile Include="scripts\sources\InputHelper.cpp">
       <Filter>scripts\sources</Filter>
     </ClCompile>
-    <ClCompile Include="scripts\sources\UIManager.cpp">
-      <Filter>scripts\sources</Filter>
+    <ClCompile Include="scripts\common\Component\Text\Text.cpp">
+      <Filter>scripts\common\Component\Text</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -63,6 +63,9 @@
     </Filter>
     <Filter Include="shaders\common">
       <UniqueIdentifier>{5f68b7dd-70b4-4ffd-abed-f240d8631c01}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scripts\common\Component\Text">
+      <UniqueIdentifier>{df6c017d-2a25-4899-bd9f-968dff9363a1}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -168,8 +171,11 @@
     <ClInclude Include="scripts\common\Component\Mesh\MeshPP.h">
       <Filter>scripts\common\Component\Mesh</Filter>
     </ClInclude>
-    <ClInclude Include="scripts\headers\UIManager.h">
-      <Filter>scripts\headers</Filter>
+    <ClInclude Include="scripts\common\Component\Text\Include.h">
+      <Filter>scripts\common\Component\Text</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\common\Component\Text\Text.h">
+      <Filter>scripts\common\Component\Text</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
