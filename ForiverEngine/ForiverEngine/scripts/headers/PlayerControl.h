@@ -10,6 +10,16 @@ namespace ForiverEngine
 	public:
 		DELETE_DEFAULT_METHODS(PlayerControl);
 
+		// 与えられた座標がどのブロックの位置にあるかを計算し、格子座標で返す
+		static Lattice3 GetBlockLatticePosition(const Vector3& position)
+		{
+			return Lattice3(
+				static_cast<int>(std::round(position.x)),
+				static_cast<int>(std::round(position.y)),
+				static_cast<int>(std::round(position.z))
+			);
+		}
+
 		static Vector3 GetFootPosition(const Vector3& position, float eyeHeight)
 		{
 			return position - Vector3::Up() * eyeHeight;

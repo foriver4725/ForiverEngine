@@ -52,13 +52,8 @@ namespace ForiverEngine
 				fontCount.y,
 				std::vector<SingleData>(
 					fontCount.x,
-					// 初期値は 描画しない・黒
-					SingleData
-					{
-						.fontIndex = NoTextFontTextureIndex,
-						.color = TexelColor::Black,
-					}
-					)
+					CreateDefaultSingleData()
+				)
 			);
 
 			windowText.count = fontCount;
@@ -102,6 +97,15 @@ namespace ForiverEngine
 			}
 		}
 
+		// 行の文字をまとめてクリアする
+		void ClearRow(int rowIndex)
+		{
+			for (int x = 0; x < count.x; ++x)
+			{
+				data[rowIndex][x] = CreateDefaultSingleData();
+			}
+		}
+
 		// データからテクスチャに変換する
 		// インデックステクスチャ, カラーテクスチャ の順に返す (テクセル値が 8bit のため. TODO: RGチャンネルに詰め込んだりできないか?)
 		// テクスチャ自体は2Dだけど、生データは1D配列なので注意
@@ -137,7 +141,16 @@ namespace ForiverEngine
 			return xyCount.x * xyCount.y;
 		}
 
-		constexpr FontTextureIndexInt GetFontIndex(char text) const
+		static constexpr SingleData CreateDefaultSingleData()
+		{
+			return SingleData
+			{
+				.fontIndex = NoTextFontTextureIndex,
+				.color = TexelColor::Black,
+			};
+		}
+
+		static constexpr FontTextureIndexInt GetFontIndex(char text)
 		{
 			switch (text)
 			{
@@ -168,7 +181,7 @@ namespace ForiverEngine
 			case 'X': return 23; case 'x': return 23;
 			case 'Y': return 24; case 'y': return 24;
 			case 'Z': return 25; case 'z': return 25;
-				// 26番は空き文字になっている. 現状の設計では、わざわざ文字にする必要はない
+			case ':': return 26;
 			case '!': return 27;
 			case '?': return 28;
 			case '.': return 29;
@@ -201,7 +214,7 @@ namespace ForiverEngine
 			case '\'': return 56;
 			case '"': return 57;
 			case '*': return 58;
-			case '@': return 59;
+			case ';': return 59;
 			case '=': return 60;
 			case '^': return 61;
 			case '<': return 62;

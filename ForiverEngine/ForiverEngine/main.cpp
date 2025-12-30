@@ -1,7 +1,6 @@
 ﻿#include "scripts/headers/D3D12BasicFlow.h"
 #include "scripts/headers/Terrain.h"
 #include "scripts/headers/PlayerControl.h"
-#include "scripts/headers/WindowText.h"
 
 constexpr int WindowWidth = 1344;
 constexpr int WindowHeight = 756;
@@ -242,19 +241,12 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	// ウィンドウ上のテキストデータ
 	WindowText windowText = WindowText::CreateEmpty(
 		Lattice2(WindowWidth / WindowText::FontSingleLength, WindowHeight / WindowText::FontSingleLength));
-	// 何か入れておく
-	windowText.SetTexts(Lattice2(1, 1), "Hello, World!", WindowText::TexelColor::Red);
-	// シェーダーに転送する用のテクスチャを作成
-	const auto [windowTextIndexTexture, windowTextColorTexture] = windowText.CreateTexture();
 
 	// t1
 	const auto fontTextureBufferAndData = D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue, commandAllocator, { "assets/font.png" });
-	// t2
-	const GraphicsBuffer windowTextIndexTextureBuffer
-		= D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue, commandAllocator, windowTextIndexTexture);
-	// t3
-	const GraphicsBuffer windowTextColorTextureBuffer
-		= D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue, commandAllocator, windowTextColorTexture);
+	// t2, t3
+	auto [srvWindowTextIndexBufferAndData, srvWindowTextColorBufferAndData]
+		= D3D12BasicFlow::CreateGraphicsBuffersAndUploadFromWindowTextData(device, commandList, commandQueue, commandAllocator, windowText);
 
 	// b0
 	struct alignas(256) CBData0Text
@@ -281,8 +273,8 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 			{
 				{textGraphicsBuffer, textTextureMetadata},
 				fontTextureBufferAndData,
-				{windowTextIndexTextureBuffer, windowTextIndexTexture},
-				{windowTextColorTextureBuffer, windowTextColorTexture},
+				srvWindowTextIndexBufferAndData,
+				srvWindowTextColorBufferAndData,
 			}
 			);
 
@@ -538,6 +530,57 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 						++index;
 					}
 			}
+		}
+
+		// テキストの更新
+		{
+			// データを更新
+			{
+				// - プレイヤーの足元の座標
+				// - 選択しているブロックの座標
+
+				const Lattice3 playerFootPositionAsLattice = PlayerControl::GetBlockLatticePosition(
+					PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight));
+				const std::string positionText = std::format(
+					"Position:({:+},{:+},{:+})",
+					playerFootPositionAsLattice.x,
+					playerFootPositionAsLattice.y,
+					playerFootPositionAsLattice.z
+				);
+
+				const Lattice3 selectingBlockPositionAsLattice = Lattice3(
+					static_cast<int>(cbvBufferVirtualPtr->SelectingBlockPosition.x),
+					static_cast<int>(cbvBufferVirtualPtr->SelectingBlockPosition.y),
+					static_cast<int>(cbvBufferVirtualPtr->SelectingBlockPosition.z)
+				);
+				const std::string selectingBlockPositionText = cbvBufferVirtualPtr->IsSelectingAnyBlock ? std::format(
+					"LookAt  :({:+},{:+},{:+})",
+					selectingBlockPositionAsLattice.x,
+					selectingBlockPositionAsLattice.y,
+					selectingBlockPositionAsLattice.z
+				) : "LookAt  :None";
+
+				windowText.ClearRow(1);
+				windowText.ClearRow(2);
+				windowText.SetTexts(Lattice2(1, 1), positionText, WindowText::TexelColor::White);
+				windowText.SetTexts(Lattice2(1, 2), selectingBlockPositionText, WindowText::TexelColor::White);
+			}
+
+			// バッファを再作成してアップロードし直す
+			std::tie(srvWindowTextIndexBufferAndData, srvWindowTextColorBufferAndData)
+				= D3D12BasicFlow::CreateGraphicsBuffersAndUploadFromWindowTextData(device, commandList, commandQueue, commandAllocator, windowText);
+			D3D12Helper::CreateSRVAndRegistToDescriptorHeap(
+				device, descriptorHeapBasicText,
+				std::get<0>(srvWindowTextIndexBufferAndData),
+				static_cast<int>(ShaderRegister::t2) + 1, // CBVが1つあるので...
+				std::get<1>(srvWindowTextIndexBufferAndData)
+			);
+			D3D12Helper::CreateSRVAndRegistToDescriptorHeap(
+				device, descriptorHeapBasicText,
+				std::get<0>(srvWindowTextColorBufferAndData),
+				static_cast<int>(ShaderRegister::t3) + 1, // CBVが1つあるので...
+				std::get<1>(srvWindowTextColorBufferAndData)
+			);
 		}
 
 		const int currentBackRTIndex = D3D12Helper::GetCurrentBackBufferIndex(swapChain);

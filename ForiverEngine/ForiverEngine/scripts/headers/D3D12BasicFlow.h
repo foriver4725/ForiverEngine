@@ -5,6 +5,7 @@
 #include "./WindowHelper.h"
 #include "./D3D12Helper.h"
 #include "./TextureLoader.h"
+#include "./WindowText.h"
 
 namespace ForiverEngine
 {
@@ -261,6 +262,26 @@ namespace ForiverEngine
 		{
 			Check(UploadTextureToGPU_Impl(
 				commandList, commandQueue, commandAllocator, device, textureBuffer, textureAsMetadata));
+		}
+
+		/// <summary>
+		/// <para>画面に描画するテキストのデータを基に、</para>
+		/// <para>テクスチャを作成し、GraphicsBuffer を作成して GPU にアップロードする</para>
+		/// <para>作成した GraphicsBuffer とテクスチャをペアで返す</para>
+		/// <para>戻り値について、最初のペアはフォントインデックスのテクスチャ/GraphicsBuffer、次のペアは文字色のテクスチャ/GraphicsBuffer である</para>
+		/// <para>TODO: 戻り値のペアは1つのみにしたい!</para>
+		/// </summary>
+		static std::tuple<std::tuple<GraphicsBuffer, Texture>, std::tuple<GraphicsBuffer, Texture>>
+			CreateGraphicsBuffersAndUploadFromWindowTextData(
+				const Device& device,
+				const CommandList& commandList,
+				const CommandQueue& commandQueue,
+				const CommandAllocator& commandAllocator,
+				const WindowText& windowText
+			)
+		{
+			return Check(CreateGraphicsBuffersAndUploadFromWindowTextData_Impl(
+				device, commandList, commandQueue, commandAllocator, windowText));
 		}
 
 		/// <summary>
@@ -531,6 +552,22 @@ namespace ForiverEngine
 				const Device& device,
 				const GraphicsBuffer& textureBuffer,
 				const Texture& textureAsMetadata
+			);
+
+		/// <summary>
+		/// <para>画面に描画するテキストのデータを基に、</para>
+		/// <para>テクスチャを作成し、GraphicsBuffer を作成して GPU にアップロードする</para>
+		/// <para>作成した GraphicsBuffer とテクスチャをペアで返す</para>
+		/// <para>戻り値について、最初のペアはフォントインデックスのテクスチャ/GraphicsBuffer、次のペアは文字色のテクスチャ/GraphicsBuffer である</para>
+		/// <para>TODO: 戻り値のペアは1つのみにしたい!</para>
+		/// </summary>
+		static std::tuple<bool, std::wstring, std::tuple<std::tuple<GraphicsBuffer, Texture>, std::tuple<GraphicsBuffer, Texture>>>
+			CreateGraphicsBuffersAndUploadFromWindowTextData_Impl(
+				const Device& device,
+				const CommandList& commandList,
+				const CommandQueue& commandQueue,
+				const CommandAllocator& commandAllocator,
+				const WindowText& windowText
 			);
 
 		/// <summary>
