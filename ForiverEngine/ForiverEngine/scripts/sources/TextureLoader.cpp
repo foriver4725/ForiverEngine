@@ -133,7 +133,7 @@ namespace ForiverEngine
 		};
 	}
 
-	Texture TextureLoader::CreateManually(const std::vector<std::uint8_t>& data, int width, int height, Format format)
+	Texture TextureLoader::CreateManually(const std::vector<std::uint8_t>& data, std::size_t texelValueSize, int width, int height, Format format)
 	{
 		return Texture
 		{
@@ -142,24 +142,8 @@ namespace ForiverEngine
 			.format = format,
 			.width = width,
 			.height = height,
-			.rowSize = static_cast<int>(sizeof(std::uint8_t) * width),
-			.sliceSize = static_cast<int>(sizeof(std::uint8_t) * width * height),
-			.sliceCount = 1,
-			.mipLevels = 1, // ミップマップなし
-		};
-	}
-
-	Texture TextureLoader::CreateManuallyAsMetadata(std::size_t texelSize, int width, int height, Format format)
-	{
-		return Texture
-		{
-			.data = {}, // 生データなし
-			.textureType = GraphicsBufferType::Texture2D,
-			.format = format,
-			.width = width,
-			.height = height,
-			.rowSize = static_cast<int>(texelSize * width),
-			.sliceSize = static_cast<int>(texelSize * width * height),
+			.rowSize = static_cast<int>(texelValueSize * width),
+			.sliceSize = static_cast<int>(texelValueSize * width * height),
 			.sliceCount = 1,
 			.mipLevels = 1, // ミップマップなし
 		};

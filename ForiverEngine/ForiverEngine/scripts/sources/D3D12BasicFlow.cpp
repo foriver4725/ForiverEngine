@@ -450,35 +450,6 @@ namespace ForiverEngine
 		return { true, L"" };
 	}
 
-	std::tuple<bool, std::wstring, std::tuple<std::tuple<GraphicsBuffer, Texture>, std::tuple<GraphicsBuffer, Texture>>>
-		D3D12BasicFlow::CreateGraphicsBuffersAndUploadFromWindowTextData_Impl(
-			const Device& device,
-			const CommandList& commandList,
-			const CommandQueue& commandQueue,
-			const CommandAllocator& commandAllocator,
-			const WindowText& windowText
-		)
-	{
-		GraphicsBuffer graphicsBufferIndex = GraphicsBuffer();
-		Texture textureIndex = Texture();
-		GraphicsBuffer graphicsBufferColor = GraphicsBuffer();
-		Texture textureColor = Texture();
-
-#define RETURN_FALSE(errorMessage) \
-	return { false, errorMessage, { { graphicsBufferIndex, textureIndex }, { graphicsBufferColor, textureColor } } };
-#define RETURN_TRUE() \
-	return { true, L"", { { graphicsBufferIndex, textureIndex }, { graphicsBufferColor, textureColor } } };
-
-		std::tie(textureIndex, textureColor) = windowText.CreateTexture();
-		graphicsBufferIndex = D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue, commandAllocator, textureIndex);
-		graphicsBufferColor = D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue, commandAllocator, textureColor);
-
-		RETURN_TRUE();
-
-#undef RETURN_FALSE
-#undef RETURN_TRUE
-	}
-
 	std::tuple<bool, std::wstring>
 		D3D12BasicFlow::CommandBasicLoop_Impl(
 			// 基本オブジェクト

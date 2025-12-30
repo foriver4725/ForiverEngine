@@ -8,8 +8,7 @@ cbuffer _0 : register(b0)
 
 Texture2D<float4> _Texture : register(t0);
 Texture2D<float4> _FontTexture : register(t1);
-Texture2D<uint> _WindowTextIndexTexture : register(t2);
-Texture2D<uint> _WindowTextColorTexture : register(t3);
+Texture2D<uint4> _WindowTextTexture : register(t2);
 SamplerState _Sampler : register(s0);
 
 struct VSInput
@@ -32,25 +31,14 @@ struct PSOutput
 // 戻り値の a は0/1 の2値で、テキストを描画するかどうかを示す
 float4 PSGetTextColor(float2 pos)
 {
-    static const float3 WindowTextColorTable[8] =
-    {
-        float3(0, 0, 0), // 黒
-        float3(1, 0, 0), // 赤
-        float3(0, 1, 0), // 緑
-        float3(0, 0, 1), // 青
-        float3(1, 1, 0), // 黄
-        float3(1, 0, 1), // マゼンタ
-        float3(0, 1, 1), // シアン
-        float3(1, 1, 1), // 白
-    };
-    
     // 画面のピクセル座標 (画面いっぱいの板ポリなので、これで良いはず)
     const uint2 posAsInt = (uint2) pos;
     
     // フォントの種類を判別
     const uint2 windowTextIndex = posAsInt / _FontSingleLength;
-    const uint windowTextIndexValue = _WindowTextIndexTexture.Load(int3(windowTextIndex, 0));
-    const float3 windowTextColorValue = WindowTextColorTable[_WindowTextColorTexture.Load(int3(windowTextIndex, 0))]; // 色も取得してしまう
+    const uint4 windowTextData = _WindowTextTexture.Load(int3(windowTextIndex, 0));
+    const uint windowTextIndexValue = windowTextData.a;
+    const float3 windowTextColorValue = uint3(windowTextData.r, windowTextData.g, windowTextData.b) / 255.0;
     // 画面外なので、ここで終了
     if (any(windowTextIndex < 0 || _WindowTextTextureSize <= windowTextIndex))
         return float4(0, 0, 0, 0);

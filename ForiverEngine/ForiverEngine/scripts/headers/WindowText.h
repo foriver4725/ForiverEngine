@@ -15,28 +15,14 @@ namespace ForiverEngine
 		// インデックスは [0, FontTextureIndexInt.max - 1]. 描画しないなら FontTextureIndexInt.max を指定する
 
 	public:
-		using FontTextureIndexInt = std::uint8_t; // フォントテクスチャでのインデックス
+		using FontTextureIndexInt = std::uint8_t; // フォントテクスチャでのインデックス (8bit 以外にする場合、テクスチャへのデータパッキングを再考すること!)
 		static constexpr FontTextureIndexInt NoTextFontTextureIndex = std::numeric_limits<FontTextureIndexInt>::max();
 		static constexpr int FontSingleLength = 16; // 1フォント文字の幅/高さ (px)
 
-		// TODO: テクスチャのテクセルサイズが 8bit 固定なので、工夫して情報を詰め込む
-
-		enum class TexelColor : std::uint8_t
-		{
-			Black = 0,
-			Red = 1,
-			Green = 2,
-			Blue = 3,
-			Yellow = 4,
-			Magenta = 5,
-			Cyan = 6,
-			White = 7,
-		};
-
 		struct SingleData
 		{
+			Color color; // a は使わず、インデックスデータを詰めて 16bit にする
 			FontTextureIndexInt fontIndex;
-			TexelColor color;
 		};
 
 		// ファクトリメソッド
@@ -70,18 +56,18 @@ namespace ForiverEngine
 		}
 
 		// 単文字
-		void SetText(const Lattice2& positionIndex, char text, TexelColor color = TexelColor::Black)
+		void SetText(const Lattice2& positionIndex, char text, const Color& color = Color::Black())
 		{
 			data[positionIndex.y][positionIndex.x] = SingleData
 			{
-				.fontIndex = GetFontIndex(text),
 				.color = color,
+				.fontIndex = GetFontIndex(text),
 			};
 		}
 
 		// 複数文字
 		// 勝手に改行をする. 文字が画面からはみ出るならその分だけ無視する.
-		void SetTexts(const Lattice2& beginPositionIndex, const std::string& texts, TexelColor color = TexelColor::Black)
+		void SetTexts(const Lattice2& beginPositionIndex, const std::string& texts, const Color& color = Color::Black())
 		{
 			const int textCount = static_cast<int>(texts.size());
 			const int beginDataIndex = beginPositionIndex.y * count.x + beginPositionIndex.x; // 最小値
@@ -107,29 +93,32 @@ namespace ForiverEngine
 		}
 
 		// データからテクスチャに変換する
-		// インデックステクスチャ, カラーテクスチャ の順に返す (テクセル値が 8bit のため. TODO: RGチャンネルに詰め込んだりできないか?)
-		// テクスチャ自体は2Dだけど、生データは1D配列なので注意
-		std::tuple<Texture, Texture> CreateTexture() const
+		// テクスチャ自体は2Dだけど、生データは1Dのビット配列なので注意
+		Texture CreateTexture() const
 		{
-			const int PixelCount = GetMaxTextCount();
+			// データサイズとかは、直書きしてしまう
 
-			std::vector<std::uint8_t> indexData; indexData.reserve(PixelCount);
-			std::vector<std::uint8_t> colorData; colorData.reserve(PixelCount);
+			const int pixelCount = GetMaxTextCount();
+			const int texelValueSize = 16;
 
-			for (int i = 0; i < PixelCount; ++i)
+			std::vector<std::uint8_t> data;
+			data.reserve(pixelCount * texelValueSize);
+
+			for (int i = 0; i < pixelCount; ++i)
 			{
 				const int xi = i % count.x;
 				const int yi = i / count.x;
+				const SingleData& singleData = this->data[yi][xi];
 
-				indexData.push_back(data[yi][xi].fontIndex);
-				colorData.push_back(static_cast<std::uint8_t>(data[yi][xi].color));
+				// uint8 にして詰める
+				// [0, 255]
+				data.push_back(static_cast<std::uint8_t>(singleData.color.r * 0xff));
+				data.push_back(static_cast<std::uint8_t>(singleData.color.g * 0xff));
+				data.push_back(static_cast<std::uint8_t>(singleData.color.b * 0xff));
+				data.push_back(static_cast<std::uint8_t>(singleData.fontIndex));
 			}
 
-			return
-			{
-				TextureLoader::CreateManually(indexData, count.x, count.y, Format::R_U8),
-				TextureLoader::CreateManually(colorData, count.x, count.y, Format::R_U8)
-			};
+			return TextureLoader::CreateManually(data, 4, count.x, count.y, Format::RGBA_U8);
 		}
 
 		constexpr int GetMaxTextCount() const
@@ -145,8 +134,8 @@ namespace ForiverEngine
 		{
 			return SingleData
 			{
+				.color = Color::Black(),
 				.fontIndex = NoTextFontTextureIndex,
-				.color = TexelColor::Black,
 			};
 		}
 

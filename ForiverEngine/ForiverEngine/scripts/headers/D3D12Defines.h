@@ -352,7 +352,7 @@ public: \
 		// アラインメントをこれに揃える必要がある
 		constexpr static int RowSizeAlignment = 256;
 
-		std::vector<std::uint8_t> data; // 生データ
+		std::vector<std::uint8_t> data; // 生データ (ビット配列)
 		GraphicsBufferType textureType;
 		Format format;
 		int width;

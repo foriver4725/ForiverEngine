@@ -143,7 +143,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	// RT, SR で切り替えて使う 2D テクスチャ
 	const GraphicsBuffer ppGraphicsBuffer = D3D12Helper::CreateGraphicsBufferTexture2DForRTAndSR(device, WindowWidth, WindowHeight, RTClearColor);
 	// RT と同じ. sRGB 不可.
-	const Texture ppTextureMetadata = TextureLoader::CreateManuallyAsMetadata(4, WindowWidth, WindowHeight, Format::RGBA_U8_01);
+	const Texture ppTextureMetadata = TextureLoader::CreateManually({}, 4, WindowWidth, WindowHeight, Format::RGBA_U8_01);
 
 	const RootParameter rootParameterPP = RootParameter::CreateBasic(1, 1, 0);
 	const SamplerConfig samplerConfigPP = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
@@ -192,7 +192,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	// RT, SR で切り替えて使う 2D テクスチャ
 	const GraphicsBuffer textGraphicsBuffer = D3D12Helper::CreateGraphicsBufferTexture2DForRTAndSR(device, WindowWidth, WindowHeight, RTClearColor);
 	// RT と同じ. sRGB 不可.
-	const Texture textTextureMetadata = TextureLoader::CreateManuallyAsMetadata(4, WindowWidth, WindowHeight, Format::RGBA_U8_01);
+	const Texture textTextureMetadata = TextureLoader::CreateManually({}, 4, WindowWidth, WindowHeight, Format::RGBA_U8_01);
 
 	// 頂点レイアウト
 	const std::vector<VertexLayout> VertexLayoutsText =
@@ -201,7 +201,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		{ "TEXCOORD" , Format::RG_F32   },
 	};
 
-	const RootParameter rootParameterText = RootParameter::CreateBasic(1, 4, 0);
+	const RootParameter rootParameterText = RootParameter::CreateBasic(1, 3, 0);
 	const SamplerConfig samplerConfigText = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
 	const auto [shaderVSText, shaderPSText] = D3D12BasicFlow::CompileShader_VS_PS("./shaders/Text.hlsl");
 	const auto [rootSignatureText, graphicsPipelineStateText]
@@ -225,9 +225,9 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 
 	// t1
 	const auto fontTextureBufferAndData = D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue, commandAllocator, { "assets/font.png" });
-	// t2, t3
-	auto [srvWindowTextIndexBufferAndData, srvWindowTextColorBufferAndData]
-		= D3D12BasicFlow::CreateGraphicsBuffersAndUploadFromWindowTextData(device, commandList, commandQueue, commandAllocator, windowText);
+	// t2
+	Texture windowTextTexture = windowText.CreateTexture();
+	GraphicsBuffer windowTextGraphicsBuffer = D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue, commandAllocator, windowTextTexture);
 
 	// b0
 	struct alignas(256) CBData0Text
@@ -252,10 +252,9 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 			device,
 			{ cbvBufferText },
 			{
-				{textGraphicsBuffer, textTextureMetadata},
+				{ textGraphicsBuffer, textTextureMetadata },
 				fontTextureBufferAndData,
-				srvWindowTextIndexBufferAndData,
-				srvWindowTextColorBufferAndData,
+				{ windowTextGraphicsBuffer, windowTextTexture },
 			}
 			);
 
@@ -543,24 +542,18 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 
 				windowText.ClearRow(1);
 				windowText.ClearRow(2);
-				windowText.SetTexts(Lattice2(1, 1), positionText, WindowText::TexelColor::White);
-				windowText.SetTexts(Lattice2(1, 2), selectingBlockPositionText, WindowText::TexelColor::White);
+				windowText.SetTexts(Lattice2(1, 1), positionText, Color::White());
+				windowText.SetTexts(Lattice2(1, 2), selectingBlockPositionText, Color::White());
 			}
 
 			// バッファを再作成してアップロードし直す
-			std::tie(srvWindowTextIndexBufferAndData, srvWindowTextColorBufferAndData)
-				= D3D12BasicFlow::CreateGraphicsBuffersAndUploadFromWindowTextData(device, commandList, commandQueue, commandAllocator, windowText);
+			windowTextTexture = windowText.CreateTexture();
+			windowTextGraphicsBuffer = D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue, commandAllocator, windowTextTexture);
 			D3D12Helper::CreateSRVAndRegistToDescriptorHeap(
 				device, descriptorHeapBasicText,
-				std::get<0>(srvWindowTextIndexBufferAndData),
+				windowTextGraphicsBuffer,
 				static_cast<int>(ShaderRegister::t2) + 1, // CBVが1つあるので...
-				std::get<1>(srvWindowTextIndexBufferAndData)
-			);
-			D3D12Helper::CreateSRVAndRegistToDescriptorHeap(
-				device, descriptorHeapBasicText,
-				std::get<0>(srvWindowTextColorBufferAndData),
-				static_cast<int>(ShaderRegister::t3) + 1, // CBVが1つあるので...
-				std::get<1>(srvWindowTextColorBufferAndData)
+				windowTextTexture
 			);
 		}
 
