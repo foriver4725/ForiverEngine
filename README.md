@@ -131,12 +131,17 @@ https://github.com/user-attachments/assets/c2fc2e4c-d963-4b22-aefe-aff62fdff570
 
 <img width="50%" alt="image" src="https://github.com/user-attachments/assets/a080e8ec-9413-4d3e-8e3b-09c30b68dcf8" />
 
-</details>
-
 ---
 アンチエイリアスを実装 (FXAA っぽい何か)
 
 <img width="50%" alt="image" src="https://github.com/user-attachments/assets/84aa542a-3b84-41b4-b725-baec4ab001c0" />
+
+</details>
+
+---
+テキストを画面に描画する (初期化以降の変更不可)
+
+<img width="50%" alt="image" src="https://github.com/user-attachments/assets/b3974110-1ddd-4aed-8121-5fdd90a6cb49" />
 
 ## OSS
 | 名前 | ライセンス |
