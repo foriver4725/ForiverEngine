@@ -91,9 +91,9 @@ namespace ForiverEngine
 	}
 
 	std::tuple<bool, std::wstring, std::tuple<VertexBufferView, IndexBufferView>>
-		D3D12BasicFlow::CreateVertexAndIndexBufferViewsPP_Impl(
+		D3D12BasicFlow::CreateVertexAndIndexBufferViews_Impl(
 			const Device& device,
-			const MeshPP& mesh
+			const MeshQuad& mesh
 		)
 	{
 		VertexBufferView vertexBufferView = VertexBufferView();
@@ -104,8 +104,8 @@ namespace ForiverEngine
 #define RETURN_TRUE() \
 	return { true, L"", { vertexBufferView, indexBufferView } };
 
-		const std::vector<VertexDataPP>& vertices = mesh.vertices;               // メッシュのプロパティ
-		const VertexDataPP* verticesPtr = vertices.data();                       // 先頭ポインタ
+		const std::vector<VertexDataQuad>& vertices = mesh.vertices;             // メッシュのプロパティ
+		const VertexDataQuad* verticesPtr = vertices.data();                     // 先頭ポインタ
 		const int vertexSize = static_cast<int>(sizeof(vertices[0]));            // 要素1つ分のメモリサイズ
 		const int verticesSize = static_cast<int>(vertices.size() * vertexSize); // 全体のメモリサイズ
 
@@ -301,7 +301,7 @@ namespace ForiverEngine
 	}
 
 	std::tuple<bool, std::wstring, std::tuple<DescriptorHeapHandleAtCPU>>
-		D3D12BasicFlow::InitRTVPP_Impl(
+		D3D12BasicFlow::InitRTV_Impl(
 			const Device& device,
 			const GraphicsBuffer& rt
 		)
@@ -317,7 +317,7 @@ namespace ForiverEngine
 		if (!descriptorHeapRTV)
 			RETURN_FALSE(L"DescriptorHeap (RTV) の作成に失敗しました");
 
-		D3D12Helper::CreateRenderTargetViewPP(device, descriptorHeapRTV, rt, 0);
+		D3D12Helper::CreateRenderTargetView(device, descriptorHeapRTV, rt, 0);
 
 		rtv = D3D12Helper::CreateDescriptorHeapHandleAtCPUIndicatingDescriptorByIndex(
 			device, descriptorHeapRTV, DescriptorHeapType::RTV, 0

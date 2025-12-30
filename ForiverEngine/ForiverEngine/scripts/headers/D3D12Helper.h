@@ -104,12 +104,12 @@ namespace ForiverEngine
 			const Device& device, const DescriptorHeap& descriptorHeapRTV, const SwapChain& swapChain, bool sRGB);
 
 		/// <summary>
-		/// <para>RTV を作成し、RTV 用 DescriptorHeap に登録する (ポストプロセス用)</para>
+		/// <para>RTV を作成し、RTV 用 DescriptorHeap に登録する (板ポリ用)</para>
 		/// <para>RT を基に RTV を作成し、 DescriptorHeap の index 番目に登録する</para>
 		/// <para>1つだけ作成する. sRGB 不可.</para>
 		/// <para>戻り値として取得することは出来ない!</para>
 		/// </summary>
-		static void CreateRenderTargetViewPP(
+		static void CreateRenderTargetView(
 			const Device& device, const DescriptorHeap& descriptorHeapRTV, const GraphicsBuffer& rt, int index);
 
 		/// <summary>

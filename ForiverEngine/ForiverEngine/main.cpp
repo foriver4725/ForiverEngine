@@ -158,23 +158,25 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		.mipLevels = 1,
 	};
 
+
+
 	const RootParameter rootParameterPP = RootParameter::CreateBasic(1, 1, 0);
 	const SamplerConfig samplerConfigPP = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
 	const auto [shaderVSPP, shaderPSPP] = D3D12BasicFlow::CompileShader_VS_PS("./shaders/PP.hlsl");
 	const auto [rootSignaturePP, graphicsPipelineStatePP]
 		= D3D12BasicFlow::CreateRootSignatureAndGraphicsPipelineState(
-			device, rootParameterPP, samplerConfigPP, shaderVSPP, shaderPSPP, VertexLayoutsPP, FillMode::Solid, CullMode::Back, false);
+			device, rootParameterPP, samplerConfigPP, shaderVSPP, shaderPSPP, VertexLayoutsQuad, FillMode::Solid, CullMode::Back, false);
 
 	// RTVのみ作成
-	const DescriptorHeapHandleAtCPU rtvPP = D3D12BasicFlow::InitRTVPP(device, ppGraphicsBuffer);
+	const DescriptorHeapHandleAtCPU rtvPP = D3D12BasicFlow::InitRTV(device, ppGraphicsBuffer);
 	const DescriptorHeapHandleAtCPU dsvPP_Dummy = DescriptorHeapHandleAtCPU{ .ptr = NULL };
 
 	// 板ポリのメッシュ
-	const MeshPP meshPP = MeshPP::CreateFullSized();
+	const MeshQuad meshPP = MeshQuad::CreateFullSized();
 
 	// 頂点バッファビューとインデックスバッファビュー
 	const auto [vertexBufferViewPP, indexBufferViewPP]
-		= D3D12BasicFlow::CreateVertexAndIndexBufferViewsPP(device, meshPP);
+		= D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, meshPP);
 
 	// CB 0
 	struct alignas(256) CBData0PP
@@ -196,6 +198,64 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	// DescriptorHeap
 	const DescriptorHeap descriptorHeapBasicPP
 		= D3D12BasicFlow::InitDescriptorHeapBasic(device, { cbvBufferPP }, { {ppGraphicsBuffer, ppTextureMetadata} });
+
+	//////////////////////////////
+
+	//////////////////////////////
+	// テキスト描画 (ポストプロセスの後)
+	// 1文字の幅 16x16 px
+
+	// RT, SR で切り替えて使う 2D テクスチャ
+	const GraphicsBuffer textGraphicsBuffer = D3D12Helper::CreateGraphicsBufferTexture2DForRTAndSR(device, WindowWidth, WindowHeight, RTClearColor);
+	const Texture textTextureMetadata = Texture
+	{
+		.textureType = GraphicsBufferType::Texture2D,
+		.format = Format::RGBA_U8_01, // RT と同じ. sRGB 不可.
+		.width = WindowWidth,
+		.height = WindowHeight,
+		.rowSize = WindowWidth * 4, // RGBA なので...
+		.sliceSize = WindowWidth * WindowHeight * 4,
+		.sliceCount = 1,
+		.mipLevels = 1,
+	};
+
+	// 頂点レイアウト
+	const std::vector<VertexLayout> VertexLayoutsText =
+	{
+		{ "POSITION" , Format::RGBA_F32 },
+		{ "TEXCOORD" , Format::RG_F32   },
+	};
+
+	const RootParameter rootParameterText = RootParameter::CreateBasic(1, 1, 0);
+	const SamplerConfig samplerConfigText = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
+	const auto [shaderVSText, shaderPSText] = D3D12BasicFlow::CompileShader_VS_PS("./shaders/Text.hlsl");
+	const auto [rootSignatureText, graphicsPipelineStateText]
+		= D3D12BasicFlow::CreateRootSignatureAndGraphicsPipelineState(
+			device, rootParameterText, samplerConfigText, shaderVSText, shaderPSText, VertexLayoutsText, FillMode::Solid, CullMode::Back, false);
+
+	// RTVのみ作成
+	const DescriptorHeapHandleAtCPU rtvText = D3D12BasicFlow::InitRTV(device, textGraphicsBuffer);
+	const DescriptorHeapHandleAtCPU dsvText_Dummy = DescriptorHeapHandleAtCPU{ .ptr = NULL };
+
+	// 板ポリのメッシュ
+	const MeshQuad meshText = MeshQuad::CreateFullSized();
+
+	// 頂点バッファビューとインデックスバッファビュー
+	const auto [vertexBufferViewText, indexBufferViewText]
+		= D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, meshText);
+
+	// CB 0
+	struct alignas(256) CBData0Text
+	{
+	};
+	CBData0Text cbData0Text =
+	{
+	};
+	const GraphicsBuffer cbvBufferText = D3D12BasicFlow::InitCBVBuffer<CBData0Text>(device, cbData0Text);
+
+	// DescriptorHeap
+	const DescriptorHeap descriptorHeapBasicText
+		= D3D12BasicFlow::InitDescriptorHeapBasic(device, { cbvBufferText }, { {textGraphicsBuffer, textTextureMetadata} });
 
 	//////////////////////////////
 
@@ -469,11 +529,20 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		// ポストプロセス
 		D3D12BasicFlow::CommandBasicLoop(
 			commandList, commandQueue, commandAllocator, device,
-			rootSignaturePP, graphicsPipelineStatePP, currentBackRT,
-			currentBackRTV, dsvPP_Dummy, descriptorHeapBasicPP, { vertexBufferViewPP }, { indexBufferViewPP },
+			rootSignaturePP, graphicsPipelineStatePP, textGraphicsBuffer,
+			rtvText, dsvPP_Dummy, descriptorHeapBasicPP, { vertexBufferViewPP }, { indexBufferViewPP },
 			GraphicsBufferState::Present, GraphicsBufferState::RenderTarget,
 			viewportScissorRect, PrimitiveTopology::TriangleList, RTClearColor, DepthBufferClearValue,
 			{ static_cast<int>(meshPP.indices.size()) }
+		);
+		// テキスト描画
+		D3D12BasicFlow::CommandBasicLoop(
+			commandList, commandQueue, commandAllocator, device,
+			rootSignatureText, graphicsPipelineStateText, currentBackRT,
+			currentBackRTV, dsvText_Dummy, descriptorHeapBasicText, { vertexBufferViewText }, { indexBufferViewText },
+			GraphicsBufferState::Present, GraphicsBufferState::RenderTarget,
+			viewportScissorRect, PrimitiveTopology::TriangleList, RTClearColor, DepthBufferClearValue,
+			{ static_cast<int>(meshText.indices.size()) }
 		);
 		if (!D3D12Helper::Present(swapChain))
 			ShowError(L"画面のフリップに失敗しました");

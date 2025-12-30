@@ -159,7 +159,7 @@
     <ClInclude Include="scripts\headers\PlayerControl.h">
       <Filter>scripts\headers</Filter>
     </ClInclude>
-    <ClInclude Include="scripts\common\Component\Mesh\MeshPP.h">
+    <ClInclude Include="scripts\common\Component\Mesh\MeshQuad.h">
       <Filter>scripts\common\Component\Mesh</Filter>
     </ClInclude>
     <ClInclude Include="scripts\headers\TextureLoader.h">
@@ -181,6 +181,9 @@
     </FxCompile>
     <FxCompile Include="shaders\common\Defines.hlsl">
       <Filter>shaders\common</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\Text.hlsl">
+      <Filter>shaders</Filter>
     </FxCompile>
   </ItemGroup>
 </Project>

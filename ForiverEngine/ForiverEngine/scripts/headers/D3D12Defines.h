@@ -285,8 +285,8 @@ public: \
 		std::uint32_t texIndex; // 使用するテクスチャのインデックス (偶数ならテクスチャの上半分、奇数なら下半分となるはず)
 	};
 
-	// 頂点データ (ポストプロセス用板ポリ)
-	struct VertexDataPP
+	// 頂点データ (板ポリ)
+	struct VertexDataQuad
 	{
 		ForiverEngine::Vector4 pos; // 画面座標系. [-1, 1]. Z は使わないので、0固定とかでOK
 		ForiverEngine::Vector2 uv; // 左上が原点
@@ -309,8 +309,8 @@ public: \
 		{ "TEXINDEX" , Format::R_U32    },
 	};
 
-	// 頂点レイアウト (ポストプロセス用板ポリ)
-	const std::vector<VertexLayout> VertexLayoutsPP =
+	// 頂点レイアウト (板ポリ)
+	const std::vector<VertexLayout> VertexLayoutsQuad =
 	{
 		{ "POSITION" , Format::RGBA_F32 },
 		{ "TEXCOORD" , Format::RG_F32   },

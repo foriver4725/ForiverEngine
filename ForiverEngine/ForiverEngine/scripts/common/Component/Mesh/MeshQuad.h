@@ -5,13 +5,13 @@
 
 namespace ForiverEngine
 {
-	struct MeshPP
+	struct MeshQuad
 	{
 		// 時計回りに結線する!!
-		std::vector<VertexDataPP> vertices;
+		std::vector<VertexDataQuad> vertices;
 		std::vector<std::uint32_t> indices;
 
-		static MeshPP CreateFullSized()
+		static MeshQuad CreateFullSized()
 		{
 			return
 			{

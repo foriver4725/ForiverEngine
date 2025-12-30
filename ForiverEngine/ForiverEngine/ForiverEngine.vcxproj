@@ -183,7 +183,7 @@
     <ClInclude Include="scripts\common\Component\Include.h" />
     <ClInclude Include="scripts\common\Component\Mesh\Include.h" />
     <ClInclude Include="scripts\common\Component\Mesh\Mesh.h" />
-    <ClInclude Include="scripts\common\Component\Mesh\MeshPP.h" />
+    <ClInclude Include="scripts\common\Component\Mesh\MeshQuad.h" />
     <ClInclude Include="scripts\common\Component\Transform\CameraTransform.h" />
     <ClInclude Include="scripts\common\Component\Transform\Include.h" />
     <ClInclude Include="scripts\common\Component\Transform\Transform.h" />
@@ -240,6 +240,12 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="shaders\PP.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="shaders\Text.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>

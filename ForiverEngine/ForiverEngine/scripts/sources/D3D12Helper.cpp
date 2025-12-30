@@ -575,14 +575,14 @@ namespace ForiverEngine
 			device->CreateRenderTargetView(
 				graphicsBuffer.Ptr,
 				&desc,
-				*Reinterpret(&handleRTV) // i 番目の Descriptor (RTV) を指し示すハンドル
+				*Reinterpret(&handleRTV)
 			);
 		}
 
 		return true;
 	}
 
-	void D3D12Helper::CreateRenderTargetViewPP(
+	void D3D12Helper::CreateRenderTargetView(
 		const Device& device, const DescriptorHeap& descriptorHeapRTV, const GraphicsBuffer& rt, int index)
 	{
 		const D3D12_RENDER_TARGET_VIEW_DESC desc =
