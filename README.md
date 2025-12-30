@@ -143,3 +143,4 @@ https://github.com/user-attachments/assets/c2fc2e4c-d963-4b22-aefe-aff62fdff570
 | --- | --- |
 | [SimplexNoise](https://github.com/SRombauts/SimplexNoise) | [MIT](https://github.com/SRombauts/SimplexNoise/blob/master/LICENSE.txt) |
 | [DirectXTex](https://github.com/microsoft/DirectXTex) | [MIT](https://github.com/microsoft/DirectXTex/blob/main/LICENSE) |
+| [DirectXTK12](https://github.com/microsoft/DirectXTK12) | [MIT](https://github.com/microsoft/DirectXTK12/blob/main/LICENSE) |
