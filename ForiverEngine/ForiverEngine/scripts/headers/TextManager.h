@@ -11,7 +11,6 @@ namespace ForiverEngine
 	class TextManager final
 	{
 	private:
-		inline static bool hasInitialized = false;
 		inline static DirectX::GraphicsMemory* graphicsMemory = nullptr;
 		inline static DirectX::SpriteBatch* spriteBatch = nullptr;
 		inline static DirectX::SpriteFont* spriteFont = nullptr;
