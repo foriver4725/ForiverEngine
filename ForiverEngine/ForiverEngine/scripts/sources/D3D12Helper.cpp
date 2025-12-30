@@ -4,9 +4,21 @@
 #include <dxgi1_6.h>
 #include <d3dcompiler.h>
 
+// テキスト用
+#include <ResourceUploadBatch.h>
+#include <SpriteFont.h>
+
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3dcompiler.lib")
+
+// テキスト用
+#if _DEBUG
+#pragma comment(lib, "DirectXTK12_x64_Debug.lib")
+#else
+#pragma comment(lib, "DirectXTK12_x64_Release.lib")
+#endif
+#pragma comment(lib, "dxguid.lib")
 
 namespace ForiverEngine
 {
@@ -1066,6 +1078,13 @@ namespace ForiverEngine
 		return true;
 	}
 
+	bool D3D12Helper::CommandCloseAndWaitForCompletion(const Device& device, const CommandQueue& commandQueue, const CommandList& commandList)
+	{
+		D3D12Helper::CommandClose(commandList);
+		D3D12Helper::ExecuteCommands(commandQueue, commandList);
+		return D3D12Helper::WaitForGPUEventCompletion(D3D12Helper::CreateFence(device), commandQueue);
+	}
+
 	bool D3D12Helper::Present(const SwapChain& swapChain)
 	{
 		// 第1引数は、フリップまでの待機フレーム数 (= 待つべき垂直同期の数)
@@ -1149,6 +1168,87 @@ namespace ForiverEngine
 		outErrorMessage = L"";
 
 		return true;
+	}
+
+	DescriptorHeap D3D12Helper::InitText(
+		const Device& device, const ViewportScissorRect& viewportScissorRect,
+		const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator,
+		const std::string& fontPath
+	)
+	{
+		// 初期化済みかチェック
+		if (D3D12Helper::hasInitializedText) return DescriptorHeap();
+		D3D12Helper::hasInitializedText = true;
+
+		// DescriptorHeap を作成
+		const DescriptorHeap descriptorHeap = D3D12Helper::CreateDescriptorHeap(device, DescriptorHeapType::CBV_SRV_UAV, 1, true);
+		const DescriptorHeapHandleAtCPU descriptorAtCPU
+			= D3D12Helper::CreateDescriptorHeapHandleAtCPUIndicatingDescriptorByIndex(device, descriptorHeap, DescriptorHeapType::CBV_SRV_UAV, 0);
+		const DescriptorHeapHandleAtGPU descriptorAtGPU
+			= D3D12Helper::CreateDescriptorHeapHandleAtGPUIndicatingDescriptorByIndex(device, descriptorHeap, DescriptorHeapType::CBV_SRV_UAV, 0);
+
+		// 初期化に必要な一時オブジェクト
+		DirectX::ResourceUploadBatch resourceUploadBatch(device.Ptr);
+		resourceUploadBatch.Begin();
+		{
+			// 初期化に必要な一時オブジェクト
+			const DirectX::RenderTargetState renderTargetState(
+				static_cast<DXGI_FORMAT>(Format::RGBA_U8_01), // RT のフォーマット
+				static_cast<DXGI_FORMAT>(Format::D_F32) // DS のフォーマット
+			);
+			const DirectX::DX12::SpriteBatchPipelineStateDescription spriteBatchPipelineStateDesc(renderTargetState);
+
+			// GraphicsMemory を作成
+			D3D12Helper::textGraphicsMemory = new DirectX::DX12::GraphicsMemory(device.Ptr);
+
+			// SpriteBatch を作成
+			D3D12Helper::textSpriteBatch = new DirectX::DX12::SpriteBatch(device.Ptr, resourceUploadBatch, spriteBatchPipelineStateDesc);
+			D3D12Helper::textSpriteBatch->SetViewport(std::get<0>(Construct(viewportScissorRect)));
+
+			// SpriteFont を作成
+			D3D12Helper::textSpriteFont = new DirectX::DX12::SpriteFont(
+				device.Ptr,
+				resourceUploadBatch,
+				StringUtils::UTF8ToUTF16(fontPath).c_str(),
+				*Reinterpret(&descriptorAtCPU),
+				*Reinterpret(&descriptorAtGPU)
+			);
+		}
+		std::future<void> future = resourceUploadBatch.End(commandQueue.Ptr);
+
+		// フォントデータを GPU にアップロード
+		D3D12Helper::CommandCloseAndWaitForCompletion(device, commandQueue, commandList);
+		if (!D3D12Helper::ClearCommandAllocatorAndList(commandAllocator, commandList))
+			return DescriptorHeap();
+		future.wait();
+
+		return descriptorHeap;
+	}
+
+	void D3D12Helper::CommandBeginTextDraw(const DescriptorHeap& descriptorHeap, const CommandList& commandList)
+	{
+		CommandSetDescriptorHeaps(commandList, { descriptorHeap });
+		D3D12Helper::textSpriteBatch->Begin(commandList.Ptr);
+	}
+
+	void D3D12Helper::RegistTextDraw(const std::string& text, const Lattice2& position, const Color& color)
+	{
+		D3D12Helper::textSpriteFont->DrawString(
+			D3D12Helper::textSpriteBatch,
+			text.c_str(),
+			DirectX::XMFLOAT2(static_cast<float>(position.x), static_cast<float>(position.y)),
+			DirectX::XMVECTORF32{ .f = { color.r, color.g, color.b, color.a } }
+		);
+	}
+
+	void D3D12Helper::EndTextDraw()
+	{
+		D3D12Helper::textSpriteBatch->End();
+	}
+
+	void D3D12Helper::FinalizeTextDrawAfterCommandExecution(const CommandQueue& commandQueue)
+	{
+		D3D12Helper::textGraphicsMemory->Commit(commandQueue.Ptr);
 	}
 
 #ifdef _DEBUG

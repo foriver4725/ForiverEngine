@@ -26,7 +26,10 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	const auto [factory, device, commandAllocator, commandList, commandQueue, swapChain]
 		= D3D12BasicFlow::CreateStandardObjects(hwnd, WindowWidth, WindowHeight);
 
-	D3D12BasicFlow::InitText(device, "./assets/fonts/NotoSans.ttf");
+	const ViewportScissorRect viewportScissorRect = ViewportScissorRect::CreateFullSized(WindowWidth, WindowHeight);
+
+	const DescriptorHeap descriptorHeapText = D3D12Helper::InitText(device, viewportScissorRect, commandList, commandQueue, commandAllocator,
+		"./assets/fonts/NotoSans_36.spritefont");
 
 	const RootParameter rootParameter = RootParameter::CreateBasic(1, 1, 0);
 	const SamplerConfig samplerConfig = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
@@ -139,9 +142,6 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	// DescriptorHeap に登録
 	const DescriptorHeap descriptorHeapBasic
 		= D3D12BasicFlow::InitDescriptorHeapBasic(device, { cbvBuffer }, { srvBufferAndData });
-
-	const ViewportScissorRect viewportScissorRect
-		= ViewportScissorRect::CreateFullSized(WindowWidth, WindowHeight);
 
 	//////////////////////////////
 	// ポストプロセス
@@ -477,8 +477,17 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 			viewportScissorRect, PrimitiveTopology::TriangleList, RTClearColor, DepthBufferClearValue,
 			{ static_cast<int>(meshPP.indices.size()) }
 		);
+
+		D3D12Helper::CommandBeginTextDraw(descriptorHeapText, commandList);
+		{
+			D3D12Helper::RegistTextDraw("ForiverEngine", Lattice2(64, 64), Color::Black());
+		}
+		D3D12Helper::EndTextDraw();
+
 		if (!D3D12Helper::Present(swapChain))
 			ShowError(L"画面のフリップに失敗しました");
+
+		D3D12Helper::FinalizeTextDrawAfterCommandExecution(commandQueue);
 	}
 	END_FRAME;
 }

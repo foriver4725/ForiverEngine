@@ -364,23 +364,6 @@ namespace ForiverEngine
 	}
 
 	std::tuple<bool, std::wstring>
-		D3D12BasicFlow::CommandCloseAndWaitForCompletion_Impl(
-			const CommandList& commandList,
-			const CommandQueue& commandQueue,
-			const Device& device
-		)
-	{
-		D3D12Helper::CommandClose(commandList);
-
-		D3D12Helper::ExecuteCommands(commandQueue, commandList);
-
-		if (!D3D12Helper::WaitForGPUEventCompletion(D3D12Helper::CreateFence(device), commandQueue))
-			return { false, L"GPU の処理待ち受けに失敗しました" };
-
-		return { true, L"" };
-	}
-
-	std::tuple<bool, std::wstring>
 		D3D12BasicFlow::UploadTextureToGPU_Impl(
 			const CommandList& commandList,
 			const CommandQueue& commandQueue,
@@ -409,7 +392,7 @@ namespace ForiverEngine
 		D3D12Helper::CommandInvokeResourceBarrierAsTransition(commandList, textureBuffer,
 			GraphicsBufferState::CopyDestination, GraphicsBufferState::PixelShaderResource, false);
 
-		D3D12BasicFlow::CommandCloseAndWaitForCompletion(commandList, commandQueue, device);
+		D3D12Helper::CommandCloseAndWaitForCompletion(device, commandQueue, commandList);
 		// コマンドを実行し終わってから、クリアする
 		if (!D3D12Helper::ClearCommandAllocatorAndList(commandAllocator, commandList))
 			return { false, L"CommandAllocator, CommandList のクリアに失敗しました" };
@@ -476,7 +459,7 @@ namespace ForiverEngine
 		}
 		D3D12Helper::CommandInvokeResourceBarrierAsTransition(commandList, rt, rtStateInsideRender, rtStateOutsideRender, false);
 
-		D3D12BasicFlow::CommandCloseAndWaitForCompletion(commandList, commandQueue, device);
+		D3D12Helper::CommandCloseAndWaitForCompletion(device, commandQueue, commandList);
 		// コマンドを実行し終わってから、クリアする
 		if (!D3D12Helper::ClearCommandAllocatorAndList(commandAllocator, commandList))
 			return { false, L"CommandAllocator, CommandList のクリアに失敗しました" };
@@ -497,23 +480,5 @@ namespace ForiverEngine
 		const Matrix4x4 mvp = p * v * m;
 
 		return { true, L"", { mvp } };
-	}
-
-	std::tuple<bool, std::wstring>
-		D3D12BasicFlow::InitText_Impl(
-			const Device& device,
-			const std::string& fontPath
-		)
-	{
-		const DescriptorHeap descriptorHeap = D3D12Helper::CreateDescriptorHeap(device, DescriptorHeapType::CBV_SRV_UAV, 1, true);
-
-		TextManager::Init(
-			device,
-			fontPath,
-			D3D12Helper::CreateDescriptorHeapHandleAtCPUIndicatingDescriptorByIndex(device, descriptorHeap, DescriptorHeapType::CBV_SRV_UAV, 0),
-			D3D12Helper::CreateDescriptorHeapHandleAtGPUIndicatingDescriptorByIndex(device, descriptorHeap, DescriptorHeapType::CBV_SRV_UAV, 0)
-		);
-
-		return { true, L"" };
 	}
 }

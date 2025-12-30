@@ -20,9 +20,6 @@
     <ClCompile Include="scripts\sources\InputHelper.cpp">
       <Filter>scripts\sources</Filter>
     </ClCompile>
-    <ClCompile Include="scripts\sources\TextManager.cpp">
-      <Filter>scripts\sources</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="shaders">
@@ -167,9 +164,6 @@
     </ClInclude>
     <ClInclude Include="scripts\common\Component\Mesh\MeshPP.h">
       <Filter>scripts\common\Component\Mesh</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\headers\TextManager.h">
-      <Filter>scripts\headers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -1,5 +1,5 @@
 ﻿// 前方宣言やオブジェクトの定義などを行う
-// DirectX12 は直接インクルードしない!
+// DirectX12 などのサイズが大きいライブラリは、直接インクルードしない!
 
 #pragma once
 
@@ -21,6 +21,17 @@ struct IDXGIAdapter;
 struct ID3D12Resource;
 struct ID3D10Blob; typedef ID3D10Blob ID3DBlob;
 struct HWND__; typedef HWND__* HWND;
+
+// テキスト用
+namespace DirectX
+{
+	inline namespace DX12
+	{
+		class GraphicsMemory;
+		class SpriteBatch;
+		class SpriteFont;
+	}
+}
 
 // 最新バージョンを指定
 using IDXGIFactoryLatest = IDXGIFactory7;
