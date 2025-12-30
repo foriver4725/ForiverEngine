@@ -548,7 +548,9 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 				for (int chunkX = chunkDrawIndexXMin; chunkX <= chunkDrawIndexXMax; ++chunkX)
 					for (int chunkZ = chunkDrawIndexZMin; chunkZ <= chunkDrawIndexZMax; ++chunkZ)
 					{
-						// チャンクが未作成ならば、まず作成する
+						// チャンクが未作成ならば、作成を開始する
+						// 作成中にやっぱり描画しないとなっても、スレッドは止まらず並列処理完了まで動き続ける
+						// そのため、並列処理でない部分をその後いつ呼んでも問題ない (状態ガードをちゃんと入れているので)
 						TryStartCreateTerrainChunkCanParallel(chunkX, chunkZ);
 						CreateTerrainChunkCannotParallel(chunkX, chunkZ);
 
