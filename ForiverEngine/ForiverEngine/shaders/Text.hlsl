@@ -3,6 +3,7 @@ cbuffer _0 : register(b0)
 }
 
 Texture2D<float4> _Texture : register(t0);
+Texture2D<float4> _FontTexture : register(t1);
 SamplerState _Sampler : register(s0);
 
 struct VSInput
@@ -36,8 +37,7 @@ PSOutput PSMain(V2P input)
 {
     PSOutput output;
     
-    output.color = _Texture.Sample(_Sampler, input.uv);
-    output.color.rgb *= float3(1, 0.5, 0.25);
+    output.color = _FontTexture.Sample(_Sampler, input.uv / 8);
     
     return output;
 }

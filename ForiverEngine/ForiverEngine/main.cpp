@@ -226,7 +226,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		{ "TEXCOORD" , Format::RG_F32   },
 	};
 
-	const RootParameter rootParameterText = RootParameter::CreateBasic(1, 1, 0);
+	const RootParameter rootParameterText = RootParameter::CreateBasic(1, 2, 0);
 	const SamplerConfig samplerConfigText = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
 	const auto [shaderVSText, shaderPSText] = D3D12BasicFlow::CompileShader_VS_PS("./shaders/Text.hlsl");
 	const auto [rootSignatureText, graphicsPipelineStateText]
@@ -244,7 +244,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	const auto [vertexBufferViewText, indexBufferViewText]
 		= D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, meshText);
 
-	// CB 0
+	// b0
 	struct alignas(256) CBData0Text
 	{
 	};
@@ -253,9 +253,12 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	};
 	const GraphicsBuffer cbvBufferText = D3D12BasicFlow::InitCBVBuffer<CBData0Text>(device, cbData0Text);
 
+	// t1
+	const auto fontTextureBufferAndData = D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue, commandAllocator, { "assets/font.png" });
+
 	// DescriptorHeap
 	const DescriptorHeap descriptorHeapBasicText
-		= D3D12BasicFlow::InitDescriptorHeapBasic(device, { cbvBufferText }, { {textGraphicsBuffer, textTextureMetadata} });
+		= D3D12BasicFlow::InitDescriptorHeapBasic(device, { cbvBufferText }, { {textGraphicsBuffer, textTextureMetadata}, fontTextureBufferAndData });
 
 	//////////////////////////////
 
