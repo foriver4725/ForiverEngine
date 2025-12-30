@@ -24,12 +24,16 @@ namespace ForiverEngine
 		const DirectX::SpriteBatchPipelineStateDescription spriteBatchPipelineStateDesc(renderTargetState);
 		UIManager::spriteBatch = new DirectX::SpriteBatch(device.Ptr, resourceUploadBatch, spriteBatchPipelineStateDesc);
 
+		const D3D12_CPU_DESCRIPTOR_HANDLE* descriptorAtCPURealPtr
+			= reinterpret_cast<const D3D12_CPU_DESCRIPTOR_HANDLE*>(const_cast<DescriptorHeapHandleAtCPU*>(&descriptorAtCPU));
+		const D3D12_GPU_DESCRIPTOR_HANDLE* descriptorAtGPURealPtr
+			= reinterpret_cast<const D3D12_GPU_DESCRIPTOR_HANDLE*>(const_cast<DescriptorHeapHandleAtGPU*>(&descriptorAtGPU));
 		UIManager::spriteFont = new DirectX::SpriteFont(
 			device.Ptr,
 			resourceUploadBatch,
 			StringUtils::UTF8ToUTF16(fontPath).c_str(),
-			descriptorAtCPU,
-			descriptorAtGPU
+			*descriptorAtCPURealPtr,
+			*descriptorAtGPURealPtr
 		);
 	}
 }

@@ -3,7 +3,7 @@
 #include <scripts/common/Include.h>
 
 // テキスト用
-// あまり外部には見せたくない
+// TODO: 外部には見せたくない
 #include <ResourceUploadBatch.h>
 #include <SpriteFont.h>
 
