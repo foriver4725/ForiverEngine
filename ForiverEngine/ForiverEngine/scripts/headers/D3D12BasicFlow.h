@@ -135,7 +135,7 @@ namespace ForiverEngine
 
 		/// <summary>
 		/// <para>GraphicsBuffer を作成して、テクスチャデータを GPU にアップロードする</para>
-		/// <para>テクスチャは与えられたパスからロードし、パスが複数あるならテクスチャ配列として処理される</para>
+		/// <para>テクスチャは与えられたパスからロードし、パスが1つなら2Dテクスチャとして、複数あるなら2Dテクスチャ配列として処理される</para>
 		/// <para>作成したバッファと、ロードしたテクスチャのメタデータを返す</para>
 		/// <para>SRV を作る用のバッファ</para>
 		/// </summary>
@@ -149,6 +149,25 @@ namespace ForiverEngine
 			)
 		{
 			return Check(InitSRVBuffer_Impl(device, commandList, commandQueue, commandAllocator, paths));
+		}
+
+		/// <summary>
+		/// <para>GraphicsBuffer を作成して、テクスチャデータを GPU にアップロードする</para>
+		/// <para>テクスチャを手動で与える (2Dテクスチャ or 2Dテクスチャ配列)</para>
+		/// <para>テクスチャの種類が 2D でない場合は、失敗させる</para>
+		/// <para>作成したバッファを返す</para>
+		/// <para>SRV を作る用のバッファ</para>
+		/// </summary>
+		static GraphicsBuffer
+			InitSRVBuffer(
+				const Device& device,
+				const CommandList& commandList,
+				const CommandQueue& commandQueue,
+				const CommandAllocator& commandAllocator,
+				const Texture& texture
+			)
+		{
+			return Check(InitSRVBuffer_Impl(device, commandList, commandQueue, commandAllocator, texture));
 		}
 
 		/// <summary>
@@ -411,7 +430,7 @@ namespace ForiverEngine
 
 		/// <summary>
 		/// <para>GraphicsBuffer を作成して、テクスチャデータを GPU にアップロードする</para>
-		/// <para>テクスチャは与えられたパスからロードし、パスが複数あるならテクスチャ配列として処理される</para>
+		/// <para>テクスチャは与えられたパスからロードし、パスが1つなら2Dテクスチャとして、複数あるなら2Dテクスチャ配列として処理される</para>
 		/// <para>作成したバッファと、ロードしたテクスチャのメタデータを返す</para>
 		/// <para>SRV を作る用のバッファ</para>
 		/// </summary>
@@ -422,6 +441,22 @@ namespace ForiverEngine
 				const CommandQueue& commandQueue,
 				const CommandAllocator& commandAllocator,
 				const std::vector<std::string>& paths
+			);
+
+		/// <summary>
+		/// <para>GraphicsBuffer を作成して、テクスチャデータを GPU にアップロードする</para>
+		/// <para>テクスチャを手動で与える (2Dテクスチャ or 2Dテクスチャ配列)</para>
+		/// <para>テクスチャの種類が 2D でない場合は、失敗させる</para>
+		/// <para>作成したバッファを返す</para>
+		/// <para>SRV を作る用のバッファ</para>
+		/// </summary>
+		static std::tuple<bool, std::wstring, std::tuple<GraphicsBuffer>>
+			InitSRVBuffer_Impl(
+				const Device& device,
+				const CommandList& commandList,
+				const CommandQueue& commandQueue,
+				const CommandAllocator& commandAllocator,
+				const Texture& texture
 			);
 
 		/// <summary>

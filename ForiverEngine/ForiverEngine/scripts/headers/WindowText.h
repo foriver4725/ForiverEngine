@@ -1,38 +1,64 @@
-#pragma once
+ï»¿#pragma once
 
 #include <scripts/common/Include.h>
+#include "./TextureLoader.h"
 
 namespace ForiverEngine
 {
 	/// <summary>
-	/// ‰æ–Ê‚É•`‰æ‚·‚éƒeƒLƒXƒg‚Ìƒf[ƒ^
+	/// ç”»é¢ã«æç”»ã™ã‚‹ãƒ†ã‚­ã‚¹ãƒˆã®ãƒ‡ãƒ¼ã‚¿
 	/// </summary>
 	class WindowText
 	{
-		// •¶š‚ÌˆÊ’u‚ÍAƒtƒHƒ“ƒgƒTƒCƒY‚Ì”{”ƒsƒNƒZƒ‹‚ÅŒÅ’è‚µ‚Ä‚µ‚Ü‚¤
-		// Še‰æ–Êã‚Ì‹éŒ`(‚±‚ê‚ÍƒCƒ“ƒfƒbƒNƒX‚ÅƒAƒNƒZƒX‚·‚é)–ˆ‚ÉA‚»‚ÌˆÊ’u‚É‰½”Ô‚Ì•¶š‚ğ•`‰æ‚·‚é‚©‚ğw’è‚·‚é
-		// ƒCƒ“ƒfƒbƒNƒX‚Í [0, GetMaxTextCount()-1]. •`‰æ‚µ‚È‚¢‚È‚ç GetMaxTextCount() ‚ğw’è‚·‚é
+		// æ–‡å­—ã®ä½ç½®ã¯ã€ãƒ•ã‚©ãƒ³ãƒˆã‚µã‚¤ã‚ºã®å€æ•°ãƒ”ã‚¯ã‚»ãƒ«ã§å›ºå®šã—ã¦ã—ã¾ã†
+		// å„ç”»é¢ä¸Šã®çŸ©å½¢(ã“ã‚Œã¯ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã§ã‚¢ã‚¯ã‚»ã‚¹ã™ã‚‹)æ¯ã«ã€ãã®ä½ç½®ã«ä½•ç•ªã®æ–‡å­—ã‚’æç”»ã™ã‚‹ã‹ã‚’æŒ‡å®šã™ã‚‹
+		// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã¯ [0, FontTextureIndexInt.max - 1]. æç”»ã—ãªã„ãªã‚‰ FontTextureIndexInt.max ã‚’æŒ‡å®šã™ã‚‹
 
 	public:
-		// ƒeƒNƒXƒ`ƒƒ“à‚ÌƒCƒ“ƒfƒbƒNƒX ‚â ƒf[ƒ^“à‚ÌƒCƒ“ƒfƒbƒNƒX ‚È‚ÇA“à•”ŒvZ‚Í‘S‚Ä‚±‚Ì®”Œ^‚ğ—p‚¢‚Äs‚¤
-		using TextInt = std::uint16_t;
-		static constexpr TextInt FontSingleLength = 16; // 1ƒtƒHƒ“ƒg•¶š‚Ì•/‚‚³ (px)
+		using FontTextureIndexInt = std::uint8_t; // ãƒ•ã‚©ãƒ³ãƒˆãƒ†ã‚¯ã‚¹ãƒãƒ£ã§ã®ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹
+		static constexpr FontTextureIndexInt NoTextFontTextureIndex = std::numeric_limits<FontTextureIndexInt>::max();
+		static constexpr int FontSingleLength = 16; // 1ãƒ•ã‚©ãƒ³ãƒˆæ–‡å­—ã®å¹…/é«˜ã• (px)
 
-		// ƒtƒ@ƒNƒgƒŠƒƒ\ƒbƒh
+		// TODO: ãƒ†ã‚¯ã‚¹ãƒãƒ£ã®ãƒ†ã‚¯ã‚»ãƒ«ã‚µã‚¤ã‚ºãŒ 8bit å›ºå®šãªã®ã§ã€å·¥å¤«ã—ã¦æƒ…å ±ã‚’è©°ã‚è¾¼ã‚€
 
-		// •¶š‚ª‰½ŒÂ“ü‚é‚©‚¾‚¯w’è‚µ‚ÄAÀÛ‚Ì•¶š‚Í“ü‚ê‚¸‚Éì¬‚·‚é
+		enum class TexelColor : std::uint8_t
+		{
+			Black = 0,
+			Red = 1,
+			Green = 2,
+			Blue = 3,
+			Yellow = 4,
+			Magenta = 5,
+			Cyan = 6,
+			White = 7,
+		};
+
+		struct SingleData
+		{
+			FontTextureIndexInt fontIndex;
+			TexelColor color;
+		};
+
+		// ãƒ•ã‚¡ã‚¯ãƒˆãƒªãƒ¡ã‚½ãƒƒãƒ‰
+
+		// æ–‡å­—ãŒä½•å€‹å…¥ã‚‹ã‹ã ã‘æŒ‡å®šã—ã¦ã€å®Ÿéš›ã®æ–‡å­—ã¯å…¥ã‚Œãšã«ä½œæˆã™ã‚‹
 		static WindowText CreateEmpty(const Lattice2& fontCount)
 		{
-			const TextInt maxTextCount = GetMaxTextCount(fontCount);
+			const int maxTextCount = GetMaxTextCount(fontCount);
 
 			WindowText windowText;
 
-			windowText.data = std::vector<std::vector<TextInt>>(
+			windowText.data = std::vector<std::vector<SingleData>>(
 				fontCount.y,
-				std::vector<TextInt>(
+				std::vector<SingleData>(
 					fontCount.x,
-					maxTextCount // ‰Šú’l‚Í•`‰æ‚µ‚È‚¢
-				)
+					// åˆæœŸå€¤ã¯ æç”»ã—ãªã„ãƒ»é»’
+					SingleData
+					{
+						.fontIndex = NoTextFontTextureIndex,
+						.color = TexelColor::Black,
+					}
+					)
 			);
 
 			windowText.count = fontCount;
@@ -40,72 +66,109 @@ namespace ForiverEngine
 			return windowText;
 		}
 
-		// ƒAƒNƒZƒT (ƒCƒ“ƒfƒbƒNƒX‚Ì‹«ŠEƒ`ƒFƒbƒN‚Í‚µ‚È‚¢!)
+		// ã‚¢ã‚¯ã‚»ã‚µ (ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã®å¢ƒç•Œãƒã‚§ãƒƒã‚¯ã¯ã—ãªã„!)
 
-		// ’P•¶š
-		void SetText(const Lattice2& positionIndex, char text)
+		// é…åˆ—ã®ã‚µã‚¤ã‚º
+		Lattice2 GetCount() const
 		{
-			data[positionIndex.y][positionIndex.x] = GetFontIndex(text);
+			return count;
 		}
 
-		// •¡”•¶š
-		// Ÿè‚É‰üs‚ğ‚·‚é. •¶š‚ª‰æ–Ê‚©‚ç‚Í‚İo‚é‚È‚ç‚»‚Ì•ª‚¾‚¯–³‹‚·‚é.
-		void SetTexts(const Lattice2& beginPositionIndex, const std::string& texts)
+		// å˜æ–‡å­—
+		void SetText(const Lattice2& positionIndex, char text, TexelColor color = TexelColor::Black)
 		{
-			const TextInt textCount = static_cast<TextInt>(texts.size());
-			const TextInt beginDataIndex = static_cast<TextInt>(beginPositionIndex.y * count.x + beginPositionIndex.x); // Å¬’l
-			const TextInt endDataIndex = std::min(static_cast<TextInt>(beginDataIndex + textCount), GetMaxTextCount()); // Å‘å’l+1
-
-			for (TextInt i = beginDataIndex; i < endDataIndex; ++i)
+			data[positionIndex.y][positionIndex.x] = SingleData
 			{
-				const TextInt xi = i % count.x;
-				const TextInt yi = i / count.x;
-				const TextInt ti = i - beginDataIndex; // ‰½”Ô–Ú‚Ì•¶š‚©
+				.fontIndex = GetFontIndex(text),
+				.color = color,
+			};
+		}
 
-				SetText(Lattice2(xi, yi), texts[ti]);
+		// è¤‡æ•°æ–‡å­—
+		// å‹æ‰‹ã«æ”¹è¡Œã‚’ã™ã‚‹. æ–‡å­—ãŒç”»é¢ã‹ã‚‰ã¯ã¿å‡ºã‚‹ãªã‚‰ãã®åˆ†ã ã‘ç„¡è¦–ã™ã‚‹.
+		void SetTexts(const Lattice2& beginPositionIndex, const std::string& texts, TexelColor color = TexelColor::Black)
+		{
+			const int textCount = static_cast<int>(texts.size());
+			const int beginDataIndex = beginPositionIndex.y * count.x + beginPositionIndex.x; // æœ€å°å€¤
+			const int endDataIndex = std::min(beginDataIndex + textCount, static_cast<int>(GetMaxTextCount())); // æœ€å¤§å€¤+1
+
+			for (int i = beginDataIndex; i < endDataIndex; ++i)
+			{
+				const int xi = i % count.x;
+				const int yi = i / count.x;
+				const int ti = i - beginDataIndex; // ä½•ç•ªç›®ã®æ–‡å­—ã‹
+
+				SetText(Lattice2(xi, yi), texts[ti], color);
 			}
 		}
 
-		constexpr TextInt GetMaxTextCount() const
+		// ãƒ‡ãƒ¼ã‚¿ã‹ã‚‰ãƒ†ã‚¯ã‚¹ãƒãƒ£ã«å¤‰æ›ã™ã‚‹
+		// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒ†ã‚¯ã‚¹ãƒãƒ£, ã‚«ãƒ©ãƒ¼ãƒ†ã‚¯ã‚¹ãƒãƒ£ ã®é †ã«è¿”ã™ (ãƒ†ã‚¯ã‚»ãƒ«å€¤ãŒ 8bit ã®ãŸã‚. TODO: RGãƒãƒ£ãƒ³ãƒãƒ«ã«è©°ã‚è¾¼ã‚“ã ã‚Šã§ããªã„ã‹?)
+		// ãƒ†ã‚¯ã‚¹ãƒãƒ£è‡ªä½“ã¯2Dã ã‘ã©ã€ç”Ÿãƒ‡ãƒ¼ã‚¿ã¯1Dé…åˆ—ãªã®ã§æ³¨æ„
+		std::tuple<Texture, Texture> CreateTexture() const
 		{
-			return static_cast<TextInt>(count.x * count.y);
-		}
-		static constexpr TextInt GetMaxTextCount(const Lattice2& xyCount)
-		{
-			return static_cast<TextInt>(xyCount.x * xyCount.y);
+			const int PixelCount = GetMaxTextCount();
+
+			std::vector<std::uint8_t> indexData; indexData.reserve(PixelCount);
+			std::vector<std::uint8_t> colorData; colorData.reserve(PixelCount);
+
+			for (int i = 0; i < PixelCount; ++i)
+			{
+				const int xi = i % count.x;
+				const int yi = i / count.x;
+
+				indexData.push_back(data[yi][xi].fontIndex);
+				colorData.push_back(static_cast<std::uint8_t>(data[yi][xi].color));
+			}
+
+			return
+			{
+				TextureLoader::CreateManually(indexData, count.x, count.y, Format::R_U8),
+				TextureLoader::CreateManually(colorData, count.x, count.y, Format::R_U8)
+			};
 		}
 
-		constexpr TextInt GetFontIndex(char text) const
+		constexpr int GetMaxTextCount() const
+		{
+			return count.x * count.y;
+		}
+		static constexpr int GetMaxTextCount(const Lattice2& xyCount)
+		{
+			return xyCount.x * xyCount.y;
+		}
+
+		constexpr FontTextureIndexInt GetFontIndex(char text) const
 		{
 			switch (text)
 			{
-			case 'A': return 0;
-			case 'B': return 1;
-			case 'C': return 2;
-			case 'D': return 3;
-			case 'E': return 4;
-			case 'F': return 5;
-			case 'G': return 6;
-			case 'H': return 7;
-			case 'I': return 8;
-			case 'J': return 9;
-			case 'K': return 10;
-			case 'L': return 11;
-			case 'M': return 12;
-			case 'N': return 13;
-			case 'O': return 14;
-			case 'P': return 15;
-			case 'Q': return 16;
-			case 'R': return 17;
-			case 'S': return 18;
-			case 'T': return 19;
-			case 'U': return 20;
-			case 'V': return 21;
-			case 'W': return 22;
-			case 'X': return 23;
-			case 'Y': return 24;
-			case 'Z': return 25;
-				// 26”Ô‚Í‹ó‚«•¶š‚É‚È‚Á‚Ä‚¢‚é. Œ»ó‚ÌİŒv‚Å‚ÍA‚í‚´‚í‚´•¶š‚É‚·‚é•K—v‚Í‚È‚¢
+				// å¤§æ–‡å­—ã¨å°æ–‡å­—ã¯åŒä¸€è¦–ã™ã‚‹
+			case 'A': return 0; case 'a': return 0;
+			case 'B': return 1; case 'b': return 1;
+			case 'C': return 2; case 'c': return 2;
+			case 'D': return 3; case 'd': return 3;
+			case 'E': return 4; case 'e': return 4;
+			case 'F': return 5; case 'f': return 5;
+			case 'G': return 6; case 'g': return 6;
+			case 'H': return 7; case 'h': return 7;
+			case 'I': return 8; case 'i': return 8;
+			case 'J': return 9; case 'j': return 9;
+			case 'K': return 10; case 'k': return 10;
+			case 'L': return 11; case 'l': return 11;
+			case 'M': return 12; case 'm': return 12;
+			case 'N': return 13; case 'n': return 13;
+			case 'O': return 14; case 'o': return 14;
+			case 'P': return 15; case 'p': return 15;
+			case 'Q': return 16; case 'q': return 16;
+			case 'R': return 17; case 'r': return 17;
+			case 'S': return 18; case 's': return 18;
+			case 'T': return 19; case 't': return 19;
+			case 'U': return 20; case 'u': return 20;
+			case 'V': return 21; case 'v': return 21;
+			case 'W': return 22; case 'w': return 22;
+			case 'X': return 23; case 'x': return 23;
+			case 'Y': return 24; case 'y': return 24;
+			case 'Z': return 25; case 'z': return 25;
+				// 26ç•ªã¯ç©ºãæ–‡å­—ã«ãªã£ã¦ã„ã‚‹. ç¾çŠ¶ã®è¨­è¨ˆã§ã¯ã€ã‚ã–ã‚ã–æ–‡å­—ã«ã™ã‚‹å¿…è¦ã¯ãªã„
 			case '!': return 27;
 			case '?': return 28;
 			case '.': return 29;
@@ -143,17 +206,17 @@ namespace ForiverEngine
 			case '^': return 61;
 			case '<': return 62;
 			case '>': return 63;
-			default: return GetMaxTextCount(); // –³Œø‚È•¶š‚ª—ˆ‚½‚çA•`‰æ‚µ‚È‚¢‚æ‚¤‚É‚·‚é
+			default: return NoTextFontTextureIndex; // ç„¡åŠ¹ãªæ–‡å­—ãŒæ¥ãŸã‚‰ã€æç”»ã—ãªã„ã‚ˆã†ã«ã™ã‚‹
 			}
 		}
 
 	private:
-		// y, x ‚Ì‡”Ô
-		// ÀÛ‚ÌƒeƒNƒXƒ`ƒƒ‚É‚¨‚¯‚éƒCƒ“ƒfƒbƒNƒX‚ª“ü‚é
-		std::vector<std::vector<TextInt>> data;
+		// y, x ã®é †ç•ª
+		// å®Ÿéš›ã®ãƒ†ã‚¯ã‚¹ãƒãƒ£ã«ãŠã‘ã‚‹ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãŒå…¥ã‚‹
+		std::vector<std::vector<SingleData>> data;
 
-		// –ˆ‰ñŒvZ‚·‚é‚Ì‚Í–Ê“|‚È‚Ì‚ÅAì¬‚ÉX,Y‚Ì—v‘f”‚ğƒLƒƒƒbƒVƒ…‚µ‚Ä‚¨‚­
-		// ƒtƒ@ƒNƒgƒŠƒƒ\ƒbƒh“à‚ÅA–Y‚ê‚¸‚ÉƒZƒbƒg‚·‚é‚±‚Æ!
+		// æ¯å›è¨ˆç®—ã™ã‚‹ã®ã¯é¢å€’ãªã®ã§ã€ä½œæˆæ™‚ã«X,Yã®è¦ç´ æ•°ã‚’ã‚­ãƒ£ãƒƒã‚·ãƒ¥ã—ã¦ãŠã
+		// ãƒ•ã‚¡ã‚¯ãƒˆãƒªãƒ¡ã‚½ãƒƒãƒ‰å†…ã§ã€å¿˜ã‚Œãšã«ã‚»ãƒƒãƒˆã™ã‚‹ã“ã¨!
 		Lattice2 count;
 	};
 }

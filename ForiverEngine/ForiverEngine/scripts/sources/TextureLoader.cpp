@@ -132,4 +132,20 @@ namespace ForiverEngine
 			.mipLevels = 1, // ミップマップは作成していないので、1固定
 		};
 	}
+
+	Texture TextureLoader::CreateManually(const std::vector<std::uint8_t>& data, int width, int height, Format format)
+	{
+		return Texture
+		{
+			.data = data,
+			.textureType = GraphicsBufferType::Texture2D,
+			.format = format,
+			.width = width,
+			.height = height,
+			.rowSize = static_cast<int>(sizeof(std::uint8_t) * width),
+			.sliceSize = static_cast<int>(sizeof(std::uint8_t) * width * height),
+			.sliceCount = 1,
+			.mipLevels = 1, // ミップマップなし
+		};
+	}
 }

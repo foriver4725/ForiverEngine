@@ -1,10 +1,15 @@
 cbuffer _0 : register(b0)
 {
-    float4 _UVLimit; // x: UMin, y: VMin, z: UMax, w: VMax
+    uint2 _FontTextureSize;
+    uint2 _WindowTextTextureSize;
+    uint _TextNothingIndex;
+    uint _FontSingleLength;
 }
 
 Texture2D<float4> _Texture : register(t0);
 Texture2D<float4> _FontTexture : register(t1);
+Texture2D<uint> _WindowTextIndexTexture : register(t2);
+Texture2D<uint> _WindowTextColorTexture : register(t3);
 SamplerState _Sampler : register(s0);
 
 struct VSInput
@@ -25,18 +30,49 @@ struct PSOutput
 };
 
 // 戻り値の a は0/1 の2値で、テキストを描画するかどうかを示す
-float4 PSGetTextColor(float2 uv)
+float4 PSGetTextColor(float2 pos)
 {
-    // テキストを描画できるUVの範囲内でない
-    if (uv.x < _UVLimit.x || _UVLimit.z < uv.x ||
-        uv.y < _UVLimit.y || _UVLimit.w < uv.y)
+    static const float3 WindowTextColorTable[8] =
     {
-        return float4(0, 0, 0, 0);
-    }
+        float3(0, 0, 0), // 黒
+        float3(1, 0, 0), // 赤
+        float3(0, 1, 0), // 緑
+        float3(0, 0, 1), // 青
+        float3(1, 1, 0), // 黄
+        float3(1, 0, 1), // マゼンタ
+        float3(0, 1, 1), // シアン
+        float3(1, 1, 1), // 白
+    };
     
-    // 適当に取得する...
-    // フォントテクスチャのクリアカラーは (0,0,0,0) なので、取得したテクセル値をそのまま返せば良い
-    return _FontTexture.Sample(_Sampler, uv / 8);
+    // 画面のピクセル座標 (画面いっぱいの板ポリなので、これで良いはず)
+    const uint2 posAsInt = (uint2) pos;
+    
+    // フォントの種類を判別
+    const uint2 windowTextIndex = posAsInt / _FontSingleLength;
+    const uint windowTextIndexValue = _WindowTextIndexTexture.Load(int3(windowTextIndex, 0));
+    const float3 windowTextColorValue = WindowTextColorTable[_WindowTextColorTexture.Load(int3(windowTextIndex, 0))]; // 色も取得してしまう
+    // 画面外なので、ここで終了
+    if (any(windowTextIndex < 0 || _WindowTextTextureSize <= windowTextIndex))
+        return float4(0, 0, 0, 0);
+    // テキストを描画しないので、ここで終了
+    if (windowTextIndexValue == _TextNothingIndex)
+        return float4(0, 0, 0, 0);
+    
+    // フォントテクスチャにおける、フォントインデックスの最大値を算出 (ピクセル座標)
+    const uint2 FontPixelIndexSize = _FontTextureSize / _FontSingleLength;
+    // 描画するフォントの、テクスチャ内におけるUV座標を算出 (ピクセル座標. [0, _FontTextureSize-1])
+    const uint2 fontPixelUV = uint2(windowTextIndexValue % FontPixelIndexSize.x, windowTextIndexValue / FontPixelIndexSize.x) * _FontSingleLength;
+    // さらに、その中でいくらオフセットしているかを算出 (ピクセル座標. [0, _FontSingleLength-1])
+    const uint2 fontPixelUVOffset = posAsInt % _FontSingleLength;
+    // 実際に描画するべきテクセル値を取得
+    const float4 font = _FontTexture.Load(int3(fontPixelUV + fontPixelUVOffset, 0));
+    
+    // 透明箇所だったら、描画しないのでここで終了
+    if (font.a < 0.01)
+        return float4(0, 0, 0, 0);
+    
+    // 色を返す
+    return float4(windowTextColorValue, 1);
 }
 
 V2P VSMain(VSInput input)
@@ -54,7 +90,7 @@ PSOutput PSMain(V2P input)
     PSOutput output;
     
     const float4 originalColor = _Texture.Sample(_Sampler, input.uv);
-    const float4 textColor = PSGetTextColor(input.uv);
+    const float4 textColor = PSGetTextColor(input.pos.xy);
     
     // テキスト自体が不透明になることは無いので、強制的に上書きしてしまう
     output.color = textColor.a > 0.5 ? textColor : originalColor;

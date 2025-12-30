@@ -225,7 +225,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		{ "TEXCOORD" , Format::RG_F32   },
 	};
 
-	const RootParameter rootParameterText = RootParameter::CreateBasic(1, 2, 0);
+	const RootParameter rootParameterText = RootParameter::CreateBasic(1, 4, 0);
 	const SamplerConfig samplerConfigText = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
 	const auto [shaderVSText, shaderPSText] = D3D12BasicFlow::CompileShader_VS_PS("./shaders/Text.hlsl");
 	const auto [rootSignatureText, graphicsPipelineStateText]
@@ -247,32 +247,48 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	WindowText windowText = WindowText::CreateEmpty(
 		Lattice2(WindowWidth / WindowText::FontSingleLength, WindowHeight / WindowText::FontSingleLength));
 	// 何か入れておく
-	windowText.SetTexts(Lattice2(0, 0), "Hello, World!");
+	windowText.SetTexts(Lattice2(1, 1), "Hello, World!", WindowText::TexelColor::Red);
+	// シェーダーに転送する用のテクスチャを作成
+	const auto [windowTextIndexTexture, windowTextColorTexture] = windowText.CreateTexture();
+
+	// t1
+	const auto fontTextureBufferAndData = D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue, commandAllocator, { "assets/font.png" });
+	// t2
+	const GraphicsBuffer windowTextIndexTextureBuffer
+		= D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue, commandAllocator, windowTextIndexTexture);
+	// t3
+	const GraphicsBuffer windowTextColorTextureBuffer
+		= D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue, commandAllocator, windowTextColorTexture);
 
 	// b0
 	struct alignas(256) CBData0Text
 	{
-		Vector4 UVLimit;
+		std::uint32_t FontTextureSize[2];
+		std::uint32_t WindowTextTextureSize[2];
+		std::uint32_t TextNothingIndex;
+		std::uint32_t FontSingleLength;
 	};
-	constexpr float uvDiff = (WindowWidth > WindowHeight) ?
-		(1.0f * ((WindowWidth - WindowHeight) >> 1) / WindowWidth) :
-		(1.0f * ((WindowHeight - WindowWidth) >> 1) / WindowHeight);
-	const CBData0Text cbData0Text =
-		WindowWidth > WindowHeight ? CBData0Text
+	const CBData0Text cbData0Text = CBData0Text
 	{
-		.UVLimit = Vector4(uvDiff, 0.0f, 1.0f - uvDiff, 1.0f),
-	} : CBData0Text
-	{
-		.UVLimit = Vector4(0.0f, uvDiff, 1.0f, 1.0f - uvDiff),
+		.FontTextureSize = { static_cast<std::uint32_t>(std::get<1>(fontTextureBufferAndData).width), static_cast<std::uint32_t>(std::get<1>(fontTextureBufferAndData).height) },
+		.WindowTextTextureSize = { static_cast<std::uint32_t>(windowText.GetCount().x), static_cast<std::uint32_t>(windowText.GetCount().y)},
+		.TextNothingIndex = static_cast<std::uint32_t>(WindowText::NoTextFontTextureIndex),
+		.FontSingleLength = static_cast<std::uint32_t>(WindowText::FontSingleLength),
 	};
 	const GraphicsBuffer cbvBufferText = D3D12BasicFlow::InitCBVBuffer<CBData0Text>(device, cbData0Text);
 
-	// t1
-	const auto fontTextureBufferAndData = D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue, commandAllocator, { "assets/font.png" });
-
 	// DescriptorHeap
 	const DescriptorHeap descriptorHeapBasicText
-		= D3D12BasicFlow::InitDescriptorHeapBasic(device, { cbvBufferText }, { {textGraphicsBuffer, textTextureMetadata}, fontTextureBufferAndData });
+		= D3D12BasicFlow::InitDescriptorHeapBasic(
+			device,
+			{ cbvBufferText },
+			{
+				{textGraphicsBuffer, textTextureMetadata},
+				fontTextureBufferAndData,
+				{windowTextIndexTextureBuffer, windowTextIndexTexture},
+				{windowTextColorTextureBuffer, windowTextColorTexture},
+			}
+			);
 
 	//////////////////////////////
 

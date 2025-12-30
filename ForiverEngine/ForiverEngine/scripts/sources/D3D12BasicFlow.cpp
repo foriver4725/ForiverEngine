@@ -211,23 +211,56 @@ namespace ForiverEngine
 			const std::vector<std::string>& paths
 		)
 	{
-		Texture textureArray = Texture();
-		GraphicsBuffer textureArrayBuffer = GraphicsBuffer();
+		Texture texture = Texture();
+		GraphicsBuffer textureBuffer = GraphicsBuffer();
 
 #define RETURN_FALSE(errorMessage) \
-	return { false, errorMessage, { textureArrayBuffer, textureArray } };
+	return { false, errorMessage, { textureBuffer, texture } };
 #define RETURN_TRUE() \
-	return { true, L"", { textureArrayBuffer, textureArray } };
+	return { true, L"", { textureBuffer, texture } };
 
-		textureArray = TextureLoader::LoadTextureArray(paths);
-		if (!textureArray.IsValid())
-			RETURN_FALSE(L"テクスチャ群のロードに失敗しました");
+		if (paths.empty())
+			RETURN_FALSE(L"テクスチャ(群)のパスが空です");
+		if (paths.size() <= 1)
+			texture = TextureLoader::LoadTexture(paths[0]);
+		else
+			texture = TextureLoader::LoadTextureArray(paths);
+		if (!texture.IsValid())
+			RETURN_FALSE(L"テクスチャ(群)のロードに失敗しました");
 
-		textureArrayBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, textureArray);
-		if (!textureArrayBuffer)
-			RETURN_FALSE(L"テクスチャ配列バッファの作成に失敗しました");
+		textureBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, texture);
+		if (!textureBuffer)
+			RETURN_FALSE(L"テクスチャ(配列)バッファの作成に失敗しました");
 
-		D3D12BasicFlow::UploadTextureToGPU(commandList, commandQueue, commandAllocator, device, textureArrayBuffer, textureArray);
+		D3D12BasicFlow::UploadTextureToGPU(commandList, commandQueue, commandAllocator, device, textureBuffer, texture);
+
+		RETURN_TRUE();
+
+#undef RETURN_FALSE
+#undef RETURN_TRUE
+	}
+
+	std::tuple<bool, std::wstring, std::tuple<GraphicsBuffer>>
+		D3D12BasicFlow::InitSRVBuffer_Impl(
+			const Device& device,
+			const CommandList& commandList,
+			const CommandQueue& commandQueue,
+			const CommandAllocator& commandAllocator,
+			const Texture& texture
+		)
+	{
+		GraphicsBuffer textureBuffer = GraphicsBuffer();
+
+#define RETURN_FALSE(errorMessage) \
+	return { false, errorMessage, { textureBuffer } };
+#define RETURN_TRUE() \
+	return { true, L"", { textureBuffer } };
+
+		textureBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, texture);
+		if (!textureBuffer)
+			RETURN_FALSE(L"テクスチャ(配列)バッファの作成に失敗しました");
+
+		D3D12BasicFlow::UploadTextureToGPU(commandList, commandQueue, commandAllocator, device, textureBuffer, texture);
 
 		RETURN_TRUE();
 
