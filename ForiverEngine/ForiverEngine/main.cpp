@@ -195,12 +195,51 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		= ViewportScissorRect::CreateFullSized(WindowWidth, WindowHeight);
 
 	//////////////////////////////
+	// 影 デプスマップに出力
+
+	// RT と同じ. sRGB 不可.
+	const Texture shadowTextureMetadata = TextureLoader::CreateManually({}, sizeof(float), WindowWidth, WindowHeight, Format::R_F32);
+	// RT, SR で切り替えて使う 2D テクスチャ
+	const GraphicsBuffer shadowGraphicsBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, shadowTextureMetadata,
+		GraphicsBufferUsagePermission::AllowRenderTarget, GraphicsBufferState::PixelShaderResource, Color::Transparent());
+
+	const RootParameter rootParameterShadow = RootParameter::CreateBasic(1, 0, 0);
+	const SamplerConfig samplerConfigShadow = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
+	const auto [shaderVSShadow, shaderPSShadow] = D3D12BasicFlow::CompileShader_VS_PS("./shaders/DepthWrite.hlsl");
+	const auto [rootSignatureShadow, graphicsPipelineStateShadow]
+		= D3D12BasicFlow::CreateRootSignatureAndGraphicsPipelineState(
+			device, rootParameterShadow, samplerConfigShadow, shaderVSShadow, shaderPSShadow, VertexLayoutsQuad, FillMode::Solid, CullMode::Back, false);
+
+	// RTVのみ作成
+	const DescriptorHeapHandleAtCPU rtvPShadow = D3D12BasicFlow::InitRTV(device, shadowGraphicsBuffer);
+	const DescriptorHeapHandleAtCPU dsvShadow_Dummy = DescriptorHeapHandleAtCPU{ .ptr = NULL };
+
+	// CB 0
+	struct alignas(256) CBData0Shadow
+	{
+		Matrix4x4 Matrix_MVP; // MVP
+	};
+	const CBData0Shadow cbData0Shadow =
+	{
+		.Matrix_MVP = cbData0.Matrix_MVP,
+	};
+	CBData0Shadow* cbvBufferShadowVirtualPtr = nullptr;
+	const GraphicsBuffer cbvBufferShadow = D3D12BasicFlow::InitCBVBuffer<CBData0Shadow>(device, cbData0Shadow, false, &cbvBufferShadowVirtualPtr);
+
+	// DescriptorHeap
+	const DescriptorHeap descriptorHeapBasicPP
+		= D3D12BasicFlow::InitDescriptorHeapBasic(device, { cbvBufferShadow }, { {shadowGraphicsBuffer, shadowTextureMetadata} });
+
+	//////////////////////////////
+
+	//////////////////////////////
 	// ポストプロセス
 
-	// RT, SR で切り替えて使う 2D テクスチャ
-	const GraphicsBuffer ppGraphicsBuffer = D3D12Helper::CreateGraphicsBufferTexture2DForRTAndSR(device, WindowWidth, WindowHeight, RTClearColor);
 	// RT と同じ. sRGB 不可.
 	const Texture ppTextureMetadata = TextureLoader::CreateManually({}, 4, WindowWidth, WindowHeight, Format::RGBA_U8_01);
+	// RT, SR で切り替えて使う 2D テクスチャ
+	const GraphicsBuffer ppGraphicsBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, ppTextureMetadata,
+		GraphicsBufferUsagePermission::AllowRenderTarget, GraphicsBufferState::PixelShaderResource, Color::Transparent());
 
 	const RootParameter rootParameterPP = RootParameter::CreateBasic(1, 1, 0);
 	const SamplerConfig samplerConfigPP = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
@@ -246,10 +285,11 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	//////////////////////////////
 	// テキスト描画 (ポストプロセスの後)
 
-	// RT, SR で切り替えて使う 2D テクスチャ
-	const GraphicsBuffer textGraphicsBuffer = D3D12Helper::CreateGraphicsBufferTexture2DForRTAndSR(device, WindowWidth, WindowHeight, RTClearColor);
 	// RT と同じ. sRGB 不可.
 	const Texture textTextureMetadata = TextureLoader::CreateManually({}, 4, WindowWidth, WindowHeight, Format::RGBA_U8_01);
+	// RT, SR で切り替えて使う 2D テクスチャ
+	const GraphicsBuffer textGraphicsBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, textTextureMetadata,
+		GraphicsBufferUsagePermission::AllowRenderTarget, GraphicsBufferState::PixelShaderResource, Color::Transparent());
 
 	// 頂点レイアウト
 	const std::vector<VertexLayout> VertexLayoutsText =
@@ -574,6 +614,11 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 						++index;
 					}
 			}
+		}
+
+		// 影のシェーダーにも、値を渡しておく
+		{
+			cbvBufferShadowVirtualPtr->Matrix_MVP = cbvBufferVirtualPtr->Matrix_MVP;
 		}
 
 		// テキストの更新

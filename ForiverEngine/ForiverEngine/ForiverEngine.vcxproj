@@ -188,6 +188,7 @@
     <ClInclude Include="scripts\common\Component\Transform\Include.h" />
     <ClInclude Include="scripts\common\Component\Transform\Transform.h" />
     <ClInclude Include="scripts\common\Include.h" />
+    <ClInclude Include="scripts\common\Math\BitFlag.h" />
     <ClInclude Include="scripts\common\Math\Color.h" />
     <ClInclude Include="scripts\common\Math\Defines.h" />
     <ClInclude Include="scripts\common\Math\Include.h" />
@@ -247,6 +248,12 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="shaders\PP.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="shaders\DepthWrite.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>

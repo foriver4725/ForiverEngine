@@ -75,24 +75,14 @@ namespace ForiverEngine
 		/// <para>2次元テクスチャ/2次元テクスチャ配列 用 (テクスチャのタイプが2Dで無いならば、失敗とみなし nullptr を返す)</para>
 		/// <para>GPU内でのみ用いる想定で、CPUからのマップ不可</para>
 		/// <para>テクスチャ変数のメタデータを基に作成する</para>
+		/// <para>初期状態を initState に設定し、clearColor でクリアする</para>
+		/// <para>clearColor について、</para>
+		/// <para>- テクスチャのフォーマットが 無効 なら clearColor は無視され、設定されない</para>
+		/// <para>- テクスチャのフォーマットが カラー用 なら RGBA をそのまま使う</para>
+		/// <para>- テクスチャのフォーマットが 深度用 なら R のみを用いる</para>
 		/// </summary>
-		static GraphicsBuffer CreateGraphicsBufferTexture2D(const Device& device, const Texture& texture);
-
-		/// <summary>
-		/// <para>GPU側のメモリ領域を確保し、その GraphicsBuffer を返す (失敗したら nullptr)</para>
-		/// <para>2次元テクスチャ用</para>
-		/// <para>オフスクリーンレンダリング用で、レンダーターゲット (RT) とシェーダーリソース (SR) で切り替えて用いる</para>
-		/// <para>sRGB の設定不可. 最初は SR として作成する</para>
-		/// <para>GPU内でのみ用いる想定で、CPUからのマップ不可</para>
-		/// </summary>
-		static GraphicsBuffer CreateGraphicsBufferTexture2DForRTAndSR(const Device& device, int width, int height, const Color& clearValue);
-
-		/// <summary>
-		/// <para>GPU側のメモリ領域を確保し、その GraphicsBuffer を返す (失敗したら nullptr)</para>
-		/// <para>デプスバッファ用 (ステンシルは用いず、32bit 深度のみとする)</para>
-		/// <para>GPU内でのみ用いる想定で、CPUからのマップ不可</para>
-		/// </summary>
-		static GraphicsBuffer CreateGraphicsBufferTexture2DAsDepthBuffer(const Device& device, int width, int height, float clearValue);
+		static GraphicsBuffer CreateGraphicsBufferTexture2D(const Device& device, const Texture& texture,
+			GraphicsBufferUsagePermission usagePermission, GraphicsBufferState initState, const Color& clearColor);
 
 		/// <summary>
 		/// <para>RTV を作成し、RTV 用 DescriptorHeap に登録する (基本)</para>

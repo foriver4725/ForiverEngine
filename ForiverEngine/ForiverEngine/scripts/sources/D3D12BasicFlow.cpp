@@ -228,7 +228,8 @@ namespace ForiverEngine
 		if (!texture.IsValid())
 			RETURN_FALSE(L"テクスチャ(群)のロードに失敗しました");
 
-		textureBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, texture);
+		textureBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, texture,
+			GraphicsBufferUsagePermission::None, GraphicsBufferState::CopyDestination, Color::Transparent());
 		if (!textureBuffer)
 			RETURN_FALSE(L"テクスチャ(配列)バッファの作成に失敗しました");
 
@@ -256,7 +257,8 @@ namespace ForiverEngine
 #define RETURN_TRUE() \
 	return { true, L"", { textureBuffer } };
 
-		textureBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, texture);
+		textureBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, texture,
+			GraphicsBufferUsagePermission::None, GraphicsBufferState::CopyDestination, Color::Transparent());
 		if (!textureBuffer)
 			RETURN_FALSE(L"テクスチャ(配列)バッファの作成に失敗しました");
 
@@ -377,7 +379,9 @@ namespace ForiverEngine
 #define RETURN_TRUE() \
 	return { true, L"", { dsv } };
 
-		const GraphicsBuffer depthBuffer = D3D12Helper::CreateGraphicsBufferTexture2DAsDepthBuffer(device, width, height, depthClearValue);
+		const Texture depthBufferMetadata = TextureLoader::CreateManually({}, sizeof(float), width, height, Format::D_F32);
+		const GraphicsBuffer depthBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, depthBufferMetadata,
+			GraphicsBufferUsagePermission::AllowDepthStencil, GraphicsBufferState::DepthWrite, Color(1.0f, 0, 0, 0));
 		if (!depthBuffer)
 			RETURN_FALSE(L"DepthBuffer の作成に失敗しました");
 

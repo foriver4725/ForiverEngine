@@ -405,7 +405,8 @@ namespace ForiverEngine
 		return GraphicsBuffer();
 	}
 
-	GraphicsBuffer D3D12Helper::CreateGraphicsBufferTexture2D(const Device& device, const Texture& texture)
+	GraphicsBuffer D3D12Helper::CreateGraphicsBufferTexture2D(const Device& device, const Texture& texture,
+		GraphicsBufferUsagePermission usagePermission, GraphicsBufferState initState, const Color& clearColor)
 	{
 		if (texture.textureType != GraphicsBufferType::Texture2D)
 		{
@@ -432,114 +433,52 @@ namespace ForiverEngine
 			.Format = static_cast<DXGI_FORMAT>(texture.format),
 			.SampleDesc = {.Count = 1, .Quality = 0 }, // 通常テクスチャなのでアンチエイリアシングはしない (クオリティは最低)
 			.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN, // 決定しない
-			.Flags = D3D12_RESOURCE_FLAG_NONE, // 指定なし
+			.Flags = static_cast<D3D12_RESOURCE_FLAGS>(usagePermission),
 		};
 
-		ID3D12Resource* ptr = nullptr;
-		if (SUCCEEDED(device->CreateCommittedResource(
-			&heapProperties,
-			D3D12_HEAP_FLAG_NONE, // 指定なし
-			&resourceDesc,
-			D3D12_RESOURCE_STATE_COPY_DEST, // コピー先として使う
-			nullptr, // 使わない
-			IID_PPV_ARGS(&ptr)
-		)))
+		// クリア値を取得
+		bool useClearValue = false;
+		D3D12_CLEAR_VALUE clearValue = {};
 		{
-			return GraphicsBuffer(ptr);
-		}
+			const std::uint32_t formatTypes = GetFormatTypes(texture.format);
 
-		return GraphicsBuffer();
-	}
-
-	GraphicsBuffer D3D12Helper::CreateGraphicsBufferTexture2DForRTAndSR(const Device& device, int width, int height, const Color& clearValue)
-	{
-		const D3D12_HEAP_PROPERTIES heapProperties =
-		{
-			.Type = D3D12_HEAP_TYPE_DEFAULT, // テクスチャ用
-			.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN, // 規定値
-			.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN, // 規定値
-			.CreationNodeMask = 0, // アダプターが1つなので...
-			.VisibleNodeMask = 0, // アダプターが1つなので...
-		};
-
-		const D3D12_RESOURCE_DESC resourceDesc =
-		{
-			.Dimension = static_cast<D3D12_RESOURCE_DIMENSION>(GraphicsBufferType::Texture2D),
-			.Alignment = 0, // 既定値でOK
-			.Width = static_cast<UINT64>(width),
-			.Height = static_cast<UINT>(height),
-			.DepthOrArraySize = 1,
-			.MipLevels = 0, // 規定値
-			.Format = static_cast<DXGI_FORMAT>(Format::RGBA_U8_01),
-			.SampleDesc = {.Count = 1, .Quality = 0 }, // 通常テクスチャなのでアンチエイリアシングはしない (クオリティは最低)
-			.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN, // 決定しない
-			.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET, // RT として使えるようにする!
-		};
-
-		const D3D12_CLEAR_VALUE clearValueReal =
-		{
-			.Format = static_cast<DXGI_FORMAT>(Format::RGBA_U8_01),
-			.Color = { clearValue.r, clearValue.g,  clearValue.b,  clearValue.a }
-		};
-
-		ID3D12Resource* ptr = nullptr;
-		if (SUCCEEDED(device->CreateCommittedResource(
-			&heapProperties,
-			D3D12_HEAP_FLAG_NONE, // 指定なし
-			&resourceDesc,
-			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, // 最初は SR として使う
-			&clearValueReal,
-			IID_PPV_ARGS(&ptr)
-		)))
-		{
-			return GraphicsBuffer(ptr);
-		}
-
-		return GraphicsBuffer();
-	}
-
-	GraphicsBuffer D3D12Helper::CreateGraphicsBufferTexture2DAsDepthBuffer(const Device& device, int width, int height, float clearValue)
-	{
-		const D3D12_HEAP_PROPERTIES heapProperties =
-		{
-			.Type = D3D12_HEAP_TYPE_DEFAULT, // テクスチャ用
-			.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN, // 規定値
-			.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN, // 規定値
-			.CreationNodeMask = 0, // アダプターが1つなので...
-			.VisibleNodeMask = 0, // アダプターが1つなので...
-		};
-
-		const D3D12_RESOURCE_DESC resourceDesc =
-		{
-			.Dimension = static_cast<D3D12_RESOURCE_DIMENSION>(GraphicsBufferType::Texture2D),
-			.Alignment = 0, // 既定値
-			.Width = static_cast<UINT64>(width),
-			.Height = static_cast<UINT>(height),
-			.DepthOrArraySize = 1, // テクスチャ配列でも3Dテクスチャでもない
-			.MipLevels = 0, // 規定値
-			.Format = static_cast<DXGI_FORMAT>(Format::D_F32),
-			.SampleDesc = {.Count = 1, .Quality = 0 }, // アンチエイリアシングなし
-			.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN, // 決定しない
-			.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL, // 深度ステンシルバッファとして使う
-		};
-
-		const D3D12_CLEAR_VALUE clearValueDesc =
-		{
-			.Format = static_cast<DXGI_FORMAT>(Format::D_F32),
-			.DepthStencil =
+			if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::ForColor))
 			{
-				.Depth = static_cast<FLOAT>(clearValue),
-				.Stencil = 0, // 規定値
+				useClearValue = true;
+				clearValue =
+				{
+					.Format = static_cast<DXGI_FORMAT>(texture.format),
+					.Color = { clearColor.r, clearColor.g,  clearColor.b,  clearColor.a }
+				};
 			}
-		};
+			else if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::ForDepth))
+			{
+				useClearValue = true;
+				clearValue =
+				{
+					.Format = static_cast<DXGI_FORMAT>(texture.format),
+					.DepthStencil =
+					{
+						.Depth = clearColor.r,
+						.Stencil = 0, // 規定値のまま
+					}
+				};
+			}
+			else
+			{
+				useClearValue = false;
+				clearValue = {};
+			}
+		}
+		const D3D12_CLEAR_VALUE* clearValuePtr = useClearValue ? &clearValue : nullptr;
 
 		ID3D12Resource* ptr = nullptr;
 		if (SUCCEEDED(device->CreateCommittedResource(
 			&heapProperties,
 			D3D12_HEAP_FLAG_NONE, // 指定なし
 			&resourceDesc,
-			D3D12_RESOURCE_STATE_DEPTH_WRITE, // 深度値書き込み用
-			&clearValueDesc,
+			static_cast<D3D12_RESOURCE_STATES>(initState),
+			clearValuePtr,
 			IID_PPV_ARGS(&ptr)
 		)))
 		{

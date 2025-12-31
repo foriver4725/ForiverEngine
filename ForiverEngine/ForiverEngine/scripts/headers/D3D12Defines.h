@@ -131,6 +131,64 @@ public: \
 		D_F32 = 40,           // DXGI_FORMAT_D32_FLOAT
 	};
 
+	// ピクセルフォーマットの分類 桁の定数値 (ビットフラグ)
+	struct FormatTypeDigit
+	{
+		static constexpr int Dimension1 = 0;
+		static constexpr int Dimension2 = 1;
+		static constexpr int Dimension3 = 2;
+		static constexpr int Dimension4 = 3;
+
+		static constexpr int TypeInt = 8;
+		static constexpr int TypeFloat = 9;
+
+		static constexpr int Bite1 = 16;
+		static constexpr int Bite2 = 17;
+		static constexpr int Bite4 = 18;
+
+		static constexpr int ForColor = 24;
+		static constexpr int ForDepth = 25;
+	};
+
+	// ピクセルフォーマットの分類を取得する (ビットフラグ)
+	inline constexpr std::uint32_t GetFormatTypes(Format format)
+	{
+		using Digit = FormatTypeDigit;
+
+		switch (format)
+		{
+		case Format::Unknown: return 0;
+
+		case Format::RGBA_F32: return BitFlag::AddFlags(0, { Digit::Dimension4, Digit::TypeFloat, Digit::Bite4, Digit::ForColor });
+		case Format::RGBA_U32: return BitFlag::AddFlags(0, { Digit::Dimension4, Digit::TypeInt,   Digit::Bite4, Digit::ForColor });
+		case Format::RGB_F32:  return BitFlag::AddFlags(0, { Digit::Dimension3, Digit::TypeFloat, Digit::Bite4, Digit::ForColor });
+		case Format::RGB_U32:  return BitFlag::AddFlags(0, { Digit::Dimension3, Digit::TypeInt,   Digit::Bite4, Digit::ForColor });
+		case Format::RG_F32:   return BitFlag::AddFlags(0, { Digit::Dimension2, Digit::TypeFloat, Digit::Bite4, Digit::ForColor });
+		case Format::RG_U32:   return BitFlag::AddFlags(0, { Digit::Dimension2, Digit::TypeInt,   Digit::Bite4, Digit::ForColor });
+		case Format::R_F32:    return BitFlag::AddFlags(0, { Digit::Dimension1, Digit::TypeFloat, Digit::Bite4, Digit::ForColor });
+		case Format::R_U32:    return BitFlag::AddFlags(0, { Digit::Dimension1, Digit::TypeInt,   Digit::Bite4, Digit::ForColor });
+
+		case Format::RGBA_F16: return BitFlag::AddFlags(0, { Digit::Dimension4, Digit::TypeFloat, Digit::Bite2, Digit::ForColor });
+		case Format::RGBA_U16: return BitFlag::AddFlags(0, { Digit::Dimension4, Digit::TypeInt,   Digit::Bite2, Digit::ForColor });
+		case Format::RG_F16:   return BitFlag::AddFlags(0, { Digit::Dimension2, Digit::TypeFloat, Digit::Bite2, Digit::ForColor });
+		case Format::RG_U16:   return BitFlag::AddFlags(0, { Digit::Dimension2, Digit::TypeInt,   Digit::Bite2, Digit::ForColor });
+		case Format::R_F16:    return BitFlag::AddFlags(0, { Digit::Dimension1, Digit::TypeFloat, Digit::Bite2, Digit::ForColor });
+		case Format::R_U16:    return BitFlag::AddFlags(0, { Digit::Dimension1, Digit::TypeInt,   Digit::Bite2, Digit::ForColor });
+
+		case Format::RGBA_U8:         return BitFlag::AddFlags(0, { Digit::Dimension4, Digit::TypeInt, Digit::Bite1, Digit::ForColor });
+		case Format::RGBA_U8_01:      return BitFlag::AddFlags(0, { Digit::Dimension4, Digit::TypeInt, Digit::Bite1, Digit::ForColor });
+		case Format::RGBA_U8_01_SRGB: return BitFlag::AddFlags(0, { Digit::Dimension4, Digit::TypeInt, Digit::Bite1, Digit::ForColor });
+		case Format::RG_U8:           return BitFlag::AddFlags(0, { Digit::Dimension2, Digit::TypeInt, Digit::Bite1, Digit::ForColor });
+		case Format::RG_U8_01:        return BitFlag::AddFlags(0, { Digit::Dimension2, Digit::TypeInt, Digit::Bite1, Digit::ForColor });
+		case Format::R_U8:            return BitFlag::AddFlags(0, { Digit::Dimension1, Digit::TypeInt, Digit::Bite1, Digit::ForColor });
+		case Format::R_U8_01:         return BitFlag::AddFlags(0, { Digit::Dimension1, Digit::TypeInt, Digit::Bite1, Digit::ForColor });
+
+		case Format::D_F32:    return BitFlag::AddFlags(0, { Digit::Dimension1, Digit::TypeFloat, Digit::Bite4, Digit::ForDepth });
+
+		default: return 0;
+		}
+	}
+
 	// ラスタライザの塗りつぶしモード
 	enum class FillMode : std::uint8_t
 	{
@@ -207,10 +265,19 @@ public: \
 	// GraphicsBuffer がGPU上でどのように使用されるか
 	enum class GraphicsBufferState : std::uint16_t
 	{
-		Present = 0,               // D3D12_RESOURCE_STATE_PRESENT
-		RenderTarget = 0x4,        // D3D12_RESOURCE_STATE_RENDER_TARGET
-		PixelShaderResource = 0x80, // D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE
+		Present = 0,                 // D3D12_RESOURCE_STATE_PRESENT
+		RenderTarget = 0x4,          // D3D12_RESOURCE_STATE_RENDER_TARGET
+		DepthWrite = 0x10,           // D3D12_RESOURCE_STATE_DEPTH_WRITE
+		PixelShaderResource = 0x80,  // D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE
 		CopyDestination = 0x400,     // D3D12_RESOURCE_STATE_COPY_DEST
+	};
+
+	// GraphicsBuffer の、使用用途許可フラグ
+	enum class GraphicsBufferUsagePermission : std::uint8_t
+	{
+		None = 0,                   // D3D12_RESOURCE_FLAG_NONE
+		AllowRenderTarget = 0x1,    // D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET
+		AllowDepthStencil = 0x2,    // D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL
 	};
 
 	// DirectX の構造体を直接外部に公開したくないので、データを自作して、内部処理で構築する

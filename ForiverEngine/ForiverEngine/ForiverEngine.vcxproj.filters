@@ -168,6 +168,9 @@
     <ClInclude Include="scripts\headers\WindowText.h">
       <Filter>scripts\headers</Filter>
     </ClInclude>
+    <ClInclude Include="scripts\common\Math\BitFlag.h">
+      <Filter>scripts\common\Math</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shaders\Basic.hlsl">
@@ -190,6 +193,9 @@
     </FxCompile>
     <FxCompile Include="shaders\common\TextSampling.hlsl">
       <Filter>shaders\common</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\DepthWrite.hlsl">
+      <Filter>shaders</Filter>
     </FxCompile>
   </ItemGroup>
 </Project>
