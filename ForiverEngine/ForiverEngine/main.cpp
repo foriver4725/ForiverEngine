@@ -22,7 +22,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	const auto [factory, device, commandAllocator, commandList, commandQueue, swapChain]
 		= D3D12BasicFlow::CreateStandardObjects(hwnd, WindowWidth, WindowHeight);
 
-	const RootParameter rootParameter = RootParameter::CreateBasic(1, 2, 0);
+	const RootParameter rootParameter = RootParameter::CreateBasic(2, 2, 0);
 	const SamplerConfig samplerConfig = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
 	const auto [shaderVS, shaderPS] = D3D12BasicFlow::CompileShader_VS_PS("./shaders/Basic.hlsl");
 	const auto [rootSignature, graphicsPipelineState]
@@ -33,8 +33,17 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	const DescriptorHeapHandleAtCPU dsv = D3D12BasicFlow::InitDSV(device, WindowWidth, WindowHeight, DepthBufferClearValue);
 
 	constexpr Transform terrainTransform = Transform::Identity();
-	CameraTransform cameraTransform = CameraTransform::CreateBasic(
+	CameraTransform cameraTransform = CameraTransform::CreatePerspective(
 		Vector3(64, 32, 64), Quaternion::Identity(), 60.0f * DegToRad, 1.0f * WindowWidth / WindowHeight);
+
+	// 太陽からのカメラ 平行投影
+	constexpr float SunDistanceFromOrigin = 1.0e4f; // 十分遠くに置く
+	const Vector3 SunDirection = Vector3(1.0f, -1.0f, 1.0f).Normed();
+	const CameraTransform sunCameraTransform = CameraTransform::CreateOrthographic(
+		-SunDirection * SunDistanceFromOrigin,
+		Quaternion::VectorToVector(Vector3::Forward(), SunDirection),
+		WindowWidth * 0.1f, WindowHeight * 0.1f
+	);
 
 	// 地形チャンクの作成進捗状態
 	enum class ChunkCreationState : std::uint8_t
@@ -142,13 +151,17 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 			}
 	}
 
-	// b0 レジスタに渡すデータ
+	// b0
 	struct alignas(256) CBData0
 	{
 		Matrix4x4 Matrix_M; // M
 		Matrix4x4 Matrix_M_IT; // M の逆→転置行列
 		Matrix4x4 Matrix_MVP; // MVP
-
+		Matrix4x4 DirectionalLight_Matrix_VP; // 太陽カメラの VP
+	};
+	// b1
+	struct alignas(256) CBData1
+	{
 		Vector3 SelectingBlockPosition; // 選択中のブロック位置 (ワールド座標)
 		float IsSelectingAnyBlock; // ブロックを選択中かどうか (bool 型として扱う)
 		Color SelectColor; // 選択中のブロックの乗算色 (a でブレンド率を指定)
@@ -157,6 +170,9 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		float Pad0;
 		Color DirectionalLightColor; // 太陽光の色 (a は使わない)
 		Color AmbientLightColor; // 環境光の色 (a は使わない)
+
+		float CastShadow; // 影を落とすかどうか (bool 型として扱う)
+		Color ShadowColor; // 影の色 (色係数. a は使わない)
 	};
 
 	CBData0 cbData0 =
@@ -164,19 +180,27 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		.Matrix_M = terrainTransform.CalculateModelMatrix(),
 		.Matrix_M_IT = terrainTransform.CalculateModelMatrixInversed().Transposed(),
 		.Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(terrainTransform, cameraTransform),
-
+		.DirectionalLight_Matrix_VP = sunCameraTransform.CalculateProjectionMatrix() * sunCameraTransform.CalculateViewMatrix(),
+	};
+	CBData1 cbData1 =
+	{
 		.SelectingBlockPosition = Vector3::Zero(),
 		.IsSelectingAnyBlock = 0,
 		.SelectColor = Color::CreateFromUint8(255, 255, 0, 100),
 
-		.DirectionalLightDirection = Vector3(1.0f, -1.0f, 1.0f).Normed(),
+		.DirectionalLightDirection = SunDirection,
 		.DirectionalLightColor = Color::White() * 1.2f,
 		.AmbientLightColor = Color::White() * 0.5f,
+
+		.CastShadow = 1,
+		.ShadowColor = Color(0.5f, 0.5f, 0.5f),
 	};
 
 	// CBV 用バッファ
-	CBData0* cbvBufferVirtualPtr = nullptr;
-	const GraphicsBuffer cbvBuffer = D3D12BasicFlow::InitCBVBuffer<CBData0>(device, cbData0, false, &cbvBufferVirtualPtr);
+	CBData0* cbvBuffer0VirtualPtr = nullptr;
+	CBData1* cbvBuffer1VirtualPtr = nullptr;
+	const GraphicsBuffer cbvBuffer0 = D3D12BasicFlow::InitCBVBuffer<CBData0>(device, cbData0, false, &cbvBuffer0VirtualPtr);
+	const GraphicsBuffer cbvBuffer1 = D3D12BasicFlow::InitCBVBuffer<CBData1>(device, cbData1, false, &cbvBuffer1VirtualPtr);
 
 	// SRV 用バッファ
 	const auto srvBufferAndData = D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue, commandAllocator,
@@ -214,14 +238,13 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	// CB 0
 	struct alignas(256) CBData0Shadow
 	{
-		Matrix4x4 Matrix_MVP; // MVP
+		Matrix4x4 Matrix_MVP;
 	};
 	const CBData0Shadow cbData0Shadow =
 	{
-		.Matrix_MVP = cbData0.Matrix_MVP,
+		.Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(terrainTransform, sunCameraTransform),
 	};
-	CBData0Shadow* cbvBufferShadowVirtualPtr = nullptr;
-	const GraphicsBuffer cbvBufferShadow = D3D12BasicFlow::InitCBVBuffer<CBData0Shadow>(device, cbData0Shadow, false, &cbvBufferShadowVirtualPtr);
+	const GraphicsBuffer cbvBufferShadow = D3D12BasicFlow::InitCBVBuffer<CBData0Shadow>(device, cbData0Shadow);
 
 	// DescriptorHeap
 	const DescriptorHeap descriptorHeapBasicShadow
@@ -231,7 +254,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	// メインレンダリングの方に、情報を渡す
 
 	descriptorHeapBasic = D3D12BasicFlow::InitDescriptorHeapBasic(
-		device, { cbvBuffer }, { srvBufferAndData, { shadowGraphicsBuffer, shadowTextureMetadata } });
+		device, { cbvBuffer0, cbvBuffer1 }, { srvBufferAndData, { shadowGraphicsBuffer, shadowTextureMetadata } });
 
 	//////////
 
@@ -466,7 +489,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		}
 
 		// これだけ再計算すれば良い
-		cbvBufferVirtualPtr->Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(terrainTransform, cameraTransform);
+		cbvBuffer0VirtualPtr->Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(terrainTransform, cameraTransform);
 
 		// ブロックを選択する
 		{
@@ -506,10 +529,10 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 				}
 			}
 
-			cbvBufferVirtualPtr->IsSelectingAnyBlock = (hitBlock != Block::Air) ? 1.0f : 0.0f;
+			cbvBuffer1VirtualPtr->IsSelectingAnyBlock = (hitBlock != Block::Air) ? 1.0f : 0.0f;
 			if (hitBlock != Block::Air)
 			{
-				cbvBufferVirtualPtr->SelectingBlockPosition = Vector3(
+				cbvBuffer1VirtualPtr->SelectingBlockPosition = Vector3(
 					static_cast<float>(hitPosition.x),
 					static_cast<float>(hitPosition.y),
 					static_cast<float>(hitPosition.z)
@@ -523,12 +546,12 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		{
 			if (InputHelper::GetKeyInfo(Key::Enter).pressedNow)
 			{
-				if (cbvBufferVirtualPtr->IsSelectingAnyBlock > 0.5f)
+				if (cbvBuffer1VirtualPtr->IsSelectingAnyBlock > 0.5f)
 				{
 					hasBrokenBlock = true;
 
-					const Lattice3 blockPositionAsLattice = Lattice3(cbvBufferVirtualPtr->SelectingBlockPosition);
-					const Lattice2 chunkIndex = PlayerControl::GetChunkIndexAtPosition(cbvBufferVirtualPtr->SelectingBlockPosition);
+					const Lattice3 blockPositionAsLattice = Lattice3(cbvBuffer1VirtualPtr->SelectingBlockPosition);
+					const Lattice2 chunkIndex = PlayerControl::GetChunkIndexAtPosition(cbvBuffer1VirtualPtr->SelectingBlockPosition);
 
 					// 地形データとメッシュを更新
 					terrains[chunkIndex.x][chunkIndex.y].SetBlock(
@@ -620,11 +643,6 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 			}
 		}
 
-		// 影のシェーダーにも、値を渡しておく
-		{
-			cbvBufferShadowVirtualPtr->Matrix_MVP = cbvBufferVirtualPtr->Matrix_MVP;
-		}
-
 		// テキストの更新
 		{
 			// データを更新
@@ -655,11 +673,11 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 				);
 
 				const Lattice3 selectingBlockPositionAsLattice = Lattice3(
-					static_cast<int>(cbvBufferVirtualPtr->SelectingBlockPosition.x),
-					static_cast<int>(cbvBufferVirtualPtr->SelectingBlockPosition.y),
-					static_cast<int>(cbvBufferVirtualPtr->SelectingBlockPosition.z)
+					static_cast<int>(cbvBuffer1VirtualPtr->SelectingBlockPosition.x),
+					static_cast<int>(cbvBuffer1VirtualPtr->SelectingBlockPosition.y),
+					static_cast<int>(cbvBuffer1VirtualPtr->SelectingBlockPosition.z)
 				);
-				const std::string selectingBlockPositionText = cbvBufferVirtualPtr->IsSelectingAnyBlock ? std::format(
+				const std::string selectingBlockPositionText = cbvBuffer1VirtualPtr->IsSelectingAnyBlock ? std::format(
 					"LookAt:({:+},{:+},{:+})",
 					selectingBlockPositionAsLattice.x,
 					selectingBlockPositionAsLattice.y,

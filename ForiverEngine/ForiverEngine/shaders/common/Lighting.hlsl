@@ -12,6 +12,13 @@ struct LightingParams
     float3 AmbientColor; // 環境光の色
 };
 
+struct ShadowParams
+{
+    float CastShadow; // 影を落とすか (1.0: 落とす, 0.0: 落とさない)
+    Texture2D<float> SunDepthTexture; // 太陽からのカメラで書き込んだ、深度テクスチャ
+    float4x4 SunVP; // 太陽の VP 行列
+};
+
 float3 PSCalcLighting(LightingParams params)
 {
     // 太陽光
@@ -24,4 +31,10 @@ float3 PSCalcLighting(LightingParams params)
     // 光の影響を合成して返す
     const float3 light = sun + ambient;
     return light;
+}
+
+// 戻り値: 1.0 (影を落とす), 0.0 (影を落とさない)
+float PSCheckCastShadow(ShadowParams params)
+{
+    return 0;
 }

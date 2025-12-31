@@ -17,8 +17,7 @@ struct V2P
 
 struct PSOutput
 {
-    // R のみでいいけど、警告が出るので float にはしないでおく
-    float4 depth : SV_TARGET;
+    float depth : SV_TARGET;
 };
 
 V2P VSMain(VSInput input)

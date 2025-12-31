@@ -3,7 +3,11 @@ cbuffer _0 : register(b0)
     float4x4 _Matrix_M;
     float4x4 _Matrix_M_IT;
     float4x4 _Matrix_MVP;
-    
+    float4x4 _DirectionalLight_Matrix_VP;
+}
+
+cbuffer _1 : register(b0)
+{
     float3 _SelectingBlockPosition;
     float _IsSelectingAnyBlock;
     float4 _SelectColor;
@@ -11,6 +15,9 @@ cbuffer _0 : register(b0)
     float3 _DirectionalLightDirection;
     float4 _DirectionalLightColor;
     float4 _AmbientLightColor;
+    
+    float _CastShadow;
+    float4 _ShadowColor;
 }
 
 Texture2DArray<float4> _Texture : register(t0);
@@ -86,15 +93,24 @@ PSOutput PSMain(V2P input)
     if (PSCheckIsSelectedBlock(input.centerWorldPos) > 0.5)
         color.rgb = lerp(color.rgb, _SelectColor.rgb, _SelectColor.a);
     
+    // ディフューズカラーの計算
     LightingParams lightingParams;
     lightingParams.Normal = normalize(input.normal);
     lightingParams.SunDirection = normalize(_DirectionalLightDirection);
     lightingParams.SunColor = _DirectionalLightColor.rgb;
     lightingParams.AmbientColor = _AmbientLightColor.rgb;
-    color.rgb *= PSCalcLighting(lightingParams);
+    const float3 lightColor = PSCalcLighting(lightingParams);
     
+    // シャドウの計算
+    ShadowParams shadowParams;
+    shadowParams.CastShadow = _CastShadow;
+    shadowParams.SunDepthTexture = _ShadowDepthTexture;
+    shadowParams.SunVP = _DirectionalLight_Matrix_VP;
+    const float castShadow = PSCheckCastShadow(shadowParams);
+    const float3 shadowColor = castShadow > 0.5 ? _ShadowColor.rgb : float3(1.0, 1.0, 1.0);
+    
+    color.rgb *= lightColor * shadowColor;
     output.color = color;
-    //output.color = _ShadowDepthTexture.Sample(_Sampler, input.pos.xy / float2(1344, 756));
     
     return output;
 }
