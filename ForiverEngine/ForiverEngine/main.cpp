@@ -353,19 +353,12 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	const GraphicsBuffer textGraphicsBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, textTextureMetadata,
 		GraphicsBufferUsagePermission::AllowRenderTarget, GraphicsBufferState::PixelShaderResource, Color::Transparent());
 
-	// 頂点レイアウト
-	const std::vector<VertexLayout> VertexLayoutsText =
-	{
-		{ "POSITION" , Format::RGBA_F32 },
-		{ "TEXCOORD" , Format::RG_F32   },
-	};
-
 	const RootParameter rootParameterText = RootParameter::CreateBasic(1, 3, 0);
 	const SamplerConfig samplerConfigText = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
 	const auto [shaderVSText, shaderPSText] = D3D12BasicFlow::CompileShader_VS_PS("./shaders/Text.hlsl");
 	const auto [rootSignatureText, graphicsPipelineStateText]
 		= D3D12BasicFlow::CreateRootSignatureAndGraphicsPipelineState(
-			device, rootParameterText, samplerConfigText, shaderVSText, shaderPSText, VertexLayoutsText, FillMode::Solid, CullMode::Back, false);
+			device, rootParameterText, samplerConfigText, shaderVSText, shaderPSText, VertexLayoutsQuad, FillMode::Solid, CullMode::Back, false);
 
 	// RTVのみ作成
 	const DescriptorHeapHandleAtCPU rtvText = D3D12BasicFlow::InitRTV(device, textGraphicsBuffer, Format::RGBA_U8_01);
