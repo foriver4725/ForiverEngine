@@ -50,7 +50,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 			device, rootParameter, samplerConfig, shaderVS, shaderPS, VertexLayouts, FillMode::Solid, CullMode::None, true);
 
 	const auto [rtGetter, rtvGetter] = D3D12BasicFlow::InitRTV(device, swapChain, Format::RGBA_U8_01);
-	const DescriptorHeapHandleAtCPU dsv = D3D12BasicFlow::InitDSV(device, WindowWidth, WindowHeight, DepthBufferClearValue);
+	const DescriptorHeapHandleAtCPU dsv = D3D12BasicFlow::InitDSV(device, WindowWidth, WindowHeight);
 
 	constexpr Transform terrainTransform = Transform::Identity();
 	CameraTransform cameraTransform = CameraTransform::CreatePerspective(
@@ -265,7 +265,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 
 	// RTV, DSV
 	const DescriptorHeapHandleAtCPU rtvShadow = D3D12BasicFlow::InitRTV(device, shadowGraphicsBuffer, Format::R_F32);
-	const DescriptorHeapHandleAtCPU dsvShadow = D3D12BasicFlow::InitDSV(device, ShadowRTWidth, ShadowRTHeight, DepthBufferClearValue);
+	const DescriptorHeapHandleAtCPU dsvShadow = D3D12BasicFlow::InitDSV(device, ShadowRTWidth, ShadowRTHeight);
 
 	// CB 0
 	struct alignas(256) CBData0Shadow
