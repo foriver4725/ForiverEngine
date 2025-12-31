@@ -663,6 +663,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 				// - フレームタイム
 				// - プレイヤーの足元の座標
 				// - 選択しているブロックの座標
+				// - 現在いるチャンクのインデックス
 
 				constexpr int FrameTimeTextUpdateIntervalFrames = 16; // テキストの更新間隔 (フレーム数)
 				static int frameTimeTextUpdateCounter = 0;
@@ -674,12 +675,12 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 					if (frameTimeTextUpdateCounter % FrameTimeTextUpdateIntervalFrames == 0)
 						frameTimeTextValue = WindowHelper::GetDeltaMilliseconds<double>();
 				}
-				const std::string frameTimeText = std::format("Frame Time:{:.2f} ms", frameTimeTextValue);
+				const std::string frameTimeText = std::format("Frame Time : {:.2f} ms", frameTimeTextValue);
 
 				const Lattice3 playerFootPositionAsLattice = PlayerControl::GetBlockLatticePosition(
 					PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight));
 				const std::string positionText = std::format(
-					"Position:({:+},{:+},{:+})",
+					"Position : ({},{},{})",
 					playerFootPositionAsLattice.x,
 					playerFootPositionAsLattice.y,
 					playerFootPositionAsLattice.z
@@ -691,16 +692,24 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 					static_cast<int>(cbvBuffer1VirtualPtr->SelectingBlockPosition.z)
 				);
 				const std::string selectingBlockPositionText = cbvBuffer1VirtualPtr->IsSelectingAnyBlock ? std::format(
-					"LookAt:({:+},{:+},{:+})",
+					"LookAt : ({},{},{})",
 					selectingBlockPositionAsLattice.x,
 					selectingBlockPositionAsLattice.y,
 					selectingBlockPositionAsLattice.z
-				) : "LookAt  :None";
+				) : "LookAt : None";
+
+				const Lattice2 currentChunkIndex = PlayerControl::GetChunkIndexAtPosition(cameraTransform.position);
+				const std::string chunkIndexText = std::format(
+					"Chunk Index : ({},{})",
+					currentChunkIndex.x,
+					currentChunkIndex.y
+				);
 
 				windowText.ClearAll();
 				windowText.SetTexts(Lattice2(1, 1), frameTimeText, Color::White());
 				windowText.SetTexts(Lattice2(1, 2), positionText, Color::White());
 				windowText.SetTexts(Lattice2(1, 3), selectingBlockPositionText, Color::White());
+				windowText.SetTexts(Lattice2(1, 4), chunkIndexText, Color::White());
 			}
 
 			// バッファを再作成してアップロードし直す
