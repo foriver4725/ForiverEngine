@@ -256,7 +256,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	const GraphicsBuffer shadowGraphicsBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, shadowTextureMetadata,
 		GraphicsBufferUsagePermission::AllowRenderTarget, GraphicsBufferState::PixelShaderResource, Color(DepthBufferClearValue, 0, 0, 0));
 
-	const RootParameter rootParameterShadow = RootParameter::CreateBasic(1, 0, 0);
+	const RootParameter rootParameterShadow = RootParameter::CreateBasic(1, 1, 0);
 	const SamplerConfig samplerConfigShadow = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
 	const auto [shaderVSShadow, shaderPSShadow] = D3D12BasicFlow::CompileShader_VS_PS("./shaders/DepthWrite.hlsl");
 	const auto [rootSignatureShadow, graphicsPipelineStateShadow]
