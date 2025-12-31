@@ -225,11 +225,10 @@ namespace ForiverEngine
 			InitDSV(
 				const Device& device,
 				int width,
-				int height,
-				float depthClearValue
+				int height
 			)
 		{
-			return Check(InitDSV_Impl(device, width, height, depthClearValue));
+			return Check(InitDSV_Impl(device, width, height));
 		}
 
 		/// <summary>
@@ -505,8 +504,7 @@ namespace ForiverEngine
 			InitDSV_Impl(
 				const Device& device,
 				int width,
-				int height,
-				float depthClearValue
+				int height
 			);
 
 		/// <summary>

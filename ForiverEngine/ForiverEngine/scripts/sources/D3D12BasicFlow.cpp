@@ -372,8 +372,7 @@ namespace ForiverEngine
 		D3D12BasicFlow::InitDSV_Impl(
 			const Device& device,
 			int width,
-			int height,
-			float depthClearValue
+			int height
 		)
 	{
 		DescriptorHeapHandleAtCPU dsv = DescriptorHeapHandleAtCPU();
@@ -385,7 +384,7 @@ namespace ForiverEngine
 
 		const Texture depthBufferMetadata = TextureLoader::CreateManually({}, width, height, Format::D_F32);
 		const GraphicsBuffer depthBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, depthBufferMetadata,
-			GraphicsBufferUsagePermission::AllowDepthStencil, GraphicsBufferState::DepthWrite, Color(depthClearValue, 0, 0, 0));
+			GraphicsBufferUsagePermission::AllowDepthStencil, GraphicsBufferState::DepthWrite, Color(DepthBufferClearValue, 0, 0, 0));
 		if (!depthBuffer)
 			RETURN_FALSE(L"DepthBuffer の作成に失敗しました");
 
