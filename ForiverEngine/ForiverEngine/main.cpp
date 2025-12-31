@@ -172,6 +172,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		Color AmbientLightColor; // 環境光の色 (a は使わない)
 
 		float CastShadow; // 影を落とすかどうか (bool 型として扱う)
+		float Pad1[3];
 		Color ShadowColor; // 影の色 (色係数. a は使わない)
 	};
 
