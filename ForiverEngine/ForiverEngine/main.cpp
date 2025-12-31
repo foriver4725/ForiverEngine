@@ -254,7 +254,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 
 	const Texture shadowTextureMetadata = TextureLoader::CreateManually({}, ShadowRTWidth, ShadowRTHeight, Format::R_F32);
 	const GraphicsBuffer shadowGraphicsBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, shadowTextureMetadata,
-		GraphicsBufferUsagePermission::AllowRenderTarget, GraphicsBufferState::PixelShaderResource, Color::Transparent());
+		GraphicsBufferUsagePermission::AllowRenderTarget, GraphicsBufferState::PixelShaderResource, Color(DepthBufferClearValue, 0, 0, 0));
 
 	const RootParameter rootParameterShadow = RootParameter::CreateBasic(1, 0, 0);
 	const SamplerConfig samplerConfigShadow = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
@@ -742,7 +742,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 			rootSignatureShadow, graphicsPipelineStateShadow, shadowGraphicsBuffer,
 			rtvShadow, dsvShadow, descriptorHeapBasicShadow, drawingVertexBufferViews, drawingIndexBufferViews,
 			GraphicsBufferState::PixelShaderResource, GraphicsBufferState::RenderTarget,
-			viewportScissorRectShadow, PrimitiveTopology::TriangleList, Color::Transparent(), DepthBufferClearValue,
+			viewportScissorRectShadow, PrimitiveTopology::TriangleList, Color(DepthBufferClearValue, 0, 0, 0), DepthBufferClearValue,
 			drawingIndexCounts
 		);
 		// メインレンダリング
