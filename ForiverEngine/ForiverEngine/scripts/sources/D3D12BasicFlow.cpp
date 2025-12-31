@@ -532,11 +532,8 @@ namespace ForiverEngine
 		)
 	{
 		const Matrix4x4 m = transform.CalculateModelMatrix();
-		const Matrix4x4 v = cameraTransform.CalculateViewMatrix();
-		const Matrix4x4 p = cameraTransform.CalculateProjectionMatrix();
+		const Matrix4x4 vp = cameraTransform.CalculateVPMatrix();
 
-		const Matrix4x4 mvp = p * v * m;
-
-		return { true, L"", { mvp } };
+		return { true, L"", { vp * m } };
 	}
 }

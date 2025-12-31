@@ -92,6 +92,16 @@ namespace ForiverEngine
 			}
 		}
 
+		// 全文字をまとめてクリアする
+		// TODO: ちょっと処理が重いか?
+		void ClearAll()
+		{
+			for (int y = 0; y < count.y; ++y)
+			{
+				ClearRow(y);
+			}
+		}
+
 		// データからテクスチャに変換する
 		// テクスチャ自体は2Dだけど、生データは1Dのビット配列なので注意
 		Texture CreateTexture() const

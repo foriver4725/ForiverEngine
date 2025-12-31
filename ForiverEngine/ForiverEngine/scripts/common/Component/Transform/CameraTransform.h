@@ -120,5 +120,16 @@ namespace ForiverEngine
 				);
 			}
 		}
+
+		/// <summary>
+		/// VP行列を計算
+		/// </summary>
+		Matrix4x4 CalculateVPMatrix() const noexcept
+		{
+			const Matrix4x4 v = CalculateViewMatrix();
+			const Matrix4x4 p = CalculateProjectionMatrix();
+
+			return p * v;
+		}
 	};
 }

@@ -17,6 +17,26 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	WindowHelper::SetTargetFps(60);
 	WindowHelper::SetCursorEnabled(false);
 
+	//////////////////////////////
+	// プレイヤー挙動のパラメータ
+
+	constexpr Vector3 PlayerCollisionSize = Vector3(0.5f, 1.8f, 0.5f);
+	constexpr float SpeedH = 3.0f; // 水平移動速度 (m/s)
+	constexpr float DashSpeedH = 6.0f; // ダッシュ時の水平移動速度 (m/s)
+	constexpr float CameraSensitivityH = 180.0f; // 水平感度 (度/s)
+	constexpr float CameraSensitivityV = 90.0f; // 垂直感度 (度/s)
+	constexpr float MinVelocityV = -50.0f; // 最大落下速度 (m/s)
+	constexpr float JumpHeight = 1.05f; // ジャンプ高さ (m)
+	constexpr float EyeHeight = 1.6f; // 目の高さ (m)
+	constexpr float GroundedCheckOffset = 0.1f; // 接地判定のオフセット (m). 埋まっている判定と区別するため、少しずらす
+	float velocityV = 0; // 鉛直速度
+
+	// 向いているブロックを選択
+	constexpr float ReachDistance = 5.0f; // 選択可能な最大距離 (m)
+	constexpr float ReachDetectStep = 0.1f; // レイキャストの刻み幅 (m)
+
+	//////////////////////////////
+
 	constexpr Color RTClearColor = Color::CreateFromUint8(60, 150, 210); // 空色
 
 	const auto [factory, device, commandAllocator, commandList, commandQueue, swapChain]
@@ -37,13 +57,21 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		Vector3(64, 32, 64), Quaternion::Identity(), 60.0f * DegToRad, 1.0f * WindowWidth / WindowHeight);
 
 	// 太陽からのカメラ 平行投影
-	constexpr float SunDistanceFromOrigin = 1.0e4f; // 十分遠くに置く
+	constexpr Color SunShadowColor = Color(0.7f, 0.7f, 0.7f);
+	constexpr float SunDistanceFromPlayer = 100;
+	constexpr Vector2 SunClipSize = Vector2(1024, 1024); // 幅と高さ
+	constexpr Vector2 SunClipZ = Vector2(0.1f, 500.0f); // x: near, y: far
 	const Vector3 SunDirection = Vector3(1.0f, -1.0f, 1.0f).Normed();
-	const CameraTransform sunCameraTransform = CameraTransform::CreateOrthographic(
-		-SunDirection * SunDistanceFromOrigin,
-		Quaternion::VectorToVector(Vector3::Forward(), SunDirection),
-		WindowWidth * 0.1f, WindowHeight * 0.1f
-	);
+	const std::function<CameraTransform()> CreateSunCameraTransform = [&]()
+		{
+			return CameraTransform::CreateOrthographic(
+				PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight) - SunDirection * SunDistanceFromPlayer,
+				Quaternion::VectorToVector(Vector3::Forward(), SunDirection),
+				SunClipSize.x, SunClipSize.y,
+				SunClipZ.x, SunClipZ.y
+			);
+		};
+	CameraTransform sunCameraTransform = CreateSunCameraTransform();
 
 	// 地形チャンクの作成進捗状態
 	enum class ChunkCreationState : std::uint8_t
@@ -181,7 +209,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		.Matrix_M = terrainTransform.CalculateModelMatrix(),
 		.Matrix_M_IT = terrainTransform.CalculateModelMatrixInversed().Transposed(),
 		.Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(terrainTransform, cameraTransform),
-		.DirectionalLight_Matrix_VP = sunCameraTransform.CalculateProjectionMatrix() * sunCameraTransform.CalculateViewMatrix(),
+		.DirectionalLight_Matrix_VP = sunCameraTransform.CalculateVPMatrix(),
 	};
 	CBData1 cbData1 =
 	{
@@ -194,7 +222,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		.AmbientLightColor = Color::White() * 0.5f,
 
 		.CastShadow = 1,
-		.ShadowColor = Color(0.5f, 0.5f, 0.5f),
+		.ShadowColor = SunShadowColor,
 	};
 
 	// CBV 用バッファ
@@ -221,7 +249,10 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	//////////////////////////////
 	// 影 デプスマップに出力
 
-	const Texture shadowTextureMetadata = TextureLoader::CreateManually({}, WindowWidth, WindowHeight, Format::R_F32);
+	constexpr int ShadowRTWidth = 512;
+	constexpr int ShadowRTHeight = 512;
+
+	const Texture shadowTextureMetadata = TextureLoader::CreateManually({}, ShadowRTWidth, ShadowRTHeight, Format::R_F32);
 	const GraphicsBuffer shadowGraphicsBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, shadowTextureMetadata,
 		GraphicsBufferUsagePermission::AllowRenderTarget, GraphicsBufferState::PixelShaderResource, Color::Transparent());
 
@@ -232,24 +263,33 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		= D3D12BasicFlow::CreateRootSignatureAndGraphicsPipelineState(
 			device, rootParameterShadow, samplerConfigShadow, shaderVSShadow, shaderPSShadow, VertexLayoutsQuad, FillMode::Solid, CullMode::Back, false);
 
-	// RTVのみ作成
-	const DescriptorHeapHandleAtCPU rtvPShadow = D3D12BasicFlow::InitRTV(device, shadowGraphicsBuffer, Format::R_F32);
-	const DescriptorHeapHandleAtCPU dsvShadow_Dummy = DescriptorHeapHandleAtCPU{ .ptr = NULL };
+	// RTV, DSV
+	const DescriptorHeapHandleAtCPU rtvShadow = D3D12BasicFlow::InitRTV(device, shadowGraphicsBuffer, Format::R_F32);
+	const DescriptorHeapHandleAtCPU dsvShadow = D3D12BasicFlow::InitDSV(device, ShadowRTWidth, ShadowRTHeight, DepthBufferClearValue);
 
 	// CB 0
 	struct alignas(256) CBData0Shadow
 	{
 		Matrix4x4 Matrix_MVP;
 	};
-	const CBData0Shadow cbData0Shadow =
+	CBData0Shadow cbData0Shadow =
 	{
 		.Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(terrainTransform, sunCameraTransform),
 	};
-	const GraphicsBuffer cbvBufferShadow = D3D12BasicFlow::InitCBVBuffer<CBData0Shadow>(device, cbData0Shadow);
+	CBData0Shadow* cbvBuffer0ShadowVirtualPtr = nullptr;
+	const GraphicsBuffer cbvBufferShadow = D3D12BasicFlow::InitCBVBuffer<CBData0Shadow>(device, cbData0Shadow, false, &cbvBuffer0ShadowVirtualPtr);
 
 	// DescriptorHeap
 	const DescriptorHeap descriptorHeapBasicShadow
 		= D3D12BasicFlow::InitDescriptorHeapBasic(device, { cbvBufferShadow }, { {shadowGraphicsBuffer, shadowTextureMetadata} });
+
+	const ViewportScissorRect viewportScissorRectShadow = ViewportScissorRect
+	{
+		.minX = (WindowWidth - ShadowRTWidth) >> 1,
+		.maxX = (WindowWidth - ShadowRTWidth) >> 1 + ShadowRTWidth,
+		.minY = (WindowHeight - ShadowRTHeight) >> 1,
+		.maxY = (WindowHeight - ShadowRTHeight) >> 1 + ShadowRTHeight,
+	};
 
 	//////////
 	// メインレンダリングの方に、情報を渡す
@@ -384,21 +424,6 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 			);
 
 	//////////////////////////////
-
-	constexpr Vector3 PlayerCollisionSize = Vector3(0.5f, 1.8f, 0.5f);
-	constexpr float SpeedH = 3.0f; // 水平移動速度 (m/s)
-	constexpr float DashSpeedH = 6.0f; // ダッシュ時の水平移動速度 (m/s)
-	constexpr float CameraSensitivityH = 180.0f; // 水平感度 (度/s)
-	constexpr float CameraSensitivityV = 90.0f; // 垂直感度 (度/s)
-	constexpr float MinVelocityV = -50.0f; // 最大落下速度 (m/s)
-	constexpr float JumpHeight = 1.05f; // ジャンプ高さ (m)
-	constexpr float EyeHeight = 1.6f; // 目の高さ (m)
-	constexpr float GroundedCheckOffset = 0.1f; // 接地判定のオフセット (m). 埋まっている判定と区別するため、少しずらす
-	float velocityV = 0; // 鉛直速度
-
-	// 向いているブロックを選択
-	constexpr float ReachDistance = 5.0f; // 選択可能な最大距離 (m)
-	constexpr float ReachDetectStep = 0.1f; // レイキャストの刻み幅 (m)
 
 	BEGIN_FRAME(hwnd);
 	{
@@ -685,9 +710,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 					selectingBlockPositionAsLattice.z
 				) : "LookAt  :None";
 
-				windowText.ClearRow(1);
-				windowText.ClearRow(2);
-				windowText.ClearRow(3);
+				windowText.ClearAll();
 				windowText.SetTexts(Lattice2(1, 1), frameTimeText, Color::White());
 				windowText.SetTexts(Lattice2(1, 2), positionText, Color::White());
 				windowText.SetTexts(Lattice2(1, 3), selectingBlockPositionText, Color::White());
@@ -704,6 +727,15 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 			);
 		}
 
+		// 太陽カメラの位置を、プレイヤーの頭上らへんにする
+		// CBuffer の更新も行う
+		{
+			sunCameraTransform = CreateSunCameraTransform();
+
+			cbvBuffer0VirtualPtr->DirectionalLight_Matrix_VP = sunCameraTransform.CalculateVPMatrix();
+			cbvBuffer0ShadowVirtualPtr->Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(terrainTransform, sunCameraTransform);
+		}
+
 		const int currentBackRTIndex = D3D12Helper::GetCurrentBackRTIndex(swapChain);
 		const GraphicsBuffer currentBackRT = rtGetter(currentBackRTIndex);
 		const DescriptorHeapHandleAtCPU currentBackRTV = rtvGetter(currentBackRTIndex);
@@ -714,9 +746,9 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		D3D12BasicFlow::CommandBasicLoop(
 			commandList, commandQueue, commandAllocator, device,
 			rootSignatureShadow, graphicsPipelineStateShadow, shadowGraphicsBuffer,
-			rtvPShadow, dsvShadow_Dummy, descriptorHeapBasicShadow, drawingVertexBufferViews, drawingIndexBufferViews,
+			rtvShadow, dsvShadow, descriptorHeapBasicShadow, drawingVertexBufferViews, drawingIndexBufferViews,
 			GraphicsBufferState::PixelShaderResource, GraphicsBufferState::RenderTarget,
-			viewportScissorRect, PrimitiveTopology::TriangleList, Color::Transparent(), DepthBufferClearValue,
+			viewportScissorRectShadow, PrimitiveTopology::TriangleList, Color::Transparent(), DepthBufferClearValue,
 			drawingIndexCounts
 		);
 		// メインレンダリング
