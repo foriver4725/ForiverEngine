@@ -118,7 +118,7 @@ namespace ForiverEngine
 				data.push_back(static_cast<std::uint8_t>(singleData.fontIndex));
 			}
 
-			return TextureLoader::CreateManually(data, 4, count.x, count.y, Format::RGBA_U8);
+			return TextureLoader::CreateManually(data, count.x, count.y, Format::RGBA_U8);
 		}
 
 		constexpr int GetMaxTextCount() const

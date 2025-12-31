@@ -131,14 +131,15 @@ namespace ForiverEngine
 		static int GetTargetFps() { return targetFps; }
 
 		/// <summary>
-		/// 前フレームからの経過時間 [s]
+		/// 前フレームからの経過時間 [ms]
 		/// </summary>
-		static float GetDeltaSeconds() { return static_cast<float>(deltaTime * 0.001); } // [ms] → [s]
-
+		template<std::floating_point TReturnValue>
+		static TReturnValue GetDeltaMilliseconds() { return static_cast<TReturnValue>(deltaTime); }
 		/// <summary>
 		/// 前フレームからの経過時間 [s]
 		/// </summary>
-		static double GetDeltaSecondsAsDouble() { return deltaTime * 0.001; } // [ms] → [s]
+		template<std::floating_point TReturnValue>
+		static TReturnValue GetDeltaSeconds() { return static_cast<TReturnValue>(deltaTime * 1.0e-3); }
 
 		/// <summary>
 		/// ウィンドウを初期化する

@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <functional>
 #include <utility>
+#include <concepts>
 
 #include <thread>
 #include <mutex>

@@ -26,6 +26,6 @@ namespace ForiverEngine
 		/// <para>手動でテクスチャデータを作成して返す</para>
 		/// 2Dテクスチャのみ対応
 		/// </summary>
-		static Texture CreateManually(const std::vector<std::uint8_t>& data, std::size_t texelValueSize, int width, int height, Format format);
+		static Texture CreateManually(const std::vector<std::uint8_t>& data, int width, int height, Format format);
 	};
 }

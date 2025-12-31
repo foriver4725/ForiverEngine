@@ -122,7 +122,6 @@ public: \
 
 		RGBA_U8 = 30,         // DXGI_FORMAT_R8G8B8A8_UINT
 		RGBA_U8_01 = 28,      // DXGI_FORMAT_R8G8B8A8_UNORM
-		RGBA_U8_01_SRGB = 29, // DXGI_FORMAT_R8G8B8A8_UNORM_SRGB
 		RG_U8 = 50,           // DXGI_FORMAT_R8G8_UINT
 		RG_U8_01 = 49,        // DXGI_FORMAT_R8G8_UNORM
 		R_U8 = 62,            // DXGI_FORMAT_R8_UINT
@@ -177,7 +176,6 @@ public: \
 
 		case Format::RGBA_U8:         return BitFlag::AddFlags(0, { Digit::Dimension4, Digit::TypeInt, Digit::Bite1, Digit::ForColor });
 		case Format::RGBA_U8_01:      return BitFlag::AddFlags(0, { Digit::Dimension4, Digit::TypeInt, Digit::Bite1, Digit::ForColor });
-		case Format::RGBA_U8_01_SRGB: return BitFlag::AddFlags(0, { Digit::Dimension4, Digit::TypeInt, Digit::Bite1, Digit::ForColor });
 		case Format::RG_U8:           return BitFlag::AddFlags(0, { Digit::Dimension2, Digit::TypeInt, Digit::Bite1, Digit::ForColor });
 		case Format::RG_U8_01:        return BitFlag::AddFlags(0, { Digit::Dimension2, Digit::TypeInt, Digit::Bite1, Digit::ForColor });
 		case Format::R_U8:            return BitFlag::AddFlags(0, { Digit::Dimension1, Digit::TypeInt, Digit::Bite1, Digit::ForColor });

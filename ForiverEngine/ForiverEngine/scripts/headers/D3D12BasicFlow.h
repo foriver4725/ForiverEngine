@@ -189,31 +189,31 @@ namespace ForiverEngine
 		}
 
 		/// <summary>
-		/// <para>専用の DescriptorHeap を作成し、複数個の RTV をその DescriptorHeap の中に作成して返す (基本)</para>
-		/// <para>戻り値は関数で、インデックスを基に、バッファとビューを取得出来る</para>
+		/// <para>SwapChain 内の RT 全てに対して、専用の DescriptorHeap を作成し、RTV をその DescriptorHeap の中に作成して返す</para>
+		/// <para>戻り値は関数で、インデックスを基に、RT/RTV を取得出来る</para>
 		/// </summary>
 		static std::tuple<std::function<GraphicsBuffer(int)>, std::function<DescriptorHeapHandleAtCPU(int)>>
 			InitRTV(
 				const Device& device,
 				const SwapChain& swapChain,
-				int amount,
-				bool sRGB
+				Format format
 			)
 		{
-			return Check(InitRTV_Impl(device, swapChain, amount, sRGB));
+			return Check(InitRTV_Impl(device, swapChain, format));
 		}
 
 		/// <summary>
-		/// <para>与えられた RT に対して、専用の DescriptorHeap を作成し、1つの RTV をその DescriptorHeap の中に作成して返す (板ポリ用)</para>
+		/// <para>与えられた RT に対して、専用の DescriptorHeap を作成し、RTV をその DescriptorHeap の中に作成して返す</para>
 		/// <para>作成した RTV を返す</para>
 		/// </summary>
 		static DescriptorHeapHandleAtCPU
 			InitRTV(
 				const Device& device,
-				const GraphicsBuffer& rt
+				const GraphicsBuffer& rt,
+				Format format
 			)
 		{
-			return Check(InitRTV_Impl(device, rt));
+			return Check(InitRTV_Impl(device, rt, format));
 		}
 
 		/// <summary>
@@ -474,26 +474,26 @@ namespace ForiverEngine
 				const std::vector<std::tuple<GraphicsBuffer, Texture>>& srvBuffers
 			);
 
-		/// <summary>
-		/// <para>専用の DescriptorHeap を作成し、複数個の RTV をその DescriptorHeap の中に作成して返す (基本)</para>
-		/// <para>戻り値は関数で、インデックスを基に、バッファとビューを取得出来る</para>
+		// <summary>
+		/// <para>SwapChain 内の RT 全てに対して、専用の DescriptorHeap を作成し、RTV をその DescriptorHeap の中に作成して返す</para>
+		/// <para>戻り値は関数で、インデックスを基に、RT/RTV を取得出来る</para>
 		/// </summary>
 		static std::tuple<bool, std::wstring, std::tuple<std::function<GraphicsBuffer(int)>, std::function<DescriptorHeapHandleAtCPU(int)>>>
 			InitRTV_Impl(
 				const Device& device,
 				const SwapChain& swapChain,
-				int amount,
-				bool sRGB
+				Format format
 			);
 
 		/// <summary>
-		/// <para>与えられた RT に対して、専用の DescriptorHeap を作成し、1つの RTV をその DescriptorHeap の中に作成して返す (板ポリ用)</para>
+		/// <para>与えられた RT に対して、専用の DescriptorHeap を作成し、RTV をその DescriptorHeap の中に作成して返す</para>
 		/// <para>作成した RTV を返す</para>
 		/// </summary>
 		static std::tuple<bool, std::wstring, std::tuple<DescriptorHeapHandleAtCPU>>
 			InitRTV_Impl(
 				const Device& device,
-				const GraphicsBuffer& rt
+				const GraphicsBuffer& rt,
+				Format format
 			);
 
 		/// <summary>

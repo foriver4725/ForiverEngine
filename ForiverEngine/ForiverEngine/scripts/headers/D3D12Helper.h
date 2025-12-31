@@ -77,30 +77,30 @@ namespace ForiverEngine
 		/// <para>テクスチャ変数のメタデータを基に作成する</para>
 		/// <para>初期状態を initState に設定し、clearColor でクリアする</para>
 		/// <para>clearColor について、</para>
-		/// <para>- テクスチャのフォーマットが 無効 なら clearColor は無視され、設定されない</para>
-		/// <para>- テクスチャのフォーマットが カラー用 なら RGBA をそのまま使う</para>
-		/// <para>- テクスチャのフォーマットが 深度用 なら R のみを用いる</para>
+		/// <para>- 1. usagePermission が RT でも DS でも無い場合は、 clearColor は無視され、設定されない</para>
+		/// <para>- 2. テクスチャのフォーマットが 無効 なら clearColor は無視され、設定されない</para>
+		/// <para>- 3. テクスチャのフォーマットが カラー用 なら RGBA をそのまま使う</para>
+		/// <para>- 4. テクスチャのフォーマットが 深度用 なら R のみを用いる</para>
 		/// </summary>
 		static GraphicsBuffer CreateGraphicsBufferTexture2D(const Device& device, const Texture& texture,
 			GraphicsBufferUsagePermission usagePermission, GraphicsBufferState initState, const Color& clearColor);
 
 		/// <summary>
-		/// <para>RTV を作成し、RTV 用 DescriptorHeap に登録する (基本)</para>
-		/// <para>swapChain からレンダーターゲットバッファ群を取得し、それぞれに対して RTV を作成する</para>
+		/// <para>RTV を作成し、RTV 用 DescriptorHeap に登録する</para>
+		/// <para>swapChain からRT群を取得し、それぞれに対して RTV を作成する</para>
 		/// <para>全て成功したら true, 1つでも失敗したら false を返す (失敗した瞬間に処理を中断する)<para>
 		/// <para>戻り値として取得することは出来ない!</para>
 		/// </summary>
 		static bool CreateRenderTargetViews(
-			const Device& device, const DescriptorHeap& descriptorHeapRTV, const SwapChain& swapChain, bool sRGB);
+			const Device& device, const DescriptorHeap& descriptorHeapRTV, const SwapChain& swapChain, Format format);
 
 		/// <summary>
-		/// <para>RTV を作成し、RTV 用 DescriptorHeap に登録する (板ポリ用)</para>
+		/// <para>RTV を作成し、RTV 用 DescriptorHeap に登録する</para>
 		/// <para>RT を基に RTV を作成し、 DescriptorHeap の index 番目に登録する</para>
-		/// <para>1つだけ作成する. sRGB 不可.</para>
 		/// <para>戻り値として取得することは出来ない!</para>
 		/// </summary>
 		static void CreateRenderTargetView(
-			const Device& device, const DescriptorHeap& descriptorHeapRTV, const GraphicsBuffer& rt, int index);
+			const Device& device, const DescriptorHeap& descriptorHeapRTV, const GraphicsBuffer& rt, Format format, int index);
 
 		/// <summary>
 		/// <para>DSV を作成し、DSV 用 DescriptorHeap に登録する</para>
@@ -191,15 +191,20 @@ namespace ForiverEngine
 		static bool ClearCommandAllocatorAndList(const CommandAllocator& commandAllocator, const CommandList& commandList);
 
 		/// <summary>
-		/// <para>SwapChain から現在のバックバッファのインデックスを取得する</para>
-		/// 常に、必ず1つのバックバッファが存在する想定
+		/// SwapChain から RT の数を取得する (失敗したら -1)
 		/// </summary>
-		static int GetCurrentBackBufferIndex(const SwapChain& swapChain);
+		static int GetRTCount(const SwapChain& swapChain);
 
 		/// <summary>
-		/// SwapChain から指定インデックスのバッファを取得する (失敗したら nullptr)
+		/// <para>SwapChain から現在の バックRT のインデックスを取得する</para>
+		/// 常に、必ず1つの バックRT が存在する想定
 		/// </summary>
-		static GraphicsBuffer GetBufferByIndex(const SwapChain& swapChain, int index);
+		static int GetCurrentBackRTIndex(const SwapChain& swapChain);
+
+		/// <summary>
+		/// SwapChain から指定インデックスの RT を取得する (失敗したら nullptr)
+		/// </summary>
+		static GraphicsBuffer GetRT(const SwapChain& swapChain, int index);
 
 		/// <summary>
 		/// <para>[Command]</para>

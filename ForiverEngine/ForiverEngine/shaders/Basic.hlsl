@@ -14,6 +14,7 @@ cbuffer _0 : register(b0)
 }
 
 Texture2DArray<float4> _Texture : register(t0);
+Texture2D<float> _ShadowDepthTexture : register(t1);
 SamplerState _Sampler : register(s0);
 
 struct VSInput
@@ -93,6 +94,7 @@ PSOutput PSMain(V2P input)
     color.rgb *= PSCalcLighting(lightingParams);
     
     output.color = color;
+    //output.color = _ShadowDepthTexture.Sample(_Sampler, input.pos.xy / float2(1344, 756));
     
     return output;
 }

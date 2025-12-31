@@ -22,14 +22,14 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	const auto [factory, device, commandAllocator, commandList, commandQueue, swapChain]
 		= D3D12BasicFlow::CreateStandardObjects(hwnd, WindowWidth, WindowHeight);
 
-	const RootParameter rootParameter = RootParameter::CreateBasic(1, 1, 0);
+	const RootParameter rootParameter = RootParameter::CreateBasic(1, 2, 0);
 	const SamplerConfig samplerConfig = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
 	const auto [shaderVS, shaderPS] = D3D12BasicFlow::CompileShader_VS_PS("./shaders/Basic.hlsl");
 	const auto [rootSignature, graphicsPipelineState]
 		= D3D12BasicFlow::CreateRootSignatureAndGraphicsPipelineState(
 			device, rootParameter, samplerConfig, shaderVS, shaderPS, VertexLayouts, FillMode::Solid, CullMode::None, true);
 
-	const auto [rtGetter, rtvGetter] = D3D12BasicFlow::InitRTV(device, swapChain, 2, false);
+	const auto [rtGetter, rtvGetter] = D3D12BasicFlow::InitRTV(device, swapChain, Format::RGBA_U8_01);
 	const DescriptorHeapHandleAtCPU dsv = D3D12BasicFlow::InitDSV(device, WindowWidth, WindowHeight, DepthBufferClearValue);
 
 	constexpr Transform terrainTransform = Transform::Identity();
@@ -188,8 +188,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	const Texture textureArrayMetadata = std::get<1>(srvBufferAndData);
 
 	// DescriptorHeap に登録
-	const DescriptorHeap descriptorHeapBasic
-		= D3D12BasicFlow::InitDescriptorHeapBasic(device, { cbvBuffer }, { srvBufferAndData });
+	DescriptorHeap descriptorHeapBasic = DescriptorHeap(); // 後で作成する!!
 
 	const ViewportScissorRect viewportScissorRect
 		= ViewportScissorRect::CreateFullSized(WindowWidth, WindowHeight);
@@ -197,9 +196,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	//////////////////////////////
 	// 影 デプスマップに出力
 
-	// RT と同じ. sRGB 不可.
-	const Texture shadowTextureMetadata = TextureLoader::CreateManually({}, sizeof(float), WindowWidth, WindowHeight, Format::R_F32);
-	// RT, SR で切り替えて使う 2D テクスチャ
+	const Texture shadowTextureMetadata = TextureLoader::CreateManually({}, WindowWidth, WindowHeight, Format::R_F32);
 	const GraphicsBuffer shadowGraphicsBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, shadowTextureMetadata,
 		GraphicsBufferUsagePermission::AllowRenderTarget, GraphicsBufferState::PixelShaderResource, Color::Transparent());
 
@@ -211,7 +208,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 			device, rootParameterShadow, samplerConfigShadow, shaderVSShadow, shaderPSShadow, VertexLayoutsQuad, FillMode::Solid, CullMode::Back, false);
 
 	// RTVのみ作成
-	const DescriptorHeapHandleAtCPU rtvPShadow = D3D12BasicFlow::InitRTV(device, shadowGraphicsBuffer);
+	const DescriptorHeapHandleAtCPU rtvPShadow = D3D12BasicFlow::InitRTV(device, shadowGraphicsBuffer, Format::R_F32);
 	const DescriptorHeapHandleAtCPU dsvShadow_Dummy = DescriptorHeapHandleAtCPU{ .ptr = NULL };
 
 	// CB 0
@@ -227,16 +224,23 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	const GraphicsBuffer cbvBufferShadow = D3D12BasicFlow::InitCBVBuffer<CBData0Shadow>(device, cbData0Shadow, false, &cbvBufferShadowVirtualPtr);
 
 	// DescriptorHeap
-	const DescriptorHeap descriptorHeapBasicPP
+	const DescriptorHeap descriptorHeapBasicShadow
 		= D3D12BasicFlow::InitDescriptorHeapBasic(device, { cbvBufferShadow }, { {shadowGraphicsBuffer, shadowTextureMetadata} });
+
+	//////////
+	// メインレンダリングの方に、情報を渡す
+
+	descriptorHeapBasic = D3D12BasicFlow::InitDescriptorHeapBasic(
+		device, { cbvBuffer }, { srvBufferAndData, { shadowGraphicsBuffer, shadowTextureMetadata } });
+
+	//////////
 
 	//////////////////////////////
 
 	//////////////////////////////
 	// ポストプロセス
 
-	// RT と同じ. sRGB 不可.
-	const Texture ppTextureMetadata = TextureLoader::CreateManually({}, 4, WindowWidth, WindowHeight, Format::RGBA_U8_01);
+	const Texture ppTextureMetadata = TextureLoader::CreateManually({}, WindowWidth, WindowHeight, Format::RGBA_U8_01);
 	// RT, SR で切り替えて使う 2D テクスチャ
 	const GraphicsBuffer ppGraphicsBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, ppTextureMetadata,
 		GraphicsBufferUsagePermission::AllowRenderTarget, GraphicsBufferState::PixelShaderResource, Color::Transparent());
@@ -249,7 +253,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 			device, rootParameterPP, samplerConfigPP, shaderVSPP, shaderPSPP, VertexLayoutsQuad, FillMode::Solid, CullMode::Back, false);
 
 	// RTVのみ作成
-	const DescriptorHeapHandleAtCPU rtvPP = D3D12BasicFlow::InitRTV(device, ppGraphicsBuffer);
+	const DescriptorHeapHandleAtCPU rtvPP = D3D12BasicFlow::InitRTV(device, ppGraphicsBuffer, Format::RGBA_U8_01);
 	const DescriptorHeapHandleAtCPU dsvPP_Dummy = DescriptorHeapHandleAtCPU{ .ptr = NULL };
 
 	// 板ポリのメッシュ
@@ -286,7 +290,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	// テキスト描画 (ポストプロセスの後)
 
 	// RT と同じ. sRGB 不可.
-	const Texture textTextureMetadata = TextureLoader::CreateManually({}, 4, WindowWidth, WindowHeight, Format::RGBA_U8_01);
+	const Texture textTextureMetadata = TextureLoader::CreateManually({}, WindowWidth, WindowHeight, Format::RGBA_U8_01);
 	// RT, SR で切り替えて使う 2D テクスチャ
 	const GraphicsBuffer textGraphicsBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, textTextureMetadata,
 		GraphicsBufferUsagePermission::AllowRenderTarget, GraphicsBufferState::PixelShaderResource, Color::Transparent());
@@ -306,7 +310,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 			device, rootParameterText, samplerConfigText, shaderVSText, shaderPSText, VertexLayoutsText, FillMode::Solid, CullMode::Back, false);
 
 	// RTVのみ作成
-	const DescriptorHeapHandleAtCPU rtvText = D3D12BasicFlow::InitRTV(device, textGraphicsBuffer);
+	const DescriptorHeapHandleAtCPU rtvText = D3D12BasicFlow::InitRTV(device, textGraphicsBuffer, Format::RGBA_U8_01);
 	const DescriptorHeapHandleAtCPU dsvText_Dummy = DescriptorHeapHandleAtCPU{ .ptr = NULL };
 
 	// 板ポリのメッシュ
@@ -383,7 +387,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 			cameraTransform,
 			InputHelper::GetAsAxis2D(Key::Up, Key::Down, Key::Left, Key::Right),
 			Vector2(CameraSensitivityH, CameraSensitivityV) * DegToRad,
-			WindowHelper::GetDeltaSeconds()
+			WindowHelper::GetDeltaSeconds<float>()
 		);
 
 		// 移動前の座標を保存しておく
@@ -411,12 +415,12 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 			}
 			else
 			{
-				velocityV -= G * WindowHelper::GetDeltaSeconds();
+				velocityV -= G * WindowHelper::GetDeltaSeconds<float>();
 				velocityV = std::max(velocityV, MinVelocityV);
 			}
 
 			if (std::abs(velocityV) > 0.01f)
-				cameraTransform.position += Vector3::Up() * (velocityV * WindowHelper::GetDeltaSeconds());
+				cameraTransform.position += Vector3::Up() * (velocityV * WindowHelper::GetDeltaSeconds<float>());
 		}
 
 		// 頭上にブロックがあって頭を打ったら、上方向の速度を無くす
@@ -446,7 +450,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 				cameraTransform,
 				moveInput,
 				(canDash && InputHelper::GetKeyInfo(Key::LShift).pressed) ? DashSpeedH : SpeedH,
-				WindowHelper::GetDeltaSeconds()
+				WindowHelper::GetDeltaSeconds<float>()
 			);
 		}
 
@@ -625,8 +629,21 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		{
 			// データを更新
 			{
+				// - フレームタイム
 				// - プレイヤーの足元の座標
 				// - 選択しているブロックの座標
+
+				constexpr int FrameTimeTextUpdateIntervalFrames = 16; // テキストの更新間隔 (フレーム数)
+				static int frameTimeTextUpdateCounter = 0;
+				static double frameTimeTextValue = 0.0;
+				{
+					// フレーム数をカウントし、一定周期でフレームタイムを更新する
+					if (++frameTimeTextUpdateCounter >= FrameTimeTextUpdateIntervalFrames)
+						frameTimeTextUpdateCounter = 0;
+					if (frameTimeTextUpdateCounter % FrameTimeTextUpdateIntervalFrames == 0)
+						frameTimeTextValue = WindowHelper::GetDeltaMilliseconds<double>();
+				}
+				const std::string frameTimeText = std::format("Frame Time:{:.2f} ms", frameTimeTextValue);
 
 				const Lattice3 playerFootPositionAsLattice = PlayerControl::GetBlockLatticePosition(
 					PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight));
@@ -643,7 +660,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 					static_cast<int>(cbvBufferVirtualPtr->SelectingBlockPosition.z)
 				);
 				const std::string selectingBlockPositionText = cbvBufferVirtualPtr->IsSelectingAnyBlock ? std::format(
-					"LookAt  :({:+},{:+},{:+})",
+					"LookAt:({:+},{:+},{:+})",
 					selectingBlockPositionAsLattice.x,
 					selectingBlockPositionAsLattice.y,
 					selectingBlockPositionAsLattice.z
@@ -651,8 +668,10 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 
 				windowText.ClearRow(1);
 				windowText.ClearRow(2);
-				windowText.SetTexts(Lattice2(1, 1), positionText, Color::White());
-				windowText.SetTexts(Lattice2(1, 2), selectingBlockPositionText, Color::White());
+				windowText.ClearRow(3);
+				windowText.SetTexts(Lattice2(1, 1), frameTimeText, Color::White());
+				windowText.SetTexts(Lattice2(1, 2), positionText, Color::White());
+				windowText.SetTexts(Lattice2(1, 3), selectingBlockPositionText, Color::White());
 			}
 
 			// バッファを再作成してアップロードし直す
@@ -666,12 +685,21 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 			);
 		}
 
-		const int currentBackRTIndex = D3D12Helper::GetCurrentBackBufferIndex(swapChain);
+		const int currentBackRTIndex = D3D12Helper::GetCurrentBackRTIndex(swapChain);
 		const GraphicsBuffer currentBackRT = rtGetter(currentBackRTIndex);
 		const DescriptorHeapHandleAtCPU currentBackRTV = rtvGetter(currentBackRTIndex);
 		if (!currentBackRT)
 			ShowError(L"現在のバックレンダーターゲットの取得に失敗しました");
 
+		// 影のデプス書き込み
+		D3D12BasicFlow::CommandBasicLoop(
+			commandList, commandQueue, commandAllocator, device,
+			rootSignatureShadow, graphicsPipelineStateShadow, shadowGraphicsBuffer,
+			rtvPShadow, dsvShadow_Dummy, descriptorHeapBasicShadow, drawingVertexBufferViews, drawingIndexBufferViews,
+			GraphicsBufferState::PixelShaderResource, GraphicsBufferState::RenderTarget,
+			viewportScissorRect, PrimitiveTopology::TriangleList, Color::Transparent(), DepthBufferClearValue,
+			drawingIndexCounts
+		);
 		// メインレンダリング
 		D3D12BasicFlow::CommandBasicLoop(
 			commandList, commandQueue, commandAllocator, device,
@@ -687,7 +715,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 			rootSignaturePP, graphicsPipelineStatePP, textGraphicsBuffer,
 			rtvText, dsvPP_Dummy, descriptorHeapBasicPP, { vertexBufferViewPP }, { indexBufferViewPP },
 			GraphicsBufferState::Present, GraphicsBufferState::RenderTarget,
-			viewportScissorRect, PrimitiveTopology::TriangleList, RTClearColor, DepthBufferClearValue,
+			viewportScissorRect, PrimitiveTopology::TriangleList, Color::Transparent(), DepthBufferClearValue,
 			{ static_cast<int>(meshPP.indices.size()) }
 		);
 		// テキスト描画
@@ -696,7 +724,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 			rootSignatureText, graphicsPipelineStateText, currentBackRT,
 			currentBackRTV, dsvText_Dummy, descriptorHeapBasicText, { vertexBufferViewText }, { indexBufferViewText },
 			GraphicsBufferState::Present, GraphicsBufferState::RenderTarget,
-			viewportScissorRect, PrimitiveTopology::TriangleList, RTClearColor, DepthBufferClearValue,
+			viewportScissorRect, PrimitiveTopology::TriangleList, Color::Transparent(), DepthBufferClearValue,
 			{ static_cast<int>(meshText.indices.size()) }
 		);
 		if (!D3D12Helper::Present(swapChain))

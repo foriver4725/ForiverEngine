@@ -304,8 +304,7 @@ namespace ForiverEngine
 		D3D12BasicFlow::InitRTV_Impl(
 			const Device& device,
 			const SwapChain& swapChain,
-			int amount,
-			bool sRGB
+			Format format
 		)
 	{
 		std::function<GraphicsBuffer(int)> bufferGetter = std::function<GraphicsBuffer(int)>();
@@ -316,14 +315,18 @@ namespace ForiverEngine
 #define RETURN_TRUE() \
 	return { true, L"", { bufferGetter, viewGetter } };
 
-		const DescriptorHeap descriptorHeapRTV = D3D12Helper::CreateDescriptorHeap(device, DescriptorHeapType::RTV, amount, false);
+		const int descriptorCount = D3D12Helper::GetRTCount(swapChain);
+		if (descriptorCount <= 0)
+			RETURN_FALSE(L"SwapChain 内の RT の数が不正です");
+
+		const DescriptorHeap descriptorHeapRTV = D3D12Helper::CreateDescriptorHeap(device, DescriptorHeapType::RTV, descriptorCount, false);
 		if (!descriptorHeapRTV)
 			RETURN_FALSE(L"DescriptorHeap (RTV) の作成に失敗しました");
 
-		if (!D3D12Helper::CreateRenderTargetViews(device, descriptorHeapRTV, swapChain, sRGB))
+		if (!D3D12Helper::CreateRenderTargetViews(device, descriptorHeapRTV, swapChain, format))
 			RETURN_FALSE(L"RenderTargetView を作成できない RenderTargetBuffer がありました");
 
-		bufferGetter = [swapChain](int i) { return D3D12Helper::GetBufferByIndex(swapChain, i); };
+		bufferGetter = [swapChain](int i) { return D3D12Helper::GetRT(swapChain, i); };
 		viewGetter = [device, descriptorHeapRTV](int i) {
 			return D3D12Helper::CreateDescriptorHeapHandleAtCPUIndicatingDescriptorByIndex(
 				device, descriptorHeapRTV, DescriptorHeapType::RTV, i);
@@ -338,7 +341,8 @@ namespace ForiverEngine
 	std::tuple<bool, std::wstring, std::tuple<DescriptorHeapHandleAtCPU>>
 		D3D12BasicFlow::InitRTV_Impl(
 			const Device& device,
-			const GraphicsBuffer& rt
+			const GraphicsBuffer& rt,
+			Format format
 		)
 	{
 		DescriptorHeapHandleAtCPU rtv = DescriptorHeapHandleAtCPU();
@@ -352,7 +356,7 @@ namespace ForiverEngine
 		if (!descriptorHeapRTV)
 			RETURN_FALSE(L"DescriptorHeap (RTV) の作成に失敗しました");
 
-		D3D12Helper::CreateRenderTargetView(device, descriptorHeapRTV, rt, 0);
+		D3D12Helper::CreateRenderTargetView(device, descriptorHeapRTV, rt, format, 0);
 
 		rtv = D3D12Helper::CreateDescriptorHeapHandleAtCPUIndicatingDescriptorByIndex(
 			device, descriptorHeapRTV, DescriptorHeapType::RTV, 0
@@ -379,9 +383,9 @@ namespace ForiverEngine
 #define RETURN_TRUE() \
 	return { true, L"", { dsv } };
 
-		const Texture depthBufferMetadata = TextureLoader::CreateManually({}, sizeof(float), width, height, Format::D_F32);
+		const Texture depthBufferMetadata = TextureLoader::CreateManually({}, width, height, Format::D_F32);
 		const GraphicsBuffer depthBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, depthBufferMetadata,
-			GraphicsBufferUsagePermission::AllowDepthStencil, GraphicsBufferState::DepthWrite, Color(1.0f, 0, 0, 0));
+			GraphicsBufferUsagePermission::AllowDepthStencil, GraphicsBufferState::DepthWrite, Color(depthClearValue, 0, 0, 0));
 		if (!depthBuffer)
 			RETURN_FALSE(L"DepthBuffer の作成に失敗しました");
 

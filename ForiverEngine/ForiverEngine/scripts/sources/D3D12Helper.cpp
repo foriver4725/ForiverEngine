@@ -34,9 +34,6 @@ namespace ForiverEngine
 	// 見つからなかった場合は nullptr を返す
 	static GraphicAdapter FindAvailableGraphicAdapter(const Factory& factory, std::function<bool(const std::wstring&)> descriptionComparer);
 
-	// SwapChain からバッファ数を取得する (失敗したら -1)
-	static int GetBufferCountFromSwapChain(const SwapChain& swapChain);
-
 	Factory D3D12Helper::CreateFactory()
 	{
 		IDXGIFactoryLatest* ptr = nullptr;
@@ -442,7 +439,13 @@ namespace ForiverEngine
 		{
 			const std::uint32_t formatTypes = GetFormatTypes(texture.format);
 
-			if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::ForColor))
+			// 仕様により、この場合はクリア値を指定してはいけない
+			if (usagePermission == GraphicsBufferUsagePermission::None)
+			{
+				useClearValue = false;
+				clearValue = {};
+			}
+			else if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::ForColor))
 			{
 				useClearValue = true;
 				clearValue =
@@ -489,44 +492,30 @@ namespace ForiverEngine
 	}
 
 	bool D3D12Helper::CreateRenderTargetViews(
-		const Device& device, const DescriptorHeap& descriptorHeapRTV, const SwapChain& swapChain, bool sRGB)
+		const Device& device, const DescriptorHeap& descriptorHeapRTV, const SwapChain& swapChain, Format format)
 	{
-		// NOTE : sRGB を true にした場合、バックバッファービューとレンダーターゲットフォーマットに食い違いが生じるため、
-		//        デバッグレイヤーをオンにしている場合にエラーが表示される
+		const int rtCount = GetRTCount(swapChain);
+		if (rtCount <= 0)
+			return false;
 
-		const Format format = sRGB ? Format::RGBA_U8_01_SRGB : Format::RGBA_U8_01;
-
-		const D3D12_RENDER_TARGET_VIEW_DESC desc =
+		for (int i = 0; i < rtCount; ++i)
 		{
-			.Format = static_cast<DXGI_FORMAT>(format),
-			.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D,
-		};
-
-		for (int i = 0; i < GetBufferCountFromSwapChain(swapChain); ++i)
-		{
-			const GraphicsBuffer graphicsBuffer = GetBufferByIndex(swapChain, i);
+			const GraphicsBuffer graphicsBuffer = GetRT(swapChain, i);
 			if (!graphicsBuffer)
 				return false;
 
-			const DescriptorHeapHandleAtCPU handleRTV = CreateDescriptorHeapHandleAtCPUIndicatingDescriptorByIndex(
-				device, descriptorHeapRTV, DescriptorHeapType::RTV, i);
-
-			device->CreateRenderTargetView(
-				graphicsBuffer.Ptr,
-				&desc,
-				*Reinterpret(&handleRTV)
-			);
+			CreateRenderTargetView(device, descriptorHeapRTV, graphicsBuffer, format, i);
 		}
 
 		return true;
 	}
 
 	void D3D12Helper::CreateRenderTargetView(
-		const Device& device, const DescriptorHeap& descriptorHeapRTV, const GraphicsBuffer& rt, int index)
+		const Device& device, const DescriptorHeap& descriptorHeapRTV, const GraphicsBuffer& rt, Format format, int index)
 	{
 		const D3D12_RENDER_TARGET_VIEW_DESC desc =
 		{
-			.Format = static_cast<DXGI_FORMAT>(Format::RGBA_U8_01),
+			.Format = static_cast<DXGI_FORMAT>(format),
 			.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D,
 		};
 
@@ -814,12 +803,23 @@ namespace ForiverEngine
 		return true;
 	}
 
-	int D3D12Helper::GetCurrentBackBufferIndex(const SwapChain& swapChain)
+	int D3D12Helper::GetRTCount(const SwapChain& swapChain)
+	{
+		DXGI_SWAP_CHAIN_DESC desc = {};
+		if (SUCCEEDED(swapChain->GetDesc(&desc)))
+		{
+			return desc.BufferCount;
+		}
+
+		return -1;
+	}
+
+	int D3D12Helper::GetCurrentBackRTIndex(const SwapChain& swapChain)
 	{
 		return swapChain->GetCurrentBackBufferIndex();
 	}
 
-	GraphicsBuffer D3D12Helper::GetBufferByIndex(const SwapChain& swapChain, int index)
+	GraphicsBuffer D3D12Helper::GetRT(const SwapChain& swapChain, int index)
 	{
 		ID3D12Resource* ptr = nullptr;
 		if (SUCCEEDED(swapChain->GetBuffer(index, IID_PPV_ARGS(&ptr))))
@@ -1239,16 +1239,5 @@ namespace ForiverEngine
 		}
 
 		return GraphicAdapter();
-	}
-
-	int GetBufferCountFromSwapChain(const SwapChain& swapChain)
-	{
-		DXGI_SWAP_CHAIN_DESC desc = {};
-		if (SUCCEEDED(swapChain->GetDesc(&desc)))
-		{
-			return desc.BufferCount;
-		}
-
-		return -1;
 	}
 }

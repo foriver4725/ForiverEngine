@@ -133,8 +133,38 @@ namespace ForiverEngine
 		};
 	}
 
-	Texture TextureLoader::CreateManually(const std::vector<std::uint8_t>& data, std::size_t texelValueSize, int width, int height, Format format)
+	Texture TextureLoader::CreateManually(const std::vector<std::uint8_t>& data, int width, int height, Format format)
 	{
+		// 1テクセルのバイト数を計算
+
+		const std::uint32_t formatTypes = GetFormatTypes(format);
+
+		int channelAmount = 0;
+		int biteAmountPerChannel = 0;
+		{
+			if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::Dimension1))
+				channelAmount = 1;
+			else if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::Dimension2))
+				channelAmount = 2;
+			else if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::Dimension3))
+				channelAmount = 3;
+			else if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::Dimension4))
+				channelAmount = 4;
+			else
+				channelAmount = 0; // 不明
+
+			if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::Bite1))
+				biteAmountPerChannel = 1;
+			else if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::Bite2))
+				biteAmountPerChannel = 2;
+			else if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::Bite4))
+				biteAmountPerChannel = 4;
+			else
+				biteAmountPerChannel = 0; // 不明
+		}
+
+		const std::size_t biteAmountTotal = static_cast<std::size_t>(channelAmount * biteAmountPerChannel);
+
 		return Texture
 		{
 			.data = data,
@@ -142,8 +172,8 @@ namespace ForiverEngine
 			.format = format,
 			.width = width,
 			.height = height,
-			.rowSize = static_cast<int>(texelValueSize * width),
-			.sliceSize = static_cast<int>(texelValueSize * width * height),
+			.rowSize = static_cast<int>(biteAmountTotal * width),
+			.sliceSize = static_cast<int>(biteAmountTotal * width * height),
 			.sliceCount = 1,
 			.mipLevels = 1, // ミップマップなし
 		};
