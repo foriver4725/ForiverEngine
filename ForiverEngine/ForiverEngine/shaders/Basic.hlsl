@@ -6,7 +6,7 @@ cbuffer _0 : register(b0)
     float4x4 _DirectionalLight_Matrix_VP;
 }
 
-cbuffer _1 : register(b0)
+cbuffer _1 : register(b1)
 {
     float3 _SelectingBlockPosition;
     float _IsSelectingAnyBlock;
