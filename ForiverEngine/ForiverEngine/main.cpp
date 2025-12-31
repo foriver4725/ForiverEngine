@@ -249,8 +249,8 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	//////////////////////////////
 	// 影 デプスマップに出力
 
-	constexpr int ShadowRTWidth = 512;
-	constexpr int ShadowRTHeight = 512;
+	constexpr int ShadowRTWidth = 1024;
+	constexpr int ShadowRTHeight = 1024;
 
 	const Texture shadowTextureMetadata = TextureLoader::CreateManually({}, ShadowRTWidth, ShadowRTHeight, Format::R_F32);
 	const GraphicsBuffer shadowGraphicsBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, shadowTextureMetadata,
@@ -283,13 +283,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	const DescriptorHeap descriptorHeapBasicShadow
 		= D3D12BasicFlow::InitDescriptorHeapBasic(device, { cbvBufferShadow }, { {shadowGraphicsBuffer, shadowTextureMetadata} });
 
-	const ViewportScissorRect viewportScissorRectShadow = ViewportScissorRect
-	{
-		.minX = (WindowWidth - ShadowRTWidth) >> 1,
-		.maxX = (WindowWidth - ShadowRTWidth) >> 1 + ShadowRTWidth,
-		.minY = (WindowHeight - ShadowRTHeight) >> 1,
-		.maxY = (WindowHeight - ShadowRTHeight) >> 1 + ShadowRTHeight,
-	};
+	const ViewportScissorRect viewportScissorRectShadow = ViewportScissorRect::CreateFullSized(ShadowRTWidth, ShadowRTHeight);
 
 	//////////
 	// メインレンダリングの方に、情報を渡す
