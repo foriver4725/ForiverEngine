@@ -64,8 +64,7 @@ float PSCheckCastShadow(ShadowParams params)
     const float minDepthFromSun = params.SunDepthTexture.Sample(params.Sampler, sunDepthTextureUV);
     
     // このピクセル自体の、太陽から見た深度値を取得
-    // 影を書き込んだ時の最前面ピクセルに影が落ちないように、ちょっとだけ深度を浅くして、判定を厳しくする
-    const float depthFromSun = posAfterMVPFromSun.z - 0.001;
+    const float depthFromSun = posAfterMVPFromSun.z;
     
     // 深度を比較して、影を落とすかどうか判定する
     // 太陽から見た最前面ピクセルよりも奥にあるならば、影を落とす
