@@ -105,7 +105,9 @@ PSOutput PSMain(V2P input)
     ShadowParams shadowParams;
     shadowParams.CastShadow = _CastShadow;
     shadowParams.SunDepthTexture = _ShadowDepthTexture;
-    shadowParams.SunVP = _DirectionalLight_Matrix_VP;
+    shadowParams.Sampler = _Sampler;
+    shadowParams.WorldPosition = input.worldPos;
+    shadowParams.SunMatrixVP = _DirectionalLight_Matrix_VP;
     const float castShadow = PSCheckCastShadow(shadowParams);
     const float3 shadowColor = castShadow > 0.5 ? _ShadowColor.rgb : float3(1.0, 1.0, 1.0);
     
