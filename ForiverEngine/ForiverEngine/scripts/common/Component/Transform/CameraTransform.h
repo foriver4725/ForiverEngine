@@ -21,7 +21,9 @@ namespace ForiverEngine
 		float fov; // 垂直視野角 (ラジアン)
 		float aspectRatio; // 幅 / 高さ
 
-		static CameraTransform CreatePerspective(const Vector3& position, const Quaternion& rotation, float fov, float aspectRatio) noexcept
+		static CameraTransform CreatePerspective(const Vector3& position, const Quaternion& rotation, float fov, float aspectRatio,
+			float nearClip = 0.1f, float farClip = 1000.0f
+		) noexcept
 		{
 			CameraTransform cameraTransform = {};
 
@@ -32,8 +34,8 @@ namespace ForiverEngine
 			cameraTransform.scale = Vector3::One();
 
 			// CameraTransform
-			cameraTransform.nearClip = 0.1f;
-			cameraTransform.farClip = 1000.0f;
+			cameraTransform.nearClip = nearClip;
+			cameraTransform.farClip = farClip;
 			cameraTransform.isPerspective = true;
 			cameraTransform.fov = fov;
 			cameraTransform.aspectRatio = aspectRatio;
@@ -41,7 +43,9 @@ namespace ForiverEngine
 			return cameraTransform;
 		}
 
-		static CameraTransform CreateOrthographic(const Vector3& position, const Quaternion& rotation, float clipSizeX, float clipSizeY) noexcept
+		static CameraTransform CreateOrthographic(const Vector3& position, const Quaternion& rotation, float clipSizeX, float clipSizeY,
+			float nearClip = 0.1f, float farClip = 1000.0f
+		) noexcept
 		{
 			CameraTransform cameraTransform = {};
 
@@ -52,10 +56,10 @@ namespace ForiverEngine
 			cameraTransform.scale = Vector3::One();
 
 			// CameraTransform
-			cameraTransform.nearClip = 0.1f;
-			cameraTransform.farClip = 1000.0f;
+			cameraTransform.nearClip = nearClip;
+			cameraTransform.farClip = farClip;
 			cameraTransform.isPerspective = false;
-			cameraTransform.fov = std::atan2(clipSizeY * 0.5f, cameraTransform.nearClip) * 2.0f; // nearクリップ面で平行投影を始めると想定するので...
+			cameraTransform.fov = std::atan2(clipSizeY * 0.5f, nearClip) * 2.0f; // nearクリップ面で平行投影を始めると想定するので...
 			cameraTransform.aspectRatio = clipSizeX / clipSizeY;
 
 			return cameraTransform;
