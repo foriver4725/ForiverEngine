@@ -221,7 +221,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		.DirectionalLightColor = Color::White() * 1.2f,
 		.AmbientLightColor = Color::White() * 0.5f,
 
-		.CastShadow = 1,
+		.CastShadow = 0, // TODO: 影の計算がおかしいので、今は影を無くしておく!
 		.ShadowColor = SunShadowColor,
 	};
 
