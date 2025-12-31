@@ -17,7 +17,7 @@ struct V2P
 
 struct PSOutput
 {
-    float4 color : SV_TARGET;
+    float depth : SV_TARGET;
 };
 
 V2P VSMain(VSInput input)
@@ -34,9 +34,7 @@ PSOutput PSMain(V2P input)
 {
     PSOutput output;
     
-    // ダミー
-    // 結局 DS しか使わないので、ピクセルカラーは必要ない
-    output.color = 0;
+    output.depth = input.pos.z;
     
     return output;
 }

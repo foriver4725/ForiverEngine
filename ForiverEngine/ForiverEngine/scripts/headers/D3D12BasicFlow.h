@@ -218,21 +218,17 @@ namespace ForiverEngine
 
 		/// <summary>
 		/// <para>深度バッファと専用の DescriptorHeap を作成し、DSV をその DescriptorHeap の中に作成して返す</para>
-		/// <para>作成した DS, DSV を返す</para>
 		/// <para>記録用のバッファなので、1つのみ作成する</para>
 		/// <para>ステンシルは使わないので、深度のみとして作成する</para>
-		/// <para>alsoUseAsSR が true の場合、シェーダーから見えるようにし、初期状態を PixelShaderResource にする</para>
 		/// </summary>
-		static std::tuple<GraphicsBuffer, DescriptorHeapHandleAtCPU>
+		static DescriptorHeapHandleAtCPU
 			InitDSV(
 				const Device& device,
 				int width,
-				int height,
-				Format format,
-				bool alsoUseAsSR = false
+				int height
 			)
 		{
-			return Check(InitDSV_Impl(device, width, height, format, alsoUseAsSR));
+			return Check(InitDSV_Impl(device, width, height));
 		}
 
 		/// <summary>
@@ -501,18 +497,14 @@ namespace ForiverEngine
 
 		/// <summary>
 		/// <para>深度バッファと専用の DescriptorHeap を作成し、DSV をその DescriptorHeap の中に作成して返す</para>
-		/// <para>作成した DS, DSV を返す</para>
 		/// <para>記録用のバッファなので、1つのみ作成する</para>
 		/// <para>ステンシルは使わないので、深度のみとして作成する</para>
-		/// <para>alsoUseAsSR が true の場合、シェーダーから見えるようにし、初期状態を PixelShaderResource にする</para>
 		/// </summary>
-		static std::tuple<bool, std::wstring, std::tuple<GraphicsBuffer, DescriptorHeapHandleAtCPU>>
+		static std::tuple<bool, std::wstring, std::tuple<DescriptorHeapHandleAtCPU>>
 			InitDSV_Impl(
 				const Device& device,
 				int width,
-				int height,
-				Format format,
-				bool alsoUseAsSR = false
+				int height
 			);
 
 		/// <summary>

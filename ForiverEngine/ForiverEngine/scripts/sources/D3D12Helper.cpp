@@ -530,11 +530,11 @@ namespace ForiverEngine
 	}
 
 	void D3D12Helper::CreateDepthStencilView(
-		const Device& device, const DescriptorHeap& descriptorHeapDSV, const GraphicsBuffer& depthBuffer, Format format)
+		const Device& device, const DescriptorHeap& descriptorHeapDSV, const GraphicsBuffer& depthBuffer)
 	{
 		const D3D12_DEPTH_STENCIL_VIEW_DESC desc =
 		{
-			.Format = static_cast<DXGI_FORMAT>(format),
+			.Format = static_cast<DXGI_FORMAT>(Format::D_F32),
 			.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D,
 			.Flags = D3D12_DSV_FLAG_NONE, // 指定なし
 		};

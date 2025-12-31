@@ -50,7 +50,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 			device, rootParameter, samplerConfig, shaderVS, shaderPS, VertexLayouts, FillMode::Solid, CullMode::None, true);
 
 	const auto [rtGetter, rtvGetter] = D3D12BasicFlow::InitRTV(device, swapChain, Format::RGBA_U8_01);
-	const auto [ds__, dsv] = D3D12BasicFlow::InitDSV(device, WindowWidth, WindowHeight, Format::D_F32);
+	const DescriptorHeapHandleAtCPU dsv = D3D12BasicFlow::InitDSV(device, WindowWidth, WindowHeight);
 
 	constexpr Transform terrainTransform = Transform::Identity();
 	CameraTransform cameraTransform = CameraTransform::CreatePerspective(
@@ -252,21 +252,20 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	constexpr int ShadowRTWidth = 1024;
 	constexpr int ShadowRTHeight = 1024;
 
-	const Texture shadowTextureMetadata = TextureLoader::CreateManually({}, ShadowRTWidth, ShadowRTHeight, Format::RGBA_U8_01);
+	const Texture shadowTextureMetadata = TextureLoader::CreateManually({}, ShadowRTWidth, ShadowRTHeight, Format::R_F32);
 	const GraphicsBuffer shadowGraphicsBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, shadowTextureMetadata,
-		GraphicsBufferUsagePermission::AllowRenderTarget, GraphicsBufferState::Present, Color::Transparent());
+		GraphicsBufferUsagePermission::AllowRenderTarget, GraphicsBufferState::PixelShaderResource, Color(DepthBufferClearValue, 0, 0, 0));
 
 	const RootParameter rootParameterShadow = RootParameter::CreateBasic(1, 0, 0);
 	const SamplerConfig samplerConfigShadow = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
-	const auto [shaderVSShadow, shaderPSShadow] = D3D12BasicFlow::CompileShader_VS_PS("./shaders/ShadowSun.hlsl");
+	const auto [shaderVSShadow, shaderPSShadow] = D3D12BasicFlow::CompileShader_VS_PS("./shaders/DepthWrite.hlsl");
 	const auto [rootSignatureShadow, graphicsPipelineStateShadow]
 		= D3D12BasicFlow::CreateRootSignatureAndGraphicsPipelineState(
 			device, rootParameterShadow, samplerConfigShadow, shaderVSShadow, shaderPSShadow, VertexLayoutsQuad, FillMode::Solid, CullMode::Back, true);
 
 	// RTV, DSV
-	const DescriptorHeapHandleAtCPU rtvShadow = D3D12BasicFlow::InitRTV(device, shadowGraphicsBuffer, Format::RGBA_U8_01);
-	const auto [dsShadow, dsvShadow] = D3D12BasicFlow::InitDSV(device, ShadowRTWidth, ShadowRTHeight, Format::D_F32, true);
-	const Texture shadowDSMetadata = TextureLoader::CreateManually({}, ShadowRTWidth, ShadowRTHeight, Format::D_F32);
+	const DescriptorHeapHandleAtCPU rtvShadow = D3D12BasicFlow::InitRTV(device, shadowGraphicsBuffer, Format::R_F32);
+	const DescriptorHeapHandleAtCPU dsvShadow = D3D12BasicFlow::InitDSV(device, ShadowRTWidth, ShadowRTHeight);
 
 	// CB 0
 	struct alignas(256) CBData0Shadow
@@ -282,7 +281,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 
 	// DescriptorHeap
 	const DescriptorHeap descriptorHeapBasicShadow
-		= D3D12BasicFlow::InitDescriptorHeapBasic(device, { cbvBufferShadow }, {});
+		= D3D12BasicFlow::InitDescriptorHeapBasic(device, { cbvBufferShadow }, { {shadowGraphicsBuffer, shadowTextureMetadata} });
 
 	const ViewportScissorRect viewportScissorRectShadow = ViewportScissorRect::CreateFullSized(ShadowRTWidth, ShadowRTHeight);
 
@@ -290,7 +289,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	// メインレンダリングの方に、情報を渡す
 
 	descriptorHeapBasic = D3D12BasicFlow::InitDescriptorHeapBasic(
-		device, { cbvBuffer0, cbvBuffer1 }, { srvBufferAndData, { dsShadow, shadowDSMetadata } });
+		device, { cbvBuffer0, cbvBuffer1 }, { srvBufferAndData, { shadowGraphicsBuffer, shadowTextureMetadata } });
 
 	//////////
 
@@ -671,7 +670,6 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 				// - フレームタイム
 				// - プレイヤーの足元の座標
 				// - 選択しているブロックの座標
-				// - 現在いるチャンクのインデックス
 
 				constexpr int FrameTimeTextUpdateIntervalFrames = 16; // テキストの更新間隔 (フレーム数)
 				static int frameTimeTextUpdateCounter = 0;
@@ -683,12 +681,12 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 					if (frameTimeTextUpdateCounter % FrameTimeTextUpdateIntervalFrames == 0)
 						frameTimeTextValue = WindowHelper::GetDeltaMilliseconds<double>();
 				}
-				const std::string frameTimeText = std::format("Frame Time : {:.2f} ms", frameTimeTextValue);
+				const std::string frameTimeText = std::format("Frame Time:{:.2f} ms", frameTimeTextValue);
 
 				const Lattice3 playerFootPositionAsLattice = PlayerControl::GetBlockLatticePosition(
 					PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight));
 				const std::string positionText = std::format(
-					"Position : ({},{},{})",
+					"Position:({:+},{:+},{:+})",
 					playerFootPositionAsLattice.x,
 					playerFootPositionAsLattice.y,
 					playerFootPositionAsLattice.z
@@ -700,24 +698,16 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 					static_cast<int>(cbvBuffer1VirtualPtr->SelectingBlockPosition.z)
 				);
 				const std::string selectingBlockPositionText = cbvBuffer1VirtualPtr->IsSelectingAnyBlock ? std::format(
-					"LookAt : ({},{},{})",
+					"LookAt:({:+},{:+},{:+})",
 					selectingBlockPositionAsLattice.x,
 					selectingBlockPositionAsLattice.y,
 					selectingBlockPositionAsLattice.z
-				) : "LookAt : None";
-
-				const Lattice2 currentChunkIndex = PlayerControl::GetChunkIndexAtPosition(cameraTransform.position);
-				const std::string chunkIndexText = std::format(
-					"Chunk Index : ({},{})",
-					currentChunkIndex.x,
-					currentChunkIndex.y
-				);
+				) : "LookAt  :None";
 
 				windowText.ClearAll();
 				windowText.SetTexts(Lattice2(1, 1), frameTimeText, Color::White());
 				windowText.SetTexts(Lattice2(1, 2), positionText, Color::White());
 				windowText.SetTexts(Lattice2(1, 3), selectingBlockPositionText, Color::White());
-				windowText.SetTexts(Lattice2(1, 4), chunkIndexText, Color::White());
 			}
 
 			// バッファを再作成してアップロードし直す
@@ -751,8 +741,8 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 			commandList, commandQueue, commandAllocator, device,
 			rootSignatureShadow, graphicsPipelineStateShadow, shadowGraphicsBuffer,
 			rtvShadow, dsvShadow, descriptorHeapBasicShadow, drawingVertexBufferViews, drawingIndexBufferViews,
-			GraphicsBufferState::Present, GraphicsBufferState::RenderTarget,
-			viewportScissorRectShadow, PrimitiveTopology::TriangleList, Color::Transparent(), DepthBufferClearValue,
+			GraphicsBufferState::PixelShaderResource, GraphicsBufferState::RenderTarget,
+			viewportScissorRectShadow, PrimitiveTopology::TriangleList, Color(DepthBufferClearValue, 0, 0, 0), DepthBufferClearValue,
 			drawingIndexCounts
 		);
 		// メインレンダリング

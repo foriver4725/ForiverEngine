@@ -104,11 +104,11 @@ namespace ForiverEngine
 
 		/// <summary>
 		/// <para>DSV を作成し、DSV 用 DescriptorHeap に登録する</para>
-		/// <para>ステンシルは用いない</para>
+		/// <para>ステンシルは用いず、32bit 深度のみとする</para>
 		/// <para>戻り値として取得することは出来ない!</para>
 		/// </summary>
 		static void CreateDepthStencilView(
-			const Device& device, const DescriptorHeap& descriptorHeapDSV, const GraphicsBuffer& depthBuffer, Format format);
+			const Device& device, const DescriptorHeap& descriptorHeapDSV, const GraphicsBuffer& depthBuffer);
 
 		/// <summary>
 		/// 頂点バッファ から 頂点バッファービュー を作成して返す
