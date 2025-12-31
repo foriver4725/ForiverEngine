@@ -315,6 +315,9 @@ namespace ForiverEngine
 #define RETURN_TRUE() \
 	return { true, L"", { bufferGetter, viewGetter } };
 
+		if (!BitFlag::HasFlag(GetFormatTypes(format), FormatTypeDigit::ForColor))
+			RETURN_FALSE(L"RTV 用のフォーマットが不正です");
+
 		const int descriptorCount = D3D12Helper::GetRTCount(swapChain);
 		if (descriptorCount <= 0)
 			RETURN_FALSE(L"SwapChain 内の RT の数が不正です");
@@ -352,6 +355,9 @@ namespace ForiverEngine
 #define RETURN_TRUE() \
 	return { true, L"", { rtv } };
 
+		if (!BitFlag::HasFlag(GetFormatTypes(format), FormatTypeDigit::ForColor))
+			RETURN_FALSE(L"RTV 用のフォーマットが不正です");
+
 		const DescriptorHeap descriptorHeapRTV = D3D12Helper::CreateDescriptorHeap(device, DescriptorHeapType::RTV, 1, false);
 		if (!descriptorHeapRTV)
 			RETURN_FALSE(L"DescriptorHeap (RTV) の作成に失敗しました");
@@ -368,31 +374,38 @@ namespace ForiverEngine
 #undef RETURN_TRUE
 	}
 
-	std::tuple<bool, std::wstring, std::tuple<DescriptorHeapHandleAtCPU>>
+	std::tuple<bool, std::wstring, std::tuple<GraphicsBuffer, DescriptorHeapHandleAtCPU>>
 		D3D12BasicFlow::InitDSV_Impl(
 			const Device& device,
 			int width,
-			int height
+			int height,
+			Format format,
+			bool alsoUseAsSR
 		)
 	{
+		GraphicsBuffer depthBuffer = GraphicsBuffer();
 		DescriptorHeapHandleAtCPU dsv = DescriptorHeapHandleAtCPU();
 
 #define RETURN_FALSE(errorMessage) \
-	return { false, errorMessage, { dsv } };
+	return { false, errorMessage, { depthBuffer, dsv } };
 #define RETURN_TRUE() \
-	return { true, L"", { dsv } };
+	return { true, L"", { depthBuffer, dsv } };
 
-		const Texture depthBufferMetadata = TextureLoader::CreateManually({}, width, height, Format::D_F32);
-		const GraphicsBuffer depthBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, depthBufferMetadata,
-			GraphicsBufferUsagePermission::AllowDepthStencil, GraphicsBufferState::DepthWrite, Color(DepthBufferClearValue, 0, 0, 0));
+		const Texture depthBufferMetadata = TextureLoader::CreateManually({}, width, height, format);
+		depthBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(
+			device, depthBufferMetadata,
+			GraphicsBufferUsagePermission::AllowDepthStencil,
+			alsoUseAsSR ? GraphicsBufferState::PixelShaderResource : GraphicsBufferState::DepthWrite,
+			Color(DepthBufferClearValue, 0, 0, 0)
+		);
 		if (!depthBuffer)
 			RETURN_FALSE(L"DepthBuffer の作成に失敗しました");
 
-		const DescriptorHeap descriptorHeapDSV = D3D12Helper::CreateDescriptorHeap(device, DescriptorHeapType::DSV, 1, false);
+		const DescriptorHeap descriptorHeapDSV = D3D12Helper::CreateDescriptorHeap(device, DescriptorHeapType::DSV, 1, alsoUseAsSR);
 		if (!descriptorHeapDSV)
 			RETURN_FALSE(L"DescriptorHeap (DSV) の作成に失敗しました");
 
-		D3D12Helper::CreateDepthStencilView(device, descriptorHeapDSV, depthBuffer);
+		D3D12Helper::CreateDepthStencilView(device, descriptorHeapDSV, depthBuffer, format);
 
 		dsv = D3D12Helper::CreateDescriptorHeapHandleAtCPUIndicatingDescriptorByIndex(
 			device, descriptorHeapDSV, DescriptorHeapType::DSV, 0);
