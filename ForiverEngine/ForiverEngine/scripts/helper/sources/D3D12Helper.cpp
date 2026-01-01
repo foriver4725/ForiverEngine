@@ -36,8 +36,8 @@ namespace ForiverEngine
     DECLARE_REINTERPRET_FUNCTION(TFromPtr, TToPtr); \
 	DECLARE_REINTERPRET_FUNCTION(TToPtr, TFromPtr); \
 
-	DECLARE_BIDIRECTIONAL_REINTERPRET_FUNCTION(DescriptorHeapHandleAtCPU, D3D12_CPU_DESCRIPTOR_HANDLE);
-	DECLARE_BIDIRECTIONAL_REINTERPRET_FUNCTION(DescriptorHeapHandleAtGPU, D3D12_GPU_DESCRIPTOR_HANDLE);
+	DECLARE_BIDIRECTIONAL_REINTERPRET_FUNCTION(DescriptorHandleAtCPU, D3D12_CPU_DESCRIPTOR_HANDLE);
+	DECLARE_BIDIRECTIONAL_REINTERPRET_FUNCTION(DescriptorHandleAtGPU, D3D12_GPU_DESCRIPTOR_HANDLE);
 	DECLARE_BIDIRECTIONAL_REINTERPRET_FUNCTION(VertexBufferView, D3D12_VERTEX_BUFFER_VIEW);
 	DECLARE_BIDIRECTIONAL_REINTERPRET_FUNCTION(IndexBufferView, D3D12_INDEX_BUFFER_VIEW);
 
@@ -529,7 +529,7 @@ namespace ForiverEngine
 			.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D,
 		};
 
-		const DescriptorHeapHandleAtCPU handleRTV = CreateDescriptorHeapHandleAtCPUIndicatingDescriptorByIndex(
+		const DescriptorHandleAtCPU handleRTV = CreateDescriptorHandleAtCPU(
 			device, descriptorHeapRTV, DescriptorHeapType::RTV, index);
 
 		device->CreateRenderTargetView(
@@ -550,7 +550,7 @@ namespace ForiverEngine
 		};
 
 		// DescriptorHeap の 0 番目に DSV を作成する
-		const DescriptorHeapHandleAtCPU handleRTV = CreateDescriptorHeapHandleAtCPUIndicatingDescriptorByIndex(
+		const DescriptorHandleAtCPU handleRTV = CreateDescriptorHandleAtCPU(
 			device, descriptorHeapDSV, DescriptorHeapType::DSV, 0);
 
 		device->CreateDepthStencilView(
@@ -593,8 +593,8 @@ namespace ForiverEngine
 			.SizeInBytes = static_cast<UINT>(graphicsBuffer->GetDesc().Width)
 		};
 
-		const DescriptorHeapHandleAtCPU handleCBV =
-			CreateDescriptorHeapHandleAtCPUIndicatingDescriptorByIndex(
+		const DescriptorHandleAtCPU handleCBV =
+			CreateDescriptorHandleAtCPU(
 				device, descriptorHeap,
 				DescriptorHeapType::CBV_SRV_UAV,
 				index
@@ -651,8 +651,8 @@ namespace ForiverEngine
 			}
 		};
 
-		const DescriptorHeapHandleAtCPU handleSRV =
-			CreateDescriptorHeapHandleAtCPUIndicatingDescriptorByIndex(
+		const DescriptorHandleAtCPU handleSRV =
+			CreateDescriptorHandleAtCPU(
 				device, descriptorHeap,
 				DescriptorHeapType::CBV_SRV_UAV,
 				index
@@ -665,7 +665,7 @@ namespace ForiverEngine
 		);
 	}
 
-	DescriptorHeapHandleAtCPU D3D12Helper::CreateDescriptorHeapHandleAtCPUIndicatingDescriptorByIndex(
+	DescriptorHandleAtCPU D3D12Helper::CreateDescriptorHandleAtCPU(
 		const Device& device, const DescriptorHeap& descriptorHeap, DescriptorHeapType descriptorHeapType, int index)
 	{
 		D3D12_CPU_DESCRIPTOR_HANDLE handle = descriptorHeap->GetCPUDescriptorHandleForHeapStart();
@@ -673,7 +673,7 @@ namespace ForiverEngine
 		return *Reinterpret(&handle);
 	}
 
-	DescriptorHeapHandleAtGPU D3D12Helper::CreateDescriptorHeapHandleAtGPUIndicatingDescriptorByIndex(
+	DescriptorHandleAtGPU D3D12Helper::CreateDescriptorHandleAtGPU(
 		const Device& device, const DescriptorHeap& descriptorHeap, DescriptorHeapType descriptorHeapType, int index)
 	{
 		D3D12_GPU_DESCRIPTOR_HANDLE handle = descriptorHeap->GetGPUDescriptorHandleForHeapStart();
@@ -863,23 +863,23 @@ namespace ForiverEngine
 	}
 
 	void D3D12Helper::CommandSetRT(const CommandList& commandList,
-		const DescriptorHeapHandleAtCPU& rtv, const DescriptorHeapHandleAtCPU& dsv)
+		const DescriptorHandleAtCPU& rtv, const DescriptorHandleAtCPU& dsv)
 	{
 		commandList->OMSetRenderTargets(
 			1, // 今のところ、一回の描画における RTV は1つのみ
-			Reinterpret(const_cast<DescriptorHeapHandleAtCPU*>(&rtv)),
+			Reinterpret(const_cast<DescriptorHandleAtCPU*>(&rtv)),
 			false, // 規定値
-			(dsv.ptr) ? Reinterpret(const_cast<DescriptorHeapHandleAtCPU*>(&dsv)) : nullptr
+			(dsv.ptr) ? Reinterpret(const_cast<DescriptorHandleAtCPU*>(&dsv)) : nullptr
 		);
 	}
 
 	void D3D12Helper::CommandClearRT(
-		const CommandList& commandList, const DescriptorHeapHandleAtCPU& rtv, const DescriptorHeapHandleAtCPU& dsv,
+		const CommandList& commandList, const DescriptorHandleAtCPU& rtv, const DescriptorHandleAtCPU& dsv,
 		Color rtvClearValue, float dsvClearValue)
 	{
 		const float clearColorAsArray[4] = { rtvClearValue.r, rtvClearValue.g, rtvClearValue.b, rtvClearValue.a };
 		commandList->ClearRenderTargetView(
-			*Reinterpret(const_cast<DescriptorHeapHandleAtCPU*>(&rtv)),
+			*Reinterpret(const_cast<DescriptorHandleAtCPU*>(&rtv)),
 			clearColorAsArray,
 			0, nullptr // 全範囲をクリアするので、指定しない
 		);
@@ -887,7 +887,7 @@ namespace ForiverEngine
 		if (dsv.ptr)
 		{
 			commandList->ClearDepthStencilView(
-				*Reinterpret(const_cast<DescriptorHeapHandleAtCPU*>(&dsv)),
+				*Reinterpret(const_cast<DescriptorHandleAtCPU*>(&dsv)),
 				D3D12_CLEAR_FLAG_DEPTH, // 深度値のみクリア
 				dsvClearValue,
 				0, // ステンシル値はクリアしないので、0でOK
@@ -919,7 +919,7 @@ namespace ForiverEngine
 	}
 
 	void D3D12Helper::CommandLinkDescriptorHeapToRootSignature(
-		const CommandList& commandList, const DescriptorHeapHandleAtGPU& firstDescriptor, int rootParameterIndex)
+		const CommandList& commandList, const DescriptorHandleAtGPU& firstDescriptor, int rootParameterIndex)
 	{
 		commandList->SetGraphicsRootDescriptorTable(
 			static_cast<UINT>(rootParameterIndex),

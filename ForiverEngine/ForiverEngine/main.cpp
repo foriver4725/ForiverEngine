@@ -53,7 +53,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowSize.x, WindowS
 	if (!swapChain)
 		ShowError(L"SwapChain の作成に失敗しました");
 	const auto [rtGetter, rtvGetter] = D3D12BasicFlow::InitRTV(device, swapChain, Format::RGBA_U8_01);
-	const DescriptorHeapHandleAtCPU dsv = D3D12BasicFlow::InitDSV(device, WindowSize);
+	const DescriptorHandleAtCPU dsv = D3D12BasicFlow::InitDSV(device, WindowSize);
 
 	constexpr Transform terrainTransform = Transform::Identity();
 	CameraTransform cameraTransform = CameraTransform::CreatePerspective(
@@ -264,8 +264,8 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowSize.x, WindowS
 			device, rootParameterShadow, samplerConfigShadow, shaderVSShadow, shaderPSShadow, VertexLayoutsQuad, FillMode::Solid, CullMode::Back, true);
 
 	// RTV, DSV
-	const DescriptorHeapHandleAtCPU rtvShadow = D3D12BasicFlow::InitRTV(device, shadowGraphicsBuffer, Format::R_F32);
-	const DescriptorHeapHandleAtCPU dsvShadow = D3D12BasicFlow::InitDSV(device, ShadowRTSize);
+	const DescriptorHandleAtCPU rtvShadow = D3D12BasicFlow::InitRTV(device, shadowGraphicsBuffer, Format::R_F32);
+	const DescriptorHandleAtCPU dsvShadow = D3D12BasicFlow::InitDSV(device, ShadowRTSize);
 
 	// CB 0
 	struct alignas(256) CBData0Shadow
@@ -311,8 +311,8 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowSize.x, WindowS
 			device, rootParameterPP, samplerConfigPP, shaderVSPP, shaderPSPP, VertexLayoutsQuad, FillMode::Solid, CullMode::Back, false);
 
 	// RTVのみ作成
-	const DescriptorHeapHandleAtCPU rtvPP = D3D12BasicFlow::InitRTV(device, ppGraphicsBuffer, Format::RGBA_U8_01);
-	const DescriptorHeapHandleAtCPU dsvPP_Dummy = DescriptorHeapHandleAtCPU{ .ptr = NULL };
+	const DescriptorHandleAtCPU rtvPP = D3D12BasicFlow::InitRTV(device, ppGraphicsBuffer, Format::RGBA_U8_01);
+	const DescriptorHandleAtCPU dsvPP_Dummy = DescriptorHandleAtCPU{ .ptr = NULL };
 
 	// 板ポリのメッシュ
 	const MeshQuad meshPP = MeshQuad::CreateFullSized();
@@ -359,8 +359,8 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowSize.x, WindowS
 			device, rootParameterText, samplerConfigText, shaderVSText, shaderPSText, VertexLayoutsQuad, FillMode::Solid, CullMode::Back, false);
 
 	// RTVのみ作成
-	const DescriptorHeapHandleAtCPU rtvText = D3D12BasicFlow::InitRTV(device, textGraphicsBuffer, Format::RGBA_U8_01);
-	const DescriptorHeapHandleAtCPU dsvText_Dummy = DescriptorHeapHandleAtCPU{ .ptr = NULL };
+	const DescriptorHandleAtCPU rtvText = D3D12BasicFlow::InitRTV(device, textGraphicsBuffer, Format::RGBA_U8_01);
+	const DescriptorHandleAtCPU dsvText_Dummy = DescriptorHandleAtCPU{ .ptr = NULL };
 
 	// 板ポリのメッシュ
 	const MeshQuad meshText = MeshQuad::CreateFullSized();
@@ -731,7 +731,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowSize.x, WindowS
 
 		const int currentBackRTIndex = D3D12Helper::GetCurrentBackRTIndex(swapChain);
 		const GraphicsBuffer currentBackRT = rtGetter(currentBackRTIndex);
-		const DescriptorHeapHandleAtCPU currentBackRTV = rtvGetter(currentBackRTIndex);
+		const DescriptorHandleAtCPU currentBackRTV = rtvGetter(currentBackRTIndex);
 		if (!currentBackRT)
 			ShowError(L"現在のバックレンダーターゲットの取得に失敗しました");
 

@@ -147,14 +147,14 @@ namespace ForiverEngine
 		/// <para>DescriptorHeap のハンドルを作成し、index 番目の Descriptor を指し示すように内部ポインタを進めて返す</para>
 		/// CPU 用
 		/// </summary>
-		static DescriptorHeapHandleAtCPU CreateDescriptorHeapHandleAtCPUIndicatingDescriptorByIndex(
+		static DescriptorHandleAtCPU CreateDescriptorHandleAtCPU(
 			const Device& device, const DescriptorHeap& descriptorHeap, DescriptorHeapType descriptorHeapType, int index);
 
 		/// <summary>
 		/// <para>DescriptorHeap のハンドルを作成し、index 番目の Descriptor を指し示すように内部ポインタを進めて返す</para>
 		/// GPU 用
 		/// </summary>
-		static DescriptorHeapHandleAtGPU CreateDescriptorHeapHandleAtGPUIndicatingDescriptorByIndex(
+		static DescriptorHandleAtGPU CreateDescriptorHandleAtGPU(
 			const Device& device, const DescriptorHeap& descriptorHeap, DescriptorHeapType descriptorHeapType, int index);
 
 		/// <summary>
@@ -220,7 +220,7 @@ namespace ForiverEngine
 		/// <para>DSV について、nullptr が渡された場合、DSV を設定しない</para>
 		/// </summary>
 		static void CommandSetRT(const CommandList& commandList,
-			const DescriptorHeapHandleAtCPU& rtv, const DescriptorHeapHandleAtCPU& dsv);
+			const DescriptorHandleAtCPU& rtv, const DescriptorHandleAtCPU& dsv);
 
 		/// <summary>
 		/// <para>[Command]</para>
@@ -229,7 +229,7 @@ namespace ForiverEngine
 		/// <para>DSV について、nullptr が渡された場合、DSV をクリアしない</para>
 		/// </summary>
 		static void CommandClearRT(
-			const CommandList& commandList, const DescriptorHeapHandleAtCPU& rtv, const DescriptorHeapHandleAtCPU& dsv,
+			const CommandList& commandList, const DescriptorHandleAtCPU& rtv, const DescriptorHandleAtCPU& dsv,
 			Color rtvClearValue, float dsvClearValue);
 
 		/// <summary>
@@ -256,7 +256,7 @@ namespace ForiverEngine
 		/// DescriptorHeap の最初のハンドルを受け取り、それを rootParameterIndex 番目のルートパラメータにリンクする
 		/// </summary>
 		static void CommandLinkDescriptorHeapToRootSignature(
-			const CommandList& commandList, const DescriptorHeapHandleAtGPU& firstDescriptor, int rootParameterIndex);
+			const CommandList& commandList, const DescriptorHandleAtGPU& firstDescriptor, int rootParameterIndex);
 
 		/// <summary>
 		/// <para>[Command]</para>

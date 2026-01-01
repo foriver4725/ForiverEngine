@@ -402,8 +402,8 @@ public: \
 
 	// DirectX の構造体を直接外部に公開したくないので、メモリ配置を同じにした構造体に reinterpret_cast する
 	typedef ULONG_PTR SIZE_T;
-	struct DescriptorHeapHandleAtCPU { SIZE_T ptr; };
-	struct DescriptorHeapHandleAtGPU { UINT64 ptr; };
+	struct DescriptorHandleAtCPU { SIZE_T ptr; };
+	struct DescriptorHandleAtGPU { UINT64 ptr; };
 	struct VertexBufferView { UINT64 bufferAddress; UINT verticesSize; UINT vertexSize; };
 	struct IndexBufferView { UINT64 bufferAddress; UINT indicesSize; Format indexFormat; };
 

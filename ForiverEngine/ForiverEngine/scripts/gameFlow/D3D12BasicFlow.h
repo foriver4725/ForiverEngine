@@ -296,7 +296,7 @@ namespace ForiverEngine
 		/// <para>SwapChain 内の RT 全てに対して、専用の DescriptorHeap を作成し、RTV をその DescriptorHeap の中に作成して返す</para>
 		/// <para>戻り値は関数で、インデックスを基に、RT/RTV を取得出来る</para>
 		/// </summary>
-		static std::tuple<std::function<GraphicsBuffer(int)>, std::function<DescriptorHeapHandleAtCPU(int)>>
+		static std::tuple<std::function<GraphicsBuffer(int)>, std::function<DescriptorHandleAtCPU(int)>>
 			InitRTV(const Device& device, const SwapChain& swapChain, Format format)
 		{
 			const int descriptorCount = D3D12Helper::GetRTCount(swapChain);
@@ -311,8 +311,8 @@ namespace ForiverEngine
 				ShowError(L"RenderTargetView を作成できない RenderTargetBuffer がありました");
 
 			const std::function<GraphicsBuffer(int)> bufferGetter = [swapChain](int i) { return D3D12Helper::GetRT(swapChain, i); };
-			const std::function<DescriptorHeapHandleAtCPU(int)> viewGetter = [device, descriptorHeapRTV](int i) {
-				return D3D12Helper::CreateDescriptorHeapHandleAtCPUIndicatingDescriptorByIndex(
+			const std::function<DescriptorHandleAtCPU(int)> viewGetter = [device, descriptorHeapRTV](int i) {
+				return D3D12Helper::CreateDescriptorHandleAtCPU(
 					device, descriptorHeapRTV, DescriptorHeapType::RTV, i);
 				};
 
@@ -323,7 +323,7 @@ namespace ForiverEngine
 		/// <para>与えられた RT に対して、専用の DescriptorHeap を作成し、RTV をその DescriptorHeap の中に作成して返す</para>
 		/// <para>作成した RTV を返す</para>
 		/// </summary>
-		static DescriptorHeapHandleAtCPU
+		static DescriptorHandleAtCPU
 			InitRTV(const Device& device, const GraphicsBuffer& rt, Format format)
 		{
 			const DescriptorHeap descriptorHeapRTV = D3D12Helper::CreateDescriptorHeap(device, DescriptorHeapType::RTV, 1, false);
@@ -332,7 +332,7 @@ namespace ForiverEngine
 
 			D3D12Helper::CreateRenderTargetView(device, descriptorHeapRTV, rt, format, 0);
 
-			const DescriptorHeapHandleAtCPU rtv = D3D12Helper::CreateDescriptorHeapHandleAtCPUIndicatingDescriptorByIndex(
+			const DescriptorHandleAtCPU rtv = D3D12Helper::CreateDescriptorHandleAtCPU(
 				device, descriptorHeapRTV, DescriptorHeapType::RTV, 0
 			);
 
@@ -344,7 +344,7 @@ namespace ForiverEngine
 		/// <para>記録用のバッファなので、1つのみ作成する</para>
 		/// <para>ステンシルは使わないので、深度のみとして作成する</para>
 		/// </summary>
-		static DescriptorHeapHandleAtCPU
+		static DescriptorHandleAtCPU
 			InitDSV(const Device& device, const Lattice2& size)
 		{
 			const Texture depthBufferMetadata = Texture::CreateManually({}, size, Format::D_F32);
@@ -359,7 +359,7 @@ namespace ForiverEngine
 
 			D3D12Helper::CreateDepthStencilView(device, descriptorHeapDSV, depthBuffer);
 
-			const DescriptorHeapHandleAtCPU dsv = D3D12Helper::CreateDescriptorHeapHandleAtCPUIndicatingDescriptorByIndex(
+			const DescriptorHandleAtCPU dsv = D3D12Helper::CreateDescriptorHandleAtCPU(
 				device, descriptorHeapDSV, DescriptorHeapType::DSV, 0);
 
 			return dsv;
@@ -453,7 +453,7 @@ namespace ForiverEngine
 				// パイプライン関連
 				const RootSignature& rootSignature, const PipelineState& graphicsPipelineState, const GraphicsBuffer& rt,
 				// Descriptor
-				const DescriptorHeapHandleAtCPU& rtv, const DescriptorHeapHandleAtCPU& dsv,
+				const DescriptorHandleAtCPU& rtv, const DescriptorHandleAtCPU& dsv,
 				const DescriptorHeap& descriptorHeapBasic,
 				const std::vector<VertexBufferView>& vertexBufferViewArray,
 				const std::vector<IndexBufferView>& indexBufferViewArray,
@@ -485,7 +485,7 @@ namespace ForiverEngine
 				// ルートパラメーターは1つだけなので、インデックス0にリンクすれば良い
 				D3D12Helper::CommandLinkDescriptorHeapToRootSignature(
 					commandList,
-					D3D12Helper::CreateDescriptorHeapHandleAtGPUIndicatingDescriptorByIndex(
+					D3D12Helper::CreateDescriptorHandleAtGPU(
 						device, descriptorHeapBasic, DescriptorHeapType::CBV_SRV_UAV, 0),
 					0
 				);
