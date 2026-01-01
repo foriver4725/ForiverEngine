@@ -156,6 +156,7 @@ namespace ForiverEngine
 			return y;
 		}
 
+		// TODO: 必ず1チャンクしか見ないので、当たり判定がチャンクの境界に跨っているとバグる
 		template<int ChunkSize>
 		static bool IsOverlappingWithTerrain(
 			const std::array<std::array<Terrain, ChunkSize>, ChunkSize>& terrainChunks,
