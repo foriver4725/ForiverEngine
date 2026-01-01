@@ -1330,9 +1330,9 @@ namespace ForiverEngine
 	{
 		return
 		{
-			.SemanticName = vertexLayout.SemanticName,
+			.SemanticName = vertexLayout.semanticName.c_str(),
 			.SemanticIndex = 0, // 同じセマンティクス名が複数ある場合のインデックス (0でOK)
-			.Format = static_cast<DXGI_FORMAT>(vertexLayout.Format),
+			.Format = static_cast<DXGI_FORMAT>(vertexLayout.format),
 			.InputSlot = 0, // インターリーブ なので、0番スロットだけ使えばOK
 			.AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT, // 頂点バッファのメンバは連続しているので、それらのアドレスは自動で計算してもらう
 			.InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, // 1頂点ごとにこのレイアウトが入っている

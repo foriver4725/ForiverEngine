@@ -364,8 +364,8 @@ public: \
 	// 頂点レイアウト 単品
 	struct VertexLayout
 	{
-		const char* SemanticName;
-		Format Format;
+		std::string semanticName;
+		Format format;
 	};
 
 	// 頂点レイアウト (ブロック)
