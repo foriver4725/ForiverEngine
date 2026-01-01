@@ -26,21 +26,23 @@ namespace ForiverEngine
 	static D3D12_INPUT_ELEMENT_DESC Construct(const VertexLayout& vertexLayout);
 	static std::pair<D3D12_VIEWPORT, D3D12_RECT> Construct(const ViewportScissorRect& viewportScissorRect);
 
-	static D3D12_CPU_DESCRIPTOR_HANDLE* Reinterpret(const DescriptorHeapHandleAtCPU* value);
-	static DescriptorHeapHandleAtCPU* Reinterpret(const D3D12_CPU_DESCRIPTOR_HANDLE* value);
-	static D3D12_GPU_DESCRIPTOR_HANDLE* Reinterpret(const DescriptorHeapHandleAtGPU* value);
-	static DescriptorHeapHandleAtGPU* Reinterpret(const D3D12_GPU_DESCRIPTOR_HANDLE* value);
-	static D3D12_VERTEX_BUFFER_VIEW* Reinterpret(const VertexBufferView* value);
-	static VertexBufferView* Reinterpret(const D3D12_VERTEX_BUFFER_VIEW* value);
-	static D3D12_INDEX_BUFFER_VIEW* Reinterpret(const IndexBufferView* value);
-	static IndexBufferView* Reinterpret(const D3D12_INDEX_BUFFER_VIEW* value);
+#define DECLARE_REINTERPRET_FUNCTION(TFromPtr, TToPtr) \
+	TToPtr* Reinterpret(const TFromPtr* value) \
+	{ \
+		return reinterpret_cast<TToPtr*>(const_cast<TFromPtr*>(value)); \
+	} \
 
-	// エラーの Blob からエラーメッセージを取得する
-	static std::wstring FetchErrorMessageFromErrorBlob(const Blob& blob);
+#define DECLARE_BIDIRECTIONAL_REINTERPRET_FUNCTION(TFromPtr, TToPtr) \
+    DECLARE_REINTERPRET_FUNCTION(TFromPtr, TToPtr); \
+	DECLARE_REINTERPRET_FUNCTION(TToPtr, TFromPtr); \
 
-	// グラフィックアダプターを順に列挙していき、その Description が最初に Comparer にマッチしたものを返す
-	// 見つからなかった場合は nullptr を返す
-	static GraphicAdapter FindAvailableGraphicAdapter(const Factory& factory, std::function<bool(const std::wstring&)> descriptionComparer);
+	DECLARE_BIDIRECTIONAL_REINTERPRET_FUNCTION(DescriptorHeapHandleAtCPU, D3D12_CPU_DESCRIPTOR_HANDLE);
+	DECLARE_BIDIRECTIONAL_REINTERPRET_FUNCTION(DescriptorHeapHandleAtGPU, D3D12_GPU_DESCRIPTOR_HANDLE);
+	DECLARE_BIDIRECTIONAL_REINTERPRET_FUNCTION(VertexBufferView, D3D12_VERTEX_BUFFER_VIEW);
+	DECLARE_BIDIRECTIONAL_REINTERPRET_FUNCTION(IndexBufferView, D3D12_INDEX_BUFFER_VIEW);
+
+#undef DECLARE_BIDIRECTIONAL_REINTERPRET_FUNCTION
+#undef DECLARE_REINTERPRET_FUNCTION
 
 	Factory D3D12Helper::CreateFactory()
 	{
@@ -1021,6 +1023,33 @@ namespace ForiverEngine
 		return SUCCEEDED(swapChain->Present(1, 0));
 	}
 
+	GraphicAdapter D3D12Helper::FindAvailableGraphicAdapter(
+		const Factory& factory, const std::function<bool(const std::wstring&)>& descriptionComparer)
+	{
+		IDXGIAdapter* ptr = nullptr;
+		for (int i = 0; factory->EnumAdapters(i, &ptr) != DXGI_ERROR_NOT_FOUND; ++i)
+		{
+			DXGI_ADAPTER_DESC desc;
+			ptr->GetDesc(&desc);
+
+			if (descriptionComparer(desc.Description))
+				return GraphicAdapter(ptr);
+		}
+
+		return GraphicAdapter();
+	}
+
+	std::wstring D3D12Helper::FetchErrorMessageFromErrorBlob(const Blob& blob)
+	{
+		std::wstring message;
+
+		message.resize(blob->GetBufferSize());
+		std::copy_n(static_cast<char*>(blob->GetBufferPointer()), blob->GetBufferSize(), message.begin());
+		message += L"\n";
+
+		return message;
+	}
+
 	Blob D3D12Helper::CompileShaderFile(
 		const std::wstring& path, const std::string& entryFunc, const std::string& shaderTarget, std::wstring& outErrorMessage)
 	{
@@ -1332,71 +1361,5 @@ namespace ForiverEngine
 		};
 
 		return { viewport, scissorRect };
-	}
-
-	D3D12_CPU_DESCRIPTOR_HANDLE* Reinterpret(const DescriptorHeapHandleAtCPU* value)
-	{
-		return reinterpret_cast<D3D12_CPU_DESCRIPTOR_HANDLE*>(const_cast<DescriptorHeapHandleAtCPU*>(value));
-	}
-
-	DescriptorHeapHandleAtCPU* Reinterpret(const D3D12_CPU_DESCRIPTOR_HANDLE* value)
-	{
-		return reinterpret_cast<DescriptorHeapHandleAtCPU*>(const_cast<D3D12_CPU_DESCRIPTOR_HANDLE*>(value));
-	}
-
-	D3D12_GPU_DESCRIPTOR_HANDLE* Reinterpret(const DescriptorHeapHandleAtGPU* value)
-	{
-		return reinterpret_cast<D3D12_GPU_DESCRIPTOR_HANDLE*>(const_cast<DescriptorHeapHandleAtGPU*>(value));
-	}
-
-	DescriptorHeapHandleAtGPU* Reinterpret(const D3D12_GPU_DESCRIPTOR_HANDLE* value)
-	{
-		return reinterpret_cast<DescriptorHeapHandleAtGPU*>(const_cast<D3D12_GPU_DESCRIPTOR_HANDLE*>(value));
-	}
-
-	D3D12_VERTEX_BUFFER_VIEW* Reinterpret(const VertexBufferView* value)
-	{
-		return reinterpret_cast<D3D12_VERTEX_BUFFER_VIEW*>(const_cast<VertexBufferView*>(value));
-	}
-
-	VertexBufferView* Reinterpret(const D3D12_VERTEX_BUFFER_VIEW* value)
-	{
-		return reinterpret_cast<VertexBufferView*>(const_cast<D3D12_VERTEX_BUFFER_VIEW*>(value));
-	}
-
-	D3D12_INDEX_BUFFER_VIEW* Reinterpret(const IndexBufferView* value)
-	{
-		return reinterpret_cast<D3D12_INDEX_BUFFER_VIEW*>(const_cast<IndexBufferView*>(value));
-	}
-
-	IndexBufferView* Reinterpret(const D3D12_INDEX_BUFFER_VIEW* value)
-	{
-		return reinterpret_cast<IndexBufferView*>(const_cast<D3D12_INDEX_BUFFER_VIEW*>(value));
-	}
-
-	std::wstring FetchErrorMessageFromErrorBlob(const Blob& blob)
-	{
-		std::wstring message;
-
-		message.resize(blob->GetBufferSize());
-		std::copy_n(static_cast<char*>(blob->GetBufferPointer()), blob->GetBufferSize(), message.begin());
-		message += L"\n";
-
-		return message;
-	}
-
-	GraphicAdapter FindAvailableGraphicAdapter(const Factory& factory, std::function<bool(const std::wstring&)> descriptionComparer)
-	{
-		IDXGIAdapter* ptr = nullptr;
-		for (int i = 0; factory->EnumAdapters(i, &ptr) != DXGI_ERROR_NOT_FOUND; ++i)
-		{
-			DXGI_ADAPTER_DESC desc;
-			ptr->GetDesc(&desc);
-
-			if (descriptionComparer(desc.Description))
-				return GraphicAdapter(ptr);
-		}
-
-		return GraphicAdapter();
 	}
 }

@@ -319,6 +319,18 @@ namespace ForiverEngine
 		static bool Present(const SwapChain& swapChain);
 
 		/// <summary>
+		/// <para>グラフィックアダプターを順に列挙していき、その Description が最初に Comparer にマッチしたものを返す</para>
+		/// <para>見つからなかった場合は nullptr を返す</para>
+		/// </summary>
+		static GraphicAdapter FindAvailableGraphicAdapter(
+			const Factory& factory, const std::function<bool(const std::wstring&)>& descriptionComparer);
+
+		/// <summary>
+		/// エラーの Blob からエラーメッセージを取得する
+		/// </summary>
+		static std::wstring FetchErrorMessageFromErrorBlob(const Blob& blob);
+
+		/// <summary>
 		/// <para>シェーダーファイルをコンパイルして返す (失敗したら nullptr)</para>
 		/// </summary>
 		static Blob CompileShaderFile(
