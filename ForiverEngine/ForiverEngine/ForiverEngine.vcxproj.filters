@@ -225,6 +225,9 @@
     <ClInclude Include="scripts\common\Math\LinearAlgebra\ToString.h">
       <Filter>scripts\common\Math\LinearAlgebra</Filter>
     </ClInclude>
+    <ClInclude Include="scripts\common\Math\Random.h">
+      <Filter>scripts\common\Math</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shaders\Basic.hlsl">
