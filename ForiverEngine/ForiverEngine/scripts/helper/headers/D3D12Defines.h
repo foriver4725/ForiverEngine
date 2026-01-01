@@ -294,14 +294,13 @@ public: \
 		std::vector<DescriptorRange> descriptorRanges; // この順に登録される
 
 		/// <summary>
-		/// <para>CBV, SRV, UAV の順に、指定された数だけ並べて作成する</para>
-		/// <para>レジスタも順に、b0,b1,..., t0,t1,..., u0,u1,... と割り当てられる</para>
+		/// <para>CBV, SRV の順に、指定された数だけ並べて作成する</para>
+		/// <para>レジスタも順に、b0,b1,..., t0,t1,... と割り当てられる</para>
 		/// <para>全てのシェーダーから参照可能に設定される</para>
 		/// </summary>
 		static constexpr RootParameter CreateBasic(
 			int cbvAmount,
-			int srvAmount,
-			int uavAmount
+			int srvAmount
 		)
 		{
 			return
@@ -311,7 +310,6 @@ public: \
 				{
 					{ DescriptorRangeType::CBV, cbvAmount, ShaderRegister::b0 },
 					{ DescriptorRangeType::SRV, srvAmount, ShaderRegister::t0 },
-					{ DescriptorRangeType::UAV, uavAmount, ShaderRegister::u0 },
 				},
 			};
 		}

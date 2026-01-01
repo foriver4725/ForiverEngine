@@ -42,7 +42,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowSize.x, WindowS
 	const auto [factory, device, commandAllocator, commandList, commandQueue]
 		= D3D12BasicFlow::CreateStandardObjects();
 
-	const RootParameter rootParameter = RootParameter::CreateBasic(2, 2, 0);
+	const RootParameter rootParameter = RootParameter::CreateBasic(2, 2);
 	const SamplerConfig samplerConfig = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
 	const auto [shaderVS, shaderPS] = D3D12BasicFlow::CompileShader_VS_PS("./shaders/Basic.hlsl");
 	const auto [rootSignature, graphicsPipelineState]
@@ -256,7 +256,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowSize.x, WindowS
 	const GraphicsBuffer shadowGraphicsBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, shadowTextureMetadata,
 		GraphicsBufferUsagePermission::AllowRenderTarget, GraphicsBufferState::PixelShaderResource, Color(DepthBufferClearValue, 0, 0, 0));
 
-	const RootParameter rootParameterShadow = RootParameter::CreateBasic(1, 1, 0);
+	const RootParameter rootParameterShadow = RootParameter::CreateBasic(1, 1);
 	const SamplerConfig samplerConfigShadow = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
 	const auto [shaderVSShadow, shaderPSShadow] = D3D12BasicFlow::CompileShader_VS_PS("./shaders/ShadowDepthWrite.hlsl");
 	const auto [rootSignatureShadow, graphicsPipelineStateShadow]
@@ -303,7 +303,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowSize.x, WindowS
 	const GraphicsBuffer ppGraphicsBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, ppTextureMetadata,
 		GraphicsBufferUsagePermission::AllowRenderTarget, GraphicsBufferState::PixelShaderResource, Color::Transparent());
 
-	const RootParameter rootParameterPP = RootParameter::CreateBasic(1, 1, 0);
+	const RootParameter rootParameterPP = RootParameter::CreateBasic(1, 1);
 	const SamplerConfig samplerConfigPP = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
 	const auto [shaderVSPP, shaderPSPP] = D3D12BasicFlow::CompileShader_VS_PS("./shaders/PP.hlsl");
 	const auto [rootSignaturePP, graphicsPipelineStatePP]
@@ -351,7 +351,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowSize.x, WindowS
 	const GraphicsBuffer textGraphicsBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, textTextureMetadata,
 		GraphicsBufferUsagePermission::AllowRenderTarget, GraphicsBufferState::PixelShaderResource, Color::Transparent());
 
-	const RootParameter rootParameterText = RootParameter::CreateBasic(1, 3, 0);
+	const RootParameter rootParameterText = RootParameter::CreateBasic(1, 3);
 	const SamplerConfig samplerConfigText = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
 	const auto [shaderVSText, shaderPSText] = D3D12BasicFlow::CompileShader_VS_PS("./shaders/Text.hlsl");
 	const auto [rootSignatureText, graphicsPipelineStateText]
