@@ -19,32 +19,6 @@ static LRESULT CALLBACK FunctionName(HWND hwnd, UINT msg, WPARAM wparam, LPARAM 
 #define ShowError(Message) \
 ForiverEngine::WindowHelper::PopupErrorDialog(Message); \
 
-#ifdef ENABLE_CUI_CONSOLE
-
-	// 初期化のマクロ 開始
-#define BEGIN_INITIALIZE(WindowClassName, WindowTitle, HwndName, WindowSize) \
-DEFINE_DEFAULT_WINDOW_PROCEDURE(WindowProcedure) \
-\
-int WindowMain(hInstance) \
-{ \
-	if (!ForiverEngine::WindowHelper::InitializeWindowFromHInstance(hInstance, WindowProcedure, (WindowClassName))) \
-    { \
-		ShowError(L"ウィンドウの初期化に失敗しました"); \
-		return -1; \
-	} \
-\
-	HWND HwndName = ForiverEngine::WindowHelper::CreateTheWindow((WindowClassName), (WindowTitle), (WindowSize)); \
-\
-	/* キー入力を初期化 */ \
-    ForiverEngine::InputHelper::InitKeyTable(); \
-\
-	/* 時間計測を初期化 */ \
-	ForiverEngine::WindowHelper::InitTime(); \
-\
-	ForiverEngine::WindowHelper::CreateConsoleInGUIApplication(); \
-
-#else
-
 	// 初期化のマクロ 開始
 #define BEGIN_INITIALIZE(WindowClassName, WindowTitle, HwndName, WindowSize) \
 DEFINE_DEFAULT_WINDOW_PROCEDURE(WindowProcedure) \
@@ -65,43 +39,16 @@ int WindowMain(hInstance) \
 	/* 時間計測を初期化 */ \
 	ForiverEngine::WindowHelper::InitTime(); \
 
-#endif
-
-#ifdef ENABLE_CUI_CONSOLE
-
-	// 初期化のマクロ 終了
-#define END_INITIALIZE() \
-	ForiverEngine::WindowHelper::CloseConsoleInGUIApplication(); \
-    return 0; \
-} \
-
-#else
-
 	// 初期化のマクロ 終了
 #define END_INITIALIZE() \
     return 0; \
 } \
-
-#endif
-
-#ifdef ENABLE_CUI_CONSOLE
-
-	// 手動終了のマクロ
-#define QUIT() \
-{ \
-	ForiverEngine::WindowHelper::CloseConsoleInGUIApplication(); \
-	return 0; \
-} \
-
-#else
 
 	// 手動終了のマクロ
 #define QUIT() \
 { \
 	return 0; \
 } \
-
-#endif
 
 	// フレーム処理のマクロ 開始
 #define BEGIN_FRAME(HwndName) \
@@ -237,26 +184,6 @@ namespace ForiverEngine
 		/// </summary>
 		static void PopupErrorDialog(const std::wstring& message);
 
-#ifdef ENABLE_CUI_CONSOLE
-		/// <summary>
-		/// GUIアプリケーションでコンソールウィンドウを作成する
-		/// </summary>
-		static void CreateConsoleInGUIApplication()
-		{
-			FILE* fp;
-			AllocConsole();
-			freopen_s(&fp, "CONOUT$", "w", stdout); // 標準出力の割り当て (stdout)
-		}
-
-		/// <summary>
-		/// GUIアプリケーションで作成したコンソールウィンドウを閉じる
-		/// </summary>
-		static void CloseConsoleInGUIApplication()
-		{
-			FreeConsole();
-		}
-#endif
-
 	private:
 		inline static int targetFps = -1;
 		inline static double targetFrameTime = -1; // [ms]
@@ -264,11 +191,4 @@ namespace ForiverEngine
 		inline static double timeAtBeginFrame = -1; // フレーム開始時の時間をメモっておく用
 		inline static double deltaTime = -1; // 前フレームからの経過時間 [ms] を計算し、外部公開する
 	};
-
-#ifdef ENABLE_CUI_CONSOLE
-	template <class... Types>
-	inline void Print(const std::format_string<Types...> format, Types&&... args) {
-		std::print(std::cout, format, std::forward<Types>(args)...);
 	}
-#endif
-}
