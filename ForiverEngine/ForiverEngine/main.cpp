@@ -18,6 +18,9 @@ int Main(hInstance)
 	WindowHelper::SetTargetFps(60);
 	WindowHelper::SetCursorEnabled(false);
 
+	constexpr std::uint32_t RandomSeed = 0x12345678;
+	Random::SetSeed(RandomSeed);
+
 	//////////////////////////////
 	// プレイヤー挙動のパラメータ
 
