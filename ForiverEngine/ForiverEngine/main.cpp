@@ -413,7 +413,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowSize.x, WindowS
 	{
 		// Escape でゲーム終了
 		if (InputHelper::GetKeyInfo(Key::Escape).pressedNow)
-			return 0;
+			QUIT();
 
 		// 回転
 		PlayerControl::Rotate(
@@ -774,6 +774,6 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowSize.x, WindowS
 		if (!D3D12Helper::Present(swapChain))
 			ShowError(L"画面のフリップに失敗しました");
 	}
-	END_FRAME;
+	END_FRAME();
 }
-END_INITIALIZE(0);
+END_INITIALIZE();

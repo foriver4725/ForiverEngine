@@ -6,18 +6,18 @@
 // WinMain() のマクロ
 // 既存マクロと重複しない命名にしている
 #define WindowMain(hInstance) \
-WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
+WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) \
 
 	// デフォルトのウィンドウプロシージャを定義するマクロ
 #define DEFINE_DEFAULT_WINDOW_PROCEDURE(FunctionName) \
 static LRESULT CALLBACK FunctionName(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) \
 { \
     return ForiverEngine::WindowHelper::OnWindowProcedure(hwnd, msg, wparam, lparam); \
-}
+} \
 
 // エラーのメッセージボックスを出すマクロ
 #define ShowError(Message) \
-ForiverEngine::WindowHelper::PopupErrorDialog(Message);
+ForiverEngine::WindowHelper::PopupErrorDialog(Message); \
 
 #ifdef ENABLE_CUI_CONSOLE
 
@@ -41,7 +41,7 @@ int WindowMain(hInstance) \
 	/* 時間計測を初期化 */ \
 	ForiverEngine::WindowHelper::InitTime(); \
 \
-	ForiverEngine::WindowHelper::CreateConsoleInGUIApplication();
+	ForiverEngine::WindowHelper::CreateConsoleInGUIApplication(); \
 
 #else
 
@@ -63,24 +63,43 @@ int WindowMain(hInstance) \
 	ForiverEngine::InputHelper::InitKeyTable(); \
 \
 	/* 時間計測を初期化 */ \
-	ForiverEngine::WindowHelper::InitTime();
+	ForiverEngine::WindowHelper::InitTime(); \
 
 #endif
 
 #ifdef ENABLE_CUI_CONSOLE
 
 	// 初期化のマクロ 終了
-#define END_INITIALIZE(ReturnIntValue) \
+#define END_INITIALIZE() \
 	ForiverEngine::WindowHelper::CloseConsoleInGUIApplication(); \
-    return ReturnIntValue; \
-}
+    return 0; \
+} \
 
 #else
 
 	// 初期化のマクロ 終了
-#define END_INITIALIZE(ReturnIntValue) \
-    return ReturnIntValue; \
-}
+#define END_INITIALIZE() \
+    return 0; \
+} \
+
+#endif
+
+#ifdef ENABLE_CUI_CONSOLE
+
+	// 手動終了のマクロ
+#define QUIT() \
+{ \
+	ForiverEngine::WindowHelper::CloseConsoleInGUIApplication(); \
+	return 0; \
+} \
+
+#else
+
+	// 手動終了のマクロ
+#define QUIT() \
+{ \
+	return 0; \
+} \
 
 #endif
 
@@ -106,7 +125,7 @@ while (true) \
 		ForiverEngine::WindowHelper::FixCursorAtCenter(HwndName); \
 
 // フレーム処理のマクロ 終了
-#define END_FRAME \
+#define END_FRAME() \
 \
 	/* フレーム終了時の時間を記録し、必要ならばスリープする */ \
 	ForiverEngine::WindowHelper::CollectTimeAtEndFrameAndSleepIfNeeded(); \
