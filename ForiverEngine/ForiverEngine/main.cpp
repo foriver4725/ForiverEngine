@@ -59,16 +59,15 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowSize.x, WindowS
 	// 太陽からのカメラ 平行投影
 	constexpr Color SunShadowColor = Color(0.7f, 0.7f, 0.7f);
 	constexpr float SunDistanceFromPlayer = 100;
-	constexpr Vector2 SunClipSize = Vector2(1024, 1024); // 幅と高さ
-	constexpr Vector2 SunClipZ = Vector2(0.1f, 500.0f); // x: near, y: far
+	constexpr Vector2 SunClipSizeXY = Vector2(1024, 1024);
+	constexpr Vector2 SunClipRangeZ = Vector2(0.1f, 500.0f);
 	const Vector3 SunDirection = Vector3(1.0f, -1.0f, 1.0f).Normed();
 	const std::function<CameraTransform()> CreateSunCameraTransform = [&]()
 		{
 			return CameraTransform::CreateOrthographic(
 				PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight) - SunDirection * SunDistanceFromPlayer,
 				Quaternion::VectorToVector(Vector3::Forward(), SunDirection),
-				SunClipSize.x, SunClipSize.y,
-				SunClipZ.x, SunClipZ.y
+				SunClipSizeXY, SunClipRangeZ
 			);
 		};
 	CameraTransform sunCameraTransform = CreateSunCameraTransform();

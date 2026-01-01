@@ -22,8 +22,8 @@ namespace ForiverEngine
 		float fov; // 垂直視野角 (ラジアン)
 		float aspectRatio; // 幅 / 高さ
 
-		static CameraTransform CreatePerspective(const Vector3& position, const Quaternion& rotation, float fov, float aspectRatio,
-			float nearClip = 0.1f, float farClip = 1000.0f
+		static CameraTransform CreatePerspective(
+			const Vector3& position, const Quaternion& rotation, float fov, float aspectRatio, const Vector2& clipRangeZ = Vector2(0.1f, 1000.0f)
 		) noexcept
 		{
 			CameraTransform cameraTransform = {};
@@ -35,8 +35,8 @@ namespace ForiverEngine
 			cameraTransform.scale = Vector3::One();
 
 			// CameraTransform
-			cameraTransform.nearClip = nearClip;
-			cameraTransform.farClip = farClip;
+			cameraTransform.nearClip = clipRangeZ.x;
+			cameraTransform.farClip = clipRangeZ.y;
 			cameraTransform.isPerspective = true;
 			cameraTransform.fov = fov;
 			cameraTransform.aspectRatio = aspectRatio;
@@ -44,8 +44,8 @@ namespace ForiverEngine
 			return cameraTransform;
 		}
 
-		static CameraTransform CreateOrthographic(const Vector3& position, const Quaternion& rotation, float clipSizeX, float clipSizeY,
-			float nearClip = 0.1f, float farClip = 1000.0f
+		static CameraTransform CreateOrthographic(
+			const Vector3& position, const Quaternion& rotation, const Vector2& clipSizeXY, const Vector2& clipRangeZ = Vector2(0.1f, 1000.0f)
 		) noexcept
 		{
 			CameraTransform cameraTransform = {};
@@ -57,11 +57,11 @@ namespace ForiverEngine
 			cameraTransform.scale = Vector3::One();
 
 			// CameraTransform
-			cameraTransform.nearClip = nearClip;
-			cameraTransform.farClip = farClip;
+			cameraTransform.nearClip = clipRangeZ.x;
+			cameraTransform.farClip = clipRangeZ.y;
 			cameraTransform.isPerspective = false;
-			cameraTransform.fov = std::atan2(clipSizeY * 0.5f, nearClip) * 2.0f; // nearクリップ面で平行投影を始めると想定するので...
-			cameraTransform.aspectRatio = clipSizeX / clipSizeY;
+			cameraTransform.fov = std::atan2(clipSizeXY.y * 0.5f, clipRangeZ.x) * 2.0f; // nearクリップ面で平行投影を始めると想定するので...
+			cameraTransform.aspectRatio = clipSizeXY.x / clipSizeXY.y;
 
 			return cameraTransform;
 		}
