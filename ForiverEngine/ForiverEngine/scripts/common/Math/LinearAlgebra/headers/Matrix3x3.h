@@ -19,6 +19,7 @@ namespace ForiverEngine
 			, c0r2(0.0f), c1r2(0.0f), c2r2(1.0f)
 		{
 		}
+
 		constexpr Matrix3x3(
 			float c0r0, float c1r0, float c2r0,
 			float c0r1, float c1r1, float c2r1,
@@ -42,8 +43,8 @@ namespace ForiverEngine
 		{
 		}
 
-		explicit Matrix3x3(const Matrix2x2& other) noexcept;
-		explicit Matrix3x3(Matrix2x2&& other) noexcept;
+		Matrix3x3(const Matrix2x2& other) noexcept;
+		Matrix3x3(Matrix2x2&& other) noexcept;
 
 		static constexpr Matrix3x3 Identity() noexcept
 		{

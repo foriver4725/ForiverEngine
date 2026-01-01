@@ -13,12 +13,17 @@ namespace ForiverEngine
 		float w;
 
 		constexpr Vector4() noexcept : x(0.0f), y(0.0f), z(0.0f), w(1.0f) {}
+
 		constexpr Vector4(float x, float y, float z, float w = 1.0f) noexcept : x(x), y(y), z(z), w(w) {}
 		constexpr Vector4(const Vector4& other) noexcept : x(other.x), y(other.y), z(other.z), w(other.w) {}
 		constexpr Vector4(Vector4&& other) noexcept : x(other.x), y(other.y), z(other.z), w(other.w) {}
 
-		explicit Vector4(const Vector3& vec, float w = 1.0f) noexcept;
-		explicit Vector4(const Lattice4& lattice) noexcept;
+		constexpr Vector4(int x, int y, int z, int w = 1) noexcept : x(static_cast<float>(x)), y(static_cast<float>(y)), z(static_cast<float>(z)), w(static_cast<float>(w)) {}
+		Vector4(const Lattice4& lattice) noexcept;
+		Vector4(Lattice4&& lattice) noexcept;
+
+		Vector4(const Vector3& vec, float w = 1.0f) noexcept;
+		Vector4(Vector3&& vec, float w = 1.0f) noexcept;
 
 		Vector4& operator=(const Vector4& other) noexcept;
 		Vector4& operator=(Vector4&& other) noexcept;

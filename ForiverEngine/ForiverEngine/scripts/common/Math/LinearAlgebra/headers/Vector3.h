@@ -12,12 +12,17 @@ namespace ForiverEngine
 		float z;
 
 		constexpr Vector3() noexcept : x(0.0f), y(0.0f), z(0.0f) {}
+
 		constexpr Vector3(float x, float y, float z = 0.0f) noexcept : x(x), y(y), z(z) {}
 		constexpr Vector3(const Vector3& other) noexcept : x(other.x), y(other.y), z(other.z) {}
 		constexpr Vector3(Vector3&& other) noexcept : x(other.x), y(other.y), z(other.z) {}
 
-		explicit Vector3(const Vector2& vec, float z = 0.0f) noexcept;
-		explicit Vector3(const Lattice3& lattice) noexcept;
+		constexpr Vector3(int x, int y, int z = 0) noexcept : x(static_cast<float>(x)), y(static_cast<float>(y)), z(static_cast<float>(z)) {}
+		Vector3(const Lattice3& lattice) noexcept;
+		Vector3(Lattice3&& lattice) noexcept;
+
+		Vector3(const Vector2& vec, float z = 0.0f) noexcept;
+		Vector3(Vector2&& vec, float z = 0.0f) noexcept;
 
 		static constexpr Vector3 Zero() noexcept { return Vector3(0.0f, 0.0f, 0.0f); }
 		static constexpr Vector3 One() noexcept { return Vector3(1.0f, 1.0f, 1.0f); }

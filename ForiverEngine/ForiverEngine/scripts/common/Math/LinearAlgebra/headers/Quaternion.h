@@ -12,6 +12,7 @@ namespace ForiverEngine
 		float w;
 
 		constexpr Quaternion() noexcept : x(0.0f), y(0.0f), z(0.0f), w(1.0f) {}
+
 		constexpr Quaternion(float x, float y, float z, float w) noexcept : x(x), y(y), z(z), w(w) {}
 		constexpr Quaternion(const Quaternion& other) noexcept : x(other.x), y(other.y), z(other.z), w(other.w) {}
 		constexpr Quaternion(Quaternion&& other) noexcept : x(other.x), y(other.y), z(other.z), w(other.w) {}

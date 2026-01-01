@@ -8,8 +8,11 @@
 
 namespace ForiverEngine
 {
-	Vector3::Vector3(const Vector2& vec, float z) noexcept : x(vec.x), y(vec.y), z(z) {}
 	Vector3::Vector3(const Lattice3& lattice) noexcept : x(static_cast<float>(lattice.x)), y(static_cast<float>(lattice.y)), z(static_cast<float>(lattice.z)) {}
+	Vector3::Vector3(Lattice3&& lattice) noexcept : x(static_cast<float>(lattice.x)), y(static_cast<float>(lattice.y)), z(static_cast<float>(lattice.z)) {}
+
+	Vector3::Vector3(const Vector2& vec, float z = 0.0f) noexcept : x(vec.x), y(vec.y), z(z) {}
+	Vector3::Vector3(Vector2&& vec, float z = 0.0f) noexcept : x(vec.x), y(vec.y), z(z) {}
 
 	Vector3& Vector3::operator=(const Vector3& other) noexcept
 	{

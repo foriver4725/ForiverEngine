@@ -8,8 +8,11 @@
 
 namespace ForiverEngine
 {
-	Lattice4::Lattice4(const Lattice3& lattice, int w) noexcept : x(lattice.x), y(lattice.y), z(lattice.z), w(w) {}
 	Lattice4::Lattice4(const Vector4& vec) noexcept : x(static_cast<int>(vec.x)), y(static_cast<int>(vec.y)), z(static_cast<int>(vec.z)), w(static_cast<int>(vec.w)) {}
+	Lattice4::Lattice4(Vector4&& vec) noexcept : x(static_cast<int>(vec.x)), y(static_cast<int>(vec.y)), z(static_cast<int>(vec.z)), w(static_cast<int>(vec.w)) {}
+
+	Lattice4::Lattice4(const Lattice3& lattice, int w) noexcept : x(lattice.x), y(lattice.y), z(lattice.z), w(w) {}
+	Lattice4::Lattice4(Lattice3&& lattice, int w) noexcept : x(lattice.x), y(lattice.y), z(lattice.z), w(w) {}
 
 	Lattice4& Lattice4::operator=(const Lattice4& other) noexcept
 	{

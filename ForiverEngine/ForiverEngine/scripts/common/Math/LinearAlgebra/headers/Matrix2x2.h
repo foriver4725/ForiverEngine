@@ -15,6 +15,7 @@ namespace ForiverEngine
 			, c0r1(0.0f), c1r1(1.0f)
 		{
 		}
+
 		constexpr Matrix2x2(
 			float c0r0, float c1r0,
 			float c0r1, float c1r1
