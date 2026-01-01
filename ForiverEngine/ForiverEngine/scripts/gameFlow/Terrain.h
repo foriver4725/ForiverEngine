@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <scripts/common/Include.h>
 #include <scripts/helper/Include.h>
@@ -17,16 +17,16 @@ namespace ForiverEngine
 	};
 
 	/// <summary>
-	/// ƒ`ƒƒƒ“ƒN’PˆÊ‚Ì’nŒ`ƒf[ƒ^
+	/// ãƒãƒ£ãƒ³ã‚¯å˜ä½ã®åœ°å½¢ãƒ‡ãƒ¼ã‚¿
 	/// </summary>
 	class Terrain
 	{
 	public:
-		static constexpr int ChunkSize = 16; // ƒ`ƒƒƒ“ƒN‚Ì1•Ó‚ÌƒTƒCƒY (ƒuƒƒbƒN”)
-		static constexpr int ChunkHeight = 256; // ƒ`ƒƒƒ“ƒN‚Ì‚‚³ (ƒuƒƒbƒN”)
+		static constexpr int ChunkSize = 16; // ãƒãƒ£ãƒ³ã‚¯ã®1è¾ºã®ã‚µã‚¤ã‚º (ãƒ–ãƒ­ãƒƒã‚¯æ•°)
+		static constexpr int ChunkHeight = 256; // ãƒãƒ£ãƒ³ã‚¯ã®é«˜ã• (ãƒ–ãƒ­ãƒƒã‚¯æ•°)
 
 		/// <summary>
-		/// ‰½‚à‚È‚¢‹ó‹C‚Ì‚İ‚Åì¬‚·‚é
+		/// ä½•ã‚‚ãªã„ç©ºæ°—ã®ã¿ã§ä½œæˆã™ã‚‹
 		/// </summary>
 		static Terrain CreateVoid(int xSize, int ySize, int zSize)
 		{
@@ -38,7 +38,7 @@ namespace ForiverEngine
 					zSize,
 					std::vector<Block>(
 						xSize,
-						Block::Air // ‰Šú’l‚Í‹ó‹C
+						Block::Air // åˆæœŸå€¤ã¯ç©ºæ°—
 					)
 				)
 			);
@@ -46,7 +46,7 @@ namespace ForiverEngine
 			return terrain;
 		}
 		/// <summary>
-		/// ‰½‚à‚È‚¢‹ó‹C‚Ì‚İ‚Åì¬‚·‚é
+		/// ä½•ã‚‚ãªã„ç©ºæ°—ã®ã¿ã§ä½œæˆã™ã‚‹
 		/// </summary>
 		static Terrain CreateVoid(const Lattice3& size)
 		{
@@ -54,16 +54,16 @@ namespace ForiverEngine
 		}
 
 		/// <summary>
-		/// <para>ƒmƒCƒY‚ğ—p‚¢‚Ä’nŒ`‚ğ¶¬‚·‚é</para>
-		/// <para>‚“x‚É‰‚¶‚Ä », ‘/“y, Î ‚ÆƒuƒƒbƒN‚ª•Ï‰»‚µ‚Ä‚¢‚­</para>
-		/// <para>‘/“y ‚É‚Â‚¢‚ÄAŠî–{‚Í“y‚ÅA“y‚ªÅã’i‚ÅI‚í‚Á‚Ä‚¢‚é‚È‚ç‚»‚ê‚ª‘‚É‚È‚é</para>
+		/// <para>ãƒã‚¤ã‚ºã‚’ç”¨ã„ã¦åœ°å½¢ã‚’ç”Ÿæˆã™ã‚‹</para>
+		/// <para>é«˜åº¦ã«å¿œã˜ã¦ ç ‚, è‰/åœŸ, çŸ³ ã¨ãƒ–ãƒ­ãƒƒã‚¯ãŒå¤‰åŒ–ã—ã¦ã„ã</para>
+		/// <para>è‰/åœŸ ã«ã¤ã„ã¦ã€åŸºæœ¬ã¯åœŸã§ã€åœŸãŒæœ€ä¸Šæ®µã§çµ‚ã‚ã£ã¦ã„ã‚‹ãªã‚‰ãã‚ŒãŒè‰ã«ãªã‚‹</para>
 		/// </summary>
-		/// <param name="size">’nŒ`‚ÌƒTƒCƒY</param>
-		/// <param name="noiseScale">ƒmƒCƒY‚ÌƒXƒP[ƒ‹ (x: …•½ƒXƒP[ƒ‹, y: ‚’¼ƒXƒP[ƒ‹)</param>
-		/// <param name="heightBulk">‚±‚Ì‚‚³•ª‚©‚³‘‚µ‚·‚é</param>
-		/// <param name="minDirtHeight">“y‚ªo‚Ä‚­‚éÅ’á‚“x</param>
-		/// <param name="minStoneHeight">Î‚ªo‚Ä‚­‚éÅ’á‚“x</param>
-		/// <param name="seed">ƒV[ƒh’l</param>
+		/// <param name="size">åœ°å½¢ã®ã‚µã‚¤ã‚º</param>
+		/// <param name="noiseScale">ãƒã‚¤ã‚ºã®ã‚¹ã‚±ãƒ¼ãƒ« (x: æ°´å¹³ã‚¹ã‚±ãƒ¼ãƒ«, y: å‚ç›´ã‚¹ã‚±ãƒ¼ãƒ«)</param>
+		/// <param name="heightBulk">ã“ã®é«˜ã•åˆ†ã‹ã•å¢—ã—ã™ã‚‹</param>
+		/// <param name="minDirtHeight">åœŸãŒå‡ºã¦ãã‚‹æœ€ä½é«˜åº¦</param>
+		/// <param name="minStoneHeight">çŸ³ãŒå‡ºã¦ãã‚‹æœ€ä½é«˜åº¦</param>
+		/// <param name="seed">ã‚·ãƒ¼ãƒ‰å€¤</param>
 		/// <returns></returns>
 		static Terrain CreateFromNoise(const Lattice2& chunkIndex, const Vector2& noiseScale, int seed,
 			int heightBulk, int minDirtHeight, int minStoneHeight)
@@ -78,7 +78,7 @@ namespace ForiverEngine
 				for (int z = 0; z < ChunkSize; ++z)
 				{
 					const float noise = Noise::Simplex2D(1.0f * (x + ChunkSize * chunkIndex.x + seedX) * noiseScale.x, 1.0f * (z + ChunkSize * chunkIndex.y + seedZ) * noiseScale.x);
-					const float heightNormed = (noise + 1.0f) * 0.5f; // [0, 1] ‚É³‹K‰»
+					const float heightNormed = (noise + 1.0f) * 0.5f; // [0, 1] ã«æ­£è¦åŒ–
 					const int height = std::clamp(heightBulk + static_cast<int>(heightNormed * noiseScale.y), 0, ChunkHeight - 1);
 
 					for (int y = 0; y <= height; ++y)
@@ -90,7 +90,7 @@ namespace ForiverEngine
 						else if (y >= minDirtHeight)
 						{
 							if (y == height)
-								terrain.SetBlock(x, y, z, Block::Grass); // Åã’i‚Í‘
+								terrain.SetBlock(x, y, z, Block::Grass); // æœ€ä¸Šæ®µã¯è‰
 							else
 								terrain.SetBlock(x, y, z, Block::Dirt);
 						}
@@ -131,8 +131,8 @@ namespace ForiverEngine
 		}
 
 		/// <summary>
-		/// <para>’n•\ƒuƒƒbƒN‚ÌYÀ•W‚ğæ“¾‚·‚é (~‡‚ÉYÀ•W‚ğŒ©‚é. –³‚¢‚È‚çƒ`ƒƒƒ“ƒN‚Ì‚‚³‚ÌÅ¬’l-1)</para>
-		/// <para>‚½‚¾‚µAYÀ•W‚Ì’Tõ‚É‚Â‚¢‚Ä‚ÍAmaxY ˆÈ‰º‚µ‚©’n•\Œó•â‚Æ‚µ‚Ä‚İ‚È‚¢ (’n’†‚Å‚à³‚µ‚­”»’è‚·‚é‚½‚ß)</para>
+		/// <para>åœ°è¡¨ãƒ–ãƒ­ãƒƒã‚¯ã®Yåº§æ¨™ã‚’å–å¾—ã™ã‚‹ (é™é †ã«Yåº§æ¨™ã‚’è¦‹ã‚‹. ç„¡ã„ãªã‚‰ãƒãƒ£ãƒ³ã‚¯ã®é«˜ã•ã®æœ€å°å€¤-1)</para>
+		/// <para>ãŸã ã—ã€Yåº§æ¨™ã®æ¢ç´¢ã«ã¤ã„ã¦ã¯ã€maxY ä»¥ä¸‹ã—ã‹åœ°è¡¨å€™è£œã¨ã—ã¦ã¿ãªã„ (åœ°ä¸­ã§ã‚‚æ­£ã—ãåˆ¤å®šã™ã‚‹ãŸã‚)</para>
 		/// </summary>
 		int GetFloorHeight(int x, int z, int maxY = ChunkHeight - 1) const
 		{
@@ -142,7 +142,7 @@ namespace ForiverEngine
 					return y;
 			}
 
-			return -1; // ’n–Ê‚ª–³‚¢
+			return -1; // åœ°é¢ãŒç„¡ã„
 		}
 		int GetFloorHeight(const Lattice2& position, int maxY = ChunkHeight - 1) const
 		{
@@ -150,8 +150,8 @@ namespace ForiverEngine
 		}
 
 		/// <summary>
-		/// <para>“VˆäƒuƒƒbƒN‚ÌYÀ•W‚ğæ“¾‚·‚é (¸‡‚ÉYÀ•W‚ğŒ©‚é. –³‚¢‚È‚çƒ`ƒƒƒ“ƒN‚Ì‚‚³‚ÌÅ‘å’l+1)</para>
-		/// <para>‚½‚¾‚µAYÀ•W‚Ì’Tõ‚É‚Â‚¢‚Ä‚ÍAminY ˆÈã‚µ‚©“VˆäŒó•â‚Æ‚µ‚Ä‚İ‚È‚¢ (’n’†‚Å‚à³‚µ‚­”»’è‚·‚é‚½‚ß)</para>
+		/// <para>å¤©äº•ãƒ–ãƒ­ãƒƒã‚¯ã®Yåº§æ¨™ã‚’å–å¾—ã™ã‚‹ (æ˜‡é †ã«Yåº§æ¨™ã‚’è¦‹ã‚‹. ç„¡ã„ãªã‚‰ãƒãƒ£ãƒ³ã‚¯ã®é«˜ã•ã®æœ€å¤§å€¤+1)</para>
+		/// <para>ãŸã ã—ã€Yåº§æ¨™ã®æ¢ç´¢ã«ã¤ã„ã¦ã¯ã€minY ä»¥ä¸Šã—ã‹å¤©äº•å€™è£œã¨ã—ã¦ã¿ãªã„ (åœ°ä¸­ã§ã‚‚æ­£ã—ãåˆ¤å®šã™ã‚‹ãŸã‚)</para>
 		/// </summary>
 		int GetCeilHeight(int x, int z, int minY = 0) const
 		{
@@ -160,7 +160,7 @@ namespace ForiverEngine
 				if (data[y][z][x] != Block::Air)
 					return y;
 			}
-			return ChunkHeight; // “Vˆä‚ª–³‚¢
+			return ChunkHeight; // å¤©äº•ãŒç„¡ã„
 		}
 		int GetCeilHeight(const Lattice2& position, int minY = 0) const
 		{
@@ -168,7 +168,7 @@ namespace ForiverEngine
 		}
 
 	private:
-		// y, z, x ‚Ì‡”Ô
+		// y, z, x ã®é †ç•ª
 		std::vector<std::vector<std::vector<Block>>> data;
 	};
 }

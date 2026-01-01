@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <scripts/common/Include.h>
 #include <scripts/helper/Include.h>
@@ -12,7 +12,7 @@ namespace ForiverEngine
 	public:
 		DELETE_DEFAULT_METHODS(PlayerControl);
 
-		// —^‚¦‚ç‚ê‚½À•W‚ª‚Ç‚ÌƒuƒƒbƒN‚ÌˆÊ’u‚É‚ ‚é‚©‚ğŒvZ‚µAŠiqÀ•W‚Å•Ô‚·
+		// ä¸ãˆã‚‰ã‚ŒãŸåº§æ¨™ãŒã©ã®ãƒ–ãƒ­ãƒƒã‚¯ã®ä½ç½®ã«ã‚ã‚‹ã‹ã‚’è¨ˆç®—ã—ã€æ ¼å­åº§æ¨™ã§è¿”ã™
 		static Lattice3 GetBlockLatticePosition(const Vector3& position)
 		{
 			return Lattice3(
@@ -27,7 +27,7 @@ namespace ForiverEngine
 			return position - Vector3::Up() * eyeHeight;
 		}
 
-		// ƒ[ƒ‹ƒhÀ•W -> ƒ`ƒƒƒ“ƒN‚ÌƒCƒ“ƒfƒbƒNƒX
+		// ãƒ¯ãƒ¼ãƒ«ãƒ‰åº§æ¨™ -> ãƒãƒ£ãƒ³ã‚¯ã®ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹
 		static Lattice2 GetChunkIndex(const Vector3& position)
 		{
 			return Lattice2(
@@ -36,14 +36,14 @@ namespace ForiverEngine
 			);
 		}
 
-		// ƒ`ƒƒƒ“ƒN‚ÌƒCƒ“ƒfƒbƒNƒX‚ªA’nŒ`‘S‘Ì‚Ì”ÍˆÍ“à‚Å‚ ‚é‚©
+		// ãƒãƒ£ãƒ³ã‚¯ã®ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãŒã€åœ°å½¢å…¨ä½“ã®ç¯„å›²å†…ã§ã‚ã‚‹ã‹
 		static bool IsChunkInBounds(const Lattice2& chunkIndex, int chunkCount)
 		{
 			return 0 <= chunkIndex.x && chunkIndex.x < chunkCount
 				&& 0 <= chunkIndex.y && chunkIndex.y < chunkCount;
 		}
 
-		// ƒ[ƒ‹ƒhÀ•W -> ƒ`ƒƒƒ“ƒN“à‚Ìƒ[ƒJƒ‹À•W ([0.0f, ChunkSize))
+		// ãƒ¯ãƒ¼ãƒ«ãƒ‰åº§æ¨™ -> ãƒãƒ£ãƒ³ã‚¯å†…ã®ãƒ­ãƒ¼ã‚«ãƒ«åº§æ¨™ ([0.0f, ChunkSize))
 		static Vector3 GetChunkLocalPosition(const Vector3& position)
 		{
 			return Vector3(
@@ -61,25 +61,25 @@ namespace ForiverEngine
 
 			const Quaternion newRotation = rotationAmount * transform.rotation;
 
-			if (std::abs((newRotation * Vector3::Forward()).y) < 0.99f) // ã‰º‰ñ“]‚ğ§ŒÀ (‘O•ûŒüƒxƒNƒgƒ‹‚Ìy¬•ª‚Å”»’è)
+			if (std::abs((newRotation * Vector3::Forward()).y) < 0.99f) // ä¸Šä¸‹å›è»¢ã‚’åˆ¶é™ (å‰æ–¹å‘ãƒ™ã‚¯ãƒˆãƒ«ã®yæˆåˆ†ã§åˆ¤å®š)
 				transform.rotation = newRotation;
 		}
 
 		static void MoveH(Transform& transform, const Vector2& moveInput, float moveSpeed, float deltaSeconds)
 		{
 			Vector3 moveDirection = transform.rotation * Vector3(moveInput.x, 0.0f, moveInput.y);
-			moveDirection.y = 0.0f; // …•½¬•ª‚Ì‚İ
-			moveDirection.Norm(); // ÅŒã‚É³‹K‰»‚·‚é
+			moveDirection.y = 0.0f; // æ°´å¹³æˆåˆ†ã®ã¿
+			moveDirection.Norm(); // æœ€å¾Œã«æ­£è¦åŒ–ã™ã‚‹
 
 			transform.position += moveDirection * (moveSpeed * deltaSeconds);
 		}
 
-		// ‘«Œ³‚æ‚è‰º‚Å‚ ‚é’†‚ÅAÅ‚à‚‚¢ƒuƒƒbƒN‚ÌYÀ•W‚ğæ“¾‚·‚é (–³‚¢‚È‚ç‘½•ªAƒ`ƒƒƒ“ƒN‚Ì‚‚³‚ÌÅ¬’l-1‚ğ•Ô‚·)
+		// è¶³å…ƒã‚ˆã‚Šä¸‹ã§ã‚ã‚‹ä¸­ã§ã€æœ€ã‚‚é«˜ã„ãƒ–ãƒ­ãƒƒã‚¯ã®Yåº§æ¨™ã‚’å–å¾—ã™ã‚‹ (ç„¡ã„ãªã‚‰å¤šåˆ†ã€ãƒãƒ£ãƒ³ã‚¯ã®é«˜ã•ã®æœ€å°å€¤-1ã‚’è¿”ã™)
 		template<int ChunkSize>
 		static int GetFloorHeight(
 			const std::array<std::array<Terrain, ChunkSize>, ChunkSize>& terrainChunks,
-			const Vector3& position, // ‘«Œ³‚ÌÀ•W (’n–Ê‚Ì‚‚³‚Í‚±‚ê‚æ‚è‘å‚«‚­‚È‚é‚±‚Æ‚Í‚È‚¢)
-			const Vector3& size // ƒRƒŠƒWƒ‡ƒ“‚ÌƒTƒCƒY
+			const Vector3& position, // è¶³å…ƒã®åº§æ¨™ (åœ°é¢ã®é«˜ã•ã¯ã“ã‚Œã‚ˆã‚Šå¤§ãããªã‚‹ã“ã¨ã¯ãªã„)
+			const Vector3& size // ã‚³ãƒªã‚¸ãƒ§ãƒ³ã®ã‚µã‚¤ã‚º
 		)
 		{
 			const Lattice2 chunkIndex = GetChunkIndex(position);
@@ -105,12 +105,12 @@ namespace ForiverEngine
 			return y;
 		}
 
-		// ‹ü‚Ì‚‚³‚æ‚èã‚Å‚ ‚é’†‚ÅAÅ‚à’á‚¢ƒuƒƒbƒN‚ÌYÀ•W‚ğæ“¾‚·‚é (–³‚¢‚È‚ç‘½•ªAƒ`ƒƒƒ“ƒN‚Ì‚‚³‚ÌÅ‘å’l+1‚ğ•Ô‚·)
+		// è¦–ç·šã®é«˜ã•ã‚ˆã‚Šä¸Šã§ã‚ã‚‹ä¸­ã§ã€æœ€ã‚‚ä½ã„ãƒ–ãƒ­ãƒƒã‚¯ã®Yåº§æ¨™ã‚’å–å¾—ã™ã‚‹ (ç„¡ã„ãªã‚‰å¤šåˆ†ã€ãƒãƒ£ãƒ³ã‚¯ã®é«˜ã•ã®æœ€å¤§å€¤+1ã‚’è¿”ã™)
 		template<int ChunkSize>
 		static int GetCeilHeight(
 			const std::array<std::array<Terrain, ChunkSize>, ChunkSize>& terrainChunks,
-			const Vector3& position, // ‹ü‚ÌÀ•W (’n–Ê‚Ì‚‚³‚Í‚±‚êˆÈ‰º‚É‚È‚é‚±‚Æ‚Í‚È‚¢)
-			const Vector3& size // ƒRƒŠƒWƒ‡ƒ“‚ÌƒTƒCƒY
+			const Vector3& position, // è¦–ç·šã®åº§æ¨™ (åœ°é¢ã®é«˜ã•ã¯ã“ã‚Œä»¥ä¸‹ã«ãªã‚‹ã“ã¨ã¯ãªã„)
+			const Vector3& size // ã‚³ãƒªã‚¸ãƒ§ãƒ³ã®ã‚µã‚¤ã‚º
 		)
 		{
 			const Lattice2 chunkIndex = GetChunkIndex(position);
@@ -139,8 +139,8 @@ namespace ForiverEngine
 		template<int ChunkSize>
 		static bool IsOverlappingWithTerrain(
 			const std::array<std::array<Terrain, ChunkSize>, ChunkSize>& terrainChunks,
-			const Vector3& position, // ‘«Œ³‚ÌÀ•W
-			const Vector3& size // ƒRƒŠƒWƒ‡ƒ“‚ÌƒTƒCƒY
+			const Vector3& position, // è¶³å…ƒã®åº§æ¨™
+			const Vector3& size // ã‚³ãƒªã‚¸ãƒ§ãƒ³ã®ã‚µã‚¤ã‚º
 		)
 		{
 			const Lattice2 chunkIndex = GetChunkIndex(position);
