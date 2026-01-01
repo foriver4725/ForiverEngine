@@ -15,11 +15,11 @@ namespace ForiverEngine
 		// 与えられた座標がどのブロックの位置にあるかを計算し、格子座標で返す
 		static Lattice3 GetBlockLatticePosition(const Vector3& position)
 		{
-			return Lattice3(
+			return Lattice3(Vector3(
 				std::round(position.x),
 				std::round(position.y),
 				std::round(position.z)
-			);
+			));
 		}
 
 		static Vector3 GetFootPosition(const Vector3& position, float eyeHeight)
@@ -30,10 +30,10 @@ namespace ForiverEngine
 		// ワールド座標 -> チャンクのインデックス
 		static Lattice2 GetChunkIndex(const Vector3& position)
 		{
-			return Lattice2(
+			return Lattice2(Vector2(
 				std::floor(position.x / Terrain::ChunkSize),
 				std::floor(position.z / Terrain::ChunkSize)
-			);
+			));
 		}
 
 		// チャンクのインデックスが、地形全体の範囲内であるか
