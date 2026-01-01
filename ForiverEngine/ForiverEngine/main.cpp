@@ -1,11 +1,7 @@
 ﻿#include <scripts/common/Include.h>
 #include <scripts/helper/Include.h>
 #include <scripts/component/Include.h>
-
-#include <scripts/headers/BasicFlow.h>
-#include <scripts/headers/WindowText.h>
-#include <scripts/headers/Terrain.h>
-#include <scripts/headers/PlayerControl.h>
+#include <scripts/gameFlow/Include.h>
 
 constexpr int WindowWidth = 1344;
 constexpr int WindowHeight = 756;
@@ -263,7 +259,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 
 	const RootParameter rootParameterShadow = RootParameter::CreateBasic(1, 1, 0);
 	const SamplerConfig samplerConfigShadow = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
-	const auto [shaderVSShadow, shaderPSShadow] = D3D12BasicFlow::CompileShader_VS_PS("./shaders/DepthWrite.hlsl");
+	const auto [shaderVSShadow, shaderPSShadow] = D3D12BasicFlow::CompileShader_VS_PS("./shaders/ShadowDepthWrite.hlsl");
 	const auto [rootSignatureShadow, graphicsPipelineStateShadow]
 		= D3D12BasicFlow::CreateRootSignatureAndGraphicsPipelineState(
 			device, rootParameterShadow, samplerConfigShadow, shaderVSShadow, shaderPSShadow, VertexLayoutsQuad, FillMode::Solid, CullMode::Back, true);

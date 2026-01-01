@@ -172,7 +172,7 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="oss\SimplexNoise.cpp" />
-    <ClCompile Include="scripts\headers\BasicFlow.cpp" />
+    <ClCompile Include="scripts\gameFlow\BasicFlow.cpp" />
     <ClCompile Include="scripts\helper\sources\D3D12Helper.cpp" />
     <ClCompile Include="scripts\helper\sources\InputHelper.cpp" />
     <ClCompile Include="scripts\helper\sources\TextureLoader.cpp" />
@@ -206,10 +206,11 @@
     <ClInclude Include="scripts\component\Transform\CameraTransform.h" />
     <ClInclude Include="scripts\component\Transform\Include.h" />
     <ClInclude Include="scripts\component\Transform\Transform.h" />
-    <ClInclude Include="scripts\headers\BasicFlow.h" />
-    <ClInclude Include="scripts\headers\PlayerControl.h" />
-    <ClInclude Include="scripts\headers\Terrain.h" />
-    <ClInclude Include="scripts\headers\WindowText.h" />
+    <ClInclude Include="scripts\gameFlow\BasicFlow.h" />
+    <ClInclude Include="scripts\gameFlow\Include.h" />
+    <ClInclude Include="scripts\gameFlow\PlayerControl.h" />
+    <ClInclude Include="scripts\gameFlow\Terrain.h" />
+    <ClInclude Include="scripts\gameFlow\WindowText.h" />
     <ClInclude Include="scripts\helper\headers\D3D12Defines.h" />
     <ClInclude Include="scripts\helper\headers\D3D12Helper.h" />
     <ClInclude Include="scripts\helper\headers\InputHelper.h" />
@@ -254,7 +255,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="shaders\DepthWrite.hlsl">
+    <FxCompile Include="shaders\ShadowDepthWrite.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>

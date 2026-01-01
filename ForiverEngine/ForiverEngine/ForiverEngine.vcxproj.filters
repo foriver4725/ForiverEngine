@@ -17,8 +17,8 @@
     <ClCompile Include="scripts\helper\sources\WindowHelper.cpp">
       <Filter>scripts\helper\sources</Filter>
     </ClCompile>
-    <ClCompile Include="scripts\headers\BasicFlow.cpp">
-      <Filter>scripts\headers</Filter>
+    <ClCompile Include="scripts\gameFlow\BasicFlow.cpp">
+      <Filter>scripts\gameFlow</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -33,9 +33,6 @@
     </Filter>
     <Filter Include="scripts\common">
       <UniqueIdentifier>{26cdc3f7-bef5-4e10-ba4d-8d81664aa60a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="scripts\headers">
-      <UniqueIdentifier>{0d027826-2e35-4f6d-8616-6dbcad6c5df4}</UniqueIdentifier>
     </Filter>
     <Filter Include="scripts\common\Math">
       <UniqueIdentifier>{5d68defa-3648-4d19-82f9-624bbb67090d}</UniqueIdentifier>
@@ -66,6 +63,9 @@
     </Filter>
     <Filter Include="scripts\component\Transform">
       <UniqueIdentifier>{84813cc1-4dd8-4e12-8f4a-9fe36a5fdd9d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scripts\gameFlow">
+      <UniqueIdentifier>{0d027826-2e35-4f6d-8616-6dbcad6c5df4}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -126,15 +126,6 @@
     <ClInclude Include="scripts\common\Utils\Include.h">
       <Filter>scripts\common\Utils</Filter>
     </ClInclude>
-    <ClInclude Include="scripts\headers\Terrain.h">
-      <Filter>scripts\headers</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\headers\PlayerControl.h">
-      <Filter>scripts\headers</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\headers\WindowText.h">
-      <Filter>scripts\headers</Filter>
-    </ClInclude>
     <ClInclude Include="scripts\common\Math\BitFlag.h">
       <Filter>scripts\common\Math</Filter>
     </ClInclude>
@@ -177,8 +168,20 @@
     <ClInclude Include="scripts\component\Mesh\MeshQuad.h">
       <Filter>scripts\component\Mesh</Filter>
     </ClInclude>
-    <ClInclude Include="scripts\headers\BasicFlow.h">
-      <Filter>scripts\headers</Filter>
+    <ClInclude Include="scripts\gameFlow\BasicFlow.h">
+      <Filter>scripts\gameFlow</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\gameFlow\Include.h">
+      <Filter>scripts\gameFlow</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\gameFlow\PlayerControl.h">
+      <Filter>scripts\gameFlow</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\gameFlow\Terrain.h">
+      <Filter>scripts\gameFlow</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\gameFlow\WindowText.h">
+      <Filter>scripts\gameFlow</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -203,7 +206,7 @@
     <FxCompile Include="shaders\common\TextSampling.hlsl">
       <Filter>shaders\common</Filter>
     </FxCompile>
-    <FxCompile Include="shaders\DepthWrite.hlsl">
+    <FxCompile Include="shaders\ShadowDepthWrite.hlsl">
       <Filter>shaders</Filter>
     </FxCompile>
   </ItemGroup>
