@@ -148,12 +148,12 @@ int Main(hInstance)
 		};
 	// 描画するチャンクが変化した時、ビューを再作成する
 	Lattice2 chunkIndex = PlayerControl::GetChunkIndex(cameraTransform.position);
-	int chunkDrawIndexXMin = std::max(0, chunkIndex.x - ChunkDrawDistance);
-	int chunkDrawIndexXMax = std::min(ChunkCount - 1, chunkIndex.x + ChunkDrawDistance);
-	int chunkDrawIndexZMin = std::max(0, chunkIndex.y - ChunkDrawDistance);
-	int chunkDrawIndexZMax = std::min(ChunkCount - 1, chunkIndex.y + ChunkDrawDistance);
+	Lattice2 chunkDrawIndexRangeX =
+		Lattice2(std::max(0, chunkIndex.x - ChunkDrawDistance), std::min(ChunkCount - 1, chunkIndex.x + ChunkDrawDistance));
+	Lattice2 chunkDrawIndexRangeZ =
+		Lattice2(std::max(0, chunkIndex.y - ChunkDrawDistance), std::min(ChunkCount - 1, chunkIndex.y + ChunkDrawDistance));
 	// 一応計算しておく (<= chunkDrawMaxCount)
-	int chunkDrawCount = (chunkDrawIndexXMax - chunkDrawIndexXMin + 1) * (chunkDrawIndexZMax - chunkDrawIndexZMin + 1);
+	int chunkDrawCount = (chunkDrawIndexRangeX.y - chunkDrawIndexRangeX.x + 1) * (chunkDrawIndexRangeZ.y - chunkDrawIndexRangeZ.x + 1);
 	// 描画するビューとインデックス
 	std::vector<VertexBufferView> drawingVertexBufferViews; drawingVertexBufferViews.reserve(ChunkDrawMaxCount);
 	std::vector<IndexBufferView> drawingIndexBufferViews; drawingIndexBufferViews.reserve(ChunkDrawMaxCount);
@@ -168,8 +168,8 @@ int Main(hInstance)
 
 	// 地形の初回作成
 	{
-		for (int chunkX = chunkDrawIndexXMin; chunkX <= chunkDrawIndexXMax; ++chunkX)
-			for (int chunkZ = chunkDrawIndexZMin; chunkZ <= chunkDrawIndexZMax; ++chunkZ)
+		for (int chunkX = chunkDrawIndexRangeX.x; chunkX <= chunkDrawIndexRangeX.y; ++chunkX)
+			for (int chunkZ = chunkDrawIndexRangeZ.x; chunkZ <= chunkDrawIndexRangeZ.y; ++chunkZ)
 			{
 				// 初回は、メインスレッドで1フレームで全て終わらせる
 				CreateTerrainChunkCanParallel(chunkX, chunkZ);
@@ -604,12 +604,12 @@ int Main(hInstance)
 			{
 				// パラメータを更新
 				chunkIndex = currentChunkIndex;
-				chunkDrawIndexXMin = std::max(0, chunkIndex.x - ChunkDrawDistance);
-				chunkDrawIndexXMax = std::min(ChunkCount - 1, chunkIndex.x + ChunkDrawDistance);
-				chunkDrawIndexZMin = std::max(0, chunkIndex.y - ChunkDrawDistance);
-				chunkDrawIndexZMax = std::min(ChunkCount - 1, chunkIndex.y + ChunkDrawDistance);
+				chunkDrawIndexRangeX =
+					Lattice2(std::max(0, chunkIndex.x - ChunkDrawDistance), std::min(ChunkCount - 1, chunkIndex.x + ChunkDrawDistance));
+				chunkDrawIndexRangeZ =
+					Lattice2(std::max(0, chunkIndex.y - ChunkDrawDistance), std::min(ChunkCount - 1, chunkIndex.y + ChunkDrawDistance));
 				// この後配列を更新するので、サイズが変わったかどうか保存しておく
-				const int currentChunkDrawCount = (chunkDrawIndexXMax - chunkDrawIndexXMin + 1) * (chunkDrawIndexZMax - chunkDrawIndexZMin + 1);
+				const int currentChunkDrawCount = (chunkDrawIndexRangeX.y - chunkDrawIndexRangeX.x + 1) * (chunkDrawIndexRangeZ.y - chunkDrawIndexRangeZ.x + 1);
 				const int chunkDrawCountDiff = currentChunkDrawCount - chunkDrawCount;
 				chunkDrawCount = currentChunkDrawCount;
 
@@ -626,8 +626,8 @@ int Main(hInstance)
 				// 配列の要素を更新していく
 				// 増えた分は push_back で追加していく
 				int index = 0;
-				for (int chunkX = chunkDrawIndexXMin; chunkX <= chunkDrawIndexXMax; ++chunkX)
-					for (int chunkZ = chunkDrawIndexZMin; chunkZ <= chunkDrawIndexZMax; ++chunkZ)
+				for (int chunkX = chunkDrawIndexRangeX.x; chunkX <= chunkDrawIndexRangeX.y; ++chunkX)
+					for (int chunkZ = chunkDrawIndexRangeZ.x; chunkZ <= chunkDrawIndexRangeZ.y; ++chunkZ)
 					{
 						// チャンクが未作成ならば、作成を開始する
 						// 作成中にやっぱり描画しないとなっても、スレッドは止まらず並列処理完了まで動き続ける
