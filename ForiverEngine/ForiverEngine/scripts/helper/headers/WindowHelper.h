@@ -2,29 +2,15 @@
 
 #include <scripts/common/Include.h>
 
-// WinMain() のマクロ
-// 既存マクロと重複しない命名にしている
-#define WindowMain(hInstance) \
-WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) \
-
-	// デフォルトのウィンドウプロシージャを定義するマクロ
-#define DEFINE_DEFAULT_WINDOW_PROCEDURE(FunctionName) \
-static LRESULT CALLBACK FunctionName(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) \
-{ \
-    return ForiverEngine::WindowHelper::OnWindowProcedure(hwnd, msg, wparam, lparam); \
-} \
-
 // エラーのメッセージボックスを出すマクロ
 #define ShowError(Message) \
 ForiverEngine::WindowHelper::PopupErrorDialog(Message); \
 
 	// 初期化のマクロ
 #define INITIALIZE(WindowClassName, WindowTitle, HwndName, WindowSize) \
-DEFINE_DEFAULT_WINDOW_PROCEDURE(WindowProcedure) \
-\
-int WindowMain(hInstance) \
+int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) \
 { \
-	if (!ForiverEngine::WindowHelper::InitializeWindowFromHInstance(hInstance, WindowProcedure, (WindowClassName))) \
+	if (!ForiverEngine::WindowHelper::InitializeWindowFromHInstance(hInstance, ForiverEngine::WindowHelper::OnWindowProcedure, (WindowClassName))) \
     { \
 		ShowError(L"ウィンドウの初期化に失敗しました"); \
 		return -1; \
