@@ -5,20 +5,20 @@
     <ClCompile Include="oss\SimplexNoise.cpp">
       <Filter>oss</Filter>
     </ClCompile>
-    <ClCompile Include="scripts\sources\D3D12BasicFlow.cpp">
-      <Filter>scripts\sources</Filter>
+    <ClCompile Include="scripts\helper\sources\D3D12Helper.cpp">
+      <Filter>scripts\helper\sources</Filter>
     </ClCompile>
-    <ClCompile Include="scripts\sources\D3D12Helper.cpp">
-      <Filter>scripts\sources</Filter>
+    <ClCompile Include="scripts\helper\sources\InputHelper.cpp">
+      <Filter>scripts\helper\sources</Filter>
     </ClCompile>
-    <ClCompile Include="scripts\sources\WindowHelper.cpp">
-      <Filter>scripts\sources</Filter>
+    <ClCompile Include="scripts\helper\sources\TextureLoader.cpp">
+      <Filter>scripts\helper\sources</Filter>
     </ClCompile>
-    <ClCompile Include="scripts\sources\InputHelper.cpp">
-      <Filter>scripts\sources</Filter>
+    <ClCompile Include="scripts\helper\sources\WindowHelper.cpp">
+      <Filter>scripts\helper\sources</Filter>
     </ClCompile>
-    <ClCompile Include="scripts\sources\TextureLoader.cpp">
-      <Filter>scripts\sources</Filter>
+    <ClCompile Include="scripts\headers\BasicFlow.cpp">
+      <Filter>scripts\headers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -37,29 +37,35 @@
     <Filter Include="scripts\headers">
       <UniqueIdentifier>{0d027826-2e35-4f6d-8616-6dbcad6c5df4}</UniqueIdentifier>
     </Filter>
-    <Filter Include="scripts\sources">
-      <UniqueIdentifier>{d19b9ac7-da06-4446-8c67-af99560650b2}</UniqueIdentifier>
-    </Filter>
     <Filter Include="scripts\common\Math">
       <UniqueIdentifier>{5d68defa-3648-4d19-82f9-624bbb67090d}</UniqueIdentifier>
     </Filter>
     <Filter Include="scripts\common\Math\LinearAlgebra">
       <UniqueIdentifier>{95cbdcf1-a0b3-45e1-987e-6a98fa1fc434}</UniqueIdentifier>
     </Filter>
-    <Filter Include="scripts\common\Component">
-      <UniqueIdentifier>{e0e928fe-3a53-4277-878f-93931ea93924}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="scripts\common\Component\Mesh">
-      <UniqueIdentifier>{981e5dff-fef7-4075-8cda-1be93af33534}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="scripts\common\Component\Transform">
-      <UniqueIdentifier>{722f7aff-d51c-43c5-8061-2e27b20653bf}</UniqueIdentifier>
-    </Filter>
     <Filter Include="scripts\common\Utils">
       <UniqueIdentifier>{90ab1ae7-0392-4389-bfcf-1153c9a647a2}</UniqueIdentifier>
     </Filter>
     <Filter Include="shaders\common">
       <UniqueIdentifier>{5f68b7dd-70b4-4ffd-abed-f240d8631c01}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scripts\helper">
+      <UniqueIdentifier>{49385442-bb11-47e1-bd8d-d1ede4d4d94a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scripts\helper\headers">
+      <UniqueIdentifier>{4109da23-552f-47cb-aeb6-c6399748fee0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scripts\helper\sources">
+      <UniqueIdentifier>{156c8e8d-3fca-4f25-b24e-5412f7c0e037}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scripts\component">
+      <UniqueIdentifier>{d9acb63c-a38e-4eb0-9652-4b4edc691e6c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scripts\component\Mesh">
+      <UniqueIdentifier>{5c778cc3-1f31-4aa8-b8dc-887ec36cdb5a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scripts\component\Transform">
+      <UniqueIdentifier>{84813cc1-4dd8-4e12-8f4a-9fe36a5fdd9d}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -68,18 +74,6 @@
     </ClInclude>
     <ClInclude Include="scripts\common\Include.h">
       <Filter>scripts\common</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\headers\D3D12BasicFlow.h">
-      <Filter>scripts\headers</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\headers\D3D12Helper.h">
-      <Filter>scripts\headers</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\headers\WindowHelper.h">
-      <Filter>scripts\headers</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\headers\D3D12Defines.h">
-      <Filter>scripts\headers</Filter>
     </ClInclude>
     <ClInclude Include="scripts\common\Math\Include.h">
       <Filter>scripts\common\Math</Filter>
@@ -114,27 +108,6 @@
     <ClInclude Include="scripts\common\Math\Defines.h">
       <Filter>scripts\common\Math</Filter>
     </ClInclude>
-    <ClInclude Include="scripts\common\Component\Include.h">
-      <Filter>scripts\common\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\common\Component\Mesh\Include.h">
-      <Filter>scripts\common\Component\Mesh</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\common\Component\Mesh\Mesh.h">
-      <Filter>scripts\common\Component\Mesh</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\common\Component\Transform\Transform.h">
-      <Filter>scripts\common\Component\Transform</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\common\Component\Transform\CameraTransform.h">
-      <Filter>scripts\common\Component\Transform</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\common\Component\Transform\Include.h">
-      <Filter>scripts\common\Component\Transform</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\headers\InputHelper.h">
-      <Filter>scripts\headers</Filter>
-    </ClInclude>
     <ClInclude Include="scripts\common\Math\LinearAlgebra\Lattice2.h">
       <Filter>scripts\common\Math\LinearAlgebra</Filter>
     </ClInclude>
@@ -159,17 +132,53 @@
     <ClInclude Include="scripts\headers\PlayerControl.h">
       <Filter>scripts\headers</Filter>
     </ClInclude>
-    <ClInclude Include="scripts\common\Component\Mesh\MeshQuad.h">
-      <Filter>scripts\common\Component\Mesh</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\headers\TextureLoader.h">
-      <Filter>scripts\headers</Filter>
-    </ClInclude>
     <ClInclude Include="scripts\headers\WindowText.h">
       <Filter>scripts\headers</Filter>
     </ClInclude>
     <ClInclude Include="scripts\common\Math\BitFlag.h">
       <Filter>scripts\common\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\helper\headers\D3D12Defines.h">
+      <Filter>scripts\helper\headers</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\helper\headers\D3D12Helper.h">
+      <Filter>scripts\helper\headers</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\helper\headers\InputHelper.h">
+      <Filter>scripts\helper\headers</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\helper\headers\TextureLoader.h">
+      <Filter>scripts\helper\headers</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\helper\headers\WindowHelper.h">
+      <Filter>scripts\helper\headers</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\helper\Include.h">
+      <Filter>scripts\helper</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\component\Include.h">
+      <Filter>scripts\component</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\component\Transform\CameraTransform.h">
+      <Filter>scripts\component\Transform</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\component\Transform\Include.h">
+      <Filter>scripts\component\Transform</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\component\Transform\Transform.h">
+      <Filter>scripts\component\Transform</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\component\Mesh\Include.h">
+      <Filter>scripts\component\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\component\Mesh\Mesh.h">
+      <Filter>scripts\component\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\component\Mesh\MeshQuad.h">
+      <Filter>scripts\component\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\headers\BasicFlow.h">
+      <Filter>scripts\headers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

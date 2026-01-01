@@ -1,11 +1,8 @@
 ﻿#pragma once
 
 #include <scripts/common/Include.h>
-
-#include "./WindowHelper.h"
-#include "./D3D12Helper.h"
-#include "./TextureLoader.h"
-#include "./WindowText.h"
+#include <scripts/helper/Include.h>
+#include <scripts/component/Include.h>
 
 namespace ForiverEngine
 {

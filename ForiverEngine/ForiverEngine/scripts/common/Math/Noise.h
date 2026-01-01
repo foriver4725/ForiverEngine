@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include <scripts/common/Math/Defines.h>
+
 #include <oss/SimplexNoise.h>
 
 namespace ForiverEngine

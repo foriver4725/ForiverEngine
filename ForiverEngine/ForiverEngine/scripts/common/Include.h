@@ -24,7 +24,6 @@
 #include <windowsx.h>
 
 #include "./Math/Include.h"
-#include "./Component/Include.h"
 #include "./Utils/Include.h"
 
 // コンストラクタとデストラクタ、代入演算子を削除するマクロ

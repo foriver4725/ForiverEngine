@@ -1,6 +1,7 @@
 ﻿#pragma once
 
-#include <scripts/common/Math/Include.h>
+#include <scripts/common/Include.h>
+#include <scripts/helper/Include.h>
 #include "./Transform.h"
 
 namespace ForiverEngine

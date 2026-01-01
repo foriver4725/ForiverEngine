@@ -1,9 +1,5 @@
 ﻿#pragma once
 
-#include <cmath>
-#include <algorithm>
-#include <stdint.h>
-
 namespace ForiverEngine
 {
 	// 浮動小数点数の誤差許容値

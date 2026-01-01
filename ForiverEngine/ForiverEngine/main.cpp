@@ -1,6 +1,11 @@
-﻿#include "scripts/headers/D3D12BasicFlow.h"
-#include "scripts/headers/Terrain.h"
-#include "scripts/headers/PlayerControl.h"
+﻿#include <scripts/common/Include.h>
+#include <scripts/helper/Include.h>
+#include <scripts/component/Include.h>
+
+#include <scripts/headers/BasicFlow.h>
+#include <scripts/headers/WindowText.h>
+#include <scripts/headers/Terrain.h>
+#include <scripts/headers/PlayerControl.h>
 
 constexpr int WindowWidth = 1344;
 constexpr int WindowHeight = 756;
