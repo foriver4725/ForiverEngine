@@ -372,30 +372,30 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	const auto [vertexBufferViewText, indexBufferViewText]
 		= D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, meshText);
 
-	// ウィンドウ上のテキストデータ
-	WindowText windowText = WindowText::CreateEmpty(
-		Lattice2(WindowWidth / WindowText::FontSingleLength, WindowHeight / WindowText::FontSingleLength));
+	// テキストUIデータ
+	TextUIData textUIData = TextUIData::CreateEmpty(
+		Lattice2(WindowWidth / TextUIData::FontTextureTextLength, WindowHeight / TextUIData::FontTextureTextLength));
 
 	// t1
 	const auto fontTextureBufferAndData = D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue, commandAllocator, { "assets/font.png" });
 	// t2
-	Texture windowTextTexture = windowText.CreateTexture();
-	GraphicsBuffer windowTextGraphicsBuffer = D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue, commandAllocator, windowTextTexture);
+	Texture textUIDataTexture = textUIData.CreateTexture();
+	GraphicsBuffer textUIDataGraphicsBuffer = D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue, commandAllocator, textUIDataTexture);
 
 	// b0
 	struct alignas(256) CBData0Text
 	{
 		std::uint32_t FontTextureSize[2];
-		std::uint32_t WindowTextTextureSize[2];
-		std::uint32_t TextNothingIndex;
-		std::uint32_t FontSingleLength;
+		std::uint32_t TextUIDataSize[2];
+		std::uint32_t InvalidFontTextureIndex;
+		std::uint32_t FontTextureTextLength;
 	};
 	const CBData0Text cbData0Text = CBData0Text
 	{
 		.FontTextureSize = { static_cast<std::uint32_t>(std::get<1>(fontTextureBufferAndData).width), static_cast<std::uint32_t>(std::get<1>(fontTextureBufferAndData).height) },
-		.WindowTextTextureSize = { static_cast<std::uint32_t>(windowText.GetCount().x), static_cast<std::uint32_t>(windowText.GetCount().y)},
-		.TextNothingIndex = static_cast<std::uint32_t>(WindowText::NoTextFontTextureIndex),
-		.FontSingleLength = static_cast<std::uint32_t>(WindowText::FontSingleLength),
+		.TextUIDataSize = { static_cast<std::uint32_t>(textUIData.GetDataSize().x), static_cast<std::uint32_t>(textUIData.GetDataSize().y)},
+		.InvalidFontTextureIndex = static_cast<std::uint32_t>(Text::InvalidFontTextureIndex),
+		.FontTextureTextLength = static_cast<std::uint32_t>(TextUIData::FontTextureTextLength),
 	};
 	const GraphicsBuffer cbvBufferText = D3D12BasicFlow::InitCBVBuffer<CBData0Text>(device, cbData0Text);
 
@@ -407,7 +407,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 			{
 				{ textGraphicsBuffer, textTextureMetadata },
 				fontTextureBufferAndData,
-				{ windowTextGraphicsBuffer, windowTextTexture },
+				{ textUIDataGraphicsBuffer, textUIDataTexture },
 			}
 			);
 
@@ -706,21 +706,21 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 					currentChunkIndex.y
 				);
 
-				windowText.ClearAll();
-				windowText.SetTexts(Lattice2(1, 1), frameTimeText, Color::White());
-				windowText.SetTexts(Lattice2(1, 2), positionText, Color::White());
-				windowText.SetTexts(Lattice2(1, 3), selectingBlockPositionText, Color::White());
-				windowText.SetTexts(Lattice2(1, 4), chunkIndexText, Color::White());
+				textUIData.ClearAll();
+				textUIData.SetTexts(Lattice2(1, 1), frameTimeText, Color::White());
+				textUIData.SetTexts(Lattice2(1, 2), positionText, Color::White());
+				textUIData.SetTexts(Lattice2(1, 3), selectingBlockPositionText, Color::White());
+				textUIData.SetTexts(Lattice2(1, 4), chunkIndexText, Color::White());
 			}
 
 			// バッファを再作成してアップロードし直す
-			windowTextTexture = windowText.CreateTexture();
-			windowTextGraphicsBuffer = D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue, commandAllocator, windowTextTexture);
+			textUIDataTexture = textUIData.CreateTexture();
+			textUIDataGraphicsBuffer = D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue, commandAllocator, textUIDataTexture);
 			D3D12Helper::CreateSRVAndRegistToDescriptorHeap(
 				device, descriptorHeapBasicText,
-				windowTextGraphicsBuffer,
+				textUIDataGraphicsBuffer,
 				static_cast<int>(ShaderRegister::t2) + 1, // CBVが1つあるので...
-				windowTextTexture
+				textUIDataTexture
 			);
 		}
 

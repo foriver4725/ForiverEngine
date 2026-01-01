@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <scripts/common/IncludeInternal.h>
 #include <scripts/common/Math/Defines.h>
 
 #include <oss/SimplexNoise.h>
@@ -9,8 +10,7 @@ namespace ForiverEngine
 	class Noise final
 	{
 	public:
-		Noise() = delete;
-		~Noise() = delete;
+		DELETE_DEFAULT_METHODS(Noise);
 
 		/// <summary>
 		/// シンプレックスノイズ 1D

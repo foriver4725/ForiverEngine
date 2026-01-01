@@ -67,6 +67,9 @@
     <Filter Include="scripts\gameFlow">
       <UniqueIdentifier>{0d027826-2e35-4f6d-8616-6dbcad6c5df4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="scripts\component\Text">
+      <UniqueIdentifier>{d535f4f2-9600-48d3-a6ec-66e4ea14419c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="oss\SimplexNoise.h">
@@ -180,8 +183,17 @@
     <ClInclude Include="scripts\gameFlow\Terrain.h">
       <Filter>scripts\gameFlow</Filter>
     </ClInclude>
-    <ClInclude Include="scripts\gameFlow\WindowText.h">
-      <Filter>scripts\gameFlow</Filter>
+    <ClInclude Include="scripts\component\Text\Include.h">
+      <Filter>scripts\component\Text</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\component\Text\Text.h">
+      <Filter>scripts\component\Text</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\component\Text\TextUIData.h">
+      <Filter>scripts\component\Text</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\common\IncludeInternal.h">
+      <Filter>scripts\common</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

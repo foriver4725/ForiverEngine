@@ -29,7 +29,7 @@ struct VSInput
     float4 pos : POSITION;
     float2 uv : TEXCOORD0;
     float3 normal : NORMAL;
-    float3 centerWorldPos : CENTERPOS;
+    float3 centerWorldPosition : CENTERPOS;
     uint texIndex : TEXINDEX;
 };
 
@@ -39,7 +39,7 @@ struct V2P
     float2 uv : TEXCOORD0;
     float3 normal : NORMAL;
     float3 worldPos : TEXCOORD1;
-    nointerpolation float3 centerWorldPos : CENTERPOS;
+    nointerpolation float3 centerWorldPosition : CENTERPOS;
     nointerpolation uint texIndex : TEXINDEX;
 };
 
@@ -50,7 +50,7 @@ struct PSOutput
 
 #include <common/Lighting.hlsl>
 
-float PSCheckIsSelectedBlock(float3 centerWorldPos)
+float PSCheckIsSelectedBlock(float3 centerWorldPosition)
 {
     // そもそも選択中のブロックが無い
     if (_IsSelectingAnyBlock < 0.5)
@@ -58,7 +58,7 @@ float PSCheckIsSelectedBlock(float3 centerWorldPos)
         return 0.0;
     }
     
-    if (all(abs(centerWorldPos - _SelectingBlockPosition) < float3(0.01, 0.01, 0.01)))
+    if (all(abs(centerWorldPosition - _SelectingBlockPosition) < float3(0.01, 0.01, 0.01)))
     {
         return 1.0;
     }
@@ -74,7 +74,7 @@ V2P VSMain(VSInput input)
     output.worldPos = mul(_Matrix_M, input.pos).xyz;
     
     output.uv = input.uv;
-    output.centerWorldPos = input.centerWorldPos;
+    output.centerWorldPosition = input.centerWorldPosition;
     output.texIndex = input.texIndex;
     
     return output;
@@ -90,7 +90,7 @@ PSOutput PSMain(V2P input)
     const uint texIndexReal = input.texIndex >> 1;
     
     float4 color = _Texture.Sample(_Sampler, float3(uvReal, texIndexReal));
-    if (PSCheckIsSelectedBlock(input.centerWorldPos) > 0.5)
+    if (PSCheckIsSelectedBlock(input.centerWorldPosition) > 0.5)
         color.rgb = lerp(color.rgb, _SelectColor.rgb, _SelectColor.a);
     
     // ディフューズカラーの計算

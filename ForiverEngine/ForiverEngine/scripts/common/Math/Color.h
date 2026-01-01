@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <scripts/common/IncludeInternal.h>
 #include <scripts/common/Math/Defines.h>
 
 namespace ForiverEngine

@@ -181,6 +181,7 @@
   <ItemGroup>
     <ClInclude Include="oss\SimplexNoise.h" />
     <ClInclude Include="scripts\common\Include.h" />
+    <ClInclude Include="scripts\common\IncludeInternal.h" />
     <ClInclude Include="scripts\common\Math\BitFlag.h" />
     <ClInclude Include="scripts\common\Math\Color.h" />
     <ClInclude Include="scripts\common\Math\Defines.h" />
@@ -203,6 +204,9 @@
     <ClInclude Include="scripts\component\Mesh\Include.h" />
     <ClInclude Include="scripts\component\Mesh\Mesh.h" />
     <ClInclude Include="scripts\component\Mesh\MeshQuad.h" />
+    <ClInclude Include="scripts\component\Text\Include.h" />
+    <ClInclude Include="scripts\component\Text\Text.h" />
+    <ClInclude Include="scripts\component\Text\TextUIData.h" />
     <ClInclude Include="scripts\component\Transform\CameraTransform.h" />
     <ClInclude Include="scripts\component\Transform\Include.h" />
     <ClInclude Include="scripts\component\Transform\Transform.h" />
@@ -210,7 +214,6 @@
     <ClInclude Include="scripts\gameFlow\Include.h" />
     <ClInclude Include="scripts\gameFlow\PlayerControl.h" />
     <ClInclude Include="scripts\gameFlow\Terrain.h" />
-    <ClInclude Include="scripts\gameFlow\WindowText.h" />
     <ClInclude Include="scripts\helper\headers\D3D12Defines.h" />
     <ClInclude Include="scripts\helper\headers\D3D12Helper.h" />
     <ClInclude Include="scripts\helper\headers\InputHelper.h" />

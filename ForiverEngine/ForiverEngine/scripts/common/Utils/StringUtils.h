@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include <scripts/common/IncludeInternal.h>
+
 #include <string>
 #define NOMINMAX
 #include <Windows.h>
@@ -9,8 +11,7 @@ namespace ForiverEngine
 	class StringUtils final
 	{
 	public:
-		StringUtils() = delete;
-		~StringUtils() = delete;
+		DELETE_DEFAULT_METHODS(StringUtils);
 
 		/// <summary>
 		/// UTF-8 (std::string) → UTF-16 (std::wstring) に変換する

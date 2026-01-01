@@ -1,6 +1,8 @@
 ﻿#pragma once
 
+#include <scripts/common/IncludeInternal.h>
 #include <scripts/common/Math/Defines.h>
+
 #include "./Vector2.h"
 
 namespace ForiverEngine

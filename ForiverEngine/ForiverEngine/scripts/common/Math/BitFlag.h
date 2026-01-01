@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <scripts/common/IncludeInternal.h>
 #include <scripts/common/Math/Defines.h>
 
 #include <vector>
@@ -10,8 +11,7 @@ namespace ForiverEngine
 	class BitFlag final
 	{
 	public:
-		BitFlag() = delete;
-		~BitFlag() = delete;
+		DELETE_DEFAULT_METHODS(BitFlag);
 
 		/// <summary>
 		/// <para>指定された桁のビットを立てる</para>
