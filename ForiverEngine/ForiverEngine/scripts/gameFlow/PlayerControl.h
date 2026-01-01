@@ -13,7 +13,7 @@ namespace ForiverEngine
 		DELETE_DEFAULT_METHODS(PlayerControl);
 
 		// 与えられた座標がどのブロックの位置にあるかを計算し、格子座標で返す
-		static Lattice3 GetBlockLatticePosition(const Vector3& position)
+		static Lattice3 GetBlockPosition(const Vector3& position)
 		{
 			return Lattice3(
 				std::round(position.x),
@@ -53,6 +53,30 @@ namespace ForiverEngine
 			);
 		}
 
+		// コリジョン立方体が、ブロックの整数座標でどの範囲にまたがっているかを計算する
+		// rangeXZ, rangeY で、戻り値の範囲を制限できる
+		static std::tuple<Lattice2, Lattice2, Lattice2> CalculateCollisionBlockBoundary(
+			const Vector3& minPosition, const Vector3& collisionSize, const Lattice2& rangeXZ, const Lattice2& rangeY)
+		{
+			const Vector3 maxPosition = minPosition + collisionSize;
+
+			const Lattice3 blockMinPosition = GetBlockPosition(minPosition);
+			const Lattice3 blockMaxPosition = GetBlockPosition(maxPosition);
+
+			const int blockXMin = std::clamp(blockMinPosition.x, rangeXZ.x, rangeXZ.y);
+			const int blockXMax = std::clamp(blockMaxPosition.x, rangeXZ.x, rangeXZ.y);
+			const int blockYMin = std::clamp(blockMinPosition.y, rangeY.x, rangeY.y);
+			const int blockYMax = std::clamp(blockMaxPosition.y, rangeY.x, rangeY.y);
+			const int blockZMin = std::clamp(blockMinPosition.z, rangeXZ.x, rangeXZ.y);
+			const int blockZMax = std::clamp(blockMaxPosition.z, rangeXZ.x, rangeXZ.y);
+
+			const Lattice2 RangeX = Lattice2(blockXMin, blockXMax);
+			const Lattice2 RangeY = Lattice2(blockYMin, blockYMax);
+			const Lattice2 RangeZ = Lattice2(blockZMin, blockZMax);
+
+			return { RangeX, RangeY, RangeZ };
+		}
+
 		static void Rotate(Transform& transform, const Vector2& rotateInput, const Vector2& rotateSpeed, float deltaSeconds)
 		{
 			const Quaternion rotationAmount =
@@ -78,7 +102,7 @@ namespace ForiverEngine
 		template<int ChunkSize>
 		static int GetFloorHeight(
 			const std::array<std::array<Terrain, ChunkSize>, ChunkSize>& terrainChunks,
-			const Vector3& position, // 足元の座標 (地面の高さはこれより大きくなることはない)
+			const Vector3& position, // 足元の座標
 			const Vector3& size // コリジョンのサイズ
 		)
 		{
@@ -88,28 +112,26 @@ namespace ForiverEngine
 			const Terrain& terrain = terrainChunks[chunkIndex.x][chunkIndex.y];
 			const Vector3 localPosition = GetChunkLocalPosition(position);
 
-			const int minX = std::clamp(static_cast<int>(std::round(localPosition.x - size.x * 0.5f)), 0, Terrain::ChunkSize - 1);
-			const int maxX = std::clamp(static_cast<int>(std::round(localPosition.x + size.x * 0.5f)), 0, Terrain::ChunkSize - 1);
-			const int maxY = std::clamp(static_cast<int>(std::floor(localPosition.y)), 0, Terrain::ChunkHeight - 1);
-			const int minZ = std::clamp(static_cast<int>(std::round(localPosition.z - size.z * 0.5f)), 0, Terrain::ChunkSize - 1);
-			const int maxZ = std::clamp(static_cast<int>(std::round(localPosition.z + size.z * 0.5f)), 0, Terrain::ChunkSize - 1);
+			const auto [rangeX, rangeY, rangeZ] = CalculateCollisionBlockBoundary(
+				localPosition - Vector3(size.x * 0.5f, 0.0f, size.z * 0.5f), size,
+				Lattice2(0, Terrain::ChunkSize - 1), Lattice2(0, Terrain::ChunkHeight - 1));
 
 			int y = std::numeric_limits<int>::min();
-			for (int z = minZ; z <= maxZ; ++z)
-				for (int x = minX; x <= maxX; ++x)
+			for (int z = rangeZ.x; z <= rangeZ.y; ++z)
+				for (int x = rangeX.x; x <= rangeX.y; ++x)
 				{
-					const int height = terrain.GetFloorHeight(x, z, maxY);
+					const int height = terrain.GetFloorHeight(x, z, rangeY.x);
 					y = std::max(y, height);
 				}
 
 			return y;
 		}
 
-		// 視線の高さより上である中で、最も低いブロックのY座標を取得する (無いなら多分、チャンクの高さの最大値+1を返す)
+		// 頭上より上である中で、最も低いブロックのY座標を取得する (無いなら多分、チャンクの高さの最大値+1を返す)
 		template<int ChunkSize>
 		static int GetCeilHeight(
 			const std::array<std::array<Terrain, ChunkSize>, ChunkSize>& terrainChunks,
-			const Vector3& position, // 視線の座標 (地面の高さはこれ以下になることはない)
+			const Vector3& position, // 足元の座標
 			const Vector3& size // コリジョンのサイズ
 		)
 		{
@@ -119,17 +141,15 @@ namespace ForiverEngine
 			const Terrain& terrain = terrainChunks[chunkIndex.x][chunkIndex.y];
 			const Vector3 localPosition = GetChunkLocalPosition(position);
 
-			const int minX = std::clamp(static_cast<int>(std::round(localPosition.x - size.x * 0.5f)), 0, Terrain::ChunkSize - 1);
-			const int maxX = std::clamp(static_cast<int>(std::round(localPosition.x + size.x * 0.5f)), 0, Terrain::ChunkSize - 1);
-			const int minY = std::clamp(static_cast<int>(std::ceil(localPosition.y)), 0, Terrain::ChunkHeight - 1);
-			const int minZ = std::clamp(static_cast<int>(std::round(localPosition.z - size.z * 0.5f)), 0, Terrain::ChunkSize - 1);
-			const int maxZ = std::clamp(static_cast<int>(std::round(localPosition.z + size.z * 0.5f)), 0, Terrain::ChunkSize - 1);
+			const auto [rangeX, rangeY, rangeZ] = CalculateCollisionBlockBoundary(
+				localPosition - Vector3(size.x * 0.5f, 0.0f, size.z * 0.5f), size,
+				Lattice2(0, Terrain::ChunkSize - 1), Lattice2(0, Terrain::ChunkHeight - 1));
 
 			int y = std::numeric_limits<int>::max();
-			for (int z = minZ; z <= maxZ; ++z)
-				for (int x = minX; x <= maxX; ++x)
+			for (int z = rangeZ.x; z <= rangeZ.y; ++z)
+				for (int x = rangeX.x; x <= rangeX.y; ++x)
 				{
-					const int height = terrain.GetCeilHeight(x, z, minY);
+					const int height = terrain.GetCeilHeight(x, z, rangeY.y);
 					y = std::min(y, height);
 				}
 
@@ -149,16 +169,13 @@ namespace ForiverEngine
 			const Terrain& terrain = terrainChunks[chunkIndex.x][chunkIndex.y];
 			const Vector3 localPosition = GetChunkLocalPosition(position);
 
-			const int minX = std::clamp(static_cast<int>(std::round(localPosition.x - size.x * 0.5f)), 0, Terrain::ChunkSize - 1);
-			const int maxX = std::clamp(static_cast<int>(std::round(localPosition.x + size.x * 0.5f)), 0, Terrain::ChunkSize - 1);
-			const int minY = std::clamp(static_cast<int>(std::round(localPosition.y)), 0, Terrain::ChunkHeight - 1);
-			const int maxY = std::clamp(static_cast<int>(std::round(localPosition.y + size.y)), 0, Terrain::ChunkHeight - 1);
-			const int minZ = std::clamp(static_cast<int>(std::round(localPosition.z - size.z * 0.5f)), 0, Terrain::ChunkSize - 1);
-			const int maxZ = std::clamp(static_cast<int>(std::round(localPosition.z + size.z * 0.5f)), 0, Terrain::ChunkSize - 1);
+			const auto [rangeX, rangeY, rangeZ] = CalculateCollisionBlockBoundary(
+				localPosition - Vector3(size.x * 0.5f, 0.0f, size.z * 0.5f), size,
+				Lattice2(0, Terrain::ChunkSize - 1), Lattice2(0, Terrain::ChunkHeight - 1));
 
-			for (int y = minY; y <= maxY; ++y)
-				for (int z = minZ; z <= maxZ; ++z)
-					for (int x = minX; x <= maxX; ++x)
+			for (int y = rangeY.x; y <= rangeY.y; ++y)
+				for (int z = rangeZ.x; z <= rangeZ.y; ++z)
+					for (int x = rangeX.x; x <= rangeX.y; ++x)
 					{
 						if (terrain.GetBlock(x, y, z) != Block::Air)
 							return true;

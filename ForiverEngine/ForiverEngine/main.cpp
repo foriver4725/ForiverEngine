@@ -465,7 +465,7 @@ int Main(hInstance)
 
 		// 頭上にブロックがあって頭を打ったら、上方向の速度を無くす
 		{
-			const int ceilY = PlayerControl::GetCeilHeight(terrains, cameraTransform.position, PlayerCollisionSize);
+			const int ceilY = PlayerControl::GetCeilHeight(terrains, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
 			const bool isOverlappingCeil = (ceilY <= Terrain::ChunkHeight - 1) ? (cameraTransform.position.y - EyeHeight + PlayerCollisionSize.y >= ceilY - 0.5f) : false;
 
 			if (isOverlappingCeil)
@@ -678,7 +678,7 @@ int Main(hInstance)
 				}
 				const std::string frameTimeText = std::format("Frame Time : {:.2f} ms", frameTimeTextValue);
 
-				const Lattice3 playerFootPositionAsLattice = PlayerControl::GetBlockLatticePosition(
+				const Lattice3 playerFootPositionAsLattice = PlayerControl::GetBlockPosition(
 					PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight));
 				const std::string positionText =
 					std::format("Position : {}", ToString(playerFootPositionAsLattice));
