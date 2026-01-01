@@ -144,7 +144,7 @@ int Main(hInstance)
 				.store(ChunkCreationState::FinishedAll, std::memory_order_release);
 		};
 	// 描画するチャンクが変化した時、ビューを再作成する
-	Lattice2 chunkIndex = PlayerControl::GetChunkIndexAtPosition(cameraTransform.position);
+	Lattice2 chunkIndex = PlayerControl::GetChunkIndex(cameraTransform.position);
 	int chunkDrawIndexXMin = std::max(0, chunkIndex.x - ChunkDrawDistance);
 	int chunkDrawIndexXMax = std::min(ChunkCount - 1, chunkIndex.x + ChunkDrawDistance);
 	int chunkDrawIndexZMin = std::max(0, chunkIndex.y - ChunkDrawDistance);
@@ -521,12 +521,9 @@ int Main(hInstance)
 					static_cast<int>(std::round(rayPosition.z))
 				);
 
-				const Lattice2 chunkIndex = PlayerControl::GetChunkIndexAtPosition(rayPosition);
-				if (chunkIndex.x < 0 || chunkIndex.x >= ChunkCount
-					|| chunkIndex.y < 0 || chunkIndex.y >= ChunkCount)
-				{
-					continue; // チャンク外
-				}
+				const Lattice2 chunkIndex = PlayerControl::GetChunkIndex(rayPosition);
+				if (!PlayerControl::IsChunkInBounds(chunkIndex, Lattice2(ChunkCount, ChunkCount)))
+					continue;
 				const Terrain& targetTerrain = terrains[chunkIndex.x][chunkIndex.y];
 				const Lattice3 rayLocalPosition = Lattice3(
 					std::clamp(rayPositionAsLattice.x - chunkIndex.x * Terrain::ChunkSize, 0, Terrain::ChunkSize - 1),
@@ -565,7 +562,7 @@ int Main(hInstance)
 					hasBrokenBlock = true;
 
 					const Lattice3 blockPositionAsLattice = Lattice3(cbvBuffer1VirtualPtr->SelectingBlockPosition);
-					const Lattice2 chunkIndex = PlayerControl::GetChunkIndexAtPosition(cbvBuffer1VirtualPtr->SelectingBlockPosition);
+					const Lattice2 chunkIndex = PlayerControl::GetChunkIndex(cbvBuffer1VirtualPtr->SelectingBlockPosition);
 
 					// 地形データとメッシュを更新
 					terrains[chunkIndex.x][chunkIndex.y].SetBlock(
@@ -594,7 +591,7 @@ int Main(hInstance)
 		// 更新時、そのチャンクがまだ未作成ならば、その作成をまず行う
 		{
 			// 存在するチャンクが変化したかチェック
-			const Lattice2 currentChunkIndex = PlayerControl::GetChunkIndexAtPosition(cameraTransform.position);
+			const Lattice2 currentChunkIndex = PlayerControl::GetChunkIndex(cameraTransform.position);
 			const bool hasExistingChunkChanged = (currentChunkIndex != chunkIndex);
 
 			// 結局配列を更新する必要があるのか?
@@ -699,7 +696,7 @@ int Main(hInstance)
 					selectingBlockPositionAsLattice.z
 				) : "LookAt : None";
 
-				const Lattice2 currentChunkIndex = PlayerControl::GetChunkIndexAtPosition(cameraTransform.position);
+				const Lattice2 currentChunkIndex = PlayerControl::GetChunkIndex(cameraTransform.position);
 				const std::string chunkIndexText = std::format(
 					"Chunk Index : ({},{})",
 					currentChunkIndex.x,

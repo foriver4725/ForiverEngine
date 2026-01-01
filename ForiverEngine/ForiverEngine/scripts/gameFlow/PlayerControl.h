@@ -16,9 +16,9 @@ namespace ForiverEngine
 		static Lattice3 GetBlockLatticePosition(const Vector3& position)
 		{
 			return Lattice3(
-				static_cast<int>(std::round(position.x)),
-				static_cast<int>(std::round(position.y)),
-				static_cast<int>(std::round(position.z))
+				std::round(position.x),
+				std::round(position.y),
+				std::round(position.z)
 			);
 		}
 
@@ -27,11 +27,30 @@ namespace ForiverEngine
 			return position - Vector3::Up() * eyeHeight;
 		}
 
-		static Lattice2 GetChunkIndexAtPosition(const Vector3& position)
+		// ワールド座標 -> チャンクのインデックス
+		static Lattice2 GetChunkIndex(const Vector3& position)
 		{
-			const int chunkX = static_cast<int>(std::floor(position.x / Terrain::ChunkSize));
-			const int chunkZ = static_cast<int>(std::floor(position.z / Terrain::ChunkSize));
-			return Lattice2(chunkX, chunkZ);
+			return Lattice2(
+				std::floor(position.x / Terrain::ChunkSize),
+				std::floor(position.z / Terrain::ChunkSize)
+			);
+		}
+
+		// チャンクのインデックスが、地形全体の範囲内であるか
+		static bool IsChunkInBounds(const Lattice2& chunkIndex, const Lattice2& chunkAmount)
+		{
+			return 0 <= chunkIndex.x && chunkIndex.x < chunkAmount.x
+				&& 0 <= chunkIndex.y && chunkIndex.y < chunkAmount.y;
+		}
+
+		// ワールド座標 -> チャンク内のローカル座標 ([0.0f, ChunkSize))
+		static Vector3 GetChunkLocalPosition(const Vector3& position)
+		{
+			return Vector3(
+				std::fmod(position.x, static_cast<float>(Terrain::ChunkSize)),
+				position.y,
+				std::fmod(position.z, static_cast<float>(Terrain::ChunkSize))
+			);
 		}
 
 		static void Rotate(Transform& transform, const Vector2& rotateInput, const Vector2& rotateSpeed, float deltaSeconds)
@@ -63,18 +82,11 @@ namespace ForiverEngine
 			const Vector3& size // コリジョンのサイズ
 		)
 		{
-			const Lattice2 chunkIndex = GetChunkIndexAtPosition(position);
-			if (chunkIndex.x < 0 || chunkIndex.x >= static_cast<int>(ChunkSize)
-				|| chunkIndex.y < 0 || chunkIndex.y >= static_cast<int>(ChunkSize))
-			{
-				return -1; // チャンク外
-			}
+			const Lattice2 chunkIndex = GetChunkIndex(position);
+			if (!IsChunkInBounds(chunkIndex, Lattice2(ChunkSize, ChunkSize)))
+				return -1;
 			const Terrain& terrain = terrainChunks[chunkIndex.x][chunkIndex.y];
-			const Vector3 localPosition = position - Vector3(
-				static_cast<float>(chunkIndex.x * Terrain::ChunkSize),
-				0.0f,
-				static_cast<float>(chunkIndex.y * Terrain::ChunkSize)
-			);
+			const Vector3 localPosition = GetChunkLocalPosition(position);
 
 			const int minX = std::clamp(static_cast<int>(std::round(localPosition.x - size.x * 0.5f)), 0, Terrain::ChunkSize - 1);
 			const int maxX = std::clamp(static_cast<int>(std::round(localPosition.x + size.x * 0.5f)), 0, Terrain::ChunkSize - 1);
@@ -101,18 +113,11 @@ namespace ForiverEngine
 			const Vector3& size // コリジョンのサイズ
 		)
 		{
-			const Lattice2 chunkIndex = GetChunkIndexAtPosition(position);
-			if (chunkIndex.x < 0 || chunkIndex.x >= static_cast<int>(ChunkSize)
-				|| chunkIndex.y < 0 || chunkIndex.y >= static_cast<int>(ChunkSize))
-			{
-				return -1; // チャンク外
-			}
+			const Lattice2 chunkIndex = GetChunkIndex(position);
+			if (!IsChunkInBounds(chunkIndex, Lattice2(ChunkSize, ChunkSize)))
+				return -1;
 			const Terrain& terrain = terrainChunks[chunkIndex.x][chunkIndex.y];
-			const Vector3 localPosition = position - Vector3(
-				static_cast<float>(chunkIndex.x * Terrain::ChunkSize),
-				0.0f,
-				static_cast<float>(chunkIndex.y * Terrain::ChunkSize)
-			);
+			const Vector3 localPosition = GetChunkLocalPosition(position);
 
 			const int minX = std::clamp(static_cast<int>(std::round(localPosition.x - size.x * 0.5f)), 0, Terrain::ChunkSize - 1);
 			const int maxX = std::clamp(static_cast<int>(std::round(localPosition.x + size.x * 0.5f)), 0, Terrain::ChunkSize - 1);
@@ -138,18 +143,11 @@ namespace ForiverEngine
 			const Vector3& size // コリジョンのサイズ
 		)
 		{
-			const Lattice2 chunkIndex = GetChunkIndexAtPosition(position);
-			if (chunkIndex.x < 0 || chunkIndex.x >= static_cast<int>(ChunkSize)
-				|| chunkIndex.y < 0 || chunkIndex.y >= static_cast<int>(ChunkSize))
-			{
-				return false; // チャンク外
-			}
+			const Lattice2 chunkIndex = GetChunkIndex(position);
+			if (!IsChunkInBounds(chunkIndex, Lattice2(ChunkSize, ChunkSize)))
+				return false;
 			const Terrain& terrain = terrainChunks[chunkIndex.x][chunkIndex.y];
-			const Vector3 localPosition = position - Vector3(
-				static_cast<float>(chunkIndex.x * Terrain::ChunkSize),
-				0.0f,
-				static_cast<float>(chunkIndex.y * Terrain::ChunkSize)
-			);
+			const Vector3 localPosition = GetChunkLocalPosition(position);
 
 			const int minX = std::clamp(static_cast<int>(std::round(localPosition.x - size.x * 0.5f)), 0, Terrain::ChunkSize - 1);
 			const int maxX = std::clamp(static_cast<int>(std::round(localPosition.x + size.x * 0.5f)), 0, Terrain::ChunkSize - 1);
