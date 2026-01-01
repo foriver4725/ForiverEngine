@@ -52,11 +52,10 @@ namespace ForiverEngine
 		static std::tuple<Factory, Device, CommandAllocator, CommandList, CommandQueue, SwapChain>
 			CreateStandardObjects(
 				HWND hwnd,
-				int windowWidth,
-				int windowHeight
+				const Lattice2& windowSize
 			)
 		{
-			return Check(CreateStandardObjects_Impl(hwnd, windowWidth, windowHeight));
+			return Check(CreateStandardObjects_Impl(hwnd, windowSize));
 		}
 
 		/// <summary>
@@ -221,11 +220,10 @@ namespace ForiverEngine
 		static DescriptorHeapHandleAtCPU
 			InitDSV(
 				const Device& device,
-				int width,
-				int height
+				const Lattice2& size
 			)
 		{
-			return Check(InitDSV_Impl(device, width, height));
+			return Check(InitDSV_Impl(device, size));
 		}
 
 		/// <summary>
@@ -340,8 +338,7 @@ namespace ForiverEngine
 		static std::tuple<bool, std::wstring, std::tuple<Factory, Device, CommandAllocator, CommandList, CommandQueue, SwapChain>>
 			CreateStandardObjects_Impl(
 				HWND hwnd,
-				int windowWidth,
-				int windowHeight
+				const Lattice2& windowSize
 			);
 
 		/// <summary>
@@ -500,8 +497,7 @@ namespace ForiverEngine
 		static std::tuple<bool, std::wstring, std::tuple<DescriptorHeapHandleAtCPU>>
 			InitDSV_Impl(
 				const Device& device,
-				int width,
-				int height
+				const Lattice2& size
 			);
 
 		/// <summary>

@@ -3,10 +3,10 @@
 #include <scripts/component/Include.h>
 #include <scripts/gameFlow/Include.h>
 
-constexpr int WindowWidth = 1344;
-constexpr int WindowHeight = 756;
+constexpr ForiverEngine::Lattice2 WindowSize = ForiverEngine::Lattice2(1344, 756);
+constexpr float WindowAspectRatio = static_cast<float>(WindowSize.x) / static_cast<float>(WindowSize.y);
 
-BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHeight);
+BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowSize.x, WindowSize.y);
 {
 	using namespace ForiverEngine;
 
@@ -41,7 +41,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	constexpr Color RTClearColor = Color::CreateFromUint8(60, 150, 210); // 空色
 
 	const auto [factory, device, commandAllocator, commandList, commandQueue, swapChain]
-		= D3D12BasicFlow::CreateStandardObjects(hwnd, WindowWidth, WindowHeight);
+		= D3D12BasicFlow::CreateStandardObjects(hwnd, WindowSize);
 
 	const RootParameter rootParameter = RootParameter::CreateBasic(2, 2, 0);
 	const SamplerConfig samplerConfig = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
@@ -51,11 +51,11 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 			device, rootParameter, samplerConfig, shaderVS, shaderPS, VertexLayouts, FillMode::Solid, CullMode::None, true);
 
 	const auto [rtGetter, rtvGetter] = D3D12BasicFlow::InitRTV(device, swapChain, Format::RGBA_U8_01);
-	const DescriptorHeapHandleAtCPU dsv = D3D12BasicFlow::InitDSV(device, WindowWidth, WindowHeight);
+	const DescriptorHeapHandleAtCPU dsv = D3D12BasicFlow::InitDSV(device, WindowSize);
 
 	constexpr Transform terrainTransform = Transform::Identity();
 	CameraTransform cameraTransform = CameraTransform::CreatePerspective(
-		Vector3(64, 32, 64), Quaternion::Identity(), 60.0f * DegToRad, 1.0f * WindowWidth / WindowHeight);
+		Vector3(64, 32, 64), Quaternion::Identity(), 60.0f * DegToRad, WindowAspectRatio);
 
 	// 太陽からのカメラ 平行投影
 	constexpr Color SunShadowColor = Color(0.7f, 0.7f, 0.7f);
@@ -244,16 +244,14 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	// DescriptorHeap に登録
 	DescriptorHeap descriptorHeapBasic = DescriptorHeap(); // 後で作成する!!
 
-	const ViewportScissorRect viewportScissorRect
-		= ViewportScissorRect::CreateFullSized(WindowWidth, WindowHeight);
+	const ViewportScissorRect viewportScissorRect = ViewportScissorRect::CreateFullSized(WindowSize);
 
 	//////////////////////////////
 	// 影 デプスマップに出力
 
-	constexpr int ShadowRTWidth = 1024;
-	constexpr int ShadowRTHeight = 1024;
+	constexpr Lattice2 ShadowRTSize = Lattice2(1024, 1024);
 
-	const Texture shadowTextureMetadata = TextureLoader::CreateManually({}, ShadowRTWidth, ShadowRTHeight, Format::R_F32);
+	const Texture shadowTextureMetadata = Texture::CreateManually({}, ShadowRTSize, Format::R_F32);
 	const GraphicsBuffer shadowGraphicsBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, shadowTextureMetadata,
 		GraphicsBufferUsagePermission::AllowRenderTarget, GraphicsBufferState::PixelShaderResource, Color(DepthBufferClearValue, 0, 0, 0));
 
@@ -266,7 +264,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 
 	// RTV, DSV
 	const DescriptorHeapHandleAtCPU rtvShadow = D3D12BasicFlow::InitRTV(device, shadowGraphicsBuffer, Format::R_F32);
-	const DescriptorHeapHandleAtCPU dsvShadow = D3D12BasicFlow::InitDSV(device, ShadowRTWidth, ShadowRTHeight);
+	const DescriptorHeapHandleAtCPU dsvShadow = D3D12BasicFlow::InitDSV(device, ShadowRTSize);
 
 	// CB 0
 	struct alignas(256) CBData0Shadow
@@ -284,7 +282,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	const DescriptorHeap descriptorHeapBasicShadow
 		= D3D12BasicFlow::InitDescriptorHeapBasic(device, { cbvBufferShadow }, { {shadowGraphicsBuffer, shadowTextureMetadata} });
 
-	const ViewportScissorRect viewportScissorRectShadow = ViewportScissorRect::CreateFullSized(ShadowRTWidth, ShadowRTHeight);
+	const ViewportScissorRect viewportScissorRectShadow = ViewportScissorRect::CreateFullSized(ShadowRTSize);
 
 	//////////
 	// メインレンダリングの方に、情報を渡す
@@ -299,7 +297,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	//////////////////////////////
 	// ポストプロセス
 
-	const Texture ppTextureMetadata = TextureLoader::CreateManually({}, WindowWidth, WindowHeight, Format::RGBA_U8_01);
+	const Texture ppTextureMetadata = Texture::CreateManually({}, WindowSize, Format::RGBA_U8_01);
 	// RT, SR で切り替えて使う 2D テクスチャ
 	const GraphicsBuffer ppGraphicsBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, ppTextureMetadata,
 		GraphicsBufferUsagePermission::AllowRenderTarget, GraphicsBufferState::PixelShaderResource, Color::Transparent());
@@ -325,15 +323,13 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	// CB 0
 	struct alignas(256) CBData0PP
 	{
-		std::uint32_t WindowWidth;
-		std::uint32_t WindowHeight;
+		std::uint32_t WindowSize[2];
 		float LimitLuminance; // ピクセルがモデルの端にあると判断する輝度差の閾値 ([0.0, 1.0]. 小さいほどAAが多くかかる)
 		float AAPower; // アンチエイリアスの強さ (大きいほどAAが強くかかる)
 	};
 	const CBData0PP cbData0PP =
 	{
-		.WindowWidth = WindowWidth,
-		.WindowHeight = WindowHeight,
+		.WindowSize = { static_cast<std::uint32_t>(WindowSize.x), static_cast<std::uint32_t>(WindowSize.y) },
 		.LimitLuminance = 0.5f,
 		.AAPower = 8.0f,
 	};
@@ -349,7 +345,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 	// テキスト描画 (ポストプロセスの後)
 
 	// RT と同じ. sRGB 不可.
-	const Texture textTextureMetadata = TextureLoader::CreateManually({}, WindowWidth, WindowHeight, Format::RGBA_U8_01);
+	const Texture textTextureMetadata = Texture::CreateManually({}, WindowSize, Format::RGBA_U8_01);
 	// RT, SR で切り替えて使う 2D テクスチャ
 	const GraphicsBuffer textGraphicsBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, textTextureMetadata,
 		GraphicsBufferUsagePermission::AllowRenderTarget, GraphicsBufferState::PixelShaderResource, Color::Transparent());
@@ -373,8 +369,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowWidth, WindowHe
 		= D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, meshText);
 
 	// テキストUIデータ
-	TextUIData textUIData = TextUIData::CreateEmpty(
-		Lattice2(WindowWidth / TextUIData::FontTextureTextLength, WindowHeight / TextUIData::FontTextureTextLength));
+	TextUIData textUIData = TextUIData::CreateEmpty(WindowSize / TextUIData::FontTextureTextLength);
 
 	// t1
 	const auto fontTextureBufferAndData = D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue, commandAllocator, { "assets/font.png" });

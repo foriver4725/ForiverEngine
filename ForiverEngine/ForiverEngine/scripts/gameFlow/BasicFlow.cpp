@@ -5,8 +5,7 @@ namespace ForiverEngine
 	std::tuple<bool, std::wstring, std::tuple<Factory, Device, CommandAllocator, CommandList, CommandQueue, SwapChain>>
 		D3D12BasicFlow::CreateStandardObjects_Impl(
 			HWND hwnd,
-			int windowWidth,
-			int windowHeight
+			const Lattice2& windowSize
 		)
 	{
 		Factory factory = Factory();
@@ -36,7 +35,7 @@ namespace ForiverEngine
 		if (!(commandQueue = D3D12Helper::CreateCommandQueue(device)))
 			RETURN_FALSE(L"CommandQueue の作成に失敗しました");
 
-		if (!(swapChain = D3D12Helper::CreateSwapChain(factory, commandQueue, hwnd, windowWidth, windowHeight)))
+		if (!(swapChain = D3D12Helper::CreateSwapChain(factory, commandQueue, hwnd, windowSize)))
 			RETURN_FALSE(L"SwapChain の作成に失敗しました");
 
 		RETURN_TRUE();
@@ -371,8 +370,7 @@ namespace ForiverEngine
 	std::tuple<bool, std::wstring, std::tuple<DescriptorHeapHandleAtCPU>>
 		D3D12BasicFlow::InitDSV_Impl(
 			const Device& device,
-			int width,
-			int height
+			const Lattice2& size
 		)
 	{
 		DescriptorHeapHandleAtCPU dsv = DescriptorHeapHandleAtCPU();
@@ -382,7 +380,7 @@ namespace ForiverEngine
 #define RETURN_TRUE() \
 	return { true, L"", { dsv } };
 
-		const Texture depthBufferMetadata = TextureLoader::CreateManually({}, width, height, Format::D_F32);
+		const Texture depthBufferMetadata = Texture::CreateManually({}, size, Format::D_F32);
 		const GraphicsBuffer depthBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, depthBufferMetadata,
 			GraphicsBufferUsagePermission::AllowDepthStencil, GraphicsBufferState::DepthWrite, Color(DepthBufferClearValue, 0, 0, 0));
 		if (!depthBuffer)

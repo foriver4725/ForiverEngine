@@ -1,7 +1,6 @@
 cbuffer _0 : register(b0)
 {
-    uint _WindowWidth;
-    uint _WindowHeight;
+    uint2 _WindowSize;
     float _LimitLuminance;
     float _AAPower;
 }
@@ -46,7 +45,7 @@ PSOutput PSMain(V2P input)
     aaParams.Texture = _Texture;
     aaParams.Sampler = _Sampler;
     aaParams.UV = input.uv;
-    aaParams.UVPerPixel = float2(1.0 / _WindowWidth, 1.0 / _WindowHeight); // ポストプロセスなので、これでOK
+    aaParams.UVPerPixel = 1.0 / _WindowSize; // ポストプロセスなので、これでOK
     aaParams.LimitLuminance = saturate(_LimitLuminance);
     aaParams.AAPower = _AAPower;
     

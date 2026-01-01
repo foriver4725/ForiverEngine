@@ -83,6 +83,14 @@ namespace ForiverEngine
 		{
 			return Lattice3(x * scalar, y * scalar, z * scalar);
 		}
+		Lattice3 operator/(int scalar) const noexcept
+		{
+			if (scalar == 0)
+			{
+				return Lattice3(0, 0, 0);
+			}
+			return Lattice3(x / scalar, y / scalar, z / scalar);
+		}
 		friend Lattice3 operator*(int scalar, const Lattice3& lattice) noexcept
 		{
 			return Lattice3(lattice.x * scalar, lattice.y * scalar, lattice.z * scalar);
@@ -109,6 +117,23 @@ namespace ForiverEngine
 			x *= scalar;
 			y *= scalar;
 			z *= scalar;
+
+			return *this;
+		}
+		Lattice3& operator/=(int scalar) noexcept
+		{
+			if (scalar == 0)
+			{
+				x = 0;
+				y = 0;
+				z = 0;
+			}
+			else
+			{
+				x /= scalar;
+				y /= scalar;
+				z /= scalar;
+			}
 
 			return *this;
 		}

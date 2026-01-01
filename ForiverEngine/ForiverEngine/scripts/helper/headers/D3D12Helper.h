@@ -52,7 +52,7 @@ namespace ForiverEngine
 		/// <summary>
 		/// DXGISwapChain を作成して返す (失敗したら nullptr)
 		/// </summary>
-		static SwapChain CreateSwapChain(const Factory& factory, const CommandQueue& commandQueue, HWND hwnd, int windowWidth, int windowHeight);
+		static SwapChain CreateSwapChain(const Factory& factory, const CommandQueue& commandQueue, HWND hwnd, const Lattice2& windowSize);
 
 		/// <summary>
 		/// DescriptorHeap を作成して返す (失敗したら nullptr)

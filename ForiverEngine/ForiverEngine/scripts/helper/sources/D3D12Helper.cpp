@@ -286,12 +286,12 @@ namespace ForiverEngine
 		return CommandQueue();
 	}
 
-	SwapChain D3D12Helper::CreateSwapChain(const Factory& factory, const CommandQueue& commandQueue, HWND hwnd, int windowWidth, int windowHeight)
+	SwapChain D3D12Helper::CreateSwapChain(const Factory& factory, const CommandQueue& commandQueue, HWND hwnd, const Lattice2& windowSize)
 	{
 		const DXGI_SWAP_CHAIN_DESC1 desc
 		{
-			.Width = static_cast<UINT>(windowWidth),
-			.Height = static_cast<UINT>(windowHeight),
+			.Width = static_cast<UINT>(windowSize.x),
+			.Height = static_cast<UINT>(windowSize.y),
 			.Format = DXGI_FORMAT_R8G8B8A8_UNORM,
 			.Stereo = false,
 			.SampleDesc = {.Count = 1, .Quality = 0 }, // マルチサンプルの指定

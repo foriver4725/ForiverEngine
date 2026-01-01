@@ -392,12 +392,12 @@ public: \
 		int minX, maxX;
 		int minY, maxY;
 
-		static constexpr ViewportScissorRect CreateFullSized(int width, int height)
+		static constexpr ViewportScissorRect CreateFullSized(const Lattice2& size)
 		{
 			return ViewportScissorRect
 			{
-				.minX = 0, .maxX = width,
-				.minY = 0, .maxY = height,
+				.minX = 0, .maxX = size.x,
+				.minY = 0, .maxY = size.y,
 			};
 		}
 	};
@@ -411,11 +411,11 @@ public: \
 
 	// 自作オブジェクト
 
-	// ロードされたテクスチャ
+	// テクスチャ
 	struct Texture
 	{
 		// アラインメントをこれに揃える必要がある
-		constexpr static int RowSizeAlignment = 256;
+		static constexpr int RowSizeAlignment = 256;
 
 		std::vector<std::uint8_t> data; // 生データ (ビット配列 的な)
 		GraphicsBufferType textureType;
@@ -428,6 +428,58 @@ public: \
 		int mipLevels;
 
 		constexpr bool IsValid() const { return !data.empty() && width > 0 && height > 0; }
+
+		/// <summary>
+		/// <para>手動作成</para>
+		/// <para>2Dテクスチャ (配列ではない) として作成する</para>
+		/// <para>生データはそのまま素通しし、そこから値を計算などはしない</para>
+		/// <para>ミップマップなし</para>
+		/// </summary>
+		static Texture CreateManually(const std::vector<std::uint8_t>& data, const Lattice2& size, Format format)
+		{
+			// 1テクセルのバイト数を計算
+
+			const std::uint32_t formatTypes = GetFormatTypes(format);
+
+			int channelAmount = 0;
+			int biteAmountPerChannel = 0;
+			{
+				if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::Dimension1))
+					channelAmount = 1;
+				else if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::Dimension2))
+					channelAmount = 2;
+				else if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::Dimension3))
+					channelAmount = 3;
+				else if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::Dimension4))
+					channelAmount = 4;
+				else
+					channelAmount = 0; // 不明
+
+				if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::Bite1))
+					biteAmountPerChannel = 1;
+				else if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::Bite2))
+					biteAmountPerChannel = 2;
+				else if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::Bite4))
+					biteAmountPerChannel = 4;
+				else
+					biteAmountPerChannel = 0; // 不明
+			}
+
+			const std::size_t biteAmountTotal = static_cast<std::size_t>(channelAmount * biteAmountPerChannel);
+
+			return Texture
+			{
+				.data = data,
+				.textureType = GraphicsBufferType::Texture2D,
+				.format = format,
+				.width = size.x,
+				.height = size.y,
+				.rowSize = static_cast<int>(biteAmountTotal * size.x),
+				.sliceSize = static_cast<int>(biteAmountTotal * size.x * size.y),
+				.sliceCount = 1,
+				.mipLevels = 1,
+			};
+		}
 	};
 
 	// 関数

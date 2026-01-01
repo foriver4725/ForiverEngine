@@ -107,7 +107,7 @@ namespace ForiverEngine
 				textureData.push_back(static_cast<std::uint8_t>(singleData.fontTextureIndex));
 			}
 
-			return TextureLoader::CreateManually(textureData, dataSize.x, dataSize.y, Format::RGBA_U8);
+			return Texture::CreateManually(textureData, dataSize, Format::RGBA_U8);
 		}
 
 	private:
