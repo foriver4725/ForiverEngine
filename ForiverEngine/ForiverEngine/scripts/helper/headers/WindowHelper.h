@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include <scripts/common/Include.h>
-#include "./InputHelper.h"
 
 // WinMain() のマクロ
 // 既存マクロと重複しない命名にしている
@@ -19,8 +18,8 @@ static LRESULT CALLBACK FunctionName(HWND hwnd, UINT msg, WPARAM wparam, LPARAM 
 #define ShowError(Message) \
 ForiverEngine::WindowHelper::PopupErrorDialog(Message); \
 
-	// 初期化のマクロ 開始
-#define BEGIN_INITIALIZE(WindowClassName, WindowTitle, HwndName, WindowSize) \
+	// 初期化のマクロ
+#define INITIALIZE(WindowClassName, WindowTitle, HwndName, WindowSize) \
 DEFINE_DEFAULT_WINDOW_PROCEDURE(WindowProcedure) \
 \
 int WindowMain(hInstance) \
@@ -38,40 +37,6 @@ int WindowMain(hInstance) \
 \
 	/* 時間計測を初期化 */ \
 	ForiverEngine::WindowHelper::InitTime(); \
-
-	// 初期化のマクロ 終了
-#define END_INITIALIZE() \
-    return 0; \
-} \
-
-	// フレーム処理のマクロ 開始
-#define BEGIN_FRAME(HwndName) \
-MSG msg = {}; \
-while (true) \
-{ \
-\
-	/* フレーム開始時の時間を記録 */ \
-	ForiverEngine::WindowHelper::RecordTimeAtBeginFrame(); \
-\
-    /* キー入力を更新 */ \
-    ForiverEngine::InputHelper::OnEveryFrame(); \
-\
-    /* 全てのメッセージを処理する */ \
-    /* WM_QUIT メッセージが来たらループを抜ける */ \
-	if (ForiverEngine::WindowHelper::HandleAllMessages(msg) < 0) \
-		return 0; \
-\
-    /* カーソルが無効なら、ウィンドウ中央に固定する */ \
-	if (!ForiverEngine::WindowHelper::IsCursorEnabled()) \
-		ForiverEngine::WindowHelper::FixCursorAtCenter(HwndName); \
-
-// フレーム処理のマクロ 終了
-#define END_FRAME() \
-\
-	/* フレーム終了時の時間を記録し、必要ならばスリープする */ \
-	ForiverEngine::WindowHelper::CollectTimeAtEndFrameAndSleepIfNeeded(); \
-	ForiverEngine::WindowHelper::ResetTimeAtBeginFrame(); \
-}
 
 namespace ForiverEngine
 {
@@ -122,10 +87,9 @@ namespace ForiverEngine
 
 		/// <summary>
 		/// <para>全てのメッセージを処理する</para>
-		/// <para>戻り値が -1 の場合、WM_QUIT メッセージが来たことを示す</para>
-		/// <para>それ以外の場合、0 を返す</para>
+		/// <para>WM_QUIT メッセージが来たなら false を、それ以外は true を返す</para>
 		/// </summary>
-		static int HandleAllMessages(MSG& msg);
+		static bool HandleAllMessages();
 
 		/// <summary>
 		/// <para>カーソルの表示・非表示を切り替える</para>
@@ -177,6 +141,17 @@ namespace ForiverEngine
 		/// エラーのメッセージボックスを出す
 		/// </summary>
 		static void PopupErrorDialog(const std::wstring& message);
+
+		/// <summary>
+		/// <para>フレーム開始時に呼び出すこと</para>
+		/// <para>フレームループを終了するなら false を、それ以外は true を返す</para>
+		/// </summary>
+		static bool OnBeginFrame(HWND hwnd);
+
+		/// <summary>
+		/// フレーム終了時に呼び出すこと
+		/// </summary>
+		static void OnEndFrame();
 
 	private:
 		inline static int targetFps = -1;

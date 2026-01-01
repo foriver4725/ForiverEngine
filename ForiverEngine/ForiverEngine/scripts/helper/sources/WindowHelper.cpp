@@ -1,4 +1,5 @@
 ﻿#include "../headers/WindowHelper.h"
+#include "../headers/InputHelper.h"
 
 namespace ForiverEngine
 {
@@ -93,18 +94,20 @@ namespace ForiverEngine
 		return DefWindowProc(hwnd, msg, wparam, lparam);
 	}
 
-	int WindowHelper::HandleAllMessages(MSG& msg)
+	bool WindowHelper::HandleAllMessages()
 	{
+		MSG msg = {};
+
 		while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
 		{
 			if (msg.message == WM_QUIT)
-				return -1;
+				return false;
 
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
 
-		return 0;
+		return true;
 	}
 
 	void WindowHelper::SetCursorEnabled(bool enabled)
@@ -207,5 +210,32 @@ namespace ForiverEngine
 	void WindowHelper::PopupErrorDialog(const std::wstring& message)
 	{
 		MessageBox(nullptr, message.c_str(), L"error", MB_OK | MB_ICONERROR);
+	}
+
+	bool WindowHelper::OnBeginFrame(HWND hwnd)
+	{
+		// フレーム開始時の時間を記録
+		RecordTimeAtBeginFrame();
+
+		// キー入力を更新
+		InputHelper::OnEveryFrame();
+
+		// 全てのメッセージを処理する
+		// WM_QUIT メッセージが来たらループを抜ける
+		if (!HandleAllMessages())
+			return false;
+
+		// カーソルが無効なら、ウィンドウ中央に固定する
+		if (!IsCursorEnabled())
+			FixCursorAtCenter(hwnd);
+
+		return true;
+	}
+
+	void WindowHelper::OnEndFrame()
+	{
+		// フレーム終了時の時間を記録し、必要ならばスリープする
+		CollectTimeAtEndFrameAndSleepIfNeeded();
+		ResetTimeAtBeginFrame();
 	}
 }

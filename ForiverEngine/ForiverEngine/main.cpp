@@ -5,7 +5,7 @@
 
 constexpr ForiverEngine::Lattice2 WindowSize = ForiverEngine::Lattice2(1344, 756);
 
-BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowSize);
+INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowSize);
 {
 	using namespace ForiverEngine;
 
@@ -409,8 +409,11 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowSize);
 
 	//////////////////////////////
 
-	BEGIN_FRAME(hwnd);
+	while (true)
 	{
+		if (!WindowHelper::OnBeginFrame(hwnd))
+			return 0;
+
 		// Escape でゲーム終了
 		if (InputHelper::GetKeyInfo(Key::Escape).pressedNow)
 			return 0;
@@ -773,7 +776,9 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowSize);
 		);
 		if (!D3D12Helper::Present(swapChain))
 			ShowError(L"画面のフリップに失敗しました");
+
+		WindowHelper::OnEndFrame();
 	}
-	END_FRAME();
-}
-END_INITIALIZE();
+
+	return 0;
+}}
