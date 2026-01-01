@@ -2,23 +2,19 @@
 
 namespace ForiverEngine
 {
-	std::tuple<bool, std::wstring, std::tuple<Factory, Device, CommandAllocator, CommandList, CommandQueue, SwapChain>>
-		D3D12BasicFlow::CreateStandardObjects_Impl(
-			HWND hwnd,
-			const Lattice2& windowSize
-		)
+	std::tuple<bool, std::wstring, std::tuple<Factory, Device, CommandAllocator, CommandList, CommandQueue>>
+		D3D12BasicFlow::CreateStandardObjects_Impl()
 	{
 		Factory factory = Factory();
 		Device device = Device();
 		CommandAllocator commandAllocater = CommandAllocator();
 		CommandList commandList = CommandList();
 		CommandQueue commandQueue = CommandQueue();
-		SwapChain swapChain = SwapChain();
 
 #define RETURN_FALSE(errorMessage) \
-    return { false, errorMessage, { factory, device, commandAllocater, commandList, commandQueue, swapChain } };
+    return { false, errorMessage, { factory, device, commandAllocater, commandList, commandQueue } };
 #define RETURN_TRUE() \
-	return { true, L"", { factory, device, commandAllocater, commandList, commandQueue, swapChain } };
+	return { true, L"", { factory, device, commandAllocater, commandList, commandQueue } };
 
 		if (!(factory = D3D12Helper::CreateFactory()))
 			RETURN_FALSE(L"Factory の作成に失敗しました");
@@ -34,9 +30,6 @@ namespace ForiverEngine
 
 		if (!(commandQueue = D3D12Helper::CreateCommandQueue(device)))
 			RETURN_FALSE(L"CommandQueue の作成に失敗しました");
-
-		if (!(swapChain = D3D12Helper::CreateSwapChain(factory, commandQueue, hwnd, windowSize)))
-			RETURN_FALSE(L"SwapChain の作成に失敗しました");
 
 		RETURN_TRUE();
 

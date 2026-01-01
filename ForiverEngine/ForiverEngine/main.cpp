@@ -39,8 +39,8 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowSize.x, WindowS
 
 	constexpr Color RTClearColor = Color::CreateFromUint8(60, 150, 210); // 空色
 
-	const auto [factory, device, commandAllocator, commandList, commandQueue, swapChain]
-		= D3D12BasicFlow::CreateStandardObjects(hwnd, WindowSize);
+	const auto [factory, device, commandAllocator, commandList, commandQueue]
+		= D3D12BasicFlow::CreateStandardObjects();
 
 	const RootParameter rootParameter = RootParameter::CreateBasic(2, 2, 0);
 	const SamplerConfig samplerConfig = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
@@ -49,6 +49,9 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowSize.x, WindowS
 		= D3D12BasicFlow::CreateRootSignatureAndGraphicsPipelineState(
 			device, rootParameter, samplerConfig, shaderVS, shaderPS, VertexLayouts, FillMode::Solid, CullMode::None, true);
 
+	const SwapChain swapChain = D3D12Helper::CreateSwapChain(factory, commandQueue, hwnd, WindowSize);
+	if (!swapChain)
+		ShowError(L"SwapChain の作成に失敗しました");
 	const auto [rtGetter, rtvGetter] = D3D12BasicFlow::InitRTV(device, swapChain, Format::RGBA_U8_01);
 	const DescriptorHeapHandleAtCPU dsv = D3D12BasicFlow::InitDSV(device, WindowSize);
 

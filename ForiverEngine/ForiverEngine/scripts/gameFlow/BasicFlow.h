@@ -49,13 +49,10 @@ namespace ForiverEngine
 		/// <summary>
 		/// DirectX12 の基本的なオブジェクト群を一括で作成する
 		/// </summary>
-		static std::tuple<Factory, Device, CommandAllocator, CommandList, CommandQueue, SwapChain>
-			CreateStandardObjects(
-				HWND hwnd,
-				const Lattice2& windowSize
-			)
+		static std::tuple<Factory, Device, CommandAllocator, CommandList, CommandQueue>
+			CreateStandardObjects()
 		{
-			return Check(CreateStandardObjects_Impl(hwnd, windowSize));
+			return Check(CreateStandardObjects_Impl());
 		}
 
 		/// <summary>
@@ -335,11 +332,8 @@ namespace ForiverEngine
 		/// <summary>
 		/// DirectX12 の基本的なオブジェクト群を一括で作成する
 		/// </summary>
-		static std::tuple<bool, std::wstring, std::tuple<Factory, Device, CommandAllocator, CommandList, CommandQueue, SwapChain>>
-			CreateStandardObjects_Impl(
-				HWND hwnd,
-				const Lattice2& windowSize
-			);
+		static std::tuple<bool, std::wstring, std::tuple<Factory, Device, CommandAllocator, CommandList, CommandQueue>>
+			CreateStandardObjects_Impl();
 
 		/// <summary>
 		/// 頂点バッファビューとインデックスバッファビューを一括で作成する (ブロック)
