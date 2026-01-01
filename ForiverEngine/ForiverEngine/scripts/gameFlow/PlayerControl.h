@@ -13,12 +13,19 @@ namespace ForiverEngine
 		DELETE_DEFAULT_METHODS(PlayerControl);
 
 		// 与えられた座標がどのブロックの位置にあるかを計算し、格子座標で返す
+		// X,Y,Z の1要素版
+		static int GetBlockPosition(const float position)
+		{
+			return std::round(position);
+		}
+
+		// 与えられた座標がどのブロックの位置にあるかを計算し、格子座標で返す
 		static Lattice3 GetBlockPosition(const Vector3& position)
 		{
 			return Lattice3(
-				std::round(position.x),
-				std::round(position.y),
-				std::round(position.z)
+				GetBlockPosition(position.x),
+				GetBlockPosition(position.y),
+				GetBlockPosition(position.z)
 			);
 		}
 
@@ -36,11 +43,17 @@ namespace ForiverEngine
 			);
 		}
 
+		// インデックスが、指定された範囲内であるか [0, count)
+		static bool IsIndexInBounds(int index, int count)
+		{
+			return 0 <= index && index < count;
+		}
+
 		// チャンクのインデックスが、地形全体の範囲内であるか
 		static bool IsChunkInBounds(const Lattice2& chunkIndex, int chunkCount)
 		{
-			return 0 <= chunkIndex.x && chunkIndex.x < chunkCount
-				&& 0 <= chunkIndex.y && chunkIndex.y < chunkCount;
+			return IsIndexInBounds(chunkIndex.x, chunkCount)
+				&& IsIndexInBounds(chunkIndex.y, chunkCount);
 		}
 
 		// ワールド座標 -> チャンク内のローカル座標 ([0.0f, ChunkSize))
@@ -50,6 +63,16 @@ namespace ForiverEngine
 				std::fmod(position.x, static_cast<float>(Terrain::ChunkSize)),
 				position.y,
 				std::fmod(position.z, static_cast<float>(Terrain::ChunkSize))
+			);
+		}
+
+		// ワールド座標 -> チャンク内のローカル座標 ([0.0f, ChunkSize))
+		static Lattice3 GetChunkLocalPosition(const Lattice3& position)
+		{
+			return Lattice3(
+				position.x % Terrain::ChunkSize,
+				position.y,
+				position.z % Terrain::ChunkSize
 			);
 		}
 
@@ -99,6 +122,7 @@ namespace ForiverEngine
 		}
 
 		// 足元より下である中で、最も高いブロックのY座標を取得する (無いなら多分、チャンクの高さの最小値-1を返す)
+		// TODO: 必ず1チャンクしか見ないので、当たり判定がチャンクの境界に跨っているとバグる
 		template<int ChunkSize>
 		static int GetFloorHeight(
 			const std::array<std::array<Terrain, ChunkSize>, ChunkSize>& terrainChunks,
@@ -110,10 +134,9 @@ namespace ForiverEngine
 			if (!IsChunkInBounds(chunkIndex, ChunkSize))
 				return -1;
 			const Terrain& terrain = terrainChunks[chunkIndex.x][chunkIndex.y];
-			const Vector3 localPosition = GetChunkLocalPosition(position);
 
-			const auto [rangeX, rangeY, rangeZ] = CalculateCollisionBlockBoundary(
-				localPosition - Vector3(size.x * 0.5f, 0.0f, size.z * 0.5f), size,
+			const Vector3 localMinPosition = GetChunkLocalPosition(position) - Vector3(size.x * 0.5f, 0.0f, size.z * 0.5f);
+			const auto [rangeX, rangeY, rangeZ] = CalculateCollisionBlockBoundary(localMinPosition, size,
 				Lattice2(0, Terrain::ChunkSize - 1), Lattice2(0, Terrain::ChunkHeight - 1));
 
 			int y = std::numeric_limits<int>::min();
@@ -128,6 +151,7 @@ namespace ForiverEngine
 		}
 
 		// 頭上より上である中で、最も低いブロックのY座標を取得する (無いなら多分、チャンクの高さの最大値+1を返す)
+		// TODO: 必ず1チャンクしか見ないので、当たり判定がチャンクの境界に跨っているとバグる
 		template<int ChunkSize>
 		static int GetCeilHeight(
 			const std::array<std::array<Terrain, ChunkSize>, ChunkSize>& terrainChunks,
@@ -139,10 +163,9 @@ namespace ForiverEngine
 			if (!IsChunkInBounds(chunkIndex, ChunkSize))
 				return -1;
 			const Terrain& terrain = terrainChunks[chunkIndex.x][chunkIndex.y];
-			const Vector3 localPosition = GetChunkLocalPosition(position);
 
-			const auto [rangeX, rangeY, rangeZ] = CalculateCollisionBlockBoundary(
-				localPosition - Vector3(size.x * 0.5f, 0.0f, size.z * 0.5f), size,
+			const Vector3 localMinPosition = GetChunkLocalPosition(position) - Vector3(size.x * 0.5f, 0.0f, size.z * 0.5f);
+			const auto [rangeX, rangeY, rangeZ] = CalculateCollisionBlockBoundary(localMinPosition, size,
 				Lattice2(0, Terrain::ChunkSize - 1), Lattice2(0, Terrain::ChunkHeight - 1));
 
 			int y = std::numeric_limits<int>::max();
@@ -156,7 +179,6 @@ namespace ForiverEngine
 			return y;
 		}
 
-		// TODO: 必ず1チャンクしか見ないので、当たり判定がチャンクの境界に跨っているとバグる
 		template<int ChunkSize>
 		static bool IsOverlappingWithTerrain(
 			const std::array<std::array<Terrain, ChunkSize>, ChunkSize>& terrainChunks,
@@ -168,10 +190,13 @@ namespace ForiverEngine
 			if (!IsChunkInBounds(chunkIndex, ChunkSize))
 				return false;
 			const Terrain& terrain = terrainChunks[chunkIndex.x][chunkIndex.y];
-			const Vector3 localPosition = GetChunkLocalPosition(position);
 
-			const auto [rangeX, rangeY, rangeZ] = CalculateCollisionBlockBoundary(
-				localPosition - Vector3(size.x * 0.5f, 0.0f, size.z * 0.5f), size,
+			const Vector3 localMinPosition = GetChunkLocalPosition(position) - Vector3(size.x * 0.5f, 0.0f, size.z * 0.5f);
+			const Vector3 localMaxPosition = localMinPosition + size;
+			const bool collisionExistsInMultipleChunkX = GetBlockPosition(localMaxPosition.x) >= Terrain::ChunkSize;
+			const bool collisionExistsInMultipleChunkZ = GetBlockPosition(localMaxPosition.z) >= Terrain::ChunkSize;
+
+			const auto [rangeX, rangeY, rangeZ] = CalculateCollisionBlockBoundary(localMinPosition, size,
 				Lattice2(0, Terrain::ChunkSize - 1), Lattice2(0, Terrain::ChunkHeight - 1));
 
 			for (int y = rangeY.x; y <= rangeY.y; ++y)
@@ -181,6 +206,51 @@ namespace ForiverEngine
 						if (terrain.GetBlock(x, y, z) != Block::Air)
 							return true;
 					}
+
+			// コリジョンがX方向にチャンクを跨いでいる
+			if (collisionExistsInMultipleChunkX && IsIndexInBounds(chunkIndex.x + 1, ChunkSize))
+			{
+				const Terrain& terrainNextX = terrainChunks[chunkIndex.x + 1][chunkIndex.y];
+				const int localBlockMaxXAtNextX = GetChunkLocalPosition(GetBlockPosition(localMaxPosition)).x;
+
+				for (int y = rangeY.x; y <= rangeY.y; ++y)
+					for (int z = rangeZ.x; z <= rangeZ.y; ++z)
+						for (int x = 0; x <= localBlockMaxXAtNextX; ++x)
+						{
+							if (terrainNextX.GetBlock(x, y, z) != Block::Air)
+								return true;
+						}
+			}
+			// コリジョンがZ方向にチャンクを跨いでいる
+			if (collisionExistsInMultipleChunkZ && IsIndexInBounds(chunkIndex.y + 1, ChunkSize))
+			{
+				const Terrain& terrainNextZ = terrainChunks[chunkIndex.x][chunkIndex.y + 1];
+				const int localBlockMaxZAtNextZ = GetChunkLocalPosition(GetBlockPosition(localMaxPosition)).z;
+
+				for (int y = rangeY.x; y <= rangeY.y; ++y)
+					for (int z = 0; z <= localBlockMaxZAtNextZ; ++z)
+						for (int x = rangeX.x; x <= rangeX.y; ++x)
+						{
+							if (terrainNextZ.GetBlock(x, y, z) != Block::Air)
+								return true;
+						}
+			}
+			// コリジョンがX,Z両方向にチャンクを跨いでいる
+			if (collisionExistsInMultipleChunkX && collisionExistsInMultipleChunkZ
+				&& IsChunkInBounds(Lattice2(chunkIndex.x + 1, chunkIndex.y + 1), ChunkSize))
+			{
+				const Terrain& terrainNextXZ = terrainChunks[chunkIndex.x + 1][chunkIndex.y + 1];
+				const int localBlockMaxXAtNextX = GetChunkLocalPosition(GetBlockPosition(localMaxPosition)).x;
+				const int localBlockMaxZAtNextZ = GetChunkLocalPosition(GetBlockPosition(localMaxPosition)).z;
+
+				for (int y = rangeY.x; y <= rangeY.y; ++y)
+					for (int z = 0; z <= localBlockMaxZAtNextZ; ++z)
+						for (int x = 0; x <= localBlockMaxXAtNextX; ++x)
+						{
+							if (terrainNextXZ.GetBlock(x, y, z) != Block::Air)
+								return true;
+						}
+			}
 
 			return false;
 		}
