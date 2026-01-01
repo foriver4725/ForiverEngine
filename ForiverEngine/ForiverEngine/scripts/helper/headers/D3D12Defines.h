@@ -30,8 +30,8 @@ using IDXGISwapChainLatest = IDXGISwapChain4;
 namespace ForiverEngine
 {
 	// シェーダーターゲットを指定
-#define ShaderTargetVS "vs_5_1"
-#define ShaderTargetPS "ps_5_1"
+	inline static const std::string ShaderTargetVS = "vs_5_1";
+	inline static const std::string ShaderTargetPS = "ps_5_1";
 
 	// 深度バッファのクリア値
 	constexpr float DepthBufferClearValue = 1.0f;
