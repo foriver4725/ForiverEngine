@@ -172,7 +172,6 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="oss\SimplexNoise.cpp" />
-    <ClCompile Include="scripts\gameFlow\BasicFlow.cpp" />
     <ClCompile Include="scripts\helper\sources\D3D12Helper.cpp" />
     <ClCompile Include="scripts\helper\sources\InputHelper.cpp" />
     <ClCompile Include="scripts\helper\sources\WindowHelper.cpp" />
@@ -209,7 +208,7 @@
     <ClInclude Include="scripts\component\Transform\CameraTransform.h" />
     <ClInclude Include="scripts\component\Transform\Include.h" />
     <ClInclude Include="scripts\component\Transform\Transform.h" />
-    <ClInclude Include="scripts\gameFlow\BasicFlow.h" />
+    <ClInclude Include="scripts\gameFlow\D3D12BasicFlow.h" />
     <ClInclude Include="scripts\gameFlow\Include.h" />
     <ClInclude Include="scripts\gameFlow\PlayerControl.h" />
     <ClInclude Include="scripts\gameFlow\Terrain.h" />

@@ -14,9 +14,6 @@
     <ClCompile Include="scripts\helper\sources\WindowHelper.cpp">
       <Filter>scripts\helper\sources</Filter>
     </ClCompile>
-    <ClCompile Include="scripts\gameFlow\BasicFlow.cpp">
-      <Filter>scripts\gameFlow</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="shaders">
@@ -165,7 +162,7 @@
     <ClInclude Include="scripts\component\Mesh\MeshQuad.h">
       <Filter>scripts\component\Mesh</Filter>
     </ClInclude>
-    <ClInclude Include="scripts\gameFlow\BasicFlow.h">
+    <ClInclude Include="scripts\gameFlow\D3D12BasicFlow.h">
       <Filter>scripts\gameFlow</Filter>
     </ClInclude>
     <ClInclude Include="scripts\gameFlow\Include.h">
