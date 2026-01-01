@@ -16,8 +16,8 @@ namespace ForiverEngine
 		constexpr Vector2(Vector2&& other) noexcept : x(other.x), y(other.y) {}
 
 		constexpr Vector2(int x, int y) noexcept : x(static_cast<float>(x)), y(static_cast<float>(y)) {}
-		Vector2(const Lattice2& lattice) noexcept;
-		Vector2(Lattice2&& lattice) noexcept;
+		explicit Vector2(const Lattice2& lattice) noexcept;
+		explicit Vector2(Lattice2&& lattice) noexcept;
 
 		static constexpr Vector2 Zero() noexcept { return Vector2(0.0f, 0.0f); }
 		static constexpr Vector2 One() noexcept { return Vector2(1.0f, 1.0f); }

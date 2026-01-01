@@ -50,8 +50,8 @@ namespace ForiverEngine
 		{
 		}
 
-		Matrix4x4(const Matrix3x3& other) noexcept;
-		Matrix4x4(Matrix3x3&& other) noexcept;
+		explicit Matrix4x4(const Matrix3x3& other) noexcept;
+		explicit Matrix4x4(Matrix3x3&& other) noexcept;
 
 		static constexpr Matrix4x4 Identity() noexcept
 		{

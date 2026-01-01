@@ -37,10 +37,10 @@ namespace ForiverEngine
 		}
 
 		// チャンクのインデックスが、地形全体の範囲内であるか
-		static bool IsChunkInBounds(const Lattice2& chunkIndex, const Lattice2& chunkAmount)
+		static bool IsChunkInBounds(const Lattice2& chunkIndex, int chunkCount)
 		{
-			return 0 <= chunkIndex.x && chunkIndex.x < chunkAmount.x
-				&& 0 <= chunkIndex.y && chunkIndex.y < chunkAmount.y;
+			return 0 <= chunkIndex.x && chunkIndex.x < chunkCount
+				&& 0 <= chunkIndex.y && chunkIndex.y < chunkCount;
 		}
 
 		// ワールド座標 -> チャンク内のローカル座標 ([0.0f, ChunkSize))
@@ -75,7 +75,7 @@ namespace ForiverEngine
 		}
 
 		// 足元より下である中で、最も高いブロックのY座標を取得する (無いなら多分、チャンクの高さの最小値-1を返す)
-		template<std::uint32_t ChunkSize>
+		template<int ChunkSize>
 		static int GetFloorHeight(
 			const std::array<std::array<Terrain, ChunkSize>, ChunkSize>& terrainChunks,
 			const Vector3& position, // 足元の座標 (地面の高さはこれより大きくなることはない)
@@ -83,7 +83,7 @@ namespace ForiverEngine
 		)
 		{
 			const Lattice2 chunkIndex = GetChunkIndex(position);
-			if (!IsChunkInBounds(chunkIndex, Lattice2(ChunkSize, ChunkSize)))
+			if (!IsChunkInBounds(chunkIndex, ChunkSize))
 				return -1;
 			const Terrain& terrain = terrainChunks[chunkIndex.x][chunkIndex.y];
 			const Vector3 localPosition = GetChunkLocalPosition(position);
@@ -106,7 +106,7 @@ namespace ForiverEngine
 		}
 
 		// 視線の高さより上である中で、最も低いブロックのY座標を取得する (無いなら多分、チャンクの高さの最大値+1を返す)
-		template<std::uint32_t ChunkSize>
+		template<int ChunkSize>
 		static int GetCeilHeight(
 			const std::array<std::array<Terrain, ChunkSize>, ChunkSize>& terrainChunks,
 			const Vector3& position, // 視線の座標 (地面の高さはこれ以下になることはない)
@@ -114,7 +114,7 @@ namespace ForiverEngine
 		)
 		{
 			const Lattice2 chunkIndex = GetChunkIndex(position);
-			if (!IsChunkInBounds(chunkIndex, Lattice2(ChunkSize, ChunkSize)))
+			if (!IsChunkInBounds(chunkIndex, ChunkSize))
 				return -1;
 			const Terrain& terrain = terrainChunks[chunkIndex.x][chunkIndex.y];
 			const Vector3 localPosition = GetChunkLocalPosition(position);
@@ -136,7 +136,7 @@ namespace ForiverEngine
 			return y;
 		}
 
-		template<std::uint32_t ChunkSize>
+		template<int ChunkSize>
 		static bool IsOverlappingWithTerrain(
 			const std::array<std::array<Terrain, ChunkSize>, ChunkSize>& terrainChunks,
 			const Vector3& position, // 足元の座標
@@ -144,7 +144,7 @@ namespace ForiverEngine
 		)
 		{
 			const Lattice2 chunkIndex = GetChunkIndex(position);
-			if (!IsChunkInBounds(chunkIndex, Lattice2(ChunkSize, ChunkSize)))
+			if (!IsChunkInBounds(chunkIndex, ChunkSize))
 				return false;
 			const Terrain& terrain = terrainChunks[chunkIndex.x][chunkIndex.y];
 			const Vector3 localPosition = GetChunkLocalPosition(position);

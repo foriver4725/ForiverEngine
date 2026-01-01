@@ -11,8 +11,8 @@ namespace ForiverEngine
 	Vector4::Vector4(const Lattice4& lattice) noexcept : x(static_cast<float>(lattice.x)), y(static_cast<float>(lattice.y)), z(static_cast<float>(lattice.z)), w(static_cast<float>(lattice.w)) {}
 	Vector4::Vector4(Lattice4&& lattice) noexcept : x(static_cast<float>(lattice.x)), y(static_cast<float>(lattice.y)), z(static_cast<float>(lattice.z)), w(static_cast<float>(lattice.w)) {}
 
-	Vector4::Vector4(const Vector3& vec, float w = 1.0f) noexcept : x(vec.x), y(vec.y), z(vec.z), w(w) {}
-	Vector4::Vector4(Vector3&& vec, float w = 1.0f) noexcept : x(vec.x), y(vec.y), z(vec.z), w(w) {}
+	Vector4::Vector4(const Vector3& vec, float w) noexcept : x(vec.x), y(vec.y), z(vec.z), w(w) {}
+	Vector4::Vector4(Vector3&& vec, float w) noexcept : x(vec.x), y(vec.y), z(vec.z), w(w) {}
 
 	Vector4& Vector4::operator=(const Vector4& other) noexcept
 	{

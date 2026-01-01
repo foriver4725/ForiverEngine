@@ -522,7 +522,7 @@ int Main(hInstance)
 				);
 
 				const Lattice2 chunkIndex = PlayerControl::GetChunkIndex(rayPosition);
-				if (!PlayerControl::IsChunkInBounds(chunkIndex, Lattice2(ChunkCount, ChunkCount)))
+				if (!PlayerControl::IsChunkInBounds(chunkIndex, ChunkCount))
 					continue;
 				const Terrain& targetTerrain = terrains[chunkIndex.x][chunkIndex.y];
 				const Lattice3 rayLocalPosition = Lattice3(
