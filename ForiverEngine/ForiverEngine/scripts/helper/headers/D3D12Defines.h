@@ -156,34 +156,34 @@ public: \
 
 		switch (format)
 		{
-		case Format::Unknown: return 0;
+		case Format::Unknown:    return 0;
 
-		case Format::RGBA_F32: return BitFlag::AddFlags(0, { Digit::Dimension4, Digit::TypeFloat, Digit::Bite4, Digit::ForColor });
-		case Format::RGBA_U32: return BitFlag::AddFlags(0, { Digit::Dimension4, Digit::TypeInt,   Digit::Bite4, Digit::ForColor });
-		case Format::RGB_F32:  return BitFlag::AddFlags(0, { Digit::Dimension3, Digit::TypeFloat, Digit::Bite4, Digit::ForColor });
-		case Format::RGB_U32:  return BitFlag::AddFlags(0, { Digit::Dimension3, Digit::TypeInt,   Digit::Bite4, Digit::ForColor });
-		case Format::RG_F32:   return BitFlag::AddFlags(0, { Digit::Dimension2, Digit::TypeFloat, Digit::Bite4, Digit::ForColor });
-		case Format::RG_U32:   return BitFlag::AddFlags(0, { Digit::Dimension2, Digit::TypeInt,   Digit::Bite4, Digit::ForColor });
-		case Format::R_F32:    return BitFlag::AddFlags(0, { Digit::Dimension1, Digit::TypeFloat, Digit::Bite4, Digit::ForColor });
-		case Format::R_U32:    return BitFlag::AddFlags(0, { Digit::Dimension1, Digit::TypeInt,   Digit::Bite4, Digit::ForColor });
+		case Format::RGBA_F32:   return BitFlag::AddFlags(0, { Digit::Dimension4, Digit::TypeFloat, Digit::Bite4, Digit::ForColor });
+		case Format::RGBA_U32:   return BitFlag::AddFlags(0, { Digit::Dimension4, Digit::TypeInt,   Digit::Bite4, Digit::ForColor });
+		case Format::RGB_F32:    return BitFlag::AddFlags(0, { Digit::Dimension3, Digit::TypeFloat, Digit::Bite4, Digit::ForColor });
+		case Format::RGB_U32:    return BitFlag::AddFlags(0, { Digit::Dimension3, Digit::TypeInt,   Digit::Bite4, Digit::ForColor });
+		case Format::RG_F32:     return BitFlag::AddFlags(0, { Digit::Dimension2, Digit::TypeFloat, Digit::Bite4, Digit::ForColor });
+		case Format::RG_U32:     return BitFlag::AddFlags(0, { Digit::Dimension2, Digit::TypeInt,   Digit::Bite4, Digit::ForColor });
+		case Format::R_F32:      return BitFlag::AddFlags(0, { Digit::Dimension1, Digit::TypeFloat, Digit::Bite4, Digit::ForColor });
+		case Format::R_U32:      return BitFlag::AddFlags(0, { Digit::Dimension1, Digit::TypeInt,   Digit::Bite4, Digit::ForColor });
 
-		case Format::RGBA_F16: return BitFlag::AddFlags(0, { Digit::Dimension4, Digit::TypeFloat, Digit::Bite2, Digit::ForColor });
-		case Format::RGBA_U16: return BitFlag::AddFlags(0, { Digit::Dimension4, Digit::TypeInt,   Digit::Bite2, Digit::ForColor });
-		case Format::RG_F16:   return BitFlag::AddFlags(0, { Digit::Dimension2, Digit::TypeFloat, Digit::Bite2, Digit::ForColor });
-		case Format::RG_U16:   return BitFlag::AddFlags(0, { Digit::Dimension2, Digit::TypeInt,   Digit::Bite2, Digit::ForColor });
-		case Format::R_F16:    return BitFlag::AddFlags(0, { Digit::Dimension1, Digit::TypeFloat, Digit::Bite2, Digit::ForColor });
-		case Format::R_U16:    return BitFlag::AddFlags(0, { Digit::Dimension1, Digit::TypeInt,   Digit::Bite2, Digit::ForColor });
+		case Format::RGBA_F16:   return BitFlag::AddFlags(0, { Digit::Dimension4, Digit::TypeFloat, Digit::Bite2, Digit::ForColor });
+		case Format::RGBA_U16:   return BitFlag::AddFlags(0, { Digit::Dimension4, Digit::TypeInt,   Digit::Bite2, Digit::ForColor });
+		case Format::RG_F16:     return BitFlag::AddFlags(0, { Digit::Dimension2, Digit::TypeFloat, Digit::Bite2, Digit::ForColor });
+		case Format::RG_U16:     return BitFlag::AddFlags(0, { Digit::Dimension2, Digit::TypeInt,   Digit::Bite2, Digit::ForColor });
+		case Format::R_F16:      return BitFlag::AddFlags(0, { Digit::Dimension1, Digit::TypeFloat, Digit::Bite2, Digit::ForColor });
+		case Format::R_U16:      return BitFlag::AddFlags(0, { Digit::Dimension1, Digit::TypeInt,   Digit::Bite2, Digit::ForColor });
 
-		case Format::RGBA_U8:         return BitFlag::AddFlags(0, { Digit::Dimension4, Digit::TypeInt, Digit::Bite1, Digit::ForColor });
-		case Format::RGBA_U8_01:      return BitFlag::AddFlags(0, { Digit::Dimension4, Digit::TypeInt, Digit::Bite1, Digit::ForColor });
-		case Format::RG_U8:           return BitFlag::AddFlags(0, { Digit::Dimension2, Digit::TypeInt, Digit::Bite1, Digit::ForColor });
-		case Format::RG_U8_01:        return BitFlag::AddFlags(0, { Digit::Dimension2, Digit::TypeInt, Digit::Bite1, Digit::ForColor });
-		case Format::R_U8:            return BitFlag::AddFlags(0, { Digit::Dimension1, Digit::TypeInt, Digit::Bite1, Digit::ForColor });
-		case Format::R_U8_01:         return BitFlag::AddFlags(0, { Digit::Dimension1, Digit::TypeInt, Digit::Bite1, Digit::ForColor });
+		case Format::RGBA_U8:    return BitFlag::AddFlags(0, { Digit::Dimension4, Digit::TypeInt,   Digit::Bite1, Digit::ForColor });
+		case Format::RGBA_U8_01: return BitFlag::AddFlags(0, { Digit::Dimension4, Digit::TypeInt,   Digit::Bite1, Digit::ForColor });
+		case Format::RG_U8:      return BitFlag::AddFlags(0, { Digit::Dimension2, Digit::TypeInt,   Digit::Bite1, Digit::ForColor });
+		case Format::RG_U8_01:   return BitFlag::AddFlags(0, { Digit::Dimension2, Digit::TypeInt,   Digit::Bite1, Digit::ForColor });
+		case Format::R_U8:       return BitFlag::AddFlags(0, { Digit::Dimension1, Digit::TypeInt,   Digit::Bite1, Digit::ForColor });
+		case Format::R_U8_01:    return BitFlag::AddFlags(0, { Digit::Dimension1, Digit::TypeInt,   Digit::Bite1, Digit::ForColor });
 
-		case Format::D_F32:    return BitFlag::AddFlags(0, { Digit::Dimension1, Digit::TypeFloat, Digit::Bite4, Digit::ForDepth });
+		case Format::D_F32:      return BitFlag::AddFlags(0, { Digit::Dimension1, Digit::TypeFloat, Digit::Bite4, Digit::ForDepth });
 
-		default: return 0;
+		default:                 return 0;
 		}
 	}
 
