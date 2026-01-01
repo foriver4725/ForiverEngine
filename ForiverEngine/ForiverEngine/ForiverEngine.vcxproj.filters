@@ -11,9 +11,6 @@
     <ClCompile Include="scripts\helper\sources\InputHelper.cpp">
       <Filter>scripts\helper\sources</Filter>
     </ClCompile>
-    <ClCompile Include="scripts\helper\sources\TextureLoader.cpp">
-      <Filter>scripts\helper\sources</Filter>
-    </ClCompile>
     <ClCompile Include="scripts\helper\sources\WindowHelper.cpp">
       <Filter>scripts\helper\sources</Filter>
     </ClCompile>
@@ -139,9 +136,6 @@
       <Filter>scripts\helper\headers</Filter>
     </ClInclude>
     <ClInclude Include="scripts\helper\headers\InputHelper.h">
-      <Filter>scripts\helper\headers</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\helper\headers\TextureLoader.h">
       <Filter>scripts\helper\headers</Filter>
     </ClInclude>
     <ClInclude Include="scripts\helper\headers\WindowHelper.h">

@@ -175,7 +175,6 @@
     <ClCompile Include="scripts\gameFlow\BasicFlow.cpp" />
     <ClCompile Include="scripts\helper\sources\D3D12Helper.cpp" />
     <ClCompile Include="scripts\helper\sources\InputHelper.cpp" />
-    <ClCompile Include="scripts\helper\sources\TextureLoader.cpp" />
     <ClCompile Include="scripts\helper\sources\WindowHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -217,7 +216,6 @@
     <ClInclude Include="scripts\helper\headers\D3D12Defines.h" />
     <ClInclude Include="scripts\helper\headers\D3D12Helper.h" />
     <ClInclude Include="scripts\helper\headers\InputHelper.h" />
-    <ClInclude Include="scripts\helper\headers\TextureLoader.h" />
     <ClInclude Include="scripts\helper\headers\WindowHelper.h" />
     <ClInclude Include="scripts\helper\Include.h" />
   </ItemGroup>
