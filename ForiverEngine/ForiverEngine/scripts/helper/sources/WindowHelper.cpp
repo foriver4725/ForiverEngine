@@ -2,29 +2,29 @@
 
 namespace ForiverEngine
 {
-	bool WindowHelper::InitializeWindowFromHInstance(HINSTANCE hInstance, WNDPROC windowProcedure, const wchar_t* className)
+	bool WindowHelper::InitializeWindowFromHInstance(HINSTANCE hInstance, WNDPROC windowProcedure, const std::wstring& className)
 	{
 		WNDCLASSW w = {};
 		w.hInstance = hInstance;
 		w.lpfnWndProc = windowProcedure;
-		w.lpszClassName = className;
+		w.lpszClassName = className.c_str();
 
 		// ウィンドウクラスの登録
 		return RegisterClassW(&w) != 0;
 	}
 
-	HWND WindowHelper::CreateTheWindow(const wchar_t* className, const wchar_t* title, int width, int height)
+	HWND WindowHelper::CreateTheWindow(const std::wstring& className, const std::wstring& title, const Lattice2& size)
 	{
 		// スクリーンサイズ取得
 		const int screenWidth = GetSystemMetrics(SM_CXSCREEN);
 		const int screenHeight = GetSystemMetrics(SM_CYSCREEN);
 
 		// スクリーン中央になるべき位置を計算
-		const int x = (screenWidth - width) / 2;
-		const int y = (screenHeight - height) / 2;
+		const int x = (screenWidth - size.x) / 2;
+		const int y = (screenHeight - size.y) / 2;
 
-		return CreateWindowW(className, title, WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-			x, y, width, height, nullptr, nullptr, nullptr, nullptr);
+		return CreateWindowW(className.c_str(), title.c_str(), WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+			x, y, size.x, size.y, nullptr, nullptr, nullptr, nullptr);
 	}
 
 	LRESULT WindowHelper::OnWindowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
@@ -204,8 +204,8 @@ namespace ForiverEngine
 		}
 	}
 
-	void WindowHelper::PopupErrorDialog(const wchar_t* message)
+	void WindowHelper::PopupErrorDialog(const std::wstring& message)
 	{
-		MessageBox(nullptr, message, L"error", MB_OK | MB_ICONERROR);
+		MessageBox(nullptr, message.c_str(), L"error", MB_OK | MB_ICONERROR);
 	}
 }

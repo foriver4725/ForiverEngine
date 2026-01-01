@@ -5,7 +5,7 @@
 
 constexpr ForiverEngine::Lattice2 WindowSize = ForiverEngine::Lattice2(1344, 756);
 
-BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowSize.x, WindowSize.y);
+BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowSize);
 {
 	using namespace ForiverEngine;
 

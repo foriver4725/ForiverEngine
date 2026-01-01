@@ -22,7 +22,7 @@ ForiverEngine::WindowHelper::PopupErrorDialog(Message); \
 #ifdef ENABLE_CUI_CONSOLE
 
 	// 初期化のマクロ 開始
-#define BEGIN_INITIALIZE(WindowClassName, WindowTitle, HwndName, WindowWidth, WindowHeight) \
+#define BEGIN_INITIALIZE(WindowClassName, WindowTitle, HwndName, WindowSize) \
 DEFINE_DEFAULT_WINDOW_PROCEDURE(WindowProcedure) \
 \
 int WindowMain(hInstance) \
@@ -33,7 +33,7 @@ int WindowMain(hInstance) \
 		return -1; \
 	} \
 \
-	HWND HwndName = ForiverEngine::WindowHelper::CreateTheWindow((WindowClassName), (WindowTitle), (WindowWidth), (WindowHeight)); \
+	HWND HwndName = ForiverEngine::WindowHelper::CreateTheWindow((WindowClassName), (WindowTitle), (WindowSize)); \
 \
 	/* キー入力を初期化 */ \
     ForiverEngine::InputHelper::InitKeyTable(); \
@@ -46,7 +46,7 @@ int WindowMain(hInstance) \
 #else
 
 	// 初期化のマクロ 開始
-#define BEGIN_INITIALIZE(WindowClassName, WindowTitle, HwndName, WindowWidth, WindowHeight) \
+#define BEGIN_INITIALIZE(WindowClassName, WindowTitle, HwndName, WindowSize) \
 DEFINE_DEFAULT_WINDOW_PROCEDURE(WindowProcedure) \
 \
 int WindowMain(hInstance) \
@@ -57,7 +57,7 @@ int WindowMain(hInstance) \
 		return -1; \
 	} \
 \
-	HWND HwndName = ForiverEngine::WindowHelper::CreateTheWindow((WindowClassName), (WindowTitle), (WindowWidth), (WindowHeight)); \
+	HWND HwndName = ForiverEngine::WindowHelper::CreateTheWindow((WindowClassName), (WindowTitle), (WindowSize)); \
 \
     /* キー入力を初期化 */ \
 	ForiverEngine::InputHelper::InitKeyTable(); \
@@ -166,13 +166,13 @@ namespace ForiverEngine
 		/// <param name="hInstance">WinMain() の hInstance を渡す</param>
 		/// <param name="windowProcedure">ウィンドウプロシージャの関数ポインタ</param>
 		/// <returns>成功したら true, 失敗したら false</returns>
-		static bool InitializeWindowFromHInstance(HINSTANCE hInstance, WNDPROC windowProcedure, const wchar_t* className);
+		static bool InitializeWindowFromHInstance(HINSTANCE hInstance, WNDPROC windowProcedure, const std::wstring& className);
 
 		/// <summary>
 		/// <para>ウィンドウを作成し、ハンドルを返す</para>
 		/// 既存マクロと重複しない命名にしている
 		/// </summary>
-		static HWND CreateTheWindow(const wchar_t* className, const wchar_t* title, int width, int height);
+		static HWND CreateTheWindow(const std::wstring& className, const std::wstring& title, const Lattice2& size);
 
 		/// <summary>
 		/// <para>ウィンドウプロシージャの内部実装</para>
@@ -235,7 +235,7 @@ namespace ForiverEngine
 		/// <summary>
 		/// エラーのメッセージボックスを出す
 		/// </summary>
-		static void PopupErrorDialog(const wchar_t* message);
+		static void PopupErrorDialog(const std::wstring& message);
 
 #ifdef ENABLE_CUI_CONSOLE
 		/// <summary>

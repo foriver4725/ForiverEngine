@@ -128,7 +128,7 @@ namespace ForiverEngine
 				vs, ps,
 				errorMessage
 			))
-				ShowError(errorMessage.c_str());
+				ShowError(errorMessage);
 
 			return { vs, ps };
 		}
@@ -154,7 +154,7 @@ namespace ForiverEngine
 
 			const RootSignature rootSignature = D3D12Helper::CreateRootSignature(device, rootParameter, samplerConfig, errorMessage);
 			if (!rootSignature)
-				ShowError(errorMessage.c_str());
+				ShowError(errorMessage);
 
 			const PipelineState graphicsPipelineState = D3D12Helper::CreateGraphicsPipelineState(
 				device, rootSignature, shaderVS, shaderPS, vertexLayouts, fillMode, cullMode, useDSV);
