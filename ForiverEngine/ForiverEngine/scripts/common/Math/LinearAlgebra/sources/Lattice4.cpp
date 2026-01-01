@@ -3,14 +3,13 @@
 #include <scripts/common/Math/Defines.h>
 #include <cmath>
 #include <algorithm>
+#include "../headers/Lattice3.h"
 #include "../headers/Vector4.h"
 
 namespace ForiverEngine
 {
-	Lattice4::Lattice4(const Vector4& vec4) noexcept
-		: x(static_cast<int>(vec4.x)), y(static_cast<int>(vec4.y)), z(static_cast<int>(vec4.z)), w(static_cast<int>(vec4.w))
-	{
-	}
+	Lattice4::Lattice4(const Lattice3& lattice, int w) noexcept : x(lattice.x), y(lattice.y), z(lattice.z), w(w) {}
+	Lattice4::Lattice4(const Vector4& vec) noexcept : x(static_cast<int>(vec.x)), y(static_cast<int>(vec.y)), z(static_cast<int>(vec.z)), w(static_cast<int>(vec.w)) {}
 
 	Lattice4& Lattice4::operator=(const Lattice4& other) noexcept
 	{

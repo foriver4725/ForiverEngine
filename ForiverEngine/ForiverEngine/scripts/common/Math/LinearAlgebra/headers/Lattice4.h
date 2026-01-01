@@ -2,6 +2,7 @@
 
 namespace ForiverEngine
 {
+	struct Lattice3;
 	struct Vector4;
 
 	struct Lattice4
@@ -11,12 +12,13 @@ namespace ForiverEngine
 		int z;
 		int w;
 
-		constexpr Lattice4() noexcept : x(0), y(0), z(0), w(0) {}
-		constexpr Lattice4(int x, int y, int z, int w) noexcept : x(x), y(y), z(z), w(w) {}
+		constexpr Lattice4() noexcept : x(0), y(0), z(0), w(1) {}
+		constexpr Lattice4(int x, int y, int z, int w = 1) noexcept : x(x), y(y), z(z), w(w) {}
 		constexpr Lattice4(const Lattice4& other) noexcept : x(other.x), y(other.y), z(other.z), w(other.w) {}
 		constexpr Lattice4(Lattice4&& other) noexcept : x(other.x), y(other.y), z(other.z), w(other.w) {}
 
-		Lattice4(const Vector4& vec4) noexcept;
+		explicit Lattice4(const Lattice3& lattice, int w = 1) noexcept;
+		explicit Lattice4(const Vector4& vec) noexcept;
 
 		Lattice4& operator=(const Lattice4& other) noexcept;
 		Lattice4& operator=(Lattice4&& other) noexcept;

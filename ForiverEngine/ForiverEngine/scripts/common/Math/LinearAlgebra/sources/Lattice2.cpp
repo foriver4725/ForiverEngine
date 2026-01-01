@@ -7,10 +7,7 @@
 
 namespace ForiverEngine
 {
-	Lattice2::Lattice2(const Vector2& vec2) noexcept
-		: x(static_cast<int>(vec2.x)), y(static_cast<int>(vec2.y))
-	{
-	}
+	Lattice2::Lattice2(const Vector2& vec) noexcept : x(static_cast<int>(vec.x)), y(static_cast<int>(vec.y)) {}
 
 	Lattice2& Lattice2::operator=(const Lattice2& other) noexcept
 	{

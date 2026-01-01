@@ -3,9 +3,12 @@
 #include <scripts/common/Math/Defines.h>
 #include <cmath>
 #include <algorithm>
+#include "../headers/Lattice2.h"
 
 namespace ForiverEngine
 {
+	Vector2::Vector2(const Lattice2& lattice) noexcept : x(static_cast<float>(lattice.x)), y(static_cast<float>(lattice.y)) {}
+
 	Vector2& Vector2::operator=(const Vector2& other) noexcept
 	{
 		if (this != &other)

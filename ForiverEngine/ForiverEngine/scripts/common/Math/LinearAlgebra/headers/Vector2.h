@@ -2,6 +2,8 @@
 
 namespace ForiverEngine
 {
+	struct Lattice2;
+
 	struct Vector2
 	{
 		float x;
@@ -11,6 +13,8 @@ namespace ForiverEngine
 		constexpr Vector2(float x, float y) noexcept : x(x), y(y) {}
 		constexpr Vector2(const Vector2& other) noexcept : x(other.x), y(other.y) {}
 		constexpr Vector2(Vector2&& other) noexcept : x(other.x), y(other.y) {}
+
+		explicit Vector2(const Lattice2& lattice) noexcept;
 
 		static constexpr Vector2 Zero() noexcept { return Vector2(0.0f, 0.0f); }
 		static constexpr Vector2 One() noexcept { return Vector2(1.0f, 1.0f); }

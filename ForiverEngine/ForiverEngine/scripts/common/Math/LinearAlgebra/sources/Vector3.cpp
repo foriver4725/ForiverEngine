@@ -3,12 +3,13 @@
 #include <scripts/common/Math/Defines.h>
 #include <cmath>
 #include <algorithm>
+#include "../headers/Lattice3.h"
 #include "../headers/Vector2.h"
 
 namespace ForiverEngine
 {
-	Vector3::Vector3(const Vector2& vec2) noexcept : x(vec2.x), y(vec2.y), z(0.0f) {}
-	Vector3::Vector3(const Vector2& vec2, float z) noexcept : x(vec2.x), y(vec2.y), z(z) {}
+	Vector3::Vector3(const Vector2& vec, float z) noexcept : x(vec.x), y(vec.y), z(z) {}
+	Vector3::Vector3(const Lattice3& lattice) noexcept : x(static_cast<float>(lattice.x)), y(static_cast<float>(lattice.y)), z(static_cast<float>(lattice.z)) {}
 
 	Vector3& Vector3::operator=(const Vector3& other) noexcept
 	{
