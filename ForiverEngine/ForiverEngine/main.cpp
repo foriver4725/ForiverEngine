@@ -4,7 +4,6 @@
 #include <scripts/gameFlow/Include.h>
 
 constexpr ForiverEngine::Lattice2 WindowSize = ForiverEngine::Lattice2(1344, 756);
-constexpr float WindowAspectRatio = static_cast<float>(WindowSize.x) / static_cast<float>(WindowSize.y);
 
 BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowSize.x, WindowSize.y);
 {
@@ -55,7 +54,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowSize.x, WindowS
 
 	constexpr Transform terrainTransform = Transform::Identity();
 	CameraTransform cameraTransform = CameraTransform::CreatePerspective(
-		Vector3(64, 32, 64), Quaternion::Identity(), 60.0f * DegToRad, WindowAspectRatio);
+		Vector3(64, 32, 64), Quaternion::Identity(), 60.0f * DegToRad, 1.0f * WindowSize.x / WindowSize.y);
 
 	// 太陽からのカメラ 平行投影
 	constexpr Color SunShadowColor = Color(0.7f, 0.7f, 0.7f);
