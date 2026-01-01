@@ -120,7 +120,7 @@ namespace ForiverEngine
 			for (int z = rangeZ.x; z <= rangeZ.y; ++z)
 				for (int x = rangeX.x; x <= rangeX.y; ++x)
 				{
-					const int height = terrain.GetFloorHeight(x, z, rangeY.x);
+					const int height = terrain.GetFloorHeight(x, z, rangeY.x); // 余裕を持たせて、足元にあるブロックから調べる
 					y = std::max(y, height);
 				}
 
@@ -149,7 +149,7 @@ namespace ForiverEngine
 			for (int z = rangeZ.x; z <= rangeZ.y; ++z)
 				for (int x = rangeX.x; x <= rangeX.y; ++x)
 				{
-					const int height = terrain.GetCeilHeight(x, z, rangeY.y);
+					const int height = terrain.GetCeilHeight(x, z, rangeY.y); // 余裕を持たせて、頭上にあるブロックから調べる
 					y = std::min(y, height);
 				}
 
