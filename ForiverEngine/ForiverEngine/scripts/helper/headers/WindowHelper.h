@@ -2,27 +2,12 @@
 
 #include <scripts/common/Include.h>
 
-// エラーのメッセージボックスを出すマクロ
+#define Main(HInstanceName) \
+WINAPI WinMain(_In_ HINSTANCE HInstanceName, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) \
+
+// 書くのが簡単なように、一律このマクロを使うものとする
 #define ShowError(Message) \
 ForiverEngine::WindowHelper::PopupErrorDialog(Message); \
-
-	// 初期化のマクロ
-#define INITIALIZE(WindowClassName, WindowTitle, HwndName, WindowSize) \
-int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) \
-{ \
-	if (!ForiverEngine::WindowHelper::InitializeWindowFromHInstance(hInstance, ForiverEngine::WindowHelper::OnWindowProcedure, (WindowClassName))) \
-    { \
-		ShowError(L"ウィンドウの初期化に失敗しました"); \
-		return -1; \
-	} \
-\
-	HWND HwndName = ForiverEngine::WindowHelper::CreateTheWindow((WindowClassName), (WindowTitle), (WindowSize)); \
-\
-    /* キー入力を初期化 */ \
-	ForiverEngine::InputHelper::InitKeyTable(); \
-\
-	/* 時間計測を初期化 */ \
-	ForiverEngine::WindowHelper::InitTime(); \
 
 namespace ForiverEngine
 {
@@ -127,6 +112,12 @@ namespace ForiverEngine
 		/// エラーのメッセージボックスを出す
 		/// </summary>
 		static void PopupErrorDialog(const std::wstring& message);
+
+		/// <summary>
+		/// WinMain() 後、ただちに呼び出すこと
+		/// </summary>
+		static HWND OnInit(
+			HINSTANCE hInstance, const std::wstring& windowClassName, const std::wstring& windowTitle, const Lattice2& windowSize);
 
 		/// <summary>
 		/// <para>フレーム開始時に呼び出すこと</para>

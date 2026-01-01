@@ -212,20 +212,29 @@ namespace ForiverEngine
 		MessageBox(nullptr, message.c_str(), L"error", MB_OK | MB_ICONERROR);
 	}
 
+	HWND WindowHelper::OnInit(
+		HINSTANCE hInstance, const std::wstring& windowClassName, const std::wstring& windowTitle, const Lattice2& windowSize)
+	{
+		if (!InitializeWindowFromHInstance(hInstance, OnWindowProcedure, windowClassName))
+			ShowError(L"ウィンドウの初期化に失敗しました");
+
+		const HWND hwnd = ForiverEngine::WindowHelper::CreateTheWindow(windowClassName, windowTitle, windowSize);
+
+		ForiverEngine::InputHelper::InitKeyTable();
+		ForiverEngine::WindowHelper::InitTime();
+
+		return hwnd;
+	}
+
 	bool WindowHelper::OnBeginFrame(HWND hwnd)
 	{
-		// フレーム開始時の時間を記録
 		RecordTimeAtBeginFrame();
 
-		// キー入力を更新
 		InputHelper::OnEveryFrame();
 
-		// 全てのメッセージを処理する
-		// WM_QUIT メッセージが来たらループを抜ける
 		if (!HandleAllMessages())
 			return false;
 
-		// カーソルが無効なら、ウィンドウ中央に固定する
 		if (!IsCursorEnabled())
 			FixCursorAtCenter(hwnd);
 
@@ -234,7 +243,6 @@ namespace ForiverEngine
 
 	void WindowHelper::OnEndFrame()
 	{
-		// フレーム終了時の時間を記録し、必要ならばスリープする
 		CollectTimeAtEndFrameAndSleepIfNeeded();
 		ResetTimeAtBeginFrame();
 	}

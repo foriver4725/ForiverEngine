@@ -3,11 +3,12 @@
 #include <scripts/component/Include.h>
 #include <scripts/gameFlow/Include.h>
 
-constexpr ForiverEngine::Lattice2 WindowSize = ForiverEngine::Lattice2(1344, 756);
-
-INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowSize);
+int Main(hInstance)
 {
 	using namespace ForiverEngine;
+
+	constexpr Lattice2 WindowSize = Lattice2(1344, 756);
+	const HWND hwnd = WindowHelper::OnInit(hInstance, L"ForiverEngine", L"ForiverEngine", WindowSize);
 
 #ifdef _DEBUG
 	if (!D3D12Helper::EnableDebugLayer())
@@ -781,4 +782,4 @@ INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowSize);
 	}
 
 	return 0;
-}}
+}
