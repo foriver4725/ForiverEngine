@@ -740,14 +740,17 @@ int Main(hInstance)
 			ShowError(L"現在のバックレンダーターゲットの取得に失敗しました");
 
 		// 影のデプス書き込み
-		D3D12BasicFlow::CommandBasicLoop(
-			commandList, commandQueue, commandAllocator, device,
-			rootSignatureShadow, graphicsPipelineStateShadow, shadowGraphicsBuffer,
-			rtvShadow, dsvShadow, descriptorHeapBasicShadow, drawingVertexBufferViews, drawingIndexBufferViews,
-			GraphicsBufferState::PixelShaderResource, GraphicsBufferState::RenderTarget,
-			viewportScissorRectShadow, PrimitiveTopology::TriangleList, Color(DepthBufferClearValue, 0, 0, 0), DepthBufferClearValue,
-			drawingIndexCounts
-		);
+		if (cbvBuffer1VirtualPtr->CastShadow > 0.5f)
+		{
+			D3D12BasicFlow::CommandBasicLoop(
+				commandList, commandQueue, commandAllocator, device,
+				rootSignatureShadow, graphicsPipelineStateShadow, shadowGraphicsBuffer,
+				rtvShadow, dsvShadow, descriptorHeapBasicShadow, drawingVertexBufferViews, drawingIndexBufferViews,
+				GraphicsBufferState::PixelShaderResource, GraphicsBufferState::RenderTarget,
+				viewportScissorRectShadow, PrimitiveTopology::TriangleList, Color(DepthBufferClearValue, 0, 0, 0), DepthBufferClearValue,
+				drawingIndexCounts
+			);
+		}
 		// メインレンダリング
 		D3D12BasicFlow::CommandBasicLoop(
 			commandList, commandQueue, commandAllocator, device,
