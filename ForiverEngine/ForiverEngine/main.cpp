@@ -230,8 +230,8 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowSize.x, WindowS
 	// CBV 用バッファ
 	CBData0* cbvBuffer0VirtualPtr = nullptr;
 	CBData1* cbvBuffer1VirtualPtr = nullptr;
-	const GraphicsBuffer cbvBuffer0 = D3D12BasicFlow::InitCBVBuffer<CBData0>(device, cbData0, false, &cbvBuffer0VirtualPtr);
-	const GraphicsBuffer cbvBuffer1 = D3D12BasicFlow::InitCBVBuffer<CBData1>(device, cbData1, false, &cbvBuffer1VirtualPtr);
+	const GraphicsBuffer cbvBuffer0 = D3D12BasicFlow::InitCBVBuffer<CBData0>(device, cbData0, &cbvBuffer0VirtualPtr);
+	const GraphicsBuffer cbvBuffer1 = D3D12BasicFlow::InitCBVBuffer<CBData1>(device, cbData1, &cbvBuffer1VirtualPtr);
 
 	// SRV 用バッファ
 	const auto srvBufferAndData = D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue, commandAllocator,
@@ -277,7 +277,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowSize.x, WindowS
 		.Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(terrainTransform, sunCameraTransform),
 	};
 	CBData0Shadow* cbvBuffer0ShadowVirtualPtr = nullptr;
-	const GraphicsBuffer cbvBufferShadow = D3D12BasicFlow::InitCBVBuffer<CBData0Shadow>(device, cbData0Shadow, false, &cbvBuffer0ShadowVirtualPtr);
+	const GraphicsBuffer cbvBufferShadow = D3D12BasicFlow::InitCBVBuffer<CBData0Shadow>(device, cbData0Shadow, &cbvBuffer0ShadowVirtualPtr);
 
 	// DescriptorHeap
 	const DescriptorHeap descriptorHeapBasicShadow

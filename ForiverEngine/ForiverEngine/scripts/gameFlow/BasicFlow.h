@@ -112,6 +112,8 @@ namespace ForiverEngine
 
 		/// <summary>
 		/// <para>GraphicsBuffer を作成して、任意の値を GPU にアップロードする</para>
+		/// <para>outBufferVirtualPtr にポインタを渡すと、処理終了時にアンマップしない</para>
+		/// <para>従って、outBufferVirtualPtr に対して CPU 側で変更した値が、動的に CB に反映されるようになる</para>
 		/// <para>作成したバッファを返す</para>
 		/// <para>CBV を作る用のバッファ</para>
 		/// </summary>
@@ -120,11 +122,10 @@ namespace ForiverEngine
 			InitCBVBuffer(
 				const Device& device,
 				const T& data,
-				bool unmapOnEnd = true,
 				T** outBufferVirtualPtr = nullptr
 			)
 		{
-			return Check(InitCBVBuffer_Impl(device, data, unmapOnEnd, outBufferVirtualPtr));
+			return Check(InitCBVBuffer_Impl(device, data, outBufferVirtualPtr));
 		}
 
 		/// <summary>
@@ -379,6 +380,8 @@ namespace ForiverEngine
 
 		/// <summary>
 		/// <para>GraphicsBuffer を作成して、任意の値を GPU にアップロードする</para>
+		/// <para>outBufferVirtualPtr にポインタを渡すと、処理終了時にアンマップしない</para>
+		/// <para>従って、outBufferVirtualPtr に対して CPU 側で変更した値が、動的に CB に反映されるようになる</para>
 		/// <para>作成したバッファを返す</para>
 		/// <para>CBV を作る用のバッファ</para>
 		/// </summary>
@@ -387,7 +390,6 @@ namespace ForiverEngine
 			InitCBVBuffer_Impl(
 				const Device& device,
 				const T& data,
-				bool unmapOnEnd = true,
 				T** outBufferVirtualPtr = nullptr
 			)
 		{
@@ -407,7 +409,7 @@ namespace ForiverEngine
 				RETURN_FALSE(L"定数バッファーの作成に失敗しました");
 
 			if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer1D(
-				buffer, &data, sizeof(T), unmapOnEnd, reinterpret_cast<void**>(outBufferVirtualPtr)))
+				buffer, &data, sizeof(T), !outBufferVirtualPtr, reinterpret_cast<void**>(outBufferVirtualPtr)))
 				RETURN_FALSE(L"定数バッファーへのデータ転送に失敗しました");
 
 			RETURN_TRUE();
