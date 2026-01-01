@@ -44,12 +44,6 @@ int WindowMain(hInstance) \
     return 0; \
 } \
 
-	// 手動終了のマクロ
-#define QUIT() \
-{ \
-	return 0; \
-} \
-
 	// フレーム処理のマクロ 開始
 #define BEGIN_FRAME(HwndName) \
 MSG msg = {}; \
@@ -191,4 +185,4 @@ namespace ForiverEngine
 		inline static double timeAtBeginFrame = -1; // フレーム開始時の時間をメモっておく用
 		inline static double deltaTime = -1; // 前フレームからの経過時間 [ms] を計算し、外部公開する
 	};
-	}
+}

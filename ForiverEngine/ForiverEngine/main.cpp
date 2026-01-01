@@ -413,7 +413,7 @@ BEGIN_INITIALIZE(L"ForiverEngine", L"ForiverEngine", hwnd, WindowSize);
 	{
 		// Escape でゲーム終了
 		if (InputHelper::GetKeyInfo(Key::Escape).pressedNow)
-			QUIT();
+			return 0;
 
 		// 回転
 		PlayerControl::Rotate(
