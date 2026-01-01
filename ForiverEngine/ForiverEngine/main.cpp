@@ -96,7 +96,7 @@ int Main(hInstance)
 	std::array<std::array<VertexBufferView, ChunkCount>, ChunkCount> terrainVertexBufferViews = {}; // 頂点バッファビュー (全部)
 	std::array<std::array<IndexBufferView, ChunkCount>, ChunkCount> terrainIndexBufferViews = {}; // インデックスバッファビュー (全部)
 	// 地形のデータ・メッシュを作成し、キャッシュしておく関数 (並列処理可能. 最初にこっちを実行する)
-	std::function<void(int, int)> CreateTerrainChunkCanParallel = [&](int chunkX, int chunkZ)
+	const std::function<void(int, int)> CreateTerrainChunkCanParallel = [&](int chunkX, int chunkZ)
 		{
 			const Terrain terrain = Terrain::CreateFromNoise({ chunkX, chunkZ }, { 0.015f, 12.0f }, TerrainSeed, 16, 18, 24);
 			terrains[chunkX][chunkZ] = terrain;
@@ -107,7 +107,7 @@ int Main(hInstance)
 			terrainChunkCreationStates[chunkX][chunkZ].store(ChunkCreationState::FinishedParallel, std::memory_order_release);
 		};
 	// ↑の並列処理を実行開始する関数
-	std::function<void(int, int)> TryStartCreateTerrainChunkCanParallel = [&](int chunkX, int chunkZ)
+	const std::function<void(int, int)> TryStartCreateTerrainChunkCanParallel = [&](int chunkX, int chunkZ)
 		{
 			ChunkCreationState expectedState = ChunkCreationState::NotYet;
 
@@ -127,7 +127,7 @@ int Main(hInstance)
 				}).detach();
 		};
 	// 地形の頂点・インデックスバッファビューを作成し、キャッシュしておく関数 (GPUが絡むので並列処理不可. 並列処理の方が完了した後、メインスレッドで実行する)
-	std::function<void(int, int)> CreateTerrainChunkCannotParallel = [&](int chunkX, int chunkZ)
+	const std::function<void(int, int)> CreateTerrainChunkCannotParallel = [&](int chunkX, int chunkZ)
 		{
 			if (terrainChunkCreationStates[chunkX][chunkZ]
 				.load(std::memory_order_acquire)
