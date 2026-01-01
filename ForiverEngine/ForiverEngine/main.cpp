@@ -677,31 +677,21 @@ int Main(hInstance)
 
 				const Lattice3 playerFootPositionAsLattice = PlayerControl::GetBlockLatticePosition(
 					PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight));
-				const std::string positionText = std::format(
-					"Position : ({},{},{})",
-					playerFootPositionAsLattice.x,
-					playerFootPositionAsLattice.y,
-					playerFootPositionAsLattice.z
-				);
+				const std::string positionText =
+					std::format("Position : {}", ToString(playerFootPositionAsLattice));
 
 				const Lattice3 selectingBlockPositionAsLattice = Lattice3(
 					static_cast<int>(cbvBuffer1VirtualPtr->SelectingBlockPosition.x),
 					static_cast<int>(cbvBuffer1VirtualPtr->SelectingBlockPosition.y),
 					static_cast<int>(cbvBuffer1VirtualPtr->SelectingBlockPosition.z)
 				);
-				const std::string selectingBlockPositionText = cbvBuffer1VirtualPtr->IsSelectingAnyBlock ? std::format(
-					"LookAt : ({},{},{})",
-					selectingBlockPositionAsLattice.x,
-					selectingBlockPositionAsLattice.y,
-					selectingBlockPositionAsLattice.z
-				) : "LookAt : None";
+				const std::string selectingBlockPositionText = cbvBuffer1VirtualPtr->IsSelectingAnyBlock ?
+					std::format("LookAt : {}", ToString(selectingBlockPositionAsLattice))
+					: "LookAt : None";
 
 				const Lattice2 currentChunkIndex = PlayerControl::GetChunkIndex(cameraTransform.position);
-				const std::string chunkIndexText = std::format(
-					"Chunk Index : ({},{})",
-					currentChunkIndex.x,
-					currentChunkIndex.y
-				);
+				const std::string chunkIndexText =
+					std::format("Chunk Index : {}", ToString(currentChunkIndex));
 
 				textUIData.ClearAll();
 				textUIData.SetTexts(Lattice2(1, 1), frameTimeText, Color::White());

@@ -10,3 +10,5 @@
 #include "./headers/Matrix3x3.h"
 #include "./headers/Matrix4x4.h"
 #include "./headers/Quaternion.h"
+
+#include "./ToString.h"

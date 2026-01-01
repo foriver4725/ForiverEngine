@@ -222,6 +222,9 @@
     <ClInclude Include="scripts\common\Math\LinearAlgebra\headers\Vector4.h">
       <Filter>scripts\common\Math\LinearAlgebra\headers</Filter>
     </ClInclude>
+    <ClInclude Include="scripts\common\Math\LinearAlgebra\ToString.h">
+      <Filter>scripts\common\Math\LinearAlgebra</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shaders\Basic.hlsl">
