@@ -413,11 +413,11 @@ int Main(hInstance)
 	while (true)
 	{
 		if (!WindowHelper::OnBeginFrame(hwnd))
-			return 0;
+			break;
 
 		// Escape でゲーム終了
 		if (InputHelper::GetKeyInfo(Key::Escape).pressedNow)
-			return 0;
+			break;
 
 		// 回転
 		PlayerControl::Rotate(
