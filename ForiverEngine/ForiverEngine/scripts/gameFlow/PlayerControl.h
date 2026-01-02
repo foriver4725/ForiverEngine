@@ -786,28 +786,36 @@ namespace ForiverEngine
 				eqci(chunks2x2[0][0].GetBlock(0, 4, 0), Block::Air);
 				eqci(chunks2x2[0][0].GetBlock(0, 12, 0), Block::Air);
 				eqci(chunks2x2[0][0].GetBlock(0, 13, 0), Block::Stone);
+				eqci(chunks2x2[0][0].GetBlock(12, 1, 15), Block::Stone);
 				eqci(chunks2x2[0][0].GetBlock(12, 8, 15), Block::Air);
+				eqci(chunks2x2[0][0].GetBlock(12, 64, 15), Block::Stone);
 
 				// x1z0
 				eqci(chunks2x2[1][0].GetBlock(0, 2, 0), Block::Stone);
 				eqci(chunks2x2[1][0].GetBlock(0, 3, 0), Block::Air);
 				eqci(chunks2x2[1][0].GetBlock(0, 13, 0), Block::Air);
 				eqci(chunks2x2[1][0].GetBlock(0, 14, 0), Block::Stone);
+				eqci(chunks2x2[1][0].GetBlock(12, 1, 15), Block::Stone);
 				eqci(chunks2x2[1][0].GetBlock(12, 8, 15), Block::Air);
+				eqci(chunks2x2[1][0].GetBlock(12, 64, 15), Block::Stone);
 
 				// x0z1
 				eqci(chunks2x2[0][1].GetBlock(0, 4, 0), Block::Stone);
 				eqci(chunks2x2[0][1].GetBlock(0, 5, 0), Block::Air);
 				eqci(chunks2x2[0][1].GetBlock(0, 11, 0), Block::Air);
 				eqci(chunks2x2[0][1].GetBlock(0, 12, 0), Block::Stone);
+				eqci(chunks2x2[0][1].GetBlock(12, 1, 15), Block::Stone);
 				eqci(chunks2x2[0][1].GetBlock(12, 8, 15), Block::Air);
+				eqci(chunks2x2[0][1].GetBlock(12, 64, 15), Block::Stone);
 
 				// x1z1
 				eqci(chunks2x2[1][1].GetBlock(0, 3, 0), Block::Stone);
 				eqci(chunks2x2[1][1].GetBlock(0, 4, 0), Block::Air);
 				eqci(chunks2x2[1][1].GetBlock(0, 12, 0), Block::Air);
 				eqci(chunks2x2[1][1].GetBlock(0, 13, 0), Block::Stone);
+				eqci(chunks2x2[1][1].GetBlock(12, 1, 15), Block::Stone);
 				eqci(chunks2x2[1][1].GetBlock(12, 8, 15), Block::Air);
+				eqci(chunks2x2[1][1].GetBlock(12, 64, 15), Block::Stone);
 			}
 
 			static void Run_CalculateCollisionBoundaryAsBlock()
