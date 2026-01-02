@@ -30,11 +30,12 @@ int Main(hInstance)
 	// プレイヤー挙動のパラメータ
 
 	constexpr Vector3 PlayerCollisionSize = Vector3(0.5f, 1.8f, 0.5f);
+	constexpr float GravityScale = 1.0f; // 重力の倍率
 	constexpr float SpeedH = 3.0f; // 水平移動速度 (m/s)
 	constexpr float DashSpeedH = 6.0f; // ダッシュ時の水平移動速度 (m/s)
 	constexpr float CameraSensitivityH = 180.0f; // 水平感度 (度/s)
 	constexpr float CameraSensitivityV = 90.0f; // 垂直感度 (度/s)
-	constexpr float MinVelocityV = -50.0f; // 最大落下速度 (m/s)
+	constexpr float MinVelocityV = -100.0f; // 最大落下速度 (m/s)
 	constexpr float JumpHeight = 1.2f; // ジャンプ高さ (m)
 	constexpr float EyeHeight = 1.6f; // 目の高さ (m)
 	constexpr float GroundedCheckOffset = 0.01f; // 接地判定のオフセット (m). 埋まっている判定と区別するため、少しずらす
@@ -448,7 +449,7 @@ int Main(hInstance)
 					terrains, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
 
 				// 落下分の加速度を加算し、鉛直移動する
-				velocityV -= G * WindowHelper::GetDeltaSeconds<float>();
+				velocityV -= (G * GravityScale) * WindowHelper::GetDeltaSeconds<float>();
 				velocityV = std::max(velocityV, MinVelocityV);
 				if (std::abs(velocityV) > 0.01f)
 					cameraTransform.position += Vector3::Up() * (velocityV * WindowHelper::GetDeltaSeconds<float>());
