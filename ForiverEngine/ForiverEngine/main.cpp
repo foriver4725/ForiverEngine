@@ -22,7 +22,7 @@ int Main(hInstance)
 	Random::SetSeed(RandomSeed);
 
 	// テストコード実行
-#if false
+#if 1
 	//Test_PlayerControl::RunAll();
 #endif
 

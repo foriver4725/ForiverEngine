@@ -279,7 +279,7 @@ namespace ForiverEngine
 				CalculateCollisionBoundaryAsBlock(terrainChunks, GetCollisionMinPosition(position, size), size);
 
 			const std::function<int(std::tuple<bool, Lattice2, Lattice2, Lattice2, Lattice2>)> FindFloorHeightForThisChunk =
-				[&terrainChunks, &position](std::tuple<bool, Lattice2, Lattice2, Lattice2, Lattice2> boundaryInfo) -> int
+				[&terrainChunks, &position, &size](std::tuple<bool, Lattice2, Lattice2, Lattice2, Lattice2> boundaryInfo) -> int
 				{
 					// 情報をアンパック
 					const auto& [isInsideChunk, localChunkIndex, rangeX, rangeY, rangeZ] = boundaryInfo;
@@ -289,7 +289,7 @@ namespace ForiverEngine
 						return -1;
 
 					// チャンクを取得 (配列の範囲外なら、最小値を返す)
-					const Lattice2 chunkIndex = GetChunkIndex(GetBlockPosition(position)) + localChunkIndex;
+					const Lattice2 chunkIndex = GetChunkIndex(GetBlockPosition(GetCollisionMinPosition(position, size))) + localChunkIndex;
 					if (!IsValidChunkIndex(chunkIndex, ChunkCount))
 						return -1;
 					const Terrain& chunk = terrainChunks[chunkIndex.x][chunkIndex.y];
@@ -325,7 +325,7 @@ namespace ForiverEngine
 				CalculateCollisionBoundaryAsBlock(terrainChunks, GetCollisionMinPosition(position, size), size);
 
 			const std::function<int(std::tuple<bool, Lattice2, Lattice2, Lattice2, Lattice2>)> FindCeilHeightForThisChunk =
-				[&terrainChunks, &position](std::tuple<bool, Lattice2, Lattice2, Lattice2, Lattice2> boundaryInfo) -> int
+				[&terrainChunks, &position, &size](std::tuple<bool, Lattice2, Lattice2, Lattice2, Lattice2> boundaryInfo) -> int
 				{
 					// 情報をアンパック
 					const auto& [isInsideChunk, localChunkIndex, rangeX, rangeY, rangeZ] = boundaryInfo;
@@ -335,7 +335,7 @@ namespace ForiverEngine
 						return Terrain::ChunkHeight;
 
 					// チャンクを取得 (配列の範囲外なら、最大値を返す)
-					const Lattice2 chunkIndex = GetChunkIndex(GetBlockPosition(position)) + localChunkIndex;
+					const Lattice2 chunkIndex = GetChunkIndex(GetBlockPosition(GetCollisionMinPosition(position, size))) + localChunkIndex;
 					if (!IsValidChunkIndex(chunkIndex, ChunkCount))
 						return Terrain::ChunkHeight;
 					const Terrain& chunk = terrainChunks[chunkIndex.x][chunkIndex.y];
@@ -370,7 +370,7 @@ namespace ForiverEngine
 				CalculateCollisionBoundaryAsBlock(terrainChunks, GetCollisionMinPosition(position, size), size);
 
 			const std::function<bool(std::tuple<bool, Lattice2, Lattice2, Lattice2, Lattice2>)> IsOverlappingForThisChunk =
-				[&terrainChunks, &position](std::tuple<bool, Lattice2, Lattice2, Lattice2, Lattice2> boundaryInfo) -> bool
+				[&terrainChunks, &position, &size](std::tuple<bool, Lattice2, Lattice2, Lattice2, Lattice2> boundaryInfo) -> bool
 				{
 					// 情報をアンパック
 					const auto& [isInsideChunk, localChunkIndex, rangeX, rangeY, rangeZ] = boundaryInfo;
@@ -380,7 +380,7 @@ namespace ForiverEngine
 						return false;
 
 					// チャンクを取得 (配列の範囲外なら、重なっていないとみなす)
-					const Lattice2 chunkIndex = GetChunkIndex(GetBlockPosition(position)) + localChunkIndex;
+					const Lattice2 chunkIndex = GetChunkIndex(GetBlockPosition(GetCollisionMinPosition(position, size))) + localChunkIndex;
 					if (!IsValidChunkIndex(chunkIndex, ChunkCount))
 						return false;
 					const Terrain& chunk = terrainChunks[chunkIndex.x][chunkIndex.y];
