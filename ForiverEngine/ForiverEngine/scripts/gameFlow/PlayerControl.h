@@ -521,6 +521,10 @@ namespace ForiverEngine
 #define eq(value, expected) { if ((value) != (expected)) ForiverEngine::Test_PlayerControl::Assert((value), (expected), __FILE__, __LINE__); }
 #define neq(value, expected) { if ((value) == (expected)) ForiverEngine::Test_PlayerControl::Assert((value), (expected), __FILE__, __LINE__); }
 
+		// static_cast<int> する
+#define eqci(value, expected) { if ((value) != (expected)) ForiverEngine::Test_PlayerControl::Assert((static_cast<int>(value)), (static_cast<int>(expected)), __FILE__, __LINE__); }
+#define neqci(value, expected) { if ((value) == (expected)) ForiverEngine::Test_PlayerControl::Assert((static_cast<int>(value)), (static_cast<int>(expected)), __FILE__, __LINE__); }
+
 		// 線形代数 (Linear Algebra)
 #define eqla(value, expected) { if ((value) != (expected)) ForiverEngine::Test_PlayerControl::Assert((ToString(value)), (ToString(expected)), __FILE__, __LINE__); }
 #define neqla(value, expected) { if ((value) == (expected)) ForiverEngine::Test_PlayerControl::Assert((ToString(value)), (ToString(expected)), __FILE__, __LINE__); }
@@ -555,6 +559,7 @@ namespace ForiverEngine
 				Run_Rotate();
 				Run_MoveH();
 
+				Run_CreateChunks2x2();
 				Run_CalculateCollisionBoundaryAsBlock();
 				Run_FindFloorHeight();
 				Run_FindCeilHeight();
@@ -770,6 +775,39 @@ namespace ForiverEngine
 			{
 				static const auto chunks2x2 = CreateChunks({ Lattice2(4, 12), Lattice2(3, 13), Lattice2(5, 11), Lattice2(4, 12) });
 				return chunks2x2;
+			}
+
+			static void Run_CreateChunks2x2()
+			{
+				const auto chunks2x2 = CreateChunks2x2();
+
+				// x0z0
+				eqci(chunks2x2[0][0].GetBlock(0, 3, 0), Block::Stone);
+				eqci(chunks2x2[0][0].GetBlock(0, 4, 0), Block::Air);
+				eqci(chunks2x2[0][0].GetBlock(0, 12, 0), Block::Air);
+				eqci(chunks2x2[0][0].GetBlock(0, 13, 0), Block::Stone);
+				eqci(chunks2x2[0][0].GetBlock(12, 8, 15), Block::Air);
+
+				// x1z0
+				eqci(chunks2x2[1][0].GetBlock(0, 2, 0), Block::Stone);
+				eqci(chunks2x2[1][0].GetBlock(0, 3, 0), Block::Air);
+				eqci(chunks2x2[1][0].GetBlock(0, 13, 0), Block::Air);
+				eqci(chunks2x2[1][0].GetBlock(0, 14, 0), Block::Stone);
+				eqci(chunks2x2[1][0].GetBlock(12, 8, 15), Block::Air);
+
+				// x0z1
+				eqci(chunks2x2[0][1].GetBlock(0, 4, 0), Block::Stone);
+				eqci(chunks2x2[0][1].GetBlock(0, 5, 0), Block::Air);
+				eqci(chunks2x2[0][1].GetBlock(0, 11, 0), Block::Air);
+				eqci(chunks2x2[0][1].GetBlock(0, 12, 0), Block::Stone);
+				eqci(chunks2x2[0][1].GetBlock(12, 8, 15), Block::Air);
+
+				// x1z1
+				eqci(chunks2x2[1][1].GetBlock(0, 3, 0), Block::Stone);
+				eqci(chunks2x2[1][1].GetBlock(0, 4, 0), Block::Air);
+				eqci(chunks2x2[1][1].GetBlock(0, 12, 0), Block::Air);
+				eqci(chunks2x2[1][1].GetBlock(0, 13, 0), Block::Stone);
+				eqci(chunks2x2[1][1].GetBlock(12, 8, 15), Block::Air);
 			}
 
 			static void Run_CalculateCollisionBoundaryAsBlock()
