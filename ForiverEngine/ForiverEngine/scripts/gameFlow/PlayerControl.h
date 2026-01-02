@@ -1016,17 +1016,18 @@ namespace ForiverEngine
 } \
 
 				// 足元
-				test((5.0f, 3.0f, 5.0f), true); // x0z0 で判定
-				test((5.0f, 4.0f, 5.0f), false); // x0z0 で判定
+				test((5.0f, 3.49f, 5.0f), true); // x0z0 で判定
+				test((5.0f, 3.51f, 5.0f), false); // x0z0 で判定
 
 				// 頭上
-				test((5.0f, 11.0f, 5.0f), false); // x0z0 で判定
-				test((5.0f, 12.0f, 5.0f), true); // x0z0 で判定
+				test((5.0f, 10.69f, 5.0f), false); // x0z0 で判定
+				test((5.0f, 10.71f, 5.0f), true); // x0z0 で判定
 
 				// 横
-				test((15.4f, 2.0f, 5.0f), true); // x0z0, x1z0 で判定
-				test((15.4f, 2.5f, 5.0f), true); // x0z0, x1z0 で判定
-				test((15.4f, 3.0f, 5.0f), false); // x0z0, x1z0 で判定
+				test((15.4f, 2.49f, 5.0f), true); // x0z0, x1z0 で判定
+				test((15.4f, 2.51f, 5.0f), true); // x0z0, x1z0 で判定
+				test((15.4f, 3.49f, 5.0f), true); // x0z0, x1z0 で判定
+				test((15.4f, 3.51f, 5.0f), false); // x0z0, x1z0 で判定
 
 				// ブロック座標の境界ギリギリ
 				test((5.0f, 3.49f, 5.0f), true); // x0z0 で判定
@@ -1034,9 +1035,12 @@ namespace ForiverEngine
 				test((5.0f, 3.51f, 5.0f), false); // x0z0 で判定
 
 				// チャンク配列の範囲外 (最小座標は範囲内)
-				test((31.4f, 2.0f, 5.0f), true); // x1z0 で判定
-				test((31.4f, 2.5f, 5.0f), true); // x1z0 で判定
-				test((31.4f, 3.0f, 15.4f), false); // x1z0, x1z1 で判定
+				test((31.4f, 3.49f, 5.0f), true); // x1z0 で判定
+				test((31.4f, 3.51f, 5.0f), false); // x1z0 で判定
+				test((31.4f, 2.49f, 15.4f), true); // x1z0, x1z1 で判定
+				test((31.4f, 2.51f, 15.4f), true); // x1z0, x1z1 で判定
+				test((31.4f, 3.49f, 15.4f), true); // x1z0, x1z1 で判定
+				test((31.4f, 3.51f, 15.4f), false); // x1z0, x1z1 で判定
 
 				// チャンク配列の範囲外 (最小座標が範囲外)
 				test((32.1f, 2.0f, 15.4f), false);
