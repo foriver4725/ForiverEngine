@@ -74,6 +74,7 @@ namespace ForiverEngine
 		/// <summary>
 		/// <para>コリジョン立方体の範囲が、どのブロック座標に属するかを計算する</para>
 		/// <para>複数チャンクに跨っている場合も考慮する</para>
+		/// <para>コリジョンのxz方向のサイズは、1より小さい想定!</para>
 		/// <para>[戻り値の形式]</para>
 		/// <para>最小インデックスのチャンク, X方向に1つ進んだチャンク, Z方向に1つ進んだチャンク, XZ両方向に1つ進んだチャンク の順に情報を返す</para>
 		/// <para>各チャンクについて、(コリジョン立方体が属するか, チャンクインデックス, X方向の範囲, Y方向の範囲, Z方向の範囲) のタプルを返す</para>
@@ -85,6 +86,9 @@ namespace ForiverEngine
 			const std::array<std::array<Terrain, ChunkCount>, ChunkCount>& terrainChunks,
 			const Vector3& worldPositionMin, const Vector3& collisionSize)
 		{
+			if (collisionSize.x >= 1.0f || collisionSize.z >= 1.0f)
+				return {};
+
 			const Lattice3 worldBlockPositionMin = GetBlockPosition(worldPositionMin);
 			const Lattice3 worldBlockPositionMax = GetBlockPosition(worldPositionMin + collisionSize);
 
