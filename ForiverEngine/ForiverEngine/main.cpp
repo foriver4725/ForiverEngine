@@ -679,15 +679,18 @@ int Main(hInstance)
 		{
 			// データを更新
 			{
-				// - フレームタイム
-				// - プレイヤーの足元のブロック座標
-				// - 現在いるチャンクのインデックス
-				// - チャンク内でのローカルブロック座標
-				// - 選択しているブロックのブロック座標
-				// - プレイヤーのコリジョンの、ワールドブロック座標の範囲
-				// - プレイヤーのXZ座標について、Floor にあるブロックのY座標
-				// - プレイヤーのXZ座標について、Ceil  にあるブロックのY座標
+				static bool hasInitializedData = false;
+				// 画面に出すテキスト. 1行ごとに文字を保存
+				static std::vector<std::pair<std::string, Color>> textUIDataRows = {};
 
+				if (!hasInitializedData)
+				{
+					hasInitializedData = true;
+					textUIDataRows.reserve(32);
+				}
+				textUIDataRows.clear();
+
+				// フレームタイム
 				constexpr int FrameTimeTextUpdateIntervalFrames = 16; // テキストの更新間隔 (フレーム数)
 				static int frameTimeTextUpdateCounter = 0;
 				static double frameTimeTextValue = 0.0;
@@ -699,60 +702,76 @@ int Main(hInstance)
 						frameTimeTextValue = WindowHelper::GetDeltaMilliseconds<double>();
 				}
 				const std::string frameTimeText = std::format("Frame Time : {:.2f} ms", frameTimeTextValue);
+				textUIDataRows.emplace_back(frameTimeText, Color::White());
 
+				// プレイヤーの足元のブロック座標
 				const Lattice3 playerFootPositionAsLattice = PlayerControl::GetBlockPosition(
 					PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight));
 				const std::string positionText =
 					std::format("Position : {}", ToString(playerFootPositionAsLattice));
+				textUIDataRows.emplace_back(positionText, Color::White());
 
+				// 現在いるチャンクのインデックス
 				const Lattice2 currentChunkIndex = PlayerControl::GetChunkIndex(PlayerControl::GetBlockPosition(cameraTransform.position));
 				const bool isCurrentChunkIndexValid = PlayerControl::IsValidChunkIndex(currentChunkIndex, ChunkCount);
 				const std::string chunkIndexText = isCurrentChunkIndexValid ?
 					std::format("Chunk Index : {}", ToString(currentChunkIndex))
 					: "Chunk Index : Invalid";
+				textUIDataRows.emplace_back(chunkIndexText, Color::White());
 
+				// チャンク内でのローカルブロック座標
 				const Lattice3 currentChunkLocalBlockPosition = isCurrentChunkIndexValid ?
 					PlayerControl::GetChunkLocalPosition(PlayerControl::GetBlockPosition(cameraTransform.position))
 					: Lattice3::Zero();
 				const std::string chunkLocalBlockPositionText = isCurrentChunkIndexValid ?
 					std::format("Chunk Local Position : {}", ToString(currentChunkLocalBlockPosition))
 					: "Chunk Local Position : Invalid";
+				textUIDataRows.emplace_back(chunkLocalBlockPositionText, Color::White());
 
+				// 選択しているブロックのブロック座標
 				const Lattice3 selectingBlockPositionAsLattice = PlayerControl::GetBlockPosition(
 					cbvBuffer1VirtualPtr->SelectingBlockPosition);
 				const std::string selectingBlockPositionText = cbvBuffer1VirtualPtr->IsSelectingAnyBlock ?
 					std::format("LookAt : {}", ToString(selectingBlockPositionAsLattice))
 					: "LookAt : None";
+				textUIDataRows.emplace_back(selectingBlockPositionText, Color::White());
 
+				// プレイヤーのコリジョンの、ワールドブロック座標の範囲
 				const Vector3 playerCollisionMin = PlayerControl::GetCollisionMinPosition(PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
 				const Vector3 playerCollisionMax = playerCollisionMin + PlayerCollisionSize;
 				const Lattice3 playerCollisionMinAsBlock = PlayerControl::GetBlockPosition(playerCollisionMin);
 				const Lattice3 playerCollisionMaxAsBlock = PlayerControl::GetBlockPosition(playerCollisionMax);
 				const std::string playerCollisionRangeText =
-					std::format("Player Collision Range : {} - {}",
+					std::format("Player Collision Range : {}-{}",
 						ToString(playerCollisionMinAsBlock),
 						ToString(playerCollisionMaxAsBlock)
 					);
+				textUIDataRows.emplace_back(playerCollisionRangeText, Color::White());
 
+				// 床ブロックのY座標
 				const int floorY = PlayerControl::FindFloorHeight(terrains, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
 				const std::string floorYText = (floorY >= 0) ?
 					std::format("Floor Y : {}", floorY)
 					: "Floor Y : None";
+				textUIDataRows.emplace_back(floorYText, Color::White());
 
+				// 天井ブロックのY座標
 				const int ceilY = PlayerControl::FindCeilHeight(terrains, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
 				const std::string ceilYText = (ceilY <= Terrain::ChunkHeight - 1) ?
 					std::format("Ceil Y : {}", ceilY)
 					: "Ceil Y : None";
+				textUIDataRows.emplace_back(ceilYText, Color::White());
 
+				// 本体のデータを更新
 				textUIData.ClearAll();
-				textUIData.SetTexts(Lattice2(1, 1), frameTimeText, Color::White());
-				textUIData.SetTexts(Lattice2(1, 2), positionText, Color::White());
-				textUIData.SetTexts(Lattice2(1, 3), chunkIndexText, Color::White());
-				textUIData.SetTexts(Lattice2(1, 4), chunkLocalBlockPositionText, Color::White());
-				textUIData.SetTexts(Lattice2(1, 5), selectingBlockPositionText, Color::White());
-				textUIData.SetTexts(Lattice2(1, 6), playerCollisionRangeText, Color::White());
-				textUIData.SetTexts(Lattice2(1, 7), floorYText, Color::White());
-				textUIData.SetTexts(Lattice2(1, 8), ceilYText, Color::White());
+				for (int i = 0; i < static_cast<int>(textUIDataRows.size()); ++i)
+				{
+					const auto& textUIDataRow = textUIDataRows[i];
+					const std::string& text = textUIDataRow.first;
+					const Color& color = textUIDataRow.second;
+
+					textUIData.SetTexts(Lattice2(1, i + 1), text, color);
+				}
 			}
 
 			// バッファを再作成してアップロードし直す
