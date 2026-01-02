@@ -118,8 +118,9 @@ namespace ForiverEngine
 			const Lattice2 chunkIndexMin = GetChunkIndex(worldBlockPositionMin);
 			const Lattice2 chunkIndexMax = GetChunkIndex(worldBlockPositionMax);
 
-			const Lattice3 localBlockPositionMin = GetChunkLocalPosition(worldBlockPositionMin); // 最小座標の、そのチャンク内でのローカル座標
-			const Lattice3 localBlockPositionMax = GetChunkLocalPosition(worldBlockPositionMax); // 最大座標の、そのチャンク内でのローカル座標
+			// そのチャンク内でのローカルブロック座標
+			const Lattice3 localBlockPositionMin = GetChunkLocalPosition(worldBlockPositionMin);
+			const Lattice3 localBlockPositionMax = GetChunkLocalPosition(worldBlockPositionMax);
 
 			// 各チャンクに存在するか
 			const bool isInsideChunkFlags[4] =
@@ -130,6 +131,18 @@ namespace ForiverEngine
 				(chunkIndexMin.x < chunkIndexMax.x) && (chunkIndexMin.y < chunkIndexMax.y)
 			};
 
+			// 2x2 チャンク内でのローカルブロック座標に変換
+			// 例えばチャンクが [16, 256, 16] のサイズだったら、
+			// 変換前の値の範囲は [0, 0, 0] ~ [15, 255, 15] で、
+			// 変換後の値の範囲は [0, 0, 0] ~ [31, 255, 31] である
+			const Lattice3 localBlockPositionMinIn2x2Chunks = localBlockPositionMin;
+			const Lattice3 localBlockPositionMaxIn2x2Chunks = localBlockPositionMax
+				+ Lattice3(
+					isInsideChunkFlags[1] ? Terrain::ChunkSize : 0,
+					0,
+					isInsideChunkFlags[2] ? Terrain::ChunkSize : 0
+				);
+
 			std::array<std::tuple<bool, Lattice2, Lattice2, Lattice2, Lattice2>, 4> result = {};
 			for (int i = 0; i < 4; ++i)
 			{
@@ -138,18 +151,6 @@ namespace ForiverEngine
 					Lattice2(
 						chunkIndexMin.x + ((i & 0b01) ? 1 : 0),
 						chunkIndexMin.y + ((i & 0b10) ? 1 : 0)
-					);
-				const Lattice3 localBlockPositionStart =
-					Lattice3(
-						(i & 0b01) ? 0 : localBlockPositionMin.x,
-						localBlockPositionMin.y,
-						(i & 0b10) ? 0 : localBlockPositionMin.z
-					);
-				const Lattice3 localBlockPositionLast =
-					Lattice3(
-						(i & 0b01) ? localBlockPositionMax.x : (Terrain::ChunkSize - 1),
-						localBlockPositionMax.y,
-						(i & 0b10) ? localBlockPositionMax.z : (Terrain::ChunkSize - 1)
 					);
 
 				// そのチャンクにコリジョンが属さないので、スキップ
@@ -167,13 +168,67 @@ namespace ForiverEngine
 				}
 
 				// 正式にこのチャンクにコリジョンが属するので、値を格納する
-				result[i] = std::make_tuple(
-					true,
-					chunkIndex,
-					Lattice2(localBlockPositionStart.x, localBlockPositionLast.x),
-					Lattice2(localBlockPositionStart.y, localBlockPositionLast.y),
-					Lattice2(localBlockPositionStart.z, localBlockPositionLast.z)
-				);
+
+				// 2x2 チャンク内でのローカルブロック座標
+				const Lattice2 rangeX2x2 = Lattice2(localBlockPositionMinIn2x2Chunks.x, localBlockPositionMaxIn2x2Chunks.x);
+				const Lattice2 rangeY2x2 = Lattice2(localBlockPositionMin.y, localBlockPositionMax.y);
+				const Lattice2 rangeZ2x2 = Lattice2(localBlockPositionMinIn2x2Chunks.z, localBlockPositionMaxIn2x2Chunks.z);
+
+				// これから、このチャンクにおけるローカルブロック座標に直す
+				Lattice2 rangeX;
+				const Lattice2 rangeY = rangeY2x2;
+				Lattice2 rangeZ;
+
+				// x0,z0
+				if (i == 0)
+				{
+					rangeX = Lattice2(
+						rangeX2x2.x,
+						std::min(rangeX2x2.y, Terrain::ChunkSize - 1)
+					);
+					rangeZ = Lattice2(
+						rangeZ2x2.x,
+						std::min(rangeZ2x2.y, Terrain::ChunkSize - 1)
+					);
+				}
+				// x1,z0
+				else if (i == 1)
+				{
+					rangeX = Lattice2(
+						std::max(rangeX2x2.x - Terrain::ChunkSize, 0),
+						rangeX2x2.y - Terrain::ChunkSize
+					);
+					rangeZ = Lattice2(
+						rangeZ2x2.x,
+						std::min(rangeZ2x2.y, Terrain::ChunkSize - 1)
+					);
+				}
+				// x0,z1
+				else if (i == 2)
+				{
+					rangeX = Lattice2(
+						rangeX2x2.x,
+						std::min(rangeX2x2.y, Terrain::ChunkSize - 1)
+					);
+					rangeZ = Lattice2(
+						std::max(rangeZ2x2.x - Terrain::ChunkSize, 0),
+						rangeZ2x2.y - Terrain::ChunkSize
+					);
+				}
+				// x1,z1
+				else // i == 3
+				{
+					rangeX = Lattice2(
+						std::max(rangeX2x2.x - Terrain::ChunkSize, 0),
+						rangeX2x2.y - Terrain::ChunkSize
+					);
+					rangeZ = Lattice2(
+						std::max(rangeZ2x2.x - Terrain::ChunkSize, 0),
+						rangeZ2x2.y - Terrain::ChunkSize
+					);
+				}
+
+				result[i] = std::make_tuple(true, chunkIndex, rangeX, rangeY, rangeZ);
 			}
 
 			return result;
@@ -317,86 +372,211 @@ namespace ForiverEngine
 {
 	struct Test_PlayerControl
 	{
+	private:
+
+#pragma region Chunk Helpers
+
+		struct CollisionBoundaryInfoWrapper
+		{
+			std::array<std::tuple<bool, Lattice2, Lattice2, Lattice2, Lattice2>, 4> value{};
+
+			bool operator==(const CollisionBoundaryInfoWrapper& other) const noexcept
+			{
+				return value == other.value;
+			}
+			bool operator!=(const CollisionBoundaryInfoWrapper& other) const noexcept
+			{
+				return !(*this == other);
+			}
+
+			std::string ToString() const noexcept
+			{
+				std::string text = "\n{";
+				for (const auto& info : value)
+				{
+					const auto& [isExistInChunk, chunkIndex__, rangeX, rangeY, rangeZ] = info;
+					text += std::format(
+						"[{},{},{},{}],",
+						isExistInChunk ? "o" : "x",
+						(isExistInChunk || rangeX != Lattice2::Zero()) ? ForiverEngine::ToString(rangeX) : "_",
+						(isExistInChunk || rangeY != Lattice2::Zero()) ? ForiverEngine::ToString(rangeY) : "_",
+						(isExistInChunk || rangeZ != Lattice2::Zero()) ? ForiverEngine::ToString(rangeZ) : "_"
+					);
+				}
+				text += "}";
+
+				return text;
+			}
+		};
+
+		// チャンクを手動作成
+		// y[0, Terrain::ChunkHeight-1] の各層が存在するかどうかを layers で指定
+		inline static Terrain CreateChunk(const std::array<bool, Terrain::ChunkHeight>& layers)
+		{
+			Terrain chunk = Terrain::CreateVoid(
+				Terrain::ChunkSize, Terrain::ChunkHeight, Terrain::ChunkSize);
+			for (int y = 0; y < Terrain::ChunkHeight; ++y)
+			{
+				if (layers[y])
+				{
+					for (int z = 0; z < Terrain::ChunkSize; ++z)
+						for (int x = 0; x < Terrain::ChunkSize; ++x)
+						{
+							chunk.SetBlock(x, y, z, Block::Stone);
+						}
+				}
+			}
+
+			return chunk;
+		}
+
+		// ブロック、空気、ブロックの 3層構造のチャンクを作成
+		inline static Terrain CreateChunk_Block_Air_Block(const Lattice2& airYRange)
+		{
+			std::array<bool, Terrain::ChunkHeight> layers = {};
+			for (int y = 0; y < Terrain::ChunkHeight; ++y)
+			{
+				if (y < airYRange.x || airYRange.y < y)
+					layers[y] = true;
+			}
+
+			return CreateChunk(layers);
+		}
+
+		// 2x2のチャンク群を作成
+		// ブロック、空気、ブロックの 3層構造
+		// min, x隣, z隣, xz隣 の順に airYRanges を指定
+		inline static std::array<std::array<Terrain, 2>, 2> CreateChunks(const std::array<Lattice2, 4 >& airYRanges)
+		{
+			std::array<std::array<Terrain, 2>, 2>chunks = {};
+
+			chunks[0][0] = CreateChunk_Block_Air_Block(airYRanges[0]);
+			chunks[1][0] = CreateChunk_Block_Air_Block(airYRanges[1]);
+			chunks[0][1] = CreateChunk_Block_Air_Block(airYRanges[2]);
+			chunks[1][1] = CreateChunk_Block_Air_Block(airYRanges[3]);
+
+			return chunks;
+		}
+
+#pragma endregion
+
+#pragma region Define Custom Assert Methods
+
+		template<typename T>
+		static void Assert(const T& value, const T& expected, const std::string& fileName, int lineNumber)
+		{
+			const std::string errorMessage = std::format("Test failed\nValue: {}\nExpected: {}", value, expected);
+			_wassert(
+				StringUtils::UTF8ToUTF16(errorMessage).c_str(),
+				StringUtils::UTF8ToUTF16(fileName).c_str(),
+				static_cast<unsigned>(lineNumber)
+			);
+		}
+
+		// 基本
+#define eq(value, expected) { if ((value) != (expected)) ForiverEngine::Test_PlayerControl::Assert((value), (expected), __FILE__, __LINE__); }
+#define neq(value, expected) { if ((value) == (expected)) ForiverEngine::Test_PlayerControl::Assert((value), (expected), __FILE__, __LINE__); }
+
+		// 線形代数 (Linear Algebra)
+#define eqla(value, expected) { if ((value) != (expected)) ForiverEngine::Test_PlayerControl::Assert((ToString(value)), (ToString(expected)), __FILE__, __LINE__); }
+#define neqla(value, expected) { if ((value) == (expected)) ForiverEngine::Test_PlayerControl::Assert((ToString(value)), (ToString(expected)), __FILE__, __LINE__); }
+
+		// 自作オブジェクト (ToString メソッドを持つ)
+#define eqobj(value, expected) { if ((value) != (expected)) ForiverEngine::Test_PlayerControl::Assert((value).ToString(), (expected).ToString(), __FILE__, __LINE__); }
+#define neqobj(value, expected) { if ((value) == (expected)) ForiverEngine::Test_PlayerControl::Assert((value).ToString(), (expected).ToString(), __FILE__, __LINE__); }
+
+#pragma endregion
+
+	public:
 		static void RunAll()
 		{
 			GetBlockPosition::RunAll();
 		}
+	private:
 
 		struct GetBlockPosition
 		{
+		public:
 			static void RunAll()
 			{
 				Run_GetBlockPosition_1();
 				Run_GetBlockPosition_3();
-
 				Run_GetChunkIndex();
 				Run_GetChunkLocalPosition();
 				Run_IsValidChunkIndex();
-
 				Run_GetFootPosition();
 				Run_GetCollisionMinPosition();
 
 				Run_Rotate();
 				Run_MoveH();
+
+				Run_CalculateCollisionBoundaryAsBlock();
 			}
+		private:
+
+#pragma region Primitive Calculations
 
 			static void Run_GetBlockPosition_1()
 			{
-				assert(PlayerControl::GetBlockPosition(0.0f) == 0);
-				assert(PlayerControl::GetBlockPosition(0.4f) == 0);
-				assert(PlayerControl::GetBlockPosition(0.5f) == 1);
-				assert(PlayerControl::GetBlockPosition(0.6f) == 1);
-				assert(PlayerControl::GetBlockPosition(1.0f) == 1);
-				assert(PlayerControl::GetBlockPosition(-0.4f) == 0);
-				assert(PlayerControl::GetBlockPosition(-0.5f) == -1);
+				eq(PlayerControl::GetBlockPosition(0.0f), 0);
+				eq(PlayerControl::GetBlockPosition(0.4f), 0);
+				eq(PlayerControl::GetBlockPosition(0.5f), 1);
+				eq(PlayerControl::GetBlockPosition(0.6f), 1);
+				eq(PlayerControl::GetBlockPosition(1.0f), 1);
+				eq(PlayerControl::GetBlockPosition(-0.4f), 0);
+				eq(PlayerControl::GetBlockPosition(-0.5f), -1);
 			}
 
 			static void Run_GetBlockPosition_3()
 			{
-				assert(PlayerControl::GetBlockPosition(Vector3(0.0f, 1.0f, 2.0f)) == Lattice3(0, 1, 2));
+				eqla(PlayerControl::GetBlockPosition(Vector3(0.0f, 1.0f, 2.0f)), Lattice3(0, 1, 2));
 			}
 
 			static void Run_GetChunkIndex()
 			{
-				assert(PlayerControl::GetChunkIndex(Lattice3(0, 0, 0)) == Lattice2(0, 0));
-				assert(PlayerControl::GetChunkIndex(Lattice3(15, 0, 15)) == Lattice2(0, 0));
-				assert(PlayerControl::GetChunkIndex(Lattice3(16, 0, 0)) == Lattice2(1, 0));
-				assert(PlayerControl::GetChunkIndex(Lattice3(0, 0, 16)) == Lattice2(0, 1));
-				assert(PlayerControl::GetChunkIndex(Lattice3(16, 0, 16)) == Lattice2(1, 1));
+				eqla(PlayerControl::GetChunkIndex(Lattice3(0, 0, 0)), Lattice2(0, 0));
+				eqla(PlayerControl::GetChunkIndex(Lattice3(15, 0, 15)), Lattice2(0, 0));
+				eqla(PlayerControl::GetChunkIndex(Lattice3(16, 0, 0)), Lattice2(1, 0));
+				eqla(PlayerControl::GetChunkIndex(Lattice3(0, 0, 16)), Lattice2(0, 1));
+				eqla(PlayerControl::GetChunkIndex(Lattice3(16, 0, 16)), Lattice2(1, 1));
 			}
 
 			static void Run_GetChunkLocalPosition()
 			{
-				assert(PlayerControl::GetChunkLocalPosition(Lattice3(0, 0, 0)) == Lattice3(0, 0, 0));
-				assert(PlayerControl::GetChunkLocalPosition(Lattice3(15, 0, 15)) == Lattice3(15, 0, 15));
-				assert(PlayerControl::GetChunkLocalPosition(Lattice3(16, 0, 0)) == Lattice3(0, 0, 0));
-				assert(PlayerControl::GetChunkLocalPosition(Lattice3(17, 0, 0)) == Lattice3(1, 0, 0));
-				assert(PlayerControl::GetChunkLocalPosition(Lattice3(0, 0, 16)) == Lattice3(0, 0, 0));
-				assert(PlayerControl::GetChunkLocalPosition(Lattice3(0, 0, 17)) == Lattice3(0, 0, 1));
-				assert(PlayerControl::GetChunkLocalPosition(Lattice3(16, 0, 16)) == Lattice3(0, 0, 0));
+				eqla(PlayerControl::GetChunkLocalPosition(Lattice3(0, 0, 0)), Lattice3(0, 0, 0));
+				eqla(PlayerControl::GetChunkLocalPosition(Lattice3(15, 0, 15)), Lattice3(15, 0, 15));
+				eqla(PlayerControl::GetChunkLocalPosition(Lattice3(16, 0, 0)), Lattice3(0, 0, 0));
+				eqla(PlayerControl::GetChunkLocalPosition(Lattice3(17, 0, 0)), Lattice3(1, 0, 0));
+				eqla(PlayerControl::GetChunkLocalPosition(Lattice3(0, 0, 16)), Lattice3(0, 0, 0));
+				eqla(PlayerControl::GetChunkLocalPosition(Lattice3(0, 0, 17)), Lattice3(0, 0, 1));
+				eqla(PlayerControl::GetChunkLocalPosition(Lattice3(16, 0, 16)), Lattice3(0, 0, 0));
 			}
 
 			static void Run_IsValidChunkIndex()
 			{
-				assert(PlayerControl::IsValidChunkIndex(Lattice2(0, 0), 4) == true);
-				assert(PlayerControl::IsValidChunkIndex(Lattice2(3, 3), 4) == true);
-				assert(PlayerControl::IsValidChunkIndex(Lattice2(-1, 0), 4) == false);
-				assert(PlayerControl::IsValidChunkIndex(Lattice2(0, -1), 4) == false);
-				assert(PlayerControl::IsValidChunkIndex(Lattice2(4, 0), 4) == false);
-				assert(PlayerControl::IsValidChunkIndex(Lattice2(0, 4), 4) == false);
+				eq(PlayerControl::IsValidChunkIndex(Lattice2(0, 0), 4), true);
+				eq(PlayerControl::IsValidChunkIndex(Lattice2(3, 3), 4), true);
+				eq(PlayerControl::IsValidChunkIndex(Lattice2(-1, 0), 4), false);
+				eq(PlayerControl::IsValidChunkIndex(Lattice2(0, -1), 4), false);
+				eq(PlayerControl::IsValidChunkIndex(Lattice2(4, 0), 4), false);
+				eq(PlayerControl::IsValidChunkIndex(Lattice2(0, 4), 4), false);
 			}
 
 			static void Run_GetFootPosition()
 			{
-				assert(PlayerControl::GetFootPosition(Vector3(0.0f, 1.8f, 0.0f), 1.8f) == Vector3(0.0f, 0.0f, 0.0f));
-				assert(PlayerControl::GetFootPosition(Vector3(1.0f, 2.5f, -3.0f), 1.5f) == Vector3(1.0f, 1.0f, -3.0f));
+				eqla(PlayerControl::GetFootPosition(Vector3(0.0f, 1.8f, 0.0f), 1.8f), Vector3(0.0f, 0.0f, 0.0f));
+				eqla(PlayerControl::GetFootPosition(Vector3(1.0f, 2.5f, -3.0f), 1.5f), Vector3(1.0f, 1.0f, -3.0f));
 			}
 
 			static void Run_GetCollisionMinPosition()
 			{
-				assert(PlayerControl::GetCollisionMinPosition(Vector3(0.0f, 0.0f, 0.0f), Vector3(0.6f, 1.8f, 0.6f)) == Vector3(-0.3f, 0.0f, -0.3f));
-				assert(PlayerControl::GetCollisionMinPosition(Vector3(1.0f, 2.0f, 3.0f), Vector3(1.0f, 2.0f, 1.0f)) == Vector3(0.5f, 2.0f, 2.5f));
+				eqla(PlayerControl::GetCollisionMinPosition(Vector3(0.0f, 0.0f, 0.0f), Vector3(0.6f, 1.8f, 0.6f)), Vector3(-0.3f, 0.0f, -0.3f));
+				eqla(PlayerControl::GetCollisionMinPosition(Vector3(1.0f, 2.0f, 3.0f), Vector3(1.0f, 2.0f, 1.0f)), Vector3(0.5f, 2.0f, 2.5f));
 			}
+
+#pragma endregion
+
+#pragma region Player Movements
 
 			static void Run_Rotate()
 			{
@@ -410,72 +590,70 @@ namespace ForiverEngine
 				};
 
 				// 入力無し
-				assert(_::Calc(
+				eqla(_::Calc(
 					Vector3::Zero(),
 					Quaternion::Identity(),
 					Vector2::Zero(),
 					Vector2(90.0f, 90.0f) * DegToRad,
 					1.0f
-				) == Quaternion::Identity());
+				), Quaternion::Identity());
 
 				// Yaw 90度回転
-				assert(_::Calc(
+				eqla(_::Calc(
 					Vector3::Zero(),
 					Quaternion::Identity(),
 					Vector2(1.0f, 0.0f),
 					Vector2(90.0f, 90.0f) * DegToRad,
 					1.0f
-				) == Quaternion::FromAxisAngle(Vector3::Up(), 90.0f * DegToRad));
+				), Quaternion::FromAxisAngle(Vector3::Up(), 90.0f * DegToRad));
 
 				// Pitch 45度回転
-				assert(_::Calc(
+				eqla(_::Calc(
 					Vector3::Zero(),
 					Quaternion::Identity(),
 					Vector2(0.0f, 1.0f),
 					Vector2(90.0f, 90.0f) * DegToRad,
 					0.5f
-				) == Quaternion::FromAxisAngle(Vector3::Right(), -45.0f * DegToRad));
+				), Quaternion::FromAxisAngle(Vector3::Right(), -45.0f * DegToRad));
 
 				// Pitch 上限を超える回転
-				assert(_::Calc(
+				eqla(_::Calc(
 					Vector3::Zero(),
 					Quaternion::FromAxisAngle(Vector3::Right(), -85.0f * DegToRad),
 					Vector2(0.0f, 1.0f),
 					Vector2(4.0f, 4.0f) * DegToRad,
 					1.0f
-				) == Quaternion::FromAxisAngle(Vector3::Right(), -85.0f * DegToRad));
+				), Quaternion::FromAxisAngle(Vector3::Right(), -85.0f * DegToRad));
 
 				// Pitch 下限を超える回転 
-				assert(_::Calc(
+				eqla(_::Calc(
 					Vector3::Zero(),
 					Quaternion::FromAxisAngle(Vector3::Right(), 85.0f * DegToRad),
 					Vector2(0.0f, -1.0f),
 					Vector2(4.0f, 4.0f) * DegToRad,
 					1.0f
-				) == Quaternion::FromAxisAngle(Vector3::Right(), 85.0f * DegToRad));
+				), Quaternion::FromAxisAngle(Vector3::Right(), 85.0f * DegToRad));
 
 				// Pitch 上限を超える回転 (回転後が上下90度を超える)
 				// これは失敗するはず
-				assert(_::Calc(
+				neqla(_::Calc(
 					Vector3::Zero(),
 					Quaternion::Identity(),
 					Vector2(0.0f, 1.0f),
 					Vector2(90.0f, 90.0f) * DegToRad,
 					2.0f
-				) != Quaternion::Identity());
+				), Quaternion::Identity());
 
 				// Yaw と Pitch の同時回転
 				// Yaw 45度, Pitch -45度
-				assert(_::Calc(
+				eqla(_::Calc(
 					Vector3::Zero(),
 					Quaternion::Identity(),
 					Vector2(0.5f, -0.5f),
 					Vector2(90.0f, 90.0f) * DegToRad,
 					1.0f
-				) == Quaternion::FromAxisAngle(Vector3::Up(), 45.0f * DegToRad) *
+				), Quaternion::FromAxisAngle(Vector3::Up(), 45.0f * DegToRad) *
 					Quaternion::FromAxisAngle(Vector3::Right(), 45.0f * DegToRad));
-
-#undef ASSERT
 			}
 
 			static void Run_MoveH()
@@ -490,44 +668,121 @@ namespace ForiverEngine
 				};
 
 				// 入力無し
-				assert(_::Calc(
+				eqla(_::Calc(
 					Vector3::Zero(),
 					Quaternion::Identity(),
 					Vector2::Zero(),
 					1.0f,
 					1.0f
-				) == Vector3::Zero());
+				), Vector3::Zero());
 
 				// 前進
-				assert(_::Calc(
+				eqla(_::Calc(
 					Vector3::Zero(),
 					Quaternion::Identity(),
 					Vector2(0.0f, 1.0f),
 					2.0f,
 					1.0f
-				) == Vector3(0.0f, 0.0f, 2.0f));
+				), Vector3(0.0f, 0.0f, 2.0f));
 
 				// 右移動
-				assert(_::Calc(
+				eqla(_::Calc(
 					Vector3::Zero(),
 					Quaternion::Identity(),
 					Vector2(1.0f, 0.0f),
 					3.0f,
 					1.0f
-				) == Vector3(3.0f, 0.0f, 0.0f));
+				), Vector3(3.0f, 0.0f, 0.0f));
 
 				// 斜め移動
-				assert(_::Calc(
+				eqla(_::Calc(
 					Vector3::Zero(),
 					Quaternion::Identity(),
 					Vector2(1.0f, 1.0f),
 					std::sqrt(2.0f),
 					1.0f
-				) == Vector3(1.0f, 0.0f, 1.0f));
+				), Vector3(1.0f, 0.0f, 1.0f));
+			}
 
-#undef ASSERT
+#pragma endregion
+
+			static void Run_CalculateCollisionBoundaryAsBlock()
+			{
+#define test( \
+	worldPositionMin, \
+	b00, x00, y00, z00, \
+	b10, x10, y10, z10, \
+	b01, x01, y01, z01, \
+	b11, x11, y11, z11 \
+)  \
+{ \
+	eqobj(CollisionBoundaryInfoWrapper(PlayerControl::CalculateCollisionBoundaryAsBlock( \
+		chunks, \
+		Vector3##worldPositionMin, \
+		CollisionSize \
+	)), CollisionBoundaryInfoWrapper(std::array<std::tuple<bool, Lattice2, Lattice2, Lattice2, Lattice2>, 4> \
+	{ \
+		std::make_tuple(##b00, Lattice2(0, 0), Lattice2##x00, Lattice2##y00, Lattice2##z00), \
+		std::make_tuple(##b10, Lattice2(1, 0), Lattice2##x10, Lattice2##y10, Lattice2##z10), \
+		std::make_tuple(##b01, Lattice2(0, 1), Lattice2##x01, Lattice2##y01, Lattice2##z01), \
+		std::make_tuple(##b11, Lattice2(1, 1), Lattice2##x11, Lattice2##y11, Lattice2##z11), \
+	})); \
+} \
+
+				constexpr Vector3 CollisionSize = Vector3(0.8f, 1.8f, 0.8f);
+				const auto chunks = CreateChunks({ Lattice2(4, 12), Lattice2(3, 12), Lattice2(5, 12), Lattice2(4, 12) });
+
+				// 1チャンクの中に収まっている
+				test(
+					(5.0f, 4.01f, 5.0f),
+					true, (5, 6), (4, 6), (5, 6),
+					false, (0, 0), (0, 0), (0, 0),
+					false, (0, 0), (0, 0), (0, 0),
+					false, (0, 0), (0, 0), (0, 0)
+				);
+
+				// X方向にだけ跨っている
+				test(
+					(15.4f, 4.01f, 5.0f),
+					true, (15, 15), (4, 6), (5, 6),
+					true, (0, 0), (4, 6), (5, 6),
+					false, (0, 0), (0, 0), (0, 0),
+					false, (0, 0), (0, 0), (0, 0)
+				);
+
+				// Z方向にだけ跨っている
+				test(
+					(5.0f, 4.01f, 15.4f),
+					true, (5, 6), (4, 6), (15, 15),
+					false, (0, 0), (0, 0), (0, 0),
+					true, (5, 6), (4, 6), (0, 0),
+					false, (0, 0), (0, 0), (0, 0)
+				);
+
+				// XZ両方向に跨っている
+				test(
+					(15.4f, 4.01f, 15.4f),
+					true, (15, 15), (4, 6), (15, 15),
+					true, (0, 0), (4, 6), (15, 15),
+					true, (15, 15), (4, 6), (0, 0),
+					true, (0, 0), (4, 6), (0, 0)
+				);
+
+				// チャンク配列のインデックスを超えた
+				test(
+					(31.4f, 4.01f, 5.0f),
+					true, (15, 15), (4, 6), (5, 6),
+					false, (0, 0), (0, 0), (0, 0),
+					false, (0, 0), (0, 0), (0, 0), // 配列外・チャンクを跨ぐ ことが両立することはない
+					false, (0, 0), (0, 0), (0, 0)
+				);
+
+#undef test
 			}
 		};
+
+#undef eq
+#undef neq
 	};
 }
 
