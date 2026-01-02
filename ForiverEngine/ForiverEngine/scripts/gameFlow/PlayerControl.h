@@ -47,19 +47,18 @@ namespace ForiverEngine
 			);
 		}
 
-		// チャンクインデックスが有効であるか
-		// 即ち、上下限を超えた値でないか
-		static bool IsValidChunkIndex(const int chunkIndex, int chunkCount)
+		// 整数が上下限を超えた値でないか ([min, max] の範囲内にあるか)
+		static bool IsIntInRange(int value, int min, int max)
 		{
-			return 0 <= chunkIndex && chunkIndex < chunkCount;
+			return min <= value && value <= max;
 		}
 
 		// チャンクインデックスが有効であるか
 		// 即ち、上下限を超えた値でないか
 		static bool IsValidChunkIndex(const Lattice2& chunkIndex, int chunkCount)
 		{
-			return IsValidChunkIndex(chunkIndex.x, chunkCount)
-				&& IsValidChunkIndex(chunkIndex.y, chunkCount);
+			return IsIntInRange(chunkIndex.x, 0, chunkCount)
+				&& IsIntInRange(chunkIndex.y, 0, chunkCount);
 		}
 
 		// プレイヤーの足元の座標を計算
@@ -180,8 +179,8 @@ namespace ForiverEngine
 			const bool isValidChunkFlags[4] =
 			{
 				true,
-				IsValidChunkIndex(chunkIndexMax.x, chunkCount),
-				IsValidChunkIndex(chunkIndexMax.y, chunkCount),
+				IsIntInRange(chunkIndexMax.x, 0, chunkCount),
+				IsIntInRange(chunkIndexMax.y, 0, chunkCount),
 				IsValidChunkIndex(chunkIndexMax, chunkCount)
 			};
 
@@ -596,8 +595,8 @@ namespace ForiverEngine
 				Run_GetBlockPosition_3();
 				Run_GetChunkIndex();
 				Run_GetChunkLocalPosition();
-				Run_IsValidChunkIndex1();
-				Run_IsValidChunkIndex2();
+				Run_IsIntInRange();
+				Run_IsValidChunkIndex();
 				Run_GetFootPosition();
 				Run_GetCollisionMinPosition();
 
@@ -650,15 +649,15 @@ namespace ForiverEngine
 				eqla(PlayerControl::GetChunkLocalPosition(Lattice3(16, 0, 16)), Lattice3(0, 0, 0));
 			}
 
-			static void Run_IsValidChunkIndex1()
+			static void Run_IsIntInRange()
 			{
-				eq(PlayerControl::IsValidChunkIndex(0, 4), true);
-				eq(PlayerControl::IsValidChunkIndex(3, 4), true);
-				eq(PlayerControl::IsValidChunkIndex(-1, 4), false);
-				eq(PlayerControl::IsValidChunkIndex(4, 4), false);
+				eq(PlayerControl::IsIntInRange(0, 0, 4), true);
+				eq(PlayerControl::IsIntInRange(4, 0, 4), true);
+				eq(PlayerControl::IsIntInRange(-1, 0, 4), false);
+				eq(PlayerControl::IsIntInRange(5, 0, 4), false);
 			}
 
-			static void Run_IsValidChunkIndex2()
+			static void Run_IsValidChunkIndex()
 			{
 				eq(PlayerControl::IsValidChunkIndex(Lattice2(0, 0), 4), true);
 				eq(PlayerControl::IsValidChunkIndex(Lattice2(3, 3), 4), true);

@@ -97,7 +97,7 @@ int Main(hInstance)
 
 	// 地形データ
 	constexpr int TerrainSeed = 0x2961E3B1;
-	constexpr int ChunkCount = 32; // ワールドのチャンク数 (ChunkCount x ChunkCount 個)
+	constexpr int ChunkCount = 1024; // ワールドのチャンク数 (ChunkCount x ChunkCount 個)
 	constexpr int ChunkDrawDistance = 8; // 描画チャンク数 (プレイヤーを中心に 半径 ChunkDrawDistance の矩形内のチャンクのみ描画する)
 	constexpr int ChunkDrawMaxCount = (ChunkDrawDistance * 2 + 1) * (ChunkDrawDistance * 2 + 1);
 	std::array<std::array<std::atomic<ChunkCreationState>, ChunkCount>, ChunkCount> terrainChunkCreationStates = {}; // チャンク作成状態 (デフォルト:NotYet)
@@ -439,6 +439,9 @@ int Main(hInstance)
 
 		// 移動
 		{
+			// 移動前の座標を保存しておく
+			const Vector3 positionBeforeMove = cameraTransform.position;
+
 			// 鉛直移動と当たり判定
 			{
 				// 床のY座標を算出しておく
@@ -496,10 +499,11 @@ int Main(hInstance)
 				}
 			}
 
+
 			// 水平移動と当たり判定
 			{
 				// 移動前の座標を保存しておく
-				const Vector3 positionBeforeMove = cameraTransform.position;
+				const Vector3 positionBeforeMoveH = cameraTransform.position;
 
 				const Vector2 moveInput = InputHelper::GetAsAxis2D(Key::W, Key::S, Key::A, Key::D);
 				const bool canDash = moveInput.y > 0.5f; // 前進しているときのみダッシュ可能
@@ -518,7 +522,34 @@ int Main(hInstance)
 					PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight),
 					PlayerCollisionSize))
 				{
-					cameraTransform.position = positionBeforeMove;
+					cameraTransform.position = positionBeforeMoveH;
+				}
+			}
+
+			// 世界の範囲内に収める
+			{
+				const auto collisionBoundaryInfos = PlayerControl::CalculateCollisionBoundaryAsBlock(
+					PlayerControl::GetCollisionMinPosition(PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize),
+					PlayerCollisionSize,
+					ChunkCount
+				);
+
+				for (const auto& info : collisionBoundaryInfos)
+				{
+					// XZ
+					if (!info.isContained)
+					{
+						cameraTransform.position = positionBeforeMove;
+						break;
+					}
+
+					// Y
+					if (!PlayerControl::IsIntInRange(info.rangeY.x, 0, Terrain::ChunkHeight - 1) ||
+						!PlayerControl::IsIntInRange(info.rangeY.y, 0, Terrain::ChunkHeight - 1))
+					{
+						cameraTransform.position = positionBeforeMove;
+						break;
+					}
 				}
 			}
 
