@@ -521,9 +521,13 @@ namespace ForiverEngine
 #define eq(value, expected) { if ((value) != (expected)) ForiverEngine::Test_PlayerControl::Assert((value), (expected), __FILE__, __LINE__); }
 #define neq(value, expected) { if ((value) == (expected)) ForiverEngine::Test_PlayerControl::Assert((value), (expected), __FILE__, __LINE__); }
 
-		// static_cast<int> する
-#define eqci(value, expected) { if ((value) != (expected)) ForiverEngine::Test_PlayerControl::Assert((static_cast<int>(value)), (static_cast<int>(expected)), __FILE__, __LINE__); }
-#define neqci(value, expected) { if ((value) == (expected)) ForiverEngine::Test_PlayerControl::Assert((static_cast<int>(value)), (static_cast<int>(expected)), __FILE__, __LINE__); }
+		// std::string のコンストラクタに渡す
+#define eqs(value, expected) { if ((value) != (expected)) ForiverEngine::Test_PlayerControl::Assert((std::string(value)), (std::string(expected)), __FILE__, __LINE__); }
+#define neqs(value, expected) { if ((value) == (expected)) ForiverEngine::Test_PlayerControl::Assert((std::string(value)), (std::string(expected)), __FILE__, __LINE__); }
+
+		// 列挙型 (static_cast<int> する)
+#define eqen(value, expected) { if ((value) != (expected)) ForiverEngine::Test_PlayerControl::Assert((static_cast<int>(value)), (static_cast<int>(expected)), __FILE__, __LINE__); }
+#define neqen(value, expected) { if ((value) == (expected)) ForiverEngine::Test_PlayerControl::Assert((static_cast<int>(value)), (static_cast<int>(expected)), __FILE__, __LINE__); }
 
 		// 線形代数 (Linear Algebra)
 #define eqla(value, expected) { if ((value) != (expected)) ForiverEngine::Test_PlayerControl::Assert((ToString(value)), (ToString(expected)), __FILE__, __LINE__); }
@@ -782,40 +786,40 @@ namespace ForiverEngine
 				const auto chunks2x2 = CreateChunks2x2();
 
 				// x0z0
-				eqci(chunks2x2[0][0].GetBlock(0, 3, 0), Block::Stone);
-				eqci(chunks2x2[0][0].GetBlock(0, 4, 0), Block::Air);
-				eqci(chunks2x2[0][0].GetBlock(0, 12, 0), Block::Air);
-				eqci(chunks2x2[0][0].GetBlock(0, 13, 0), Block::Stone);
-				eqci(chunks2x2[0][0].GetBlock(12, 1, 15), Block::Stone);
-				eqci(chunks2x2[0][0].GetBlock(12, 8, 15), Block::Air);
-				eqci(chunks2x2[0][0].GetBlock(12, 64, 15), Block::Stone);
+				eqen(chunks2x2[0][0].GetBlock(0, 3, 0), Block::Stone);
+				eqen(chunks2x2[0][0].GetBlock(0, 4, 0), Block::Air);
+				eqen(chunks2x2[0][0].GetBlock(0, 12, 0), Block::Air);
+				eqen(chunks2x2[0][0].GetBlock(0, 13, 0), Block::Stone);
+				eqen(chunks2x2[0][0].GetBlock(12, 1, 15), Block::Stone);
+				eqen(chunks2x2[0][0].GetBlock(12, 8, 15), Block::Air);
+				eqen(chunks2x2[0][0].GetBlock(12, 64, 15), Block::Stone);
 
 				// x1z0
-				eqci(chunks2x2[1][0].GetBlock(0, 2, 0), Block::Stone);
-				eqci(chunks2x2[1][0].GetBlock(0, 3, 0), Block::Air);
-				eqci(chunks2x2[1][0].GetBlock(0, 13, 0), Block::Air);
-				eqci(chunks2x2[1][0].GetBlock(0, 14, 0), Block::Stone);
-				eqci(chunks2x2[1][0].GetBlock(12, 1, 15), Block::Stone);
-				eqci(chunks2x2[1][0].GetBlock(12, 8, 15), Block::Air);
-				eqci(chunks2x2[1][0].GetBlock(12, 64, 15), Block::Stone);
+				eqen(chunks2x2[1][0].GetBlock(0, 2, 0), Block::Stone);
+				eqen(chunks2x2[1][0].GetBlock(0, 3, 0), Block::Air);
+				eqen(chunks2x2[1][0].GetBlock(0, 13, 0), Block::Air);
+				eqen(chunks2x2[1][0].GetBlock(0, 14, 0), Block::Stone);
+				eqen(chunks2x2[1][0].GetBlock(12, 1, 15), Block::Stone);
+				eqen(chunks2x2[1][0].GetBlock(12, 8, 15), Block::Air);
+				eqen(chunks2x2[1][0].GetBlock(12, 64, 15), Block::Stone);
 
 				// x0z1
-				eqci(chunks2x2[0][1].GetBlock(0, 4, 0), Block::Stone);
-				eqci(chunks2x2[0][1].GetBlock(0, 5, 0), Block::Air);
-				eqci(chunks2x2[0][1].GetBlock(0, 11, 0), Block::Air);
-				eqci(chunks2x2[0][1].GetBlock(0, 12, 0), Block::Stone);
-				eqci(chunks2x2[0][1].GetBlock(12, 1, 15), Block::Stone);
-				eqci(chunks2x2[0][1].GetBlock(12, 8, 15), Block::Air);
-				eqci(chunks2x2[0][1].GetBlock(12, 64, 15), Block::Stone);
+				eqen(chunks2x2[0][1].GetBlock(0, 4, 0), Block::Stone);
+				eqen(chunks2x2[0][1].GetBlock(0, 5, 0), Block::Air);
+				eqen(chunks2x2[0][1].GetBlock(0, 11, 0), Block::Air);
+				eqen(chunks2x2[0][1].GetBlock(0, 12, 0), Block::Stone);
+				eqen(chunks2x2[0][1].GetBlock(12, 1, 15), Block::Stone);
+				eqen(chunks2x2[0][1].GetBlock(12, 8, 15), Block::Air);
+				eqen(chunks2x2[0][1].GetBlock(12, 64, 15), Block::Stone);
 
 				// x1z1
-				eqci(chunks2x2[1][1].GetBlock(0, 3, 0), Block::Stone);
-				eqci(chunks2x2[1][1].GetBlock(0, 4, 0), Block::Air);
-				eqci(chunks2x2[1][1].GetBlock(0, 12, 0), Block::Air);
-				eqci(chunks2x2[1][1].GetBlock(0, 13, 0), Block::Stone);
-				eqci(chunks2x2[1][1].GetBlock(12, 1, 15), Block::Stone);
-				eqci(chunks2x2[1][1].GetBlock(12, 8, 15), Block::Air);
-				eqci(chunks2x2[1][1].GetBlock(12, 64, 15), Block::Stone);
+				eqen(chunks2x2[1][1].GetBlock(0, 3, 0), Block::Stone);
+				eqen(chunks2x2[1][1].GetBlock(0, 4, 0), Block::Air);
+				eqen(chunks2x2[1][1].GetBlock(0, 12, 0), Block::Air);
+				eqen(chunks2x2[1][1].GetBlock(0, 13, 0), Block::Stone);
+				eqen(chunks2x2[1][1].GetBlock(12, 1, 15), Block::Stone);
+				eqen(chunks2x2[1][1].GetBlock(12, 8, 15), Block::Air);
+				eqen(chunks2x2[1][1].GetBlock(12, 64, 15), Block::Stone);
 			}
 
 			static void Run_CalculateCollisionBoundaryAsBlock()
