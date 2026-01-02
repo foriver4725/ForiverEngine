@@ -21,6 +21,8 @@ int Main(hInstance)
 	constexpr std::uint32_t RandomSeed = 0x12345678;
 	Random::SetSeed(RandomSeed);
 
+	Test_PlayerControl::RunAll();
+
 	//////////////////////////////
 	// プレイヤー挙動のパラメータ
 
@@ -423,7 +425,7 @@ int Main(hInstance)
 			break;
 
 		// 回転
-		PlayerControl::Rotate(
+		cameraTransform.rotation = PlayerControl::Rotate(
 			cameraTransform,
 			InputHelper::GetAsAxis2D(Key::Up, Key::Down, Key::Left, Key::Right),
 			Vector2(CameraSensitivityH, CameraSensitivityV) * DegToRad,
@@ -485,7 +487,7 @@ int Main(hInstance)
 			const Vector2 moveInput = InputHelper::GetAsAxis2D(Key::W, Key::S, Key::A, Key::D);
 			const bool canDash = moveInput.y > 0.5f; // 前進しているときのみダッシュ可能
 
-			PlayerControl::MoveH(
+			cameraTransform.position = PlayerControl::MoveH(
 				cameraTransform,
 				moveInput,
 				(canDash && InputHelper::GetKeyInfo(Key::LShift).pressed) ? DashSpeedH : SpeedH,

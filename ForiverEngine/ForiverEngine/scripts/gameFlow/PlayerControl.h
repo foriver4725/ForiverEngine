@@ -71,6 +71,29 @@ namespace ForiverEngine
 			);
 		}
 
+		static Quaternion Rotate(const Transform& transform, const Vector2& rotateInput, const Vector2& rotateSpeed, float deltaSeconds)
+		{
+			const Quaternion rotationAmount =
+				Quaternion::FromAxisAngle(Vector3::Up(), rotateInput.x * rotateSpeed.x * deltaSeconds) *
+				Quaternion::FromAxisAngle(transform.GetRight(), -rotateInput.y * rotateSpeed.y * deltaSeconds);
+
+			const Quaternion newRotation = rotationAmount * transform.rotation;
+
+			if (std::abs((newRotation * Vector3::Forward()).y) < 0.99f) // 上下回転を制限 (前方向ベクトルのy成分で判定)
+				return newRotation;
+			else
+				return transform.rotation;
+		}
+
+		static Vector3 MoveH(const Transform& transform, const Vector2& moveInput, float moveSpeed, float deltaSeconds)
+		{
+			Vector3 moveDirection = transform.rotation * Vector3(moveInput.x, 0.0f, moveInput.y);
+			moveDirection.y = 0.0f; // 水平成分のみ
+			moveDirection.Norm(); // 最後に正規化する
+
+			return transform.position + moveDirection * (moveSpeed * deltaSeconds);
+		}
+
 		/// <summary>
 		/// <para>コリジョン立方体の範囲が、どのブロック座標に属するかを計算する</para>
 		/// <para>複数チャンクに跨っている場合も考慮する</para>
@@ -154,27 +177,6 @@ namespace ForiverEngine
 			}
 
 			return result;
-		}
-
-		static void Rotate(Transform& transform, const Vector2& rotateInput, const Vector2& rotateSpeed, float deltaSeconds)
-		{
-			const Quaternion rotationAmount =
-				Quaternion::FromAxisAngle(Vector3::Up(), rotateInput.x * rotateSpeed.x * deltaSeconds) *
-				Quaternion::FromAxisAngle(transform.GetRight(), -rotateInput.y * rotateSpeed.y * deltaSeconds);
-
-			const Quaternion newRotation = rotationAmount * transform.rotation;
-
-			if (std::abs((newRotation * Vector3::Forward()).y) < 0.99f) // 上下回転を制限 (前方向ベクトルのy成分で判定)
-				transform.rotation = newRotation;
-		}
-
-		static void MoveH(Transform& transform, const Vector2& moveInput, float moveSpeed, float deltaSeconds)
-		{
-			Vector3 moveDirection = transform.rotation * Vector3(moveInput.x, 0.0f, moveInput.y);
-			moveDirection.y = 0.0f; // 水平成分のみ
-			moveDirection.Norm(); // 最後に正規化する
-
-			transform.position += moveDirection * (moveSpeed * deltaSeconds);
 		}
 
 		// 足元より下である中で、最も高いブロックのY座標を取得する (無いなら チャンクの高さの最小値-1 を返す)
@@ -305,3 +307,228 @@ namespace ForiverEngine
 		}
 	};
 }
+
+// テスト
+#if _DEBUG
+
+#include <cassert>
+
+namespace ForiverEngine
+{
+	struct Test_PlayerControl
+	{
+		static void RunAll()
+		{
+			GetBlockPosition::RunAll();
+		}
+
+		struct GetBlockPosition
+		{
+			static void RunAll()
+			{
+				Run_GetBlockPosition_1();
+				Run_GetBlockPosition_3();
+
+				Run_GetChunkIndex();
+				Run_GetChunkLocalPosition();
+				Run_IsValidChunkIndex();
+
+				Run_GetFootPosition();
+				Run_GetCollisionMinPosition();
+
+				Run_Rotate();
+				Run_MoveH();
+			}
+
+			static void Run_GetBlockPosition_1()
+			{
+				assert(PlayerControl::GetBlockPosition(0.0f) == 0);
+				assert(PlayerControl::GetBlockPosition(0.4f) == 0);
+				assert(PlayerControl::GetBlockPosition(0.5f) == 1);
+				assert(PlayerControl::GetBlockPosition(0.6f) == 1);
+				assert(PlayerControl::GetBlockPosition(1.0f) == 1);
+				assert(PlayerControl::GetBlockPosition(-0.4f) == 0);
+				assert(PlayerControl::GetBlockPosition(-0.5f) == -1);
+			}
+
+			static void Run_GetBlockPosition_3()
+			{
+				assert(PlayerControl::GetBlockPosition(Vector3(0.0f, 1.0f, 2.0f)) == Lattice3(0, 1, 2));
+			}
+
+			static void Run_GetChunkIndex()
+			{
+				assert(PlayerControl::GetChunkIndex(Lattice3(0, 0, 0)) == Lattice2(0, 0));
+				assert(PlayerControl::GetChunkIndex(Lattice3(15, 0, 15)) == Lattice2(0, 0));
+				assert(PlayerControl::GetChunkIndex(Lattice3(16, 0, 0)) == Lattice2(1, 0));
+				assert(PlayerControl::GetChunkIndex(Lattice3(0, 0, 16)) == Lattice2(0, 1));
+				assert(PlayerControl::GetChunkIndex(Lattice3(16, 0, 16)) == Lattice2(1, 1));
+			}
+
+			static void Run_GetChunkLocalPosition()
+			{
+				assert(PlayerControl::GetChunkLocalPosition(Lattice3(0, 0, 0)) == Lattice3(0, 0, 0));
+				assert(PlayerControl::GetChunkLocalPosition(Lattice3(15, 0, 15)) == Lattice3(15, 0, 15));
+				assert(PlayerControl::GetChunkLocalPosition(Lattice3(16, 0, 0)) == Lattice3(0, 0, 0));
+				assert(PlayerControl::GetChunkLocalPosition(Lattice3(17, 0, 0)) == Lattice3(1, 0, 0));
+				assert(PlayerControl::GetChunkLocalPosition(Lattice3(0, 0, 16)) == Lattice3(0, 0, 0));
+				assert(PlayerControl::GetChunkLocalPosition(Lattice3(0, 0, 17)) == Lattice3(0, 0, 1));
+				assert(PlayerControl::GetChunkLocalPosition(Lattice3(16, 0, 16)) == Lattice3(0, 0, 0));
+			}
+
+			static void Run_IsValidChunkIndex()
+			{
+				assert(PlayerControl::IsValidChunkIndex(Lattice2(0, 0), 4) == true);
+				assert(PlayerControl::IsValidChunkIndex(Lattice2(3, 3), 4) == true);
+				assert(PlayerControl::IsValidChunkIndex(Lattice2(-1, 0), 4) == false);
+				assert(PlayerControl::IsValidChunkIndex(Lattice2(0, -1), 4) == false);
+				assert(PlayerControl::IsValidChunkIndex(Lattice2(4, 0), 4) == false);
+				assert(PlayerControl::IsValidChunkIndex(Lattice2(0, 4), 4) == false);
+			}
+
+			static void Run_GetFootPosition()
+			{
+				assert(PlayerControl::GetFootPosition(Vector3(0.0f, 1.8f, 0.0f), 1.8f) == Vector3(0.0f, 0.0f, 0.0f));
+				assert(PlayerControl::GetFootPosition(Vector3(1.0f, 2.5f, -3.0f), 1.5f) == Vector3(1.0f, 1.0f, -3.0f));
+			}
+
+			static void Run_GetCollisionMinPosition()
+			{
+				assert(PlayerControl::GetCollisionMinPosition(Vector3(0.0f, 0.0f, 0.0f), Vector3(0.6f, 1.8f, 0.6f)) == Vector3(-0.3f, 0.0f, -0.3f));
+				assert(PlayerControl::GetCollisionMinPosition(Vector3(1.0f, 2.0f, 3.0f), Vector3(1.0f, 2.0f, 1.0f)) == Vector3(0.5f, 2.0f, 2.5f));
+			}
+
+			static void Run_Rotate()
+			{
+				struct _
+				{
+					static Quaternion Calc(const Vector3& position, const Quaternion& rotation, const Vector2& input, const Vector2& speed, float dt)
+					{
+						const Transform transform = { .position = position, .rotation = rotation };
+						return PlayerControl::Rotate(transform, input, speed, dt);
+					}
+				};
+
+				// 入力無し
+				assert(_::Calc(
+					Vector3::Zero(),
+					Quaternion::Identity(),
+					Vector2::Zero(),
+					Vector2(90.0f, 90.0f) * DegToRad,
+					1.0f
+				) == Quaternion::Identity());
+
+				// Yaw 90度回転
+				assert(_::Calc(
+					Vector3::Zero(),
+					Quaternion::Identity(),
+					Vector2(1.0f, 0.0f),
+					Vector2(90.0f, 90.0f) * DegToRad,
+					1.0f
+				) == Quaternion::FromAxisAngle(Vector3::Up(), 90.0f * DegToRad));
+
+				// Pitch 45度回転
+				assert(_::Calc(
+					Vector3::Zero(),
+					Quaternion::Identity(),
+					Vector2(0.0f, 1.0f),
+					Vector2(90.0f, 90.0f) * DegToRad,
+					0.5f
+				) == Quaternion::FromAxisAngle(Vector3::Right(), -45.0f * DegToRad));
+
+				// Pitch 上限を超える回転
+				assert(_::Calc(
+					Vector3::Zero(),
+					Quaternion::FromAxisAngle(Vector3::Right(), -85.0f * DegToRad),
+					Vector2(0.0f, 1.0f),
+					Vector2(4.0f, 4.0f) * DegToRad,
+					1.0f
+				) == Quaternion::FromAxisAngle(Vector3::Right(), -85.0f * DegToRad));
+
+				// Pitch 下限を超える回転 
+				assert(_::Calc(
+					Vector3::Zero(),
+					Quaternion::FromAxisAngle(Vector3::Right(), 85.0f * DegToRad),
+					Vector2(0.0f, -1.0f),
+					Vector2(4.0f, 4.0f) * DegToRad,
+					1.0f
+				) == Quaternion::FromAxisAngle(Vector3::Right(), 85.0f * DegToRad));
+
+				// Pitch 上限を超える回転 (回転後が上下90度を超える)
+				// これは失敗するはず
+				assert(_::Calc(
+					Vector3::Zero(),
+					Quaternion::Identity(),
+					Vector2(0.0f, 1.0f),
+					Vector2(90.0f, 90.0f) * DegToRad,
+					2.0f
+				) != Quaternion::Identity());
+
+				// Yaw と Pitch の同時回転
+				// Yaw 45度, Pitch -45度
+				assert(_::Calc(
+					Vector3::Zero(),
+					Quaternion::Identity(),
+					Vector2(0.5f, -0.5f),
+					Vector2(90.0f, 90.0f) * DegToRad,
+					1.0f
+				) == Quaternion::FromAxisAngle(Vector3::Up(), 45.0f * DegToRad) *
+					Quaternion::FromAxisAngle(Vector3::Right(), 45.0f * DegToRad));
+
+#undef ASSERT
+			}
+
+			static void Run_MoveH()
+			{
+				struct _
+				{
+					static Vector3 Calc(const Vector3& position, const Quaternion& rotation, const Vector2& input, float speed, float dt)
+					{
+						const Transform transform = { .position = position, .rotation = rotation };
+						return PlayerControl::MoveH(transform, input, speed, dt);
+					}
+				};
+
+				// 入力無し
+				assert(_::Calc(
+					Vector3::Zero(),
+					Quaternion::Identity(),
+					Vector2::Zero(),
+					1.0f,
+					1.0f
+				) == Vector3::Zero());
+
+				// 前進
+				assert(_::Calc(
+					Vector3::Zero(),
+					Quaternion::Identity(),
+					Vector2(0.0f, 1.0f),
+					2.0f,
+					1.0f
+				) == Vector3(0.0f, 0.0f, 2.0f));
+
+				// 右移動
+				assert(_::Calc(
+					Vector3::Zero(),
+					Quaternion::Identity(),
+					Vector2(1.0f, 0.0f),
+					3.0f,
+					1.0f
+				) == Vector3(3.0f, 0.0f, 0.0f));
+
+				// 斜め移動
+				assert(_::Calc(
+					Vector3::Zero(),
+					Quaternion::Identity(),
+					Vector2(1.0f, 1.0f),
+					std::sqrt(2.0f),
+					1.0f
+				) == Vector3(1.0f, 0.0f, 1.0f));
+
+#undef ASSERT
+			}
+		};
+	};
+}
+
+#endif
