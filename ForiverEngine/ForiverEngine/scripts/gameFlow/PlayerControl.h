@@ -49,10 +49,17 @@ namespace ForiverEngine
 
 		// チャンクインデックスが有効であるか
 		// 即ち、上下限を超えた値でないか
+		static bool IsValidChunkIndex(const int chunkIndex, int chunkCount)
+		{
+			return 0 <= chunkIndex && chunkIndex < chunkCount;
+		}
+
+		// チャンクインデックスが有効であるか
+		// 即ち、上下限を超えた値でないか
 		static bool IsValidChunkIndex(const Lattice2& chunkIndex, int chunkCount)
 		{
-			return 0 <= chunkIndex.x && chunkIndex.x < chunkCount
-				&& 0 <= chunkIndex.y && chunkIndex.y < chunkCount;
+			return IsValidChunkIndex(chunkIndex.x, chunkCount)
+				&& IsValidChunkIndex(chunkIndex.y, chunkCount);
 		}
 
 		// プレイヤーの足元の座標を計算
@@ -103,6 +110,8 @@ namespace ForiverEngine
 		/// <para>各チャンクについて、(コリジョン立方体が属するか, チャンクインデックス, X方向の範囲, Y方向の範囲, Z方向の範囲) のタプルを返す</para>
 		/// <para>範囲は、そのチャンクにおけるローカルブロック座標</para>
 		/// <para>そのチャンクに属さない場合、範囲はデフォルト値</para>
+		/// <para>そのチャンクがチャンク配列の範囲外の場合、属さない扱いになる</para>
+		/// <para>そもそもの開始座標がチャンク配列の範囲外の場合、全てのチャンクで属さない扱いになる</para>
 		/// </summary>
 		template <int ChunkCount>
 		static std::array<std::tuple<bool, Lattice2, Lattice2, Lattice2, Lattice2>, 4> CalculateCollisionBoundaryAsBlock(
@@ -118,52 +127,75 @@ namespace ForiverEngine
 			const Lattice2 chunkIndexMin = GetChunkIndex(worldBlockPositionMin);
 			const Lattice2 chunkIndexMax = GetChunkIndex(worldBlockPositionMax);
 
+			// 開始地点のチャンクが配列の範囲外
+			if (!IsValidChunkIndex(chunkIndexMin, ChunkCount))
+			{
+				return
+				{
+					std::make_tuple(false, Lattice2(0, 0), Lattice2::Zero(), Lattice2::Zero(), Lattice2::Zero()),
+					std::make_tuple(false, Lattice2(1, 0), Lattice2::Zero(), Lattice2::Zero(), Lattice2::Zero()),
+					std::make_tuple(false, Lattice2(0, 1), Lattice2::Zero(), Lattice2::Zero(), Lattice2::Zero()),
+					std::make_tuple(false, Lattice2(1, 1), Lattice2::Zero(), Lattice2::Zero(), Lattice2::Zero()),
+				};
+			}
+			// 以降、開始地点のチャンクには、必ずコリジョンが属する
+
+			// 各チャンクが配列の範囲内か
+			// x0z0, x1z0, x0z1, x1z1 の順番
+			const bool isValidChunkFlags[4] =
+			{
+				true,
+				IsValidChunkIndex(chunkIndexMax.x, ChunkCount),
+				IsValidChunkIndex(chunkIndexMax.y, ChunkCount),
+				IsValidChunkIndex(chunkIndexMax, ChunkCount)
+			};
+
+			// X,Z 方向にチャンクを跨いでいるか
+			const bool isCrossingChunkX = chunkIndexMin.x < chunkIndexMax.x;
+			const bool isCrossingChunkZ = chunkIndexMin.y < chunkIndexMax.y;
+
 			// そのチャンク内でのローカルブロック座標
 			const Lattice3 localBlockPositionMin = GetChunkLocalPosition(worldBlockPositionMin);
 			const Lattice3 localBlockPositionMax = GetChunkLocalPosition(worldBlockPositionMax);
 
-			// 各チャンクに存在するか
-			const bool isInsideChunkFlags[4] =
-			{
-				IsValidChunkIndex(chunkIndexMin, ChunkCount),
-				(chunkIndexMin.x < chunkIndexMax.x),
-				(chunkIndexMin.y < chunkIndexMax.y),
-				(chunkIndexMin.x < chunkIndexMax.x) && (chunkIndexMin.y < chunkIndexMax.y)
-			};
-
 			// 2x2 チャンク内でのローカルブロック座標に変換
-			// 例えばチャンクが [16, 256, 16] のサイズだったら、
+			// 例えばチャンクが [16, 256, 16] のサイズで、チャンク配列が 2x2 のサイズだったら、
 			// 変換前の値の範囲は [0, 0, 0] ~ [15, 255, 15] で、
 			// 変換後の値の範囲は [0, 0, 0] ~ [31, 255, 31] である
+			// ただし、チャンクがチャンク配列の範囲外である場合、このサイズを超えていることもある
 			const Lattice3 localBlockPositionMinIn2x2Chunks = localBlockPositionMin;
 			const Lattice3 localBlockPositionMaxIn2x2Chunks = localBlockPositionMax
 				+ Lattice3(
-					isInsideChunkFlags[1] ? Terrain::ChunkSize : 0,
+					isCrossingChunkX ? Terrain::ChunkSize : 0,
 					0,
-					isInsideChunkFlags[2] ? Terrain::ChunkSize : 0
+					isCrossingChunkZ ? Terrain::ChunkSize : 0
 				);
 
 			std::array<std::tuple<bool, Lattice2, Lattice2, Lattice2, Lattice2>, 4> result = {};
 			for (int i = 0; i < 4; ++i)
 			{
-				// 最初に取得した 各 min,max の値を "このチャンクにおける" 数値に変換
-				const Lattice2 chunkIndex =
+				// 2x2 のチャンク群内における、このチャンクのローカルインデックスを算出
+				const Lattice2 localChunkIndex =
 					Lattice2(
-						chunkIndexMin.x + ((i & 0b01) ? 1 : 0),
-						chunkIndexMin.y + ((i & 0b10) ? 1 : 0)
+						(i & 0b01) ? 1 : 0,
+						(i & 0b10) ? 1 : 0
 					);
 
-				// そのチャンクにコリジョンが属さないので、スキップ
-				if (!isInsideChunkFlags[i])
+				// そのチャンクが配列の範囲外なので、スキップ
+				if (!isValidChunkFlags[i])
 				{
-					result[i] = std::make_tuple(false, chunkIndex, Lattice2::Zero(), Lattice2::Zero(), Lattice2::Zero());
+					result[i] = std::make_tuple(false, localChunkIndex, Lattice2::Zero(), Lattice2::Zero(), Lattice2::Zero());
 					continue;
 				}
 
-				// チャンクインデックスが配列のサイズを超えてしまったので、スキップ
-				if (!IsValidChunkIndex(chunkIndex, ChunkCount))
+				// コリジョンが属さないチャンクなので、スキップ
+				if (
+					(i == 1 && !isCrossingChunkX) ||
+					(i == 2 && !isCrossingChunkZ) ||
+					(i == 3 && !(isCrossingChunkX && isCrossingChunkZ))
+					)
 				{
-					result[i] = std::make_tuple(false, chunkIndex, Lattice2::Zero(), Lattice2::Zero(), Lattice2::Zero());
+					result[i] = std::make_tuple(false, localChunkIndex, Lattice2::Zero(), Lattice2::Zero(), Lattice2::Zero());
 					continue;
 				}
 
@@ -228,7 +260,7 @@ namespace ForiverEngine
 					);
 				}
 
-				result[i] = std::make_tuple(true, chunkIndex, rangeX, rangeY, rangeZ);
+				result[i] = std::make_tuple(true, localChunkIndex, rangeX, rangeY, rangeZ);
 			}
 
 			return result;
@@ -382,7 +414,19 @@ namespace ForiverEngine
 
 			bool operator==(const CollisionBoundaryInfoWrapper& other) const noexcept
 			{
-				return value == other.value;
+				for (int i = 0; i < 4; ++i)
+				{
+					const auto& [l0, l1, l2, l3, l4] = value[i];
+					const auto& [r0, r1, r2, r3, r4] = other.value[i];
+
+					if (l0 != r0) return false;
+					if (l1 != r1) return false;
+					if (l2 != r2) return false;
+					if (l3 != r3) return false;
+					if (l4 != r4) return false;
+				}
+
+				return true;
 			}
 			bool operator!=(const CollisionBoundaryInfoWrapper& other) const noexcept
 			{
@@ -503,7 +547,8 @@ namespace ForiverEngine
 				Run_GetBlockPosition_3();
 				Run_GetChunkIndex();
 				Run_GetChunkLocalPosition();
-				Run_IsValidChunkIndex();
+				Run_IsValidChunkIndex1();
+				Run_IsValidChunkIndex2();
 				Run_GetFootPosition();
 				Run_GetCollisionMinPosition();
 
@@ -552,7 +597,15 @@ namespace ForiverEngine
 				eqla(PlayerControl::GetChunkLocalPosition(Lattice3(16, 0, 16)), Lattice3(0, 0, 0));
 			}
 
-			static void Run_IsValidChunkIndex()
+			static void Run_IsValidChunkIndex1()
+			{
+				eq(PlayerControl::IsValidChunkIndex(0, 4), true);
+				eq(PlayerControl::IsValidChunkIndex(3, 4), true);
+				eq(PlayerControl::IsValidChunkIndex(-1, 4), false);
+				eq(PlayerControl::IsValidChunkIndex(4, 4), false);
+			}
+
+			static void Run_IsValidChunkIndex2()
 			{
 				eq(PlayerControl::IsValidChunkIndex(Lattice2(0, 0), 4), true);
 				eq(PlayerControl::IsValidChunkIndex(Lattice2(3, 3), 4), true);
@@ -768,12 +821,21 @@ namespace ForiverEngine
 					true, (0, 0), (4, 6), (0, 0)
 				);
 
-				// チャンク配列のインデックスを超えた
+				// チャンク配列の範囲外 (最小座標は範囲内)
 				test(
-					(31.4f, 4.01f, 5.0f),
-					true, (15, 15), (4, 6), (5, 6),
+					(31.4f, 4.01f, 15.4f),
+					true, (15, 15), (4, 6), (15, 15),
 					false, (0, 0), (0, 0), (0, 0),
-					false, (0, 0), (0, 0), (0, 0), // 配列外・チャンクを跨ぐ ことが両立することはない
+					true, (15, 15), (4, 6), (0, 0),
+					false, (0, 0), (0, 0), (0, 0)
+				);
+
+				// チャンク配列の範囲外 (最小座標が範囲外)
+				test(
+					(32.1f, 4.01f, 15.4f),
+					false, (0, 0), (0, 0), (0, 0),
+					false, (0, 0), (0, 0), (0, 0),
+					false, (0, 0), (0, 0), (0, 0),
 					false, (0, 0), (0, 0), (0, 0)
 				);
 
