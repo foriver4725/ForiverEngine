@@ -23,6 +23,10 @@
 #include <Windows.h>
 #include <windowsx.h>
 
+#if _DEBUG
+#include <cassert>
+#endif
+
 #include "./IncludeInternal.h"
 #include "./Math/Include.h"
 #include "./Utils/Include.h"

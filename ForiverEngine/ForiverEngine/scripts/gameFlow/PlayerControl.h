@@ -101,23 +101,58 @@ namespace ForiverEngine
 			return transform.position + moveDirection * (moveSpeed * deltaSeconds);
 		}
 
+		struct CollisionBoundaryAsBlockInfoPerChunk
+		{
+			bool isContained; // このチャンクにコリジョン立方体が属しているか
+			Lattice2 localChunkIndex; // 2x2 チャンク群内でのローカルチャンクインデックス (0~1 の範囲)
+			Lattice2 rangeX; // チャンク内ローカルブロック座標での X方向の範囲
+			Lattice2 rangeY; // チャンク内ローカルブロック座標での Y方向の範囲
+			Lattice2 rangeZ; // チャンク内ローカルブロック座標での Z方向の範囲
+
+			// 属さない 版のファクトリメソッド
+			// rangeX, rangeY, rangeZ を全て (0,0) にして作成する
+			static constexpr CollisionBoundaryAsBlockInfoPerChunk CreateUncontained(const Lattice2& localChunkIndex) noexcept
+			{
+				return CollisionBoundaryAsBlockInfoPerChunk
+				{
+					.isContained = false,
+					.localChunkIndex = localChunkIndex,
+					.rangeX = Lattice2::Zero(),
+					.rangeY = Lattice2::Zero(),
+					.rangeZ = Lattice2::Zero(),
+				};
+			}
+
+			// 属する 版のファクトリメソッド
+			static constexpr CollisionBoundaryAsBlockInfoPerChunk CreateContained(
+				const Lattice2& localChunkIndex, const Lattice2& rangeX, const Lattice2& rangeY, const Lattice2& rangeZ) noexcept
+			{
+				return CollisionBoundaryAsBlockInfoPerChunk
+				{
+					.isContained = true,
+					.localChunkIndex = localChunkIndex,
+					.rangeX = rangeX,
+					.rangeY = rangeY,
+					.rangeZ = rangeZ,
+				};
+			}
+		};
+
 		/// <summary>
 		/// <para>コリジョン立方体の範囲が、どのブロック座標に属するかを計算する</para>
 		/// <para>複数チャンクに跨っている場合も考慮する</para>
-		/// <para>コリジョンのxz方向のサイズは、1より小さい想定!</para>
-		/// <para>[戻り値の形式]</para>
-		/// <para>最小インデックスのチャンク, X方向に1つ進んだチャンク, Z方向に1つ進んだチャンク, XZ両方向に1つ進んだチャンク の順に情報を返す</para>
-		/// <para>各チャンクについて、(コリジョン立方体が属するか, ローカルチャンクインデックス, X方向の範囲, Y方向の範囲, Z方向の範囲) のタプルを返す</para>
-		/// <para>ローカルチャンクインデックスは、そのチャンクが 2x2 チャンク群内で何番目かを示す (0~1 の範囲)</para>
-		/// <para>範囲は、そのチャンクにおけるローカルブロック座標</para>
-		/// <para>そのチャンクに属さない場合、範囲はデフォルト値</para>
+		/// <para>コリジョンのxz方向のサイズは、1より小さい想定</para>
+		/// <para>[最小インデックスのチャンク, X方向に1つ進んだチャンク, Z方向に1つ進んだチャンク, XZ両方向に1つ進んだチャンク] の順に情報を返す</para>
+		/// <para>そのチャンクに属さない場合、XYZの範囲値は (0,0)</para>
 		/// <para>[チャンクインデックスの範囲チェック]</para>
 		/// <para>開始座標のチャンクで範囲外ならば、全てのチャンクで属さない扱いになる</para>
 		/// <para>それ以外のチャンクで範囲外ならば、そのチャンクでのみ属さない扱いになる</para>
 		/// </summary>
-		static std::array<std::tuple<bool, Lattice2, Lattice2, Lattice2, Lattice2>, 4> CalculateCollisionBoundaryAsBlock(
+		static std::array<CollisionBoundaryAsBlockInfoPerChunk, 4> CalculateCollisionBoundaryAsBlock(
 			const Vector3& worldPositionMin, const Vector3& collisionSize, int chunkCount)
 		{
+			using InfoPerChunk = CollisionBoundaryAsBlockInfoPerChunk;
+
 			if (collisionSize.x >= 1.0f || collisionSize.z >= 1.0f)
 				return {};
 
@@ -132,10 +167,10 @@ namespace ForiverEngine
 			{
 				return
 				{
-					std::make_tuple(false, Lattice2(0, 0), Lattice2::Zero(), Lattice2::Zero(), Lattice2::Zero()),
-					std::make_tuple(false, Lattice2(1, 0), Lattice2::Zero(), Lattice2::Zero(), Lattice2::Zero()),
-					std::make_tuple(false, Lattice2(0, 1), Lattice2::Zero(), Lattice2::Zero(), Lattice2::Zero()),
-					std::make_tuple(false, Lattice2(1, 1), Lattice2::Zero(), Lattice2::Zero(), Lattice2::Zero()),
+					InfoPerChunk::CreateUncontained(Lattice2(0, 0)),
+					InfoPerChunk::CreateUncontained(Lattice2(1, 0)),
+					InfoPerChunk::CreateUncontained(Lattice2(0, 1)),
+					InfoPerChunk::CreateUncontained(Lattice2(1, 1)),
 				};
 			}
 			// 以降、開始地点のチャンクには、必ずコリジョンが属する
@@ -171,7 +206,7 @@ namespace ForiverEngine
 					isCrossingChunkZ ? Terrain::ChunkSize : 0
 				);
 
-			std::array<std::tuple<bool, Lattice2, Lattice2, Lattice2, Lattice2>, 4> result = {};
+			std::array<InfoPerChunk, 4> result = {};
 			for (int i = 0; i < 4; ++i)
 			{
 				// 2x2 のチャンク群内における、このチャンクのローカルインデックスを算出
@@ -184,7 +219,7 @@ namespace ForiverEngine
 				// そのチャンクが配列の範囲外なので、スキップ
 				if (!isValidChunkFlags[i])
 				{
-					result[i] = std::make_tuple(false, localChunkIndex, Lattice2::Zero(), Lattice2::Zero(), Lattice2::Zero());
+					result[i] = InfoPerChunk::CreateUncontained(localChunkIndex);
 					continue;
 				}
 
@@ -195,7 +230,7 @@ namespace ForiverEngine
 					(i == 3 && !(isCrossingChunkX && isCrossingChunkZ))
 					)
 				{
-					result[i] = std::make_tuple(false, localChunkIndex, Lattice2::Zero(), Lattice2::Zero(), Lattice2::Zero());
+					result[i] = InfoPerChunk::CreateUncontained(localChunkIndex);
 					continue;
 				}
 
@@ -260,7 +295,7 @@ namespace ForiverEngine
 					);
 				}
 
-				result[i] = std::make_tuple(true, localChunkIndex, rangeX, rangeY, rangeZ);
+				result[i] = InfoPerChunk::CreateContained(localChunkIndex, rangeX, rangeY, rangeZ);
 			}
 
 			return result;
@@ -277,8 +312,8 @@ namespace ForiverEngine
 			const auto& [info, infoX, infoZ, infoXZ] =
 				CalculateCollisionBoundaryAsBlock(GetCollisionMinPosition(position, size), size, ChunkCount);
 
-			const std::function<int(std::tuple<bool, Lattice2, Lattice2, Lattice2, Lattice2>)> FindFloorHeightForThisChunk =
-				[&terrainChunks, &position, &size](std::tuple<bool, Lattice2, Lattice2, Lattice2, Lattice2> boundaryInfo) -> int
+			const std::function<int(const CollisionBoundaryAsBlockInfoPerChunk&)> FindFloorHeightForThisChunk =
+				[&terrainChunks, &position, &size](const auto& boundaryInfo)
 				{
 					// 情報をアンパック
 					const auto& [isInsideChunk, localChunkIndex, rangeX, rangeY, rangeZ] = boundaryInfo;
@@ -323,8 +358,8 @@ namespace ForiverEngine
 			const auto& [info, infoX, infoZ, infoXZ] =
 				CalculateCollisionBoundaryAsBlock(GetCollisionMinPosition(position, size), size, ChunkCount);
 
-			const std::function<int(std::tuple<bool, Lattice2, Lattice2, Lattice2, Lattice2>)> FindCeilHeightForThisChunk =
-				[&terrainChunks, &position, &size](std::tuple<bool, Lattice2, Lattice2, Lattice2, Lattice2> boundaryInfo) -> int
+			const std::function<int(const CollisionBoundaryAsBlockInfoPerChunk&)> FindCeilHeightForThisChunk =
+				[&terrainChunks, &position, &size](const auto& boundaryInfo)
 				{
 					// 情報をアンパック
 					const auto& [isInsideChunk, localChunkIndex, rangeX, rangeY, rangeZ] = boundaryInfo;
@@ -368,8 +403,8 @@ namespace ForiverEngine
 			const auto& [info, infoX, infoZ, infoXZ] =
 				CalculateCollisionBoundaryAsBlock(GetCollisionMinPosition(position, size), size, ChunkCount);
 
-			const std::function<bool(std::tuple<bool, Lattice2, Lattice2, Lattice2, Lattice2>)> IsOverlappingForThisChunk =
-				[&terrainChunks, &position, &size](std::tuple<bool, Lattice2, Lattice2, Lattice2, Lattice2> boundaryInfo) -> bool
+			const std::function<bool(const CollisionBoundaryAsBlockInfoPerChunk&)> IsOverlappingForThisChunk =
+				[&terrainChunks, &position, &size](const auto& boundaryInfo)
 				{
 					// 情報をアンパック
 					const auto& [isInsideChunk, localChunkIndex, rangeX, rangeY, rangeZ] = boundaryInfo;
@@ -407,8 +442,6 @@ namespace ForiverEngine
 // テスト
 #if _DEBUG
 
-#include <cassert>
-
 namespace ForiverEngine
 {
 	struct Test_PlayerControl
@@ -419,7 +452,7 @@ namespace ForiverEngine
 
 		struct CollisionBoundaryInfoWrapper
 		{
-			std::array<std::tuple<bool, Lattice2, Lattice2, Lattice2, Lattice2>, 4> value{};
+			std::array<PlayerControl::CollisionBoundaryAsBlockInfoPerChunk, 4> value{};
 
 			bool operator==(const CollisionBoundaryInfoWrapper& other) const noexcept
 			{
@@ -447,13 +480,12 @@ namespace ForiverEngine
 				std::string text = "\n{";
 				for (const auto& info : value)
 				{
-					const auto& [isExistInChunk, chunkIndex__, rangeX, rangeY, rangeZ] = info;
 					text += std::format(
 						"[{},{},{},{}],",
-						isExistInChunk ? "o" : "x",
-						(isExistInChunk || rangeX != Lattice2::Zero()) ? ForiverEngine::ToString(rangeX) : "_",
-						(isExistInChunk || rangeY != Lattice2::Zero()) ? ForiverEngine::ToString(rangeY) : "_",
-						(isExistInChunk || rangeZ != Lattice2::Zero()) ? ForiverEngine::ToString(rangeZ) : "_"
+						info.isContained ? "o" : "x",
+						(info.isContained || info.rangeX != Lattice2::Zero()) ? ForiverEngine::ToString(info.rangeX) : "_",
+						(info.isContained || info.rangeY != Lattice2::Zero()) ? ForiverEngine::ToString(info.rangeY) : "_",
+						(info.isContained || info.rangeZ != Lattice2::Zero()) ? ForiverEngine::ToString(info.rangeZ) : "_"
 					);
 				}
 				text += "}";
@@ -839,20 +871,16 @@ namespace ForiverEngine
 	b10, x10, y10, z10, \
 	b01, x01, y01, z01, \
 	b11, x11, y11, z11 \
-)  \
-{ \
-	eqobj(CollisionBoundaryInfoWrapper(PlayerControl::CalculateCollisionBoundaryAsBlock( \
-		Vector3##worldPositionMin, \
-		PlayerCollisionSize, \
-		2 \
-	)), CollisionBoundaryInfoWrapper(std::array<std::tuple<bool, Lattice2, Lattice2, Lattice2, Lattice2>, 4> \
-	{ \
-		std::make_tuple(##b00, Lattice2(0, 0), Lattice2##x00, Lattice2##y00, Lattice2##z00), \
-		std::make_tuple(##b10, Lattice2(1, 0), Lattice2##x10, Lattice2##y10, Lattice2##z10), \
-		std::make_tuple(##b01, Lattice2(0, 1), Lattice2##x01, Lattice2##y01, Lattice2##z01), \
-		std::make_tuple(##b11, Lattice2(1, 1), Lattice2##x11, Lattice2##y11, Lattice2##z11), \
-	})); \
-} \
+) \
+eqobj( \
+	(CollisionBoundaryInfoWrapper{PlayerControl::CalculateCollisionBoundaryAsBlock(Vector3##worldPositionMin, PlayerCollisionSize, 2)}), \
+	(CollisionBoundaryInfoWrapper{{ \
+		PlayerControl::CollisionBoundaryAsBlockInfoPerChunk { ##b00, Lattice2(0, 0), Lattice2##x00, Lattice2##y00, Lattice2##z00 }, \
+		PlayerControl::CollisionBoundaryAsBlockInfoPerChunk { ##b10, Lattice2(1, 0), Lattice2##x10, Lattice2##y10, Lattice2##z10 }, \
+		PlayerControl::CollisionBoundaryAsBlockInfoPerChunk { ##b01, Lattice2(0, 1), Lattice2##x01, Lattice2##y01, Lattice2##z01 }, \
+		PlayerControl::CollisionBoundaryAsBlockInfoPerChunk { ##b11, Lattice2(1, 1), Lattice2##x11, Lattice2##y11, Lattice2##z11 }, \
+	}}) \
+); \
 
 				// 1チャンクの中に収まっている
 				test(
@@ -913,14 +941,11 @@ namespace ForiverEngine
 
 			static void Run_FindFloorHeight()
 			{
-#define test(worldPositionMin, expected)  \
-{ \
-	eq(PlayerControl::FindFloorHeight( \
-		CreateChunks2x2(), \
-		Vector3##worldPositionMin, \
-		PlayerCollisionSize \
-	), expected); \
-} \
+#define test(worldPositionMin, expected) \
+eq( \
+	(PlayerControl::FindFloorHeight(CreateChunks2x2(), Vector3##worldPositionMin, PlayerCollisionSize)), \
+	(expected) \
+); \
 
 				// 足元が埋まっている
 				test((5.0f, 2.0f, 5.0f), 1);
@@ -959,14 +984,11 @@ namespace ForiverEngine
 
 			static void Run_FindCeilHeight()
 			{
-#define test(worldPositionMin, expected)  \
-{ \
-	eq(PlayerControl::FindCeilHeight( \
-		CreateChunks2x2(), \
-		Vector3##worldPositionMin, \
-		PlayerCollisionSize \
-	), expected); \
-} \
+#define test(worldPositionMin, expected) \
+eq( \
+	(PlayerControl::FindCeilHeight(CreateChunks2x2(), Vector3##worldPositionMin, PlayerCollisionSize)), \
+	(expected) \
+); \
 
 				// 頭上が埋まっている
 				test((5.0f, 24.0f, 5.0f), 27);
@@ -1005,14 +1027,11 @@ namespace ForiverEngine
 
 			static void Run_IsOverlappingWithTerrain()
 			{
-#define test(worldPositionMin, expected)  \
-{ \
-	eq(PlayerControl::IsOverlappingWithTerrain( \
-		CreateChunks2x2(), \
-		Vector3##worldPositionMin, \
-		PlayerCollisionSize \
-	), expected); \
-} \
+#define test(worldPositionMin, expected) \
+eq( \
+	(PlayerControl::IsOverlappingWithTerrain(CreateChunks2x2(), Vector3##worldPositionMin, PlayerCollisionSize)), \
+	(expected) \
+); \
 
 				// 足元
 				test((5.0f, 3.49f, 5.0f), true); // x0z0 で判定
@@ -1053,6 +1072,14 @@ namespace ForiverEngine
 
 #undef eq
 #undef neq
+#undef eqs
+#undef neqs
+#undef eqen
+#undef neqen
+#undef eqla
+#undef neqla
+#undef eqobj
+#undef neqobj
 	};
 }
 
