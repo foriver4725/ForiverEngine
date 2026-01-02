@@ -1035,8 +1035,8 @@ namespace ForiverEngine
 				test((5.0f, 3.51f, 5.0f), false); // x0z0 で判定
 
 				// チャンク配列の範囲外 (最小座標は範囲内)
-				test((31.4f, 3.49f, 5.0f), true); // x1z0 で判定
-				test((31.4f, 3.51f, 5.0f), false); // x1z0 で判定
+				test((31.4f, 2.49f, 5.0f), true); // x1z0 で判定
+				test((31.4f, 2.51f, 5.0f), false); // x1z0 で判定
 				test((31.4f, 2.49f, 15.4f), true); // x1z0, x1z1 で判定
 				test((31.4f, 2.51f, 15.4f), true); // x1z0, x1z1 で判定
 				test((31.4f, 3.49f, 15.4f), true); // x1z0, x1z1 で判定
