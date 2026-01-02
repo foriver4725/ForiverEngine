@@ -433,92 +433,94 @@ int Main(hInstance)
 			WindowHelper::GetDeltaSeconds<float>()
 		);
 
-		// 移動前の座標を保存しておく
-		const Vector3 positionBeforeMove = cameraTransform.position;
-
-		// 鉛直移動とジャンプ
-		{
-			// 床のY座標を算出しておく
-			const int floorY = PlayerControl::FindFloorHeight(
-				terrains, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
-			// 天井のY座標を算出しておく
-			const int ceilY = PlayerControl::FindCeilHeight(
-				terrains, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
-
-			// 落下分の加速度を加算し、鉛直移動する
-			velocityV -= G * WindowHelper::GetDeltaSeconds<float>();
-			velocityV = std::max(velocityV, MinVelocityV);
-			if (std::abs(velocityV) > 0.01f)
-				cameraTransform.position += Vector3::Up() * (velocityV * WindowHelper::GetDeltaSeconds<float>());
-
-			// 設置判定
-			const bool isGrounded =
-				(floorY >= 0) ?
-				(PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight).y
-					<= (floorY + 0.5f + GroundedCheckOffset))
-				: false;
-			// 天井判定
-			const bool isCeiling =
-				(ceilY <= (Terrain::ChunkHeight - 1)) ?
-				((PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight).y + PlayerCollisionSize.y)
-					>= (ceilY - 0.5f - CeilingCheckOffset))
-				: false;
-
-			// 接地したら、めり込みを補正して、鉛直速度を0にする
-			if (isGrounded)
-			{
-				const float standY = floorY + 0.5f + EyeHeight;
-				if (cameraTransform.position.y < standY)
-					cameraTransform.position.y = standY;
-
-				if (velocityV < 0)
-					velocityV = 0;
-			}
-			// 天井にぶつかったら、めり込みを補正して、鉛直速度を0にする
-			else if (isCeiling)
-			{
-				const float headY = ceilY - 0.5f - PlayerCollisionSize.y + EyeHeight;
-				if (cameraTransform.position.y > headY)
-					cameraTransform.position.y = headY;
-
-				if (velocityV > 0)
-					velocityV = 0;
-			}
-
-			// 接地しているなら、ジャンプ入力を受け付ける
-			if (isGrounded)
-			{
-				if (InputHelper::GetKeyInfo(Key::Space).pressedNow)
-					velocityV += std::sqrt(2.0f * G * JumpHeight);
-			}
-		}
-
 		// 移動
 		{
-			const Vector2 moveInput = InputHelper::GetAsAxis2D(Key::W, Key::S, Key::A, Key::D);
-			const bool canDash = moveInput.y > 0.5f; // 前進しているときのみダッシュ可能
+			// 鉛直移動と当たり判定
+			{
+				// 床のY座標を算出しておく
+				const int floorY = PlayerControl::FindFloorHeight(
+					terrains, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
+				// 天井のY座標を算出しておく
+				const int ceilY = PlayerControl::FindCeilHeight(
+					terrains, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
 
-			cameraTransform.position = PlayerControl::MoveH(
-				cameraTransform,
-				moveInput,
-				(canDash && InputHelper::GetKeyInfo(Key::LShift).pressed) ? DashSpeedH : SpeedH,
-				WindowHelper::GetDeltaSeconds<float>()
-			);
+				// 落下分の加速度を加算し、鉛直移動する
+				velocityV -= G * WindowHelper::GetDeltaSeconds<float>();
+				velocityV = std::max(velocityV, MinVelocityV);
+				if (std::abs(velocityV) > 0.01f)
+					cameraTransform.position += Vector3::Up() * (velocityV * WindowHelper::GetDeltaSeconds<float>());
+
+				// 設置判定
+				const bool isGrounded =
+					(floorY >= 0) ?
+					(PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight).y
+						<= (floorY + 0.5f + GroundedCheckOffset))
+					: false;
+				// 天井判定
+				const bool isCeiling =
+					(ceilY <= (Terrain::ChunkHeight - 1)) ?
+					((PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight).y + PlayerCollisionSize.y)
+						>= (ceilY - 0.5f - CeilingCheckOffset))
+					: false;
+
+				// 接地したら、めり込みを補正して、鉛直速度を0にする
+				if (isGrounded)
+				{
+					const float standY = floorY + 0.5f + EyeHeight;
+					if (cameraTransform.position.y < standY)
+						cameraTransform.position.y = standY;
+
+					if (velocityV < 0)
+						velocityV = 0;
+				}
+				// 天井にぶつかったら、めり込みを補正して、鉛直速度を0にする
+				else if (isCeiling)
+				{
+					const float headY = ceilY - 0.5f - PlayerCollisionSize.y + EyeHeight;
+					if (cameraTransform.position.y > headY)
+						cameraTransform.position.y = headY;
+
+					if (velocityV > 0)
+						velocityV = 0;
+				}
+
+				// 接地しているなら、ジャンプ入力を受け付ける
+				if (isGrounded)
+				{
+					if (InputHelper::GetKeyInfo(Key::Space).pressedNow)
+						velocityV += std::sqrt(2.0f * G * JumpHeight);
+				}
+			}
+
+			// 水平移動と当たり判定
+			{
+				// 移動前の座標を保存しておく
+				const Vector3 positionBeforeMove = cameraTransform.position;
+
+				const Vector2 moveInput = InputHelper::GetAsAxis2D(Key::W, Key::S, Key::A, Key::D);
+				const bool canDash = moveInput.y > 0.5f; // 前進しているときのみダッシュ可能
+
+				cameraTransform.position = PlayerControl::MoveH(
+					cameraTransform,
+					moveInput,
+					(canDash && InputHelper::GetKeyInfo(Key::LShift).pressed) ? DashSpeedH : SpeedH,
+					WindowHelper::GetDeltaSeconds<float>()
+				);
+
+				// 当たり判定
+				// めり込んでいるなら、元の位置に戻す
+				if (PlayerControl::IsOverlappingWithTerrain(
+					terrains,
+					PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight),
+					PlayerCollisionSize))
+				{
+					cameraTransform.position = positionBeforeMove;
+				}
+			}
+
+			// 移動が完了したので、CB 更新
+			cbvBuffer0VirtualPtr->Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(terrainTransform, cameraTransform);
 		}
-
-		// 当たり判定 (主に水平)
-		if (PlayerControl::IsOverlappingWithTerrain(
-			terrains,
-			PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight),
-			PlayerCollisionSize))
-		{
-			// 衝突していたら移動前の位置に戻す
-			// XZ 平面のみ戻す
-			cameraTransform.position = Vector3(positionBeforeMove.x, cameraTransform.position.y, positionBeforeMove.z);
-		}
-
-		// これだけ再計算すれば良い
-		cbvBuffer0VirtualPtr->Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(terrainTransform, cameraTransform);
 
 		// ブロックを選択する
 		{
