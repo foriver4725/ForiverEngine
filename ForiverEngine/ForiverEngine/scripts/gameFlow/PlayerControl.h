@@ -107,7 +107,8 @@ namespace ForiverEngine
 		/// <para>コリジョンのxz方向のサイズは、1より小さい想定!</para>
 		/// <para>[戻り値の形式]</para>
 		/// <para>最小インデックスのチャンク, X方向に1つ進んだチャンク, Z方向に1つ進んだチャンク, XZ両方向に1つ進んだチャンク の順に情報を返す</para>
-		/// <para>各チャンクについて、(コリジョン立方体が属するか, チャンクインデックス, X方向の範囲, Y方向の範囲, Z方向の範囲) のタプルを返す</para>
+		/// <para>各チャンクについて、(コリジョン立方体が属するか, ローカルチャンクインデックス, X方向の範囲, Y方向の範囲, Z方向の範囲) のタプルを返す</para>
+		/// <para>ローカルチャンクインデックスは、そのチャンクが 2x2 チャンク群内で何番目かを示す (0~1 の範囲)</para>
 		/// <para>範囲は、そのチャンクにおけるローカルブロック座標</para>
 		/// <para>そのチャンクに属さない場合、範囲はデフォルト値</para>
 		/// <para>そのチャンクがチャンク配列の範囲外の場合、属さない扱いになる</para>
@@ -281,13 +282,16 @@ namespace ForiverEngine
 				[&terrainChunks, &position](std::tuple<bool, Lattice2, Lattice2, Lattice2, Lattice2> boundaryInfo) -> int
 				{
 					// 情報をアンパック
-					const auto& [isInsideChunk, chunkIndex, rangeX, rangeY, rangeZ] = boundaryInfo;
+					const auto& [isInsideChunk, localChunkIndex, rangeX, rangeY, rangeZ] = boundaryInfo;
 
 					// このチャンクにコリジョンが属していないので、最小値を返す
 					if (!isInsideChunk)
 						return -1;
 
-					// 配列のサイズ外チェックは事前に済んでいるはず
+					// チャンクを取得 (配列の範囲外なら、最小値を返す)
+					const Lattice2 chunkIndex = GetChunkIndex(GetBlockPosition(position)) + localChunkIndex;
+					if (!IsValidChunkIndex(chunkIndex, ChunkCount))
+						return -1;
 					const Terrain& chunk = terrainChunks[chunkIndex.x][chunkIndex.y];
 
 					int y = -1;
@@ -324,13 +328,16 @@ namespace ForiverEngine
 				[&terrainChunks, &position](std::tuple<bool, Lattice2, Lattice2, Lattice2, Lattice2> boundaryInfo) -> int
 				{
 					// 情報をアンパック
-					const auto& [isInsideChunk, chunkIndex, rangeX, rangeY, rangeZ] = boundaryInfo;
+					const auto& [isInsideChunk, localChunkIndex, rangeX, rangeY, rangeZ] = boundaryInfo;
 
 					// このチャンクにコリジョンが属していないので、最大値を返す
 					if (!isInsideChunk)
 						return Terrain::ChunkHeight;
 
-					// 配列のサイズ外チェックは事前に済んでいるはず
+					// チャンクを取得 (配列の範囲外なら、最大値を返す)
+					const Lattice2 chunkIndex = GetChunkIndex(GetBlockPosition(position)) + localChunkIndex;
+					if (!IsValidChunkIndex(chunkIndex, ChunkCount))
+						return Terrain::ChunkHeight;
 					const Terrain& chunk = terrainChunks[chunkIndex.x][chunkIndex.y];
 
 					int y = Terrain::ChunkHeight;
@@ -363,16 +370,19 @@ namespace ForiverEngine
 				CalculateCollisionBoundaryAsBlock(terrainChunks, GetCollisionMinPosition(position, size), size);
 
 			const std::function<bool(std::tuple<bool, Lattice2, Lattice2, Lattice2, Lattice2>)> IsOverlappingForThisChunk =
-				[&terrainChunks](std::tuple<bool, Lattice2, Lattice2, Lattice2, Lattice2> boundaryInfo) -> bool
+				[&terrainChunks, &position](std::tuple<bool, Lattice2, Lattice2, Lattice2, Lattice2> boundaryInfo) -> bool
 				{
 					// 情報をアンパック
-					const auto& [isInsideChunk, chunkIndex, rangeX, rangeY, rangeZ] = boundaryInfo;
+					const auto& [isInsideChunk, localChunkIndex, rangeX, rangeY, rangeZ] = boundaryInfo;
 
 					// このチャンクにコリジョンが属していないので、重なっていない
 					if (!isInsideChunk)
 						return false;
 
-					// 配列のサイズ外チェックは事前に済んでいるはず
+					// チャンクを取得 (配列の範囲外なら、重なっていないとみなす)
+					const Lattice2 chunkIndex = GetChunkIndex(GetBlockPosition(position)) + localChunkIndex;
+					if (!IsValidChunkIndex(chunkIndex, ChunkCount))
+						return false;
 					const Terrain& chunk = terrainChunks[chunkIndex.x][chunkIndex.y];
 
 					for (int y = rangeY.x; y <= rangeY.y; ++y)
@@ -918,32 +928,32 @@ namespace ForiverEngine
 
 				// 1チャンクの中に収まっている
 				// x0z0, x1z0, x0z1, x1z1
-				test((5.0f, 4.0f, 5.0f), 3);
-				test((24.0f, 4.0f, 5.0f), 2);
-				test((5.0f, 4.0f, 24.0f), 4);
-				test((24.0f, 4.0f, 24.0f), 3);
+				test((5.0f, 8.0f, 5.0f), 3);
+				test((24.0f, 8.0f, 5.0f), 2);
+				test((5.0f, 8.0f, 24.0f), 4);
+				test((24.0f, 8.0f, 24.0f), 3);
 
 				// 複数チャンクに跨っている
 				// xのみ, zのみ, xz両方
-				test((15.4f, 4.0f, 5.0f), 3); // x0z0, x1z0 で判定
-				test((5.0f, 4.0f, 15.4f), 4); // x0z0, x0z1 で判定
-				test((15.4f, 4.0f, 15.4f), 4); // x0z0, x1z0, x0z1, x1z1 で判定
+				test((15.4f, 8.0f, 5.0f), 3); // x0z0, x1z0 で判定
+				test((5.0f, 8.0f, 15.4f), 4); // x0z0, x0z1 で判定
+				test((15.4f, 8.0f, 15.4f), 4); // x0z0, x1z0, x0z1, x1z1 で判定
 
 				// チャンク配列の範囲外 (最小座標は範囲内)
 				// 1チャンクの中に収まっている
 				// xのみ範囲外, zのみ範囲外, xz両方範囲外
-				test((31.4f, 4.0f, 5.0f), 2); // x1z0 で判定
-				test((5.0f, 4.0f, 31.4f), 4); // x0z1 で判定
-				test((31.4f, 4.0f, 31.4f), 3); // x1z1 で判定
+				test((31.4f, 8.0f, 5.0f), 2); // x1z0 で判定
+				test((5.0f, 8.0f, 31.4f), 4); // x0z1 で判定
+				test((31.4f, 8.0f, 31.4f), 3); // x1z1 で判定
 
 				// チャンク配列の範囲外 (最小座標は範囲内)
 				// 複数チャンクに跨っている
 				// x範囲外z跨っている, z範囲外x跨っている, xz両方範囲外
-				test((31.4f, 4.0f, 15.4f), 3); // x1z0, x1z1 で判定
-				test((15.4f, 4.0f, 31.4f), 4); // x0z1, x1z1 で判定
+				test((31.4f, 8.0f, 15.4f), 3); // x1z0, x1z1 で判定
+				test((15.4f, 8.0f, 31.4f), 4); // x0z1, x1z1 で判定
 
 				// チャンク配列の範囲外 (最小座標が範囲外)
-				test((32.1f, 4.0f, 15.4f), -1);
+				test((32.1f, 8.0f, 15.4f), -1);
 
 #undef test
 			}
@@ -964,32 +974,32 @@ namespace ForiverEngine
 
 				// 1チャンクの中に収まっている
 				// x0z0, x1z0, x0z1, x1z1
-				test((5.0f, 4.0f, 5.0f), 13);
-				test((24.0f, 4.0f, 5.0f), 14);
-				test((5.0f, 4.0f, 24.0f), 12);
-				test((24.0f, 4.0f, 24.0f), 13);
+				test((5.0f, 8.0f, 5.0f), 13);
+				test((24.0f, 8.0f, 5.0f), 14);
+				test((5.0f, 8.0f, 24.0f), 12);
+				test((24.0f, 8.0f, 24.0f), 13);
 
 				// 複数チャンクに跨っている
 				// xのみ, zのみ, xz両方
-				test((15.4f, 4.0f, 5.0f), 13); // x0z0, x1z0 で判定
-				test((5.0f, 4.0f, 15.4f), 12); // x0z0, x0z1 で判定
-				test((15.4f, 4.0f, 15.4f), 12); // x0z0, x1z0, x0z1, x1z1 で判定
+				test((15.4f, 8.0f, 5.0f), 13); // x0z0, x1z0 で判定
+				test((5.0f, 8.0f, 15.4f), 12); // x0z0, x0z1 で判定
+				test((15.4f, 8.0f, 15.4f), 12); // x0z0, x1z0, x0z1, x1z1 で判定
 
 				// チャンク配列の範囲外 (最小座標は範囲内)
 				// 1チャンクの中に収まっている
 				// xのみ範囲外, zのみ範囲外, xz両方範囲外
-				test((31.4f, 4.0f, 5.0f), 14); // x1z0 で判定
-				test((5.0f, 4.0f, 31.4f), 12); // x0z1 で判定
-				test((31.4f, 4.0f, 31.4f), 13); // x1z1 で判定
+				test((31.4f, 8.0f, 5.0f), 14); // x1z0 で判定
+				test((5.0f, 8.0f, 31.4f), 12); // x0z1 で判定
+				test((31.4f, 8.0f, 31.4f), 13); // x1z1 で判定
 
 				// チャンク配列の範囲外 (最小座標は範囲内)
 				// 複数チャンクに跨っている
 				// x範囲外z跨っている, z範囲外x跨っている, xz両方範囲外
-				test((31.4f, 4.0f, 15.4f), 13); // x1z0, x1z1 で判定
-				test((15.4f, 4.0f, 31.4f), 12); // x0z1, x1z1 で判定
+				test((31.4f, 8.0f, 15.4f), 13); // x1z0, x1z1 で判定
+				test((15.4f, 8.0f, 31.4f), 12); // x0z1, x1z1 で判定
 
 				// チャンク配列の範囲外 (最小座標が範囲外)
-				test((32.1f, 4.0f, 15.4f), Terrain::ChunkHeight);
+				test((32.1f, 8.0f, 15.4f), Terrain::ChunkHeight);
 
 #undef test
 			}
@@ -1029,7 +1039,8 @@ namespace ForiverEngine
 				test((31.4f, 3.0f, 15.4f), false); // x1z0, x1z1 で判定
 
 				// チャンク配列の範囲外 (最小座標が範囲外)
-				test((32.1f, 4.0f, 15.4f), false);
+				test((32.1f, 2.0f, 15.4f), false);
+				test((32.1f, 8.0f, 15.4f), false);
 
 #undef test
 			}
