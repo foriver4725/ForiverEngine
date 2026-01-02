@@ -470,9 +470,9 @@ int Main(hInstance)
 				// 接地したら、めり込みを補正して、鉛直速度を0にする
 				if (isGrounded)
 				{
-					const float standY = floorY + 0.5f + EyeHeight;
-					if (cameraTransform.position.y < standY)
-						cameraTransform.position.y = standY;
+					const float footY = floorY + 0.5f + EyeHeight;
+					if (cameraTransform.position.y < footY)
+						cameraTransform.position.y = footY;
 
 					if (velocityV < 0)
 						velocityV = 0;
