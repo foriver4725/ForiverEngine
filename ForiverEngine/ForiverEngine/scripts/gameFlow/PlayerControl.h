@@ -556,6 +556,9 @@ namespace ForiverEngine
 				Run_MoveH();
 
 				Run_CalculateCollisionBoundaryAsBlock();
+				Run_FindFloorHeight();
+				Run_FindCeilHeight();
+				Run_IsOverlappingWithTerrain();
 			}
 		private:
 
@@ -761,6 +764,14 @@ namespace ForiverEngine
 
 #pragma region Complex Terrain Calculations
 
+			static constexpr Vector3 PlayerCollisionSize = Vector3(0.8f, 1.8f, 0.8f);
+
+			static std::array<std::array<Terrain, 2>, 2> CreateChunks2x2()
+			{
+				static const auto chunks2x2 = CreateChunks({ Lattice2(4, 12), Lattice2(3, 13), Lattice2(5, 11), Lattice2(4, 12) });
+				return chunks2x2;
+			}
+
 			static void Run_CalculateCollisionBoundaryAsBlock()
 			{
 #define test( \
@@ -772,9 +783,9 @@ namespace ForiverEngine
 )  \
 { \
 	eqobj(CollisionBoundaryInfoWrapper(PlayerControl::CalculateCollisionBoundaryAsBlock( \
-		chunks, \
+		CreateChunks2x2(), \
 		Vector3##worldPositionMin, \
-		CollisionSize \
+		PlayerCollisionSize \
 	)), CollisionBoundaryInfoWrapper(std::array<std::tuple<bool, Lattice2, Lattice2, Lattice2, Lattice2>, 4> \
 	{ \
 		std::make_tuple(##b00, Lattice2(0, 0), Lattice2##x00, Lattice2##y00, Lattice2##z00), \
@@ -783,9 +794,6 @@ namespace ForiverEngine
 		std::make_tuple(##b11, Lattice2(1, 1), Lattice2##x11, Lattice2##y11, Lattice2##z11), \
 	})); \
 } \
-
-				constexpr Vector3 CollisionSize = Vector3(0.8f, 1.8f, 0.8f);
-				const auto chunks = CreateChunks({ Lattice2(4, 12), Lattice2(3, 12), Lattice2(5, 12), Lattice2(4, 12) });
 
 				// 1チャンクの中に収まっている
 				test(
@@ -840,6 +848,138 @@ namespace ForiverEngine
 					false, (0, 0), (0, 0), (0, 0),
 					false, (0, 0), (0, 0), (0, 0)
 				);
+
+#undef test
+			}
+
+			static void Run_FindFloorHeight()
+			{
+#define test(worldPositionMin, expected)  \
+{ \
+	eq(PlayerControl::FindFloorHeight( \
+		CreateChunks2x2(), \
+		Vector3##worldPositionMin, \
+		PlayerCollisionSize \
+	), expected); \
+} \
+
+				// 足元が埋まっている
+				test((5.0f, 2.01f, 5.0f), 1);
+
+				// 1チャンクの中に収まっている
+				// x0z0, x1z0, x0z1, x1z1
+				test((5.0f, 4.01f, 5.0f), 3);
+				test((24.0f, 4.01f, 5.0f), 2);
+				test((5.0f, 4.01f, 24.0f), 4);
+				test((24.0f, 4.01f, 24.0f), 3);
+
+				// 複数チャンクに跨っている
+				// xのみ, zのみ, xz両方
+				test((15.4f, 4.01f, 5.0f), 3); // x0z0, x1z0 で判定
+				test((5.0f, 4.01f, 15.4f), 4); // x0z0, x0z1 で判定
+				test((15.4f, 4.01f, 15.4f), 4); // x0z0, x1z0, x0z1, x1z1 で判定
+
+				// チャンク配列の範囲外 (最小座標は範囲内)
+				// 1チャンクの中に収まっている
+				// xのみ範囲外, zのみ範囲外, xz両方範囲外
+				test((31.4f, 4.01f, 5.0f), 2); // x1z0 で判定
+				test((5.0f, 4.01f, 31.4f), 4); // x0z1 で判定
+				test((31.4f, 4.01f, 31.4f), 3); // x1z1 で判定
+
+				// チャンク配列の範囲外 (最小座標は範囲内)
+				// 複数チャンクに跨っている
+				// x範囲外z跨っている, z範囲外x跨っている, xz両方範囲外
+				test((31.4f, 4.01f, 15.4f), 3); // x1z0, x1z1 で判定
+				test((15.4f, 4.01f, 31.4f), 4); // x0z1, x1z1 で判定
+
+				// チャンク配列の範囲外 (最小座標が範囲外)
+				test((32.1f, 4.01f, 15.4f), -1);
+
+#undef test
+			}
+
+			static void Run_FindCeilHeight()
+			{
+#define test(worldPositionMin, expected)  \
+{ \
+	eq(PlayerControl::FindCeilHeight( \
+		CreateChunks2x2(), \
+		Vector3##worldPositionMin, \
+		PlayerCollisionSize \
+	), expected); \
+} \
+
+				// 頭上が埋まっている
+				test((5.0f, 24.01f, 5.0f), 27);
+
+				// 1チャンクの中に収まっている
+				// x0z0, x1z0, x0z1, x1z1
+				test((5.0f, 4.01f, 5.0f), 13);
+				test((24.0f, 4.01f, 5.0f), 14);
+				test((5.0f, 4.01f, 24.0f), 12);
+				test((24.0f, 4.01f, 24.0f), 13);
+
+				// 複数チャンクに跨っている
+				// xのみ, zのみ, xz両方
+				test((15.4f, 4.01f, 5.0f), 13); // x0z0, x1z0 で判定
+				test((5.0f, 4.01f, 15.4f), 12); // x0z0, x0z1 で判定
+				test((15.4f, 4.01f, 15.4f), 12); // x0z0, x1z0, x0z1, x1z1 で判定
+
+				// チャンク配列の範囲外 (最小座標は範囲内)
+				// 1チャンクの中に収まっている
+				// xのみ範囲外, zのみ範囲外, xz両方範囲外
+				test((31.4f, 4.01f, 5.0f), 14); // x1z0 で判定
+				test((5.0f, 4.01f, 31.4f), 12); // x0z1 で判定
+				test((31.4f, 4.01f, 31.4f), 13); // x1z1 で判定
+
+				// チャンク配列の範囲外 (最小座標は範囲内)
+				// 複数チャンクに跨っている
+				// x範囲外z跨っている, z範囲外x跨っている, xz両方範囲外
+				test((31.4f, 4.01f, 15.4f), 13); // x1z0, x1z1 で判定
+				test((15.4f, 4.01f, 31.4f), 12); // x0z1, x1z1 で判定
+
+				// チャンク配列の範囲外 (最小座標が範囲外)
+				test((32.1f, 4.01f, 15.4f), Terrain::ChunkHeight);
+
+#undef test
+			}
+
+			static void Run_IsOverlappingWithTerrain()
+			{
+#define test(worldPositionMin, expected)  \
+{ \
+	eq(PlayerControl::IsOverlappingWithTerrain( \
+		CreateChunks2x2(), \
+		Vector3##worldPositionMin, \
+		PlayerCollisionSize \
+	), expected); \
+} \
+
+				// 足元
+				test((5.0f, 2.0f, 5.0f), true); // x0z0 で判定
+				test((5.0f, 4.0f, 5.0f), false); // x0z0 で判定
+
+				// 頭上
+				test((5.0f, 12.0f, 5.0f), false); // x0z0 で判定
+				test((5.0f, 14.0f, 5.0f), true); // x0z0 で判定
+
+				// 横
+				test((15.4f, 2.0f, 5.0f), true); // x0z0, x1z0 で判定
+				test((15.4f, 2.5f, 5.0f), true); // x0z0, x1z0 で判定
+				test((15.4f, 3.0f, 5.0f), false); // x0z0, x1z0 で判定
+
+				// ブロック座標の境界ギリギリ
+				test((5.0f, 3.49f, 5.0f), true); // x0z0 で判定
+				test((5.0f, 3.50f, 5.0f), false); // x0z0 で判定
+				test((5.0f, 3.51f, 5.0f), false); // x0z0 で判定
+
+				// チャンク配列の範囲外 (最小座標は範囲内)
+				test((31.4f, 2.0f, 5.0f), true); // x1z0 で判定
+				test((31.4f, 2.5f, 5.0f), true); // x1z0 で判定
+				test((31.4f, 3.0f, 15.4f), false); // x1z0, x1z1 で判定
+
+				// チャンク配列の範囲外 (最小座標が範囲外)
+				test((32.1f, 4.01f, 15.4f), false);
 
 #undef test
 			}
