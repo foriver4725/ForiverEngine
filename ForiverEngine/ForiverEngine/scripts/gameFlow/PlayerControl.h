@@ -1016,12 +1016,12 @@ namespace ForiverEngine
 } \
 
 				// 足元
-				test((5.0f, 2.0f, 5.0f), true); // x0z0 で判定
+				test((5.0f, 3.0f, 5.0f), true); // x0z0 で判定
 				test((5.0f, 4.0f, 5.0f), false); // x0z0 で判定
 
 				// 頭上
-				test((5.0f, 12.0f, 5.0f), false); // x0z0 で判定
-				test((5.0f, 14.0f, 5.0f), true); // x0z0 で判定
+				test((5.0f, 11.0f, 5.0f), false); // x0z0 で判定
+				test((5.0f, 12.0f, 5.0f), true); // x0z0 で判定
 
 				// 横
 				test((15.4f, 2.0f, 5.0f), true); // x0z0, x1z0 で判定
