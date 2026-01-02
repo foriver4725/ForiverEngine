@@ -21,7 +21,10 @@ int Main(hInstance)
 	constexpr std::uint32_t RandomSeed = 0x12345678;
 	Random::SetSeed(RandomSeed);
 
-	Test_PlayerControl::RunAll();
+	// テストコード実行
+#if false
+	//Test_PlayerControl::RunAll();
+#endif
 
 	//////////////////////////////
 	// プレイヤー挙動のパラメータ
