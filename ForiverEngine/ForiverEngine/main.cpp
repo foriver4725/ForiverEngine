@@ -36,7 +36,7 @@ int Main(hInstance)
 	constexpr float CameraSensitivityH = 180.0f; // 水平感度 (度/s)
 	constexpr float CameraSensitivityV = 90.0f; // 垂直感度 (度/s)
 	constexpr float MinVelocityV = -100.0f; // 最大落下速度 (m/s)
-	constexpr float JumpHeight = 1.5f; // ジャンプ高さ (m)
+	constexpr float JumpHeight = 1.3f; // ジャンプ高さ (m)
 	constexpr float EyeHeight = 1.6f; // 目の高さ (m)
 	constexpr float GroundedCheckOffset = 0.01f; // 接地判定のオフセット (m). 埋まっている判定と区別するため、少しずらす
 	constexpr float CeilingCheckOffset = 0.01f; // 天井判定のオフセット (m). 埋まっている判定と区別するため、少しずらす
