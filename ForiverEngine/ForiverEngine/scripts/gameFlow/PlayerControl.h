@@ -759,6 +759,8 @@ namespace ForiverEngine
 
 #pragma endregion
 
+#pragma region Complex Terrain Calculations
+
 			static void Run_CalculateCollisionBoundaryAsBlock()
 			{
 #define test( \
@@ -841,6 +843,8 @@ namespace ForiverEngine
 
 #undef test
 			}
+
+#pragma endregion
 		};
 
 #undef eq
