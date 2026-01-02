@@ -147,7 +147,7 @@ int Main(hInstance)
 				.store(ChunkCreationState::FinishedAll, std::memory_order_release);
 		};
 	// 描画するチャンクが変化した時、ビューを再作成する
-	Lattice2 chunkIndex = PlayerControl::GetChunkIndex(cameraTransform.position);
+	Lattice2 chunkIndex = PlayerControl::GetChunkIndex(PlayerControl::GetBlockPosition(cameraTransform.position));
 	Lattice2 chunkDrawIndexRangeX =
 		Lattice2(std::max(0, chunkIndex.x - ChunkDrawDistance), std::min(ChunkCount - 1, chunkIndex.x + ChunkDrawDistance));
 	Lattice2 chunkDrawIndexRangeZ =
@@ -436,8 +436,7 @@ int Main(hInstance)
 		// 落下とジャンプ
 		{
 			// 設置判定
-			const Vector3 playerFootPosition = PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight);
-			const int floorY = PlayerControl::GetFloorHeight(terrains, playerFootPosition, PlayerCollisionSize);
+			const int floorY = PlayerControl::FindFloorHeight(terrains, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
 			const bool isGrounded = (floorY >= 0) ? (cameraTransform.position.y - EyeHeight <= floorY + 0.5f + GroundedCheckOffset) : false;
 
 			if (isGrounded)
@@ -465,7 +464,7 @@ int Main(hInstance)
 
 		// 頭上にブロックがあって頭を打ったら、上方向の速度を無くす
 		{
-			const int ceilY = PlayerControl::GetCeilHeight(terrains, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
+			const int ceilY = PlayerControl::FindCeilHeight(terrains, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
 			const bool isOverlappingCeil = (ceilY <= Terrain::ChunkHeight - 1) ? (cameraTransform.position.y - EyeHeight + PlayerCollisionSize.y >= ceilY - 0.5f) : false;
 
 			if (isOverlappingCeil)
@@ -524,8 +523,8 @@ int Main(hInstance)
 					static_cast<int>(std::round(rayPosition.z))
 				);
 
-				const Lattice2 chunkIndex = PlayerControl::GetChunkIndex(rayPosition);
-				if (!PlayerControl::IsChunkInBounds(chunkIndex, ChunkCount))
+				const Lattice2 chunkIndex = PlayerControl::GetChunkIndex(PlayerControl::GetBlockPosition(rayPosition));
+				if (!PlayerControl::IsValidChunkIndex(chunkIndex, ChunkCount))
 					continue;
 				const Terrain& targetTerrain = terrains[chunkIndex.x][chunkIndex.y];
 				const Lattice3 rayLocalPosition = Lattice3(
@@ -565,7 +564,7 @@ int Main(hInstance)
 					hasBrokenBlock = true;
 
 					const Lattice3 blockPositionAsLattice = Lattice3(cbvBuffer1VirtualPtr->SelectingBlockPosition);
-					const Lattice2 chunkIndex = PlayerControl::GetChunkIndex(cbvBuffer1VirtualPtr->SelectingBlockPosition);
+					const Lattice2 chunkIndex = PlayerControl::GetChunkIndex(PlayerControl::GetBlockPosition(cbvBuffer1VirtualPtr->SelectingBlockPosition));
 
 					// 地形データとメッシュを更新
 					terrains[chunkIndex.x][chunkIndex.y].SetBlock(
@@ -594,7 +593,7 @@ int Main(hInstance)
 		// 更新時、そのチャンクがまだ未作成ならば、その作成をまず行う
 		{
 			// 存在するチャンクが変化したかチェック
-			const Lattice2 currentChunkIndex = PlayerControl::GetChunkIndex(cameraTransform.position);
+			const Lattice2 currentChunkIndex = PlayerControl::GetChunkIndex(PlayerControl::GetBlockPosition(cameraTransform.position));
 			const bool hasExistingChunkChanged = (currentChunkIndex != chunkIndex);
 
 			// 結局配列を更新する必要があるのか?
@@ -692,7 +691,7 @@ int Main(hInstance)
 					std::format("LookAt : {}", ToString(selectingBlockPositionAsLattice))
 					: "LookAt : None";
 
-				const Lattice2 currentChunkIndex = PlayerControl::GetChunkIndex(cameraTransform.position);
+				const Lattice2 currentChunkIndex = PlayerControl::GetChunkIndex(PlayerControl::GetBlockPosition(cameraTransform.position));
 				const std::string chunkIndexText =
 					std::format("Chunk Index : {}", ToString(currentChunkIndex));
 

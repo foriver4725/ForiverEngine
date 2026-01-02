@@ -12,14 +12,13 @@ namespace ForiverEngine
 	public:
 		DELETE_DEFAULT_METHODS(PlayerControl);
 
-		// 与えられた座標がどのブロックの位置にあるかを計算し、格子座標で返す
-		// X,Y,Z の1要素版
+		// ブロック座標に変換 (整数座標)
 		static int GetBlockPosition(const float position)
 		{
-			return std::round(position);
+			return static_cast<int>(std::round(position));
 		}
 
-		// 与えられた座標がどのブロックの位置にあるかを計算し、格子座標で返す
+		// ブロック座標に変換 (整数座標)
 		static Lattice3 GetBlockPosition(const Vector3& position)
 		{
 			return Lattice3(
@@ -29,75 +28,128 @@ namespace ForiverEngine
 			);
 		}
 
-		static Vector3 GetFootPosition(const Vector3& position, float eyeHeight)
-		{
-			return position - Vector3::Up() * eyeHeight;
-		}
-
-		// ワールド座標 -> チャンクのインデックス
-		static Lattice2 GetChunkIndex(const Vector3& position)
+		// どのチャンクに属しているかを取得
+		static Lattice2 GetChunkIndex(const Lattice3& worldBlockPosition)
 		{
 			return Lattice2(
-				std::floor(position.x / Terrain::ChunkSize),
-				std::floor(position.z / Terrain::ChunkSize)
+				worldBlockPosition.x / Terrain::ChunkSize,
+				worldBlockPosition.z / Terrain::ChunkSize
 			);
 		}
 
-		// インデックスが、指定された範囲内であるか [0, count)
-		static bool IsIndexInBounds(int index, int count)
-		{
-			return 0 <= index && index < count;
-		}
-
-		// チャンクのインデックスが、地形全体の範囲内であるか
-		static bool IsChunkInBounds(const Lattice2& chunkIndex, int chunkCount)
-		{
-			return IsIndexInBounds(chunkIndex.x, chunkCount)
-				&& IsIndexInBounds(chunkIndex.y, chunkCount);
-		}
-
-		// ワールド座標 -> チャンク内のローカル座標 ([0.0f, ChunkSize))
-		static Vector3 GetChunkLocalPosition(const Vector3& position)
-		{
-			return Vector3(
-				std::fmod(position.x, static_cast<float>(Terrain::ChunkSize)),
-				position.y,
-				std::fmod(position.z, static_cast<float>(Terrain::ChunkSize))
-			);
-		}
-
-		// ワールド座標 -> チャンク内のローカル座標 ([0.0f, ChunkSize))
-		static Lattice3 GetChunkLocalPosition(const Lattice3& position)
+		// チャンク内のローカルブロック座標に変換
+		static Lattice3 GetChunkLocalPosition(const Lattice3& worldBlockPosition)
 		{
 			return Lattice3(
-				position.x % Terrain::ChunkSize,
-				position.y,
-				position.z % Terrain::ChunkSize
+				worldBlockPosition.x % Terrain::ChunkSize,
+				worldBlockPosition.y,
+				worldBlockPosition.z % Terrain::ChunkSize
 			);
 		}
 
-		// コリジョン立方体が、ブロックの整数座標でどの範囲にまたがっているかを計算する
-		// rangeXZ, rangeY で、戻り値の範囲を制限できる
-		static std::tuple<Lattice2, Lattice2, Lattice2> CalculateCollisionBlockBoundary(
-			const Vector3& minPosition, const Vector3& collisionSize, const Lattice2& rangeXZ, const Lattice2& rangeY)
+		// チャンクインデックスが有効であるか
+		// 即ち、上下限を超えた値でないか
+		static bool IsValidChunkIndex(const Lattice2& chunkIndex, int chunkCount)
 		{
-			const Vector3 maxPosition = minPosition + collisionSize;
+			return 0 <= chunkIndex.x && chunkIndex.x < chunkCount
+				&& 0 <= chunkIndex.y && chunkIndex.y < chunkCount;
+		}
 
-			const Lattice3 blockMinPosition = GetBlockPosition(minPosition);
-			const Lattice3 blockMaxPosition = GetBlockPosition(maxPosition);
+		// プレイヤーの足元の座標を計算
+		static Vector3 GetFootPosition(const Vector3& worldPosition, float eyeHeight)
+		{
+			return worldPosition - Vector3::Up() * eyeHeight;
+		}
 
-			const int blockXMin = std::clamp(blockMinPosition.x, rangeXZ.x, rangeXZ.y);
-			const int blockXMax = std::clamp(blockMaxPosition.x, rangeXZ.x, rangeXZ.y);
-			const int blockYMin = std::clamp(blockMinPosition.y, rangeY.x, rangeY.y);
-			const int blockYMax = std::clamp(blockMaxPosition.y, rangeY.x, rangeY.y);
-			const int blockZMin = std::clamp(blockMinPosition.z, rangeXZ.x, rangeXZ.y);
-			const int blockZMax = std::clamp(blockMaxPosition.z, rangeXZ.x, rangeXZ.y);
+		// プレイヤーのコリジョンで、XYZ 各値が最小である座標を計算
+		static Vector3 GetCollisionMinPosition(const Vector3& footWorldPosition, const Vector3& collisionSize)
+		{
+			return Vector3(
+				footWorldPosition.x - collisionSize.x * 0.5f,
+				footWorldPosition.y,
+				footWorldPosition.z - collisionSize.z * 0.5f
+			);
+		}
 
-			const Lattice2 RangeX = Lattice2(blockXMin, blockXMax);
-			const Lattice2 RangeY = Lattice2(blockYMin, blockYMax);
-			const Lattice2 RangeZ = Lattice2(blockZMin, blockZMax);
+		/// <summary>
+		/// <para>コリジョン立方体の範囲が、どのブロック座標に属するかを計算する</para>
+		/// <para>複数チャンクに跨っている場合も考慮する</para>
+		/// <para>[戻り値の形式]</para>
+		/// <para>最小インデックスのチャンク, X方向に1つ進んだチャンク, Z方向に1つ進んだチャンク, XZ両方向に1つ進んだチャンク の順に情報を返す</para>
+		/// <para>各チャンクについて、(コリジョン立方体が属するか, チャンクインデックス, X方向の範囲, Y方向の範囲, Z方向の範囲) のタプルを返す</para>
+		/// <para>範囲は、そのチャンクにおけるローカルブロック座標</para>
+		/// <para>そのチャンクに属さない場合、範囲はデフォルト値</para>
+		/// </summary>
+		template <int ChunkCount>
+		static std::array<std::tuple<bool, Lattice2, Lattice2, Lattice2, Lattice2>, 4> CalculateCollisionBoundaryAsBlock(
+			const std::array<std::array<Terrain, ChunkCount>, ChunkCount>& terrainChunks,
+			const Vector3& worldPositionMin, const Vector3& collisionSize)
+		{
+			const Lattice3 worldBlockPositionMin = GetBlockPosition(worldPositionMin);
+			const Lattice3 worldBlockPositionMax = GetBlockPosition(worldPositionMin + collisionSize);
 
-			return { RangeX, RangeY, RangeZ };
+			const Lattice2 chunkIndexMin = GetChunkIndex(worldBlockPositionMin);
+			const Lattice2 chunkIndexMax = GetChunkIndex(worldBlockPositionMax);
+
+			const Lattice3 localBlockPositionMin = GetChunkLocalPosition(worldBlockPositionMin); // 最小座標の、そのチャンク内でのローカル座標
+			const Lattice3 localBlockPositionMax = GetChunkLocalPosition(worldBlockPositionMax); // 最大座標の、そのチャンク内でのローカル座標
+
+			// 各チャンクに存在するか
+			const bool isInsideChunkFlags[4] =
+			{
+				IsValidChunkIndex(chunkIndexMin, ChunkCount),
+				(chunkIndexMin.x < chunkIndexMax.x),
+				(chunkIndexMin.y < chunkIndexMax.y),
+				(chunkIndexMin.x < chunkIndexMax.x) && (chunkIndexMin.y < chunkIndexMax.y)
+			};
+
+			std::array<std::tuple<bool, Lattice2, Lattice2, Lattice2, Lattice2>, 4> result = {};
+			for (int i = 0; i < 4; ++i)
+			{
+				// 最初に取得した 各 min,max の値を "このチャンクにおける" 数値に変換
+				const Lattice2 chunkIndex =
+					Lattice2(
+						chunkIndexMin.x + ((i & 0b01) ? 1 : 0),
+						chunkIndexMin.y + ((i & 0b10) ? 1 : 0)
+					);
+				const Lattice3 localBlockPositionStart =
+					Lattice3(
+						(i & 0b01) ? 0 : localBlockPositionMin.x,
+						localBlockPositionMin.y,
+						(i & 0b10) ? 0 : localBlockPositionMin.z
+					);
+				const Lattice3 localBlockPositionLast =
+					Lattice3(
+						(i & 0b01) ? localBlockPositionMax.x : (Terrain::ChunkSize - 1),
+						localBlockPositionMax.y,
+						(i & 0b10) ? localBlockPositionMax.z : (Terrain::ChunkSize - 1)
+					);
+
+				// そのチャンクにコリジョンが属さないので、スキップ
+				if (!isInsideChunkFlags[i])
+				{
+					result[i] = std::make_tuple(false, chunkIndex, Lattice2::Zero(), Lattice2::Zero(), Lattice2::Zero());
+					continue;
+				}
+
+				// チャンクインデックスが配列のサイズを超えてしまったので、スキップ
+				if (!IsValidChunkIndex(chunkIndex, ChunkCount))
+				{
+					result[i] = std::make_tuple(false, chunkIndex, Lattice2::Zero(), Lattice2::Zero(), Lattice2::Zero());
+					continue;
+				}
+
+				// 正式にこのチャンクにコリジョンが属するので、値を格納する
+				result[i] = std::make_tuple(
+					true,
+					chunkIndex,
+					Lattice2(localBlockPositionStart.x, localBlockPositionLast.x),
+					Lattice2(localBlockPositionStart.y, localBlockPositionLast.y),
+					Lattice2(localBlockPositionStart.z, localBlockPositionLast.z)
+				);
+			}
+
+			return result;
 		}
 
 		static void Rotate(Transform& transform, const Vector2& rotateInput, const Vector2& rotateSpeed, float deltaSeconds)
@@ -122,136 +174,129 @@ namespace ForiverEngine
 		}
 
 		// 足元より下である中で、最も高いブロックのY座標を取得する (無いなら多分、チャンクの高さの最小値-1を返す)
-		// TODO: 必ず1チャンクしか見ないので、当たり判定がチャンクの境界に跨っているとバグる
-		template<int ChunkSize>
-		static int GetFloorHeight(
-			const std::array<std::array<Terrain, ChunkSize>, ChunkSize>& terrainChunks,
+		template<int ChunkCount>
+		static int FindFloorHeight(
+			const std::array<std::array<Terrain, ChunkCount>, ChunkCount>& terrainChunks,
 			const Vector3& position, // 足元の座標
 			const Vector3& size // コリジョンのサイズ
 		)
 		{
-			const Lattice2 chunkIndex = GetChunkIndex(position);
-			if (!IsChunkInBounds(chunkIndex, ChunkSize))
-				return -1;
-			const Terrain& terrain = terrainChunks[chunkIndex.x][chunkIndex.y];
+			const auto& [info, infoX, infoZ, infoXZ] =
+				CalculateCollisionBoundaryAsBlock(terrainChunks, GetCollisionMinPosition(position, size), size);
 
-			const Vector3 localMinPosition = GetChunkLocalPosition(position) - Vector3(size.x * 0.5f, 0.0f, size.z * 0.5f);
-			const auto [rangeX, rangeY, rangeZ] = CalculateCollisionBlockBoundary(localMinPosition, size,
-				Lattice2(0, Terrain::ChunkSize - 1), Lattice2(0, Terrain::ChunkHeight - 1));
+			const std::function<int(std::tuple<bool, Lattice2, Lattice2, Lattice2, Lattice2>)> FindFloorHeightForThisChunk =
+				[&terrainChunks, &position](std::tuple<bool, Lattice2, Lattice2, Lattice2, Lattice2> boundaryInfo) -> int
+				{
+					// 情報をアンパック
+					const auto& [isInsideChunk, chunkIndex, rangeX, rangeY, rangeZ] = boundaryInfo;
+
+					// このチャンクにコリジョンが属していないので、最小値を返す
+					if (!isInsideChunk)
+						return std::numeric_limits<int>::min();
+
+					// 配列のサイズ外チェックは事前に済んでいるはず
+					const Terrain& chunk = terrainChunks[chunkIndex.x][chunkIndex.y];
+
+					int y = std::numeric_limits<int>::min();
+					for (int z = rangeZ.x; z <= rangeZ.y; ++z)
+						for (int x = rangeX.x; x <= rangeX.y; ++x)
+						{
+							const int height = chunk.GetFloorHeight(x, z, rangeY.x); // 余裕を持たせて、足元にあるブロックから調べる
+							y = std::max(y, height);
+						}
+
+					return y;
+				};
 
 			int y = std::numeric_limits<int>::min();
-			for (int z = rangeZ.x; z <= rangeZ.y; ++z)
-				for (int x = rangeX.x; x <= rangeX.y; ++x)
-				{
-					const int height = terrain.GetFloorHeight(x, z, rangeY.x); // 余裕を持たせて、足元にあるブロックから調べる
-					y = std::max(y, height);
-				}
-
+			y = std::max(y, FindFloorHeightForThisChunk(info));
+			y = std::max(y, FindFloorHeightForThisChunk(infoX));
+			y = std::max(y, FindFloorHeightForThisChunk(infoZ));
+			y = std::max(y, FindFloorHeightForThisChunk(infoXZ));
 			return y;
 		}
 
 		// 頭上より上である中で、最も低いブロックのY座標を取得する (無いなら多分、チャンクの高さの最大値+1を返す)
-		// TODO: 必ず1チャンクしか見ないので、当たり判定がチャンクの境界に跨っているとバグる
-		template<int ChunkSize>
-		static int GetCeilHeight(
-			const std::array<std::array<Terrain, ChunkSize>, ChunkSize>& terrainChunks,
+		template<int ChunkCount>
+		static int FindCeilHeight(
+			const std::array<std::array<Terrain, ChunkCount>, ChunkCount>& terrainChunks,
 			const Vector3& position, // 足元の座標
 			const Vector3& size // コリジョンのサイズ
 		)
 		{
-			const Lattice2 chunkIndex = GetChunkIndex(position);
-			if (!IsChunkInBounds(chunkIndex, ChunkSize))
-				return -1;
-			const Terrain& terrain = terrainChunks[chunkIndex.x][chunkIndex.y];
+			const auto& [info, infoX, infoZ, infoXZ] =
+				CalculateCollisionBoundaryAsBlock(terrainChunks, GetCollisionMinPosition(position, size), size);
 
-			const Vector3 localMinPosition = GetChunkLocalPosition(position) - Vector3(size.x * 0.5f, 0.0f, size.z * 0.5f);
-			const auto [rangeX, rangeY, rangeZ] = CalculateCollisionBlockBoundary(localMinPosition, size,
-				Lattice2(0, Terrain::ChunkSize - 1), Lattice2(0, Terrain::ChunkHeight - 1));
+			const std::function<int(std::tuple<bool, Lattice2, Lattice2, Lattice2, Lattice2>)> FindCeilHeightForThisChunk =
+				[&terrainChunks, &position](std::tuple<bool, Lattice2, Lattice2, Lattice2, Lattice2> boundaryInfo) -> int
+				{
+					// 情報をアンパック
+					const auto& [isInsideChunk, chunkIndex, rangeX, rangeY, rangeZ] = boundaryInfo;
+
+					// このチャンクにコリジョンが属していないので、最大値を返す
+					if (!isInsideChunk)
+						return std::numeric_limits<int>::max();
+
+					// 配列のサイズ外チェックは事前に済んでいるはず
+					const Terrain& chunk = terrainChunks[chunkIndex.x][chunkIndex.y];
+
+					int y = std::numeric_limits<int>::max();
+					for (int z = rangeZ.x; z <= rangeZ.y; ++z)
+						for (int x = rangeX.x; x <= rangeX.y; ++x)
+						{
+							const int height = chunk.GetCeilHeight(x, z, rangeY.y); // 余裕を持たせて、頭上にあるブロックから調べる
+							y = std::min(y, height);
+						}
+
+					return y;
+				};
 
 			int y = std::numeric_limits<int>::max();
-			for (int z = rangeZ.x; z <= rangeZ.y; ++z)
-				for (int x = rangeX.x; x <= rangeX.y; ++x)
-				{
-					const int height = terrain.GetCeilHeight(x, z, rangeY.y); // 余裕を持たせて、頭上にあるブロックから調べる
-					y = std::min(y, height);
-				}
-
+			y = std::min(y, FindCeilHeightForThisChunk(info));
+			y = std::min(y, FindCeilHeightForThisChunk(infoX));
+			y = std::min(y, FindCeilHeightForThisChunk(infoZ));
+			y = std::min(y, FindCeilHeightForThisChunk(infoXZ));
 			return y;
 		}
 
-		template<int ChunkSize>
+		template<int ChunkCount>
 		static bool IsOverlappingWithTerrain(
-			const std::array<std::array<Terrain, ChunkSize>, ChunkSize>& terrainChunks,
+			const std::array<std::array<Terrain, ChunkCount>, ChunkCount>& terrainChunks,
 			const Vector3& position, // 足元の座標
 			const Vector3& size // コリジョンのサイズ
 		)
 		{
-			const Lattice2 chunkIndex = GetChunkIndex(position);
-			if (!IsChunkInBounds(chunkIndex, ChunkSize))
-				return false;
-			const Terrain& terrain = terrainChunks[chunkIndex.x][chunkIndex.y];
+			const auto& [info, infoX, infoZ, infoXZ] =
+				CalculateCollisionBoundaryAsBlock(terrainChunks, GetCollisionMinPosition(position, size), size);
 
-			const Vector3 localMinPosition = GetChunkLocalPosition(position) - Vector3(size.x * 0.5f, 0.0f, size.z * 0.5f);
-			const Vector3 localMaxPosition = localMinPosition + size;
-			const bool collisionExistsInMultipleChunkX = GetBlockPosition(localMaxPosition.x) >= Terrain::ChunkSize;
-			const bool collisionExistsInMultipleChunkZ = GetBlockPosition(localMaxPosition.z) >= Terrain::ChunkSize;
+			const std::function<bool(std::tuple<bool, Lattice2, Lattice2, Lattice2, Lattice2>)> IsOverlappingForThisChunk =
+				[&terrainChunks](std::tuple<bool, Lattice2, Lattice2, Lattice2, Lattice2> boundaryInfo) -> bool
+				{
+					// 情報をアンパック
+					const auto& [isInsideChunk, chunkIndex, rangeX, rangeY, rangeZ] = boundaryInfo;
 
-			const auto [rangeX, rangeY, rangeZ] = CalculateCollisionBlockBoundary(localMinPosition, size,
-				Lattice2(0, Terrain::ChunkSize - 1), Lattice2(0, Terrain::ChunkHeight - 1));
+					// このチャンクにコリジョンが属していないので、重なっていない
+					if (!isInsideChunk)
+						return false;
 
-			for (int y = rangeY.x; y <= rangeY.y; ++y)
-				for (int z = rangeZ.x; z <= rangeZ.y; ++z)
-					for (int x = rangeX.x; x <= rangeX.y; ++x)
-					{
-						if (terrain.GetBlock(x, y, z) != Block::Air)
-							return true;
-					}
+					// 配列のサイズ外チェックは事前に済んでいるはず
+					const Terrain& chunk = terrainChunks[chunkIndex.x][chunkIndex.y];
 
-			// コリジョンがX方向にチャンクを跨いでいる
-			if (collisionExistsInMultipleChunkX && IsIndexInBounds(chunkIndex.x + 1, ChunkSize))
-			{
-				const Terrain& terrainNextX = terrainChunks[chunkIndex.x + 1][chunkIndex.y];
-				const int localBlockMaxXAtNextX = GetChunkLocalPosition(GetBlockPosition(localMaxPosition)).x;
+					for (int y = rangeY.x; y <= rangeY.y; ++y)
+						for (int z = rangeZ.x; z <= rangeZ.y; ++z)
+							for (int x = rangeX.x; x <= rangeX.y; ++x)
+							{
+								if (chunk.GetBlock(x, y, z) != Block::Air)
+									return true;
+							}
 
-				for (int y = rangeY.x; y <= rangeY.y; ++y)
-					for (int z = rangeZ.x; z <= rangeZ.y; ++z)
-						for (int x = 0; x <= localBlockMaxXAtNextX; ++x)
-						{
-							if (terrainNextX.GetBlock(x, y, z) != Block::Air)
-								return true;
-						}
-			}
-			// コリジョンがZ方向にチャンクを跨いでいる
-			if (collisionExistsInMultipleChunkZ && IsIndexInBounds(chunkIndex.y + 1, ChunkSize))
-			{
-				const Terrain& terrainNextZ = terrainChunks[chunkIndex.x][chunkIndex.y + 1];
-				const int localBlockMaxZAtNextZ = GetChunkLocalPosition(GetBlockPosition(localMaxPosition)).z;
+					return false;
+				};
 
-				for (int y = rangeY.x; y <= rangeY.y; ++y)
-					for (int z = 0; z <= localBlockMaxZAtNextZ; ++z)
-						for (int x = rangeX.x; x <= rangeX.y; ++x)
-						{
-							if (terrainNextZ.GetBlock(x, y, z) != Block::Air)
-								return true;
-						}
-			}
-			// コリジョンがX,Z両方向にチャンクを跨いでいる
-			if (collisionExistsInMultipleChunkX && collisionExistsInMultipleChunkZ
-				&& IsChunkInBounds(Lattice2(chunkIndex.x + 1, chunkIndex.y + 1), ChunkSize))
-			{
-				const Terrain& terrainNextXZ = terrainChunks[chunkIndex.x + 1][chunkIndex.y + 1];
-				const int localBlockMaxXAtNextX = GetChunkLocalPosition(GetBlockPosition(localMaxPosition)).x;
-				const int localBlockMaxZAtNextZ = GetChunkLocalPosition(GetBlockPosition(localMaxPosition)).z;
-
-				for (int y = rangeY.x; y <= rangeY.y; ++y)
-					for (int z = 0; z <= localBlockMaxZAtNextZ; ++z)
-						for (int x = 0; x <= localBlockMaxXAtNextX; ++x)
-						{
-							if (terrainNextXZ.GetBlock(x, y, z) != Block::Air)
-								return true;
-						}
-			}
-
+			if (IsOverlappingForThisChunk(info)) return true;
+			if (IsOverlappingForThisChunk(infoX)) return true;
+			if (IsOverlappingForThisChunk(infoZ)) return true;
+			if (IsOverlappingForThisChunk(infoXZ)) return true;
 			return false;
 		}
 	};
