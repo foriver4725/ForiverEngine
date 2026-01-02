@@ -34,7 +34,8 @@ int Main(hInstance)
 	constexpr float MinVelocityV = -50.0f; // 最大落下速度 (m/s)
 	constexpr float JumpHeight = 1.05f; // ジャンプ高さ (m)
 	constexpr float EyeHeight = 1.6f; // 目の高さ (m)
-	constexpr float GroundedCheckOffset = 0.1f; // 接地判定のオフセット (m). 埋まっている判定と区別するため、少しずらす
+	constexpr float GroundedCheckOffset = 0.01f; // 接地判定のオフセット (m). 埋まっている判定と区別するため、少しずらす
+	constexpr float CeilingCheckOffset = 0.01f; // 天井判定のオフセット (m). 埋まっている判定と区別するため、少しずらす
 	float velocityV = 0; // 鉛直速度
 
 	// 向いているブロックを選択
@@ -435,50 +436,60 @@ int Main(hInstance)
 		// 移動前の座標を保存しておく
 		const Vector3 positionBeforeMove = cameraTransform.position;
 
-		// 落下とジャンプ
+		// 鉛直移動とジャンプ
 		{
-			// 設置判定
-			const int floorY = PlayerControl::FindFloorHeight(terrains, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
-			const bool isGrounded = (floorY >= 0) ? (cameraTransform.position.y - EyeHeight <= floorY + 0.5f + GroundedCheckOffset) : false;
+			// 床のY座標を算出しておく
+			const int floorY = PlayerControl::FindFloorHeight(
+				terrains, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
+			// 天井のY座標を算出しておく
+			const int ceilY = PlayerControl::FindCeilHeight(
+				terrains, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
 
+			// 落下分の加速度を加算し、鉛直移動する
+			velocityV -= G * WindowHelper::GetDeltaSeconds<float>();
+			velocityV = std::max(velocityV, MinVelocityV);
+			if (std::abs(velocityV) > 0.01f)
+				cameraTransform.position += Vector3::Up() * (velocityV * WindowHelper::GetDeltaSeconds<float>());
+
+			// 設置判定
+			const bool isGrounded =
+				(floorY >= 0) ?
+				(PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight).y
+					<= (floorY + 0.5f + GroundedCheckOffset))
+				: false;
+			// 天井判定
+			const bool isCeiling =
+				(ceilY <= (Terrain::ChunkHeight - 1)) ?
+				((PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight).y + PlayerCollisionSize.y)
+					>= (ceilY - 0.5f - CeilingCheckOffset))
+				: false;
+
+			// 接地したら、めり込みを補正して、鉛直速度を0にする
 			if (isGrounded)
 			{
-				if (velocityV < 0)
-					velocityV = 0;
-
-				// 地面へのめり込みを補正する
 				const float standY = floorY + 0.5f + EyeHeight;
 				if (cameraTransform.position.y < standY)
 					cameraTransform.position.y = standY;
 
-				if (InputHelper::GetKeyInfo(Key::Space).pressedNow)
-					velocityV = std::sqrt(2.0f * G * JumpHeight);
-			}
-			else
-			{
-				velocityV -= G * WindowHelper::GetDeltaSeconds<float>();
-				velocityV = std::max(velocityV, MinVelocityV);
-			}
-
-			if (std::abs(velocityV) > 0.01f)
-				cameraTransform.position += Vector3::Up() * (velocityV * WindowHelper::GetDeltaSeconds<float>());
-		}
-
-		// 頭上にブロックがあって頭を打ったら、上方向の速度を無くす
-		{
-			const int ceilY = PlayerControl::FindCeilHeight(terrains, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
-			const bool isOverlappingCeil = (ceilY <= Terrain::ChunkHeight - 1) ? (cameraTransform.position.y - EyeHeight + PlayerCollisionSize.y >= ceilY - 0.5f) : false;
-
-			if (isOverlappingCeil)
-			{
-				// 上方向の速度を無くす
-				if (velocityV > 0)
+				if (velocityV < 0)
 					velocityV = 0;
-
-				// 天井へのめり込みを補正する
-				const float headY = ceilY - 0.5f + EyeHeight - PlayerCollisionSize.y;
+			}
+			// 天井にぶつかったら、めり込みを補正して、鉛直速度を0にする
+			else if (isCeiling)
+			{
+				const float headY = ceilY - 0.5f - PlayerCollisionSize.y + EyeHeight;
 				if (cameraTransform.position.y > headY)
 					cameraTransform.position.y = headY;
+
+				if (velocityV > 0)
+					velocityV = 0;
+			}
+
+			// 接地しているなら、ジャンプ入力を受け付ける
+			if (isGrounded)
+			{
+				if (InputHelper::GetKeyInfo(Key::Space).pressedNow)
+					velocityV += std::sqrt(2.0f * G * JumpHeight);
 			}
 		}
 
