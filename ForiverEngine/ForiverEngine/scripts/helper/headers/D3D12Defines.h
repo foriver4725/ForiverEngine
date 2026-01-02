@@ -415,15 +415,15 @@ public: \
 		// アラインメントをこれに揃える必要がある
 		static constexpr int RowSizeAlignment = 256;
 
-		std::vector<std::uint8_t> data; // 生データ (ビット配列 的な)
-		GraphicsBufferType textureType;
-		Format format;
-		int width;
-		int height;
-		int rowSize; // 1行分のデータサイズ
-		int sliceSize; // 1スライス分のデータサイズ
-		int sliceCount; // スライス数
-		int mipLevels;
+		std::vector<std::uint8_t> data{}; // 生データ (ビット配列 的な)
+		GraphicsBufferType textureType{};
+		Format format{};
+		int width{};
+		int height{};
+		int rowSize{}; // 1行分のデータサイズ
+		int sliceSize{}; // 1スライス分のデータサイズ
+		int sliceCount{}; // スライス数
+		int mipLevels{};
 
 		constexpr bool IsValid() const { return !data.empty() && width > 0 && height > 0; }
 
