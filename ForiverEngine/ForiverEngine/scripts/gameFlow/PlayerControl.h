@@ -173,7 +173,7 @@ namespace ForiverEngine
 			transform.position += moveDirection * (moveSpeed * deltaSeconds);
 		}
 
-		// 足元より下である中で、最も高いブロックのY座標を取得する (無いなら多分、チャンクの高さの最小値-1を返す)
+		// 足元より下である中で、最も高いブロックのY座標を取得する (無いなら チャンクの高さの最小値-1 を返す)
 		template<int ChunkCount>
 		static int FindFloorHeight(
 			const std::array<std::array<Terrain, ChunkCount>, ChunkCount>& terrainChunks,
@@ -192,23 +192,23 @@ namespace ForiverEngine
 
 					// このチャンクにコリジョンが属していないので、最小値を返す
 					if (!isInsideChunk)
-						return std::numeric_limits<int>::min();
+						return -1;
 
 					// 配列のサイズ外チェックは事前に済んでいるはず
 					const Terrain& chunk = terrainChunks[chunkIndex.x][chunkIndex.y];
 
-					int y = std::numeric_limits<int>::min();
+					int y = -1;
 					for (int z = rangeZ.x; z <= rangeZ.y; ++z)
 						for (int x = rangeX.x; x <= rangeX.y; ++x)
 						{
-							const int height = chunk.GetFloorHeight(x, z, rangeY.x); // 余裕を持たせて、足元にあるブロックから調べる
+							const int height = chunk.GetFloorHeight(x, z, rangeY.x - 1);
 							y = std::max(y, height);
 						}
 
 					return y;
 				};
 
-			int y = std::numeric_limits<int>::min();
+			int y = -1;
 			y = std::max(y, FindFloorHeightForThisChunk(info));
 			y = std::max(y, FindFloorHeightForThisChunk(infoX));
 			y = std::max(y, FindFloorHeightForThisChunk(infoZ));
@@ -216,7 +216,7 @@ namespace ForiverEngine
 			return y;
 		}
 
-		// 頭上より上である中で、最も低いブロックのY座標を取得する (無いなら多分、チャンクの高さの最大値+1を返す)
+		// 頭上より上である中で、最も低いブロックのY座標を取得する (無いなら チャンクの高さの最大値+1 を返す)
 		template<int ChunkCount>
 		static int FindCeilHeight(
 			const std::array<std::array<Terrain, ChunkCount>, ChunkCount>& terrainChunks,
@@ -235,23 +235,23 @@ namespace ForiverEngine
 
 					// このチャンクにコリジョンが属していないので、最大値を返す
 					if (!isInsideChunk)
-						return std::numeric_limits<int>::max();
+						return Terrain::ChunkHeight;
 
 					// 配列のサイズ外チェックは事前に済んでいるはず
 					const Terrain& chunk = terrainChunks[chunkIndex.x][chunkIndex.y];
 
-					int y = std::numeric_limits<int>::max();
+					int y = Terrain::ChunkHeight;
 					for (int z = rangeZ.x; z <= rangeZ.y; ++z)
 						for (int x = rangeX.x; x <= rangeX.y; ++x)
 						{
-							const int height = chunk.GetCeilHeight(x, z, rangeY.y); // 余裕を持たせて、頭上にあるブロックから調べる
+							const int height = chunk.GetCeilHeight(x, z, rangeY.y + 1);
 							y = std::min(y, height);
 						}
 
 					return y;
 				};
 
-			int y = std::numeric_limits<int>::max();
+			int y = Terrain::ChunkHeight;
 			y = std::min(y, FindCeilHeightForThisChunk(info));
 			y = std::min(y, FindCeilHeightForThisChunk(infoX));
 			y = std::min(y, FindCeilHeightForThisChunk(infoZ));
