@@ -234,7 +234,7 @@ namespace ForiverEngine
 
 #pragma endregion
 
-#pragma region Complex Terrain Calculations
+#pragma region Complex Chunk Calculations
 
 #pragma region Chunk Helpers
 
