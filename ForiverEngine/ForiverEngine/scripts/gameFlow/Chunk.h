@@ -27,7 +27,7 @@ namespace ForiverEngine
 		static constexpr int Height = 256; // 高さ (ブロック数)
 		static constexpr int Count = 1024; // ワールド全体のチャンク数 (Count x Count 個)
 		static constexpr int DrawDistance = 8; // カメラからの描画チャンク数 (矩形)
-		static constexpr int DrawCountMax = DrawDistance * 2 + 1; // 描画するチャンク数の最大値 (カメラ中心に、最大 DrawCount x DrawCount 個)
+		static constexpr int DrawCountMax = DrawDistance * 2 + 1; // 描画するチャンク数の最大値 (カメラ中心に、最大 DrawCountMax x DrawCountMax 個)
 
 		Chunk() : data(nullptr) {}
 		Chunk(Chunk&& other) noexcept : data(std::move(other.data)) {}
