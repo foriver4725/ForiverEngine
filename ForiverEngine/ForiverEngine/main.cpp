@@ -101,7 +101,7 @@ int Main(hInstance)
 	constexpr int ChunkCount = 1024; // ワールドのチャンク数 (ChunkCount x ChunkCount 個)
 	constexpr int ChunkDrawDistance = 8; // 描画チャンク数 (プレイヤーを中心に 半径 ChunkDrawDistance の矩形内のチャンクのみ描画する)
 	constexpr int ChunkDrawMaxCount = (ChunkDrawDistance * 2 + 1) * (ChunkDrawDistance * 2 + 1);
-	constexpr int WorldEdgeNoEntryBlockCount = 2; // 世界の端から何マス、立ち入り禁止にするか
+	constexpr Lattice3 WorldEdgeNoEntryBlockCount = Lattice3(2, 2, 2); // 世界の端から何マス、立ち入り禁止にするか (XYZ方向)
 	// x,z の順でアクセス
 	auto terrainChunkCreationStates
 		= HeapMultiDimAllocator::CreateArray2D<std::atomic<ChunkCreationState>>(ChunkCount, ChunkCount); // チャンク作成状態 (デフォルト:NotYet)
@@ -536,11 +536,12 @@ int Main(hInstance)
 					PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight));
 
 				if (!PlayerControl::IsIntInRange(
-					footBlockPosition.x, WorldEdgeNoEntryBlockCount, Terrain::ChunkSize * ChunkCount - WorldEdgeNoEntryBlockCount) ||
+					footBlockPosition.x, WorldEdgeNoEntryBlockCount.x, Terrain::ChunkSize * ChunkCount - WorldEdgeNoEntryBlockCount.x) ||
+					// TODO: Y方向は上手く判定できないので、一旦無効化
+					/*!PlayerControl::IsIntInRange(
+						footBlockPosition.y, WorldEdgeNoEntryBlockCount.y, Terrain::ChunkHeight - WorldEdgeNoEntryBlockCount.y) ||*/
 					!PlayerControl::IsIntInRange(
-						footBlockPosition.y, 0, Terrain::ChunkHeight) ||
-					!PlayerControl::IsIntInRange(
-						footBlockPosition.z, WorldEdgeNoEntryBlockCount, Terrain::ChunkSize * ChunkCount - WorldEdgeNoEntryBlockCount))
+						footBlockPosition.z, WorldEdgeNoEntryBlockCount.z, Terrain::ChunkSize * ChunkCount - WorldEdgeNoEntryBlockCount.z))
 				{
 					cameraTransform.position = positionBeforeMove;
 				}
