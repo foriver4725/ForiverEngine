@@ -680,6 +680,12 @@ int Main(hInstance)
 					std::format("Position : {}", ToString(playerFootPositionAsLattice));
 				textUIDataRows.emplace_back(positionText, Color::White());
 
+				// 選択しているブロックのブロック座標
+				const std::string selectingBlockPositionText = (cbvBuffer1VirtualPtr->IsSelectingBlock == 1) ?
+					std::format("LookAt : {}", ToString(cbvBuffer1VirtualPtr->SelectingBlockWorldPosition))
+					: "LookAt : None";
+				textUIDataRows.emplace_back(selectingBlockPositionText, Color::White());
+
 				// 現在いるチャンクのインデックス
 				const std::string chunkIndexText = PlayerControl::IsValidChunkIndex(existingChunkIndex) ?
 					std::format("Chunk Index : {}", ToString(existingChunkIndex))
@@ -693,11 +699,13 @@ int Main(hInstance)
 					: "Chunk Local Position : Invalid";
 				textUIDataRows.emplace_back(chunkLocalBlockPositionText, Color::White());
 
-				// 選択しているブロックのブロック座標
-				const std::string selectingBlockPositionText = (cbvBuffer1VirtualPtr->IsSelectingBlock == 1) ?
-					std::format("LookAt : {}", ToString(cbvBuffer1VirtualPtr->SelectingBlockWorldPosition))
-					: "LookAt : None";
-				textUIDataRows.emplace_back(selectingBlockPositionText, Color::White());
+				// 描画しているチャンクの範囲
+				const std::string drawChunksRangeText = std::format(
+					"Drawing Chunks : {}-{}",
+					ToString(drawChunksIndexRangeInfo.GetRangeMin()),
+					ToString(drawChunksIndexRangeInfo.GetRangeMax())
+				);
+				textUIDataRows.emplace_back(drawChunksRangeText, Color::White());
 
 				// プレイヤーのコリジョンの、ワールドブロック座標の範囲
 				const Vector3 playerCollisionMin = PlayerControl::GetCollisionMinPosition(PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
