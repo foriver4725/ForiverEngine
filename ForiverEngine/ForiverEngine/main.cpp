@@ -22,8 +22,10 @@ int Main(hInstance)
 	Random::SetSeed(RandomSeed);
 
 	// テストコード実行
-#if 1
-	//Test_PlayerControl::RunAll();
+#if 0
+	Test_PlayerControl::RunAll();
+
+	ShowError(L"全てのテストに成功しました");
 #endif
 
 	//////////////////////////////
