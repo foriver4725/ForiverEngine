@@ -22,8 +22,10 @@ namespace ForiverEngine
 	class Chunk
 	{
 	public:
+		static constexpr std::uint32_t DefaultCreationSeed = 0x2961E3B1; // 生成のシード値 (デフォルト値)
 		static constexpr int Size = 16;    // 1辺のサイズ (ブロック数)
 		static constexpr int Height = 256; // 高さ (ブロック数)
+		static constexpr int Count = 1024; // ワールド全体のチャンク数 (Count x Count 個)
 
 		Chunk() : data(nullptr) {}
 		Chunk(Chunk&& other) noexcept : data(std::move(other.data)) {}
@@ -33,6 +35,20 @@ namespace ForiverEngine
 			data = std::move(other.data);
 			other.data = nullptr;
 			return *this;
+		}
+
+		template<typename T>
+		using ChunksArray = HeapMultiDimAllocator::Array2D<T>;
+
+		/// <summary>
+		/// <para>チャンク群の数だけ要素を持った、2次元配列を作成する</para>
+		/// <para>チャンクと1対1対応するデータを表現するのに使う</para>
+		/// <para>アクセスは [x][z] の順</para>
+		/// </summary>
+		template<typename T>
+		static ChunksArray<T> CreateChunksArray()
+		{
+			return HeapMultiDimAllocator::CreateArray2D<T>(Chunk::Count, Chunk::Count);
 		}
 
 		/// <summary>
@@ -59,18 +75,17 @@ namespace ForiverEngine
 		/// </summary>
 		/// <param name="chunkIndex">チャンクのインデックス (x,z)</param>
 		/// <param name="noiseScale">ノイズのスケール (x: 水平スケール, y: 垂直スケール)</param>
-		/// <param name="seed">シード値</param>
 		/// <param name="heightBulk">この高さ分かさ増しする</param>
 		/// <param name="minDirtHeight">土が出てくる最低高度</param>
 		/// <param name="minStoneHeight">石が出てくる最低高度</param>
-		static Chunk CreateFromNoise(const Lattice2& chunkIndex, const Vector2& noiseScale, int seed,
-			int heightBulk, int minDirtHeight, int minStoneHeight)
+		/// <param name="seed">シード値</param>
+		static Chunk CreateFromNoise(const Lattice2& chunkIndex, const Vector2& noiseScale,
+			int heightBulk, int minDirtHeight, int minStoneHeight, std::uint32_t seed = DefaultCreationSeed)
 		{
 			Chunk chunk = CreateVoid();
 
-			// [-32768, 32767]
-			const int seedX = (seed & 0xFFFF0000) >> 16;
-			const int seedZ = seed & 0x0000FFFF;
+			const float seedX = static_cast<float>((seed & 0xFFFF0000) >> 16);
+			const float seedZ = static_cast<float>(seed & 0x0000FFFF);
 
 			for (int x = 0; x < Size; ++x)
 				for (int z = 0; z < Size; ++z)

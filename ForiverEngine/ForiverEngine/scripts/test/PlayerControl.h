@@ -396,7 +396,7 @@ eqen(chunks2x2[localChunkIndexX][localChunkIndexZ].GetBlock(Lattice3##blockPosit
 	b11, x11, y11, z11 \
 ) \
 eqobj( \
-	(CollisionBoundaryInfoWrapper{TargetClass::CalculateCollisionBoundaryAsBlock(Vector3##worldPositionMin, PlayerCollisionSize, 2)}), \
+	(CollisionBoundaryInfoWrapper{TargetClass::CalculateCollisionBoundaryAsBlock(Vector3##worldPositionMin, PlayerCollisionSize, Chunk::Size, 2)}), \
 	(CollisionBoundaryInfoWrapper{{ \
 		TargetClass::CollisionBoundaryAsBlockInfoPerChunk { ##b00, Lattice2(0, 0), Lattice2##x00, Lattice2##y00, Lattice2##z00 }, \
 		TargetClass::CollisionBoundaryAsBlockInfoPerChunk { ##b10, Lattice2(1, 0), Lattice2##x10, Lattice2##y10, Lattice2##z10 }, \
@@ -466,7 +466,7 @@ eqobj( \
 			{
 #define test(worldPositionMin, expected) \
 eq( \
-	(TargetClass::FindFloorHeight(CreateChunk3Layerd2x2ForTest(), 2, Vector3##worldPositionMin, PlayerCollisionSize)), \
+	(TargetClass::FindFloorHeight(CreateChunk3Layerd2x2ForTest(), Vector3##worldPositionMin, PlayerCollisionSize, Chunk::Size, 2)), \
 	(expected) \
 ); \
 
@@ -509,7 +509,7 @@ eq( \
 			{
 #define test(worldPositionMin, expected) \
 eq( \
-	(TargetClass::FindCeilHeight(CreateChunk3Layerd2x2ForTest(), 2, Vector3##worldPositionMin, PlayerCollisionSize)), \
+	(TargetClass::FindCeilHeight(CreateChunk3Layerd2x2ForTest(), Vector3##worldPositionMin, PlayerCollisionSize, Chunk::Size, Chunk::Height, 2)), \
 	(expected) \
 ); \
 
@@ -552,7 +552,7 @@ eq( \
 			{
 #define test(worldPositionMin, expected) \
 eq( \
-	(TargetClass::IsOverlappingWithTerrain(CreateChunk3Layerd2x2ForTest(), 2, Vector3##worldPositionMin, PlayerCollisionSize)), \
+	(TargetClass::IsOverlappingWithTerrain(CreateChunk3Layerd2x2ForTest(), Vector3##worldPositionMin, PlayerCollisionSize, Chunk::Size, 2)), \
 	(expected) \
 ); \
 

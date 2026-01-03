@@ -104,21 +104,18 @@ int Main(hInstance)
 
 	// 地形データ
 
-	constexpr int TerrainSeed = 0x2961E3B1;
-	constexpr int ChunkCount = 1024; // ワールドのチャンク数 (ChunkCount x ChunkCount 個)
 	constexpr int ChunkDrawDistance = 8; // 描画チャンク数 (プレイヤーを中心に 半径 ChunkDrawDistance の矩形内のチャンクのみ描画する)
 	constexpr int ChunkDrawMaxCount = (ChunkDrawDistance * 2 + 1) * (ChunkDrawDistance * 2 + 1);
 	constexpr Lattice3 WorldEdgeNoEntryBlockCount = Lattice3(2, 2, 2); // 世界の端から何マス、立ち入り禁止にするか (XYZ方向)
-	// x,z の順でアクセス
-	auto chunkCreationStates = HeapMultiDimAllocator::CreateArray2D<std::atomic<ChunkCreationState>>(ChunkCount, ChunkCount); // チャンク作成状態 (デフォルト:NotYet)
-	auto chunks = HeapMultiDimAllocator::CreateArray2D<Chunk>(ChunkCount, ChunkCount); // チャンクの配列
-	auto chunkMeshes = HeapMultiDimAllocator::CreateArray2D<Mesh>(ChunkCount, ChunkCount); // 地形の結合メッシュ
-	auto chunkVertexBufferViews = HeapMultiDimAllocator::CreateArray2D<VertexBufferView>(ChunkCount, ChunkCount); // 頂点バッファビュー (全部)
-	auto chunkIndexBufferViews = HeapMultiDimAllocator::CreateArray2D<IndexBufferView>(ChunkCount, ChunkCount); // インデックスバッファビュー (全部)
+	auto chunkCreationStates = Chunk::CreateChunksArray<std::atomic<ChunkCreationState>>(); // チャンク作成状態 (デフォルト:NotYet)
+	auto chunks = Chunk::CreateChunksArray<Chunk>(); // チャンクの配列
+	auto chunkMeshes = Chunk::CreateChunksArray<Mesh>(); // 地形の結合メッシュ
+	auto chunkVertexBufferViews = Chunk::CreateChunksArray<VertexBufferView>(); // 頂点バッファビュー (全部)
+	auto chunkIndexBufferViews = Chunk::CreateChunksArray<IndexBufferView>(); // インデックスバッファビュー (全部)
 	// 地形のデータ・メッシュを作成し、キャッシュしておく関数 (並列処理可能. 最初にこっちを実行する)
 	const std::function<void(const Lattice2&)> CreateChunkParallel = [&](const Lattice2& chunkIndex)
 		{
-			Chunk chunk = Chunk::CreateFromNoise(chunkIndex, { 0.015f, 12.0f }, TerrainSeed, 16, 18, 24);
+			Chunk chunk = Chunk::CreateFromNoise(chunkIndex, { 0.015f, 12.0f }, 16, 18, 24);
 
 			chunkMeshes[chunkIndex.x][chunkIndex.y] = chunk.CreateMesh(chunkIndex);
 			chunks[chunkIndex.x][chunkIndex.y] = std::move(chunk);
@@ -166,11 +163,11 @@ int Main(hInstance)
 	Lattice2 existingChunkIndex = PlayerControl::GetChunkIndex(PlayerControl::GetBlockPosition(cameraTransform.position));
 	Lattice2 chunkDrawIndexRangeX = Lattice2(
 		std::max(0, existingChunkIndex.x - ChunkDrawDistance),
-		std::min(ChunkCount - 1, existingChunkIndex.x + ChunkDrawDistance)
+		std::min(Chunk::Count - 1, existingChunkIndex.x + ChunkDrawDistance)
 	);
 	Lattice2 chunkDrawIndexRangeZ = Lattice2(
 		std::max(0, existingChunkIndex.y - ChunkDrawDistance),
-		std::min(ChunkCount - 1, existingChunkIndex.y + ChunkDrawDistance)
+		std::min(Chunk::Count - 1, existingChunkIndex.y + ChunkDrawDistance)
 	);
 	// 一応計算しておく (<= chunkDrawMaxCount)
 	int chunkDrawCount = (chunkDrawIndexRangeX.y - chunkDrawIndexRangeX.x + 1) * (chunkDrawIndexRangeZ.y - chunkDrawIndexRangeZ.x + 1);
@@ -181,8 +178,8 @@ int Main(hInstance)
 
 	// チャンク作成状態の初期化
 	{
-		for (int xi = 0; xi < ChunkCount; ++xi)
-			for (int zi = 0; zi < ChunkCount; ++zi)
+		for (int xi = 0; xi < Chunk::Count; ++xi)
+			for (int zi = 0; zi < Chunk::Count; ++zi)
 				chunkCreationStates[xi][zi].store(ChunkCreationState::NotYet);
 	}
 
@@ -459,10 +456,10 @@ int Main(hInstance)
 			{
 				// 床のY座標を算出しておく
 				const int floorY = PlayerControl::FindFloorHeight(
-					chunks, ChunkCount, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
+					chunks, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
 				// 天井のY座標を算出しておく
 				const int ceilY = PlayerControl::FindCeilHeight(
-					chunks, ChunkCount, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
+					chunks, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
 
 				// 落下分の加速度を加算し、鉛直移動する
 				velocityV -= (G * GravityScale) * WindowHelper::GetDeltaSeconds<float>();
@@ -531,9 +528,7 @@ int Main(hInstance)
 				// 当たり判定
 				// めり込んでいるなら、元の位置に戻す
 				if (PlayerControl::IsOverlappingWithTerrain(
-					chunks, ChunkCount,
-					PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight),
-					PlayerCollisionSize))
+					chunks, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize))
 				{
 					cameraTransform.position = positionBeforeMoveH;
 				}
@@ -545,12 +540,12 @@ int Main(hInstance)
 					PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight));
 
 				if (!PlayerControl::IsIntInRange(
-					footBlockPosition.x, WorldEdgeNoEntryBlockCount.x, Chunk::Size * ChunkCount - WorldEdgeNoEntryBlockCount.x) ||
+					footBlockPosition.x, WorldEdgeNoEntryBlockCount.x, Chunk::Size * Chunk::Count - WorldEdgeNoEntryBlockCount.x) ||
 					// TODO: Y方向は上手く判定できないので、一旦無効化
 					/*!PlayerControl::IsIntInRange(
-						footBlockPosition.y, WorldEdgeNoEntryBlockCount.y, Terrain::ChunkHeight - WorldEdgeNoEntryBlockCount.y) ||*/
+						footBlockPosition.y, WorldEdgeNoEntryBlockCount.y, Chunk::Height - WorldEdgeNoEntryBlockCount.y) ||*/
 					!PlayerControl::IsIntInRange(
-						footBlockPosition.z, WorldEdgeNoEntryBlockCount.z, Chunk::Size * ChunkCount - WorldEdgeNoEntryBlockCount.z))
+						footBlockPosition.z, WorldEdgeNoEntryBlockCount.z, Chunk::Size * Chunk::Count - WorldEdgeNoEntryBlockCount.z))
 				{
 					cameraTransform.position = positionBeforeMove;
 				}
@@ -575,7 +570,7 @@ int Main(hInstance)
 				const Lattice3 rayBlockPosition = PlayerControl::GetBlockPosition(rayPosition);
 
 				const Lattice2 chunkIndex = PlayerControl::GetChunkIndex(rayBlockPosition);
-				if (!PlayerControl::IsValidChunkIndex(chunkIndex, ChunkCount))
+				if (!PlayerControl::IsValidChunkIndex(chunkIndex))
 					continue;
 
 				const Chunk& targettingChunk = chunks[chunkIndex.x][chunkIndex.y];
@@ -635,11 +630,11 @@ int Main(hInstance)
 				existingChunkIndex = currentExistingChunkIndex;
 				chunkDrawIndexRangeX = Lattice2(
 					std::max(0, existingChunkIndex.x - ChunkDrawDistance),
-					std::min(ChunkCount - 1, existingChunkIndex.x + ChunkDrawDistance)
+					std::min(Chunk::Count - 1, existingChunkIndex.x + ChunkDrawDistance)
 				);
 				chunkDrawIndexRangeZ = Lattice2(
 					std::max(0, existingChunkIndex.y - ChunkDrawDistance),
-					std::min(ChunkCount - 1, existingChunkIndex.y + ChunkDrawDistance)
+					std::min(Chunk::Count - 1, existingChunkIndex.y + ChunkDrawDistance)
 				);
 				// この後配列を更新するので、サイズが変わったかどうか保存しておく
 				const int currentChunkDrawCount = (chunkDrawIndexRangeX.y - chunkDrawIndexRangeX.x + 1) * (chunkDrawIndexRangeZ.y - chunkDrawIndexRangeZ.x + 1);
@@ -727,13 +722,13 @@ int Main(hInstance)
 				textUIDataRows.emplace_back(positionText, Color::White());
 
 				// 現在いるチャンクのインデックス
-				const std::string chunkIndexText = PlayerControl::IsValidChunkIndex(existingChunkIndex, ChunkCount) ?
+				const std::string chunkIndexText = PlayerControl::IsValidChunkIndex(existingChunkIndex) ?
 					std::format("Chunk Index : {}", ToString(existingChunkIndex))
 					: "Chunk Index : Invalid";
 				textUIDataRows.emplace_back(chunkIndexText, Color::White());
 
 				// チャンク内でのローカルブロック座標
-				const std::string chunkLocalBlockPositionText = PlayerControl::IsValidChunkIndex(existingChunkIndex, ChunkCount) ?
+				const std::string chunkLocalBlockPositionText = PlayerControl::IsValidChunkIndex(existingChunkIndex) ?
 					std::format("Chunk Local Position : {}",
 						ToString(PlayerControl::GetChunkLocalPosition(PlayerControl::GetBlockPosition(cameraTransform.position))))
 					: "Chunk Local Position : Invalid";
@@ -759,9 +754,9 @@ int Main(hInstance)
 
 				// 床&天井ブロックのY座標
 				const int floorY = PlayerControl::FindFloorHeight(
-					chunks, ChunkCount, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
+					chunks, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
 				const int ceilY = PlayerControl::FindCeilHeight(
-					chunks, ChunkCount, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
+					chunks, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
 				const std::string floorCeilHeightText = std::format(
 					"Floor&Ceil Height : ({},{})",
 					(floorY >= 0) ? std::to_string(floorY) : "None",
