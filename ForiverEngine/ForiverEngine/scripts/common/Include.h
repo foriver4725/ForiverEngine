@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <functional>
 #include <utility>
+#include <memory>
 #include <concepts>
 
 #include <thread>

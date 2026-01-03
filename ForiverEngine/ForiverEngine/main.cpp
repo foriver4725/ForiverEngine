@@ -96,23 +96,27 @@ int Main(hInstance)
 	};
 
 	// 地形データ
+
 	constexpr int TerrainSeed = 0x2961E3B1;
 	constexpr int ChunkCount = 1024; // ワールドのチャンク数 (ChunkCount x ChunkCount 個)
 	constexpr int ChunkDrawDistance = 8; // 描画チャンク数 (プレイヤーを中心に 半径 ChunkDrawDistance の矩形内のチャンクのみ描画する)
 	constexpr int ChunkDrawMaxCount = (ChunkDrawDistance * 2 + 1) * (ChunkDrawDistance * 2 + 1);
-	std::array<std::array<std::atomic<ChunkCreationState>, ChunkCount>, ChunkCount> terrainChunkCreationStates = {}; // チャンク作成状態 (デフォルト:NotYet)
-	std::array<std::array<Terrain, ChunkCount>, ChunkCount> terrains = {}; // チャンクの配列
-	std::array<std::array<Mesh, ChunkCount>, ChunkCount> terrainMeshes = {}; // 地形の結合メッシュ
-	std::array<std::array<VertexBufferView, ChunkCount>, ChunkCount> terrainVertexBufferViews = {}; // 頂点バッファビュー (全部)
-	std::array<std::array<IndexBufferView, ChunkCount>, ChunkCount> terrainIndexBufferViews = {}; // インデックスバッファビュー (全部)
+	constexpr int WorldEdgeNoEntryBlockCount = 2; // 世界の端から何マス、立ち入り禁止にするか
+	// x,z の順でアクセス
+	auto terrainChunkCreationStates
+		= HeapMultiDimAllocator::CreateArray2D<std::atomic<ChunkCreationState>>(ChunkCount, ChunkCount); // チャンク作成状態 (デフォルト:NotYet)
+	auto terrains = HeapMultiDimAllocator::CreateArray2D<Terrain>(ChunkCount, ChunkCount); // チャンクの配列
+	auto terrainMeshes = HeapMultiDimAllocator::CreateArray2D<Mesh>(ChunkCount, ChunkCount); // 地形の結合メッシュ
+	auto terrainVertexBufferViews = HeapMultiDimAllocator::CreateArray2D<VertexBufferView>(ChunkCount, ChunkCount); // 頂点バッファビュー (全部)
+	auto terrainIndexBufferViews = HeapMultiDimAllocator::CreateArray2D<IndexBufferView>(ChunkCount, ChunkCount); // インデックスバッファビュー (全部)
 	// 地形のデータ・メッシュを作成し、キャッシュしておく関数 (並列処理可能. 最初にこっちを実行する)
 	const std::function<void(int, int)> CreateTerrainChunkCanParallel = [&](int chunkX, int chunkZ)
 		{
-			const Terrain terrain = Terrain::CreateFromNoise({ chunkX, chunkZ }, { 0.015f, 12.0f }, TerrainSeed, 16, 18, 24);
-			terrains[chunkX][chunkZ] = terrain;
+			Terrain terrain = Terrain::CreateFromNoise({ chunkX, chunkZ }, { 0.015f, 12.0f }, TerrainSeed, 16, 18, 24);
 
 			const Lattice2 localOffset = Lattice2(chunkX * Terrain::ChunkSize, chunkZ * Terrain::ChunkSize);
 			terrainMeshes[chunkX][chunkZ] = terrain.CreateMesh(localOffset);
+			terrains[chunkX][chunkZ] = std::move(terrain);
 
 			terrainChunkCreationStates[chunkX][chunkZ].store(ChunkCreationState::FinishedParallel, std::memory_order_release);
 		};
@@ -168,23 +172,23 @@ int Main(hInstance)
 
 	// チャンク作成状態の初期化
 	{
-		for (auto& zArray : terrainChunkCreationStates)
-			for (auto& value : zArray)
-				value.store(ChunkCreationState::NotYet);
+		for (int xi = 0; xi < ChunkCount; ++xi)
+			for (int zi = 0; zi < ChunkCount; ++zi)
+				terrainChunkCreationStates[xi][zi].store(ChunkCreationState::NotYet);
 	}
 
 	// 地形の初回作成
 	{
-		for (int chunkX = chunkDrawIndexRangeX.x; chunkX <= chunkDrawIndexRangeX.y; ++chunkX)
-			for (int chunkZ = chunkDrawIndexRangeZ.x; chunkZ <= chunkDrawIndexRangeZ.y; ++chunkZ)
+		for (int xi = chunkDrawIndexRangeX.x; xi <= chunkDrawIndexRangeX.y; ++xi)
+			for (int zi = chunkDrawIndexRangeZ.x; zi <= chunkDrawIndexRangeZ.y; ++zi)
 			{
 				// 初回は、メインスレッドで1フレームで全て終わらせる
-				CreateTerrainChunkCanParallel(chunkX, chunkZ);
-				CreateTerrainChunkCannotParallel(chunkX, chunkZ);
+				CreateTerrainChunkCanParallel(xi, zi);
+				CreateTerrainChunkCannotParallel(xi, zi);
 
-				const VertexBufferView vertexBufferView = terrainVertexBufferViews[chunkX][chunkZ];
-				const IndexBufferView indexBufferView = terrainIndexBufferViews[chunkX][chunkZ];
-				const int indexCount = static_cast<int>(terrainMeshes[chunkX][chunkZ].indices.size());
+				const VertexBufferView vertexBufferView = terrainVertexBufferViews[xi][zi];
+				const IndexBufferView indexBufferView = terrainIndexBufferViews[xi][zi];
+				const int indexCount = static_cast<int>(terrainMeshes[xi][zi].indices.size());
 
 				drawingVertexBufferViews.push_back(vertexBufferView);
 				drawingIndexBufferViews.push_back(indexBufferView);
@@ -446,10 +450,10 @@ int Main(hInstance)
 			{
 				// 床のY座標を算出しておく
 				const int floorY = PlayerControl::FindFloorHeight(
-					terrains, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
+					terrains, ChunkCount, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
 				// 天井のY座標を算出しておく
 				const int ceilY = PlayerControl::FindCeilHeight(
-					terrains, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
+					terrains, ChunkCount, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
 
 				// 落下分の加速度を加算し、鉛直移動する
 				velocityV -= (G * GravityScale) * WindowHelper::GetDeltaSeconds<float>();
@@ -518,7 +522,7 @@ int Main(hInstance)
 				// 当たり判定
 				// めり込んでいるなら、元の位置に戻す
 				if (PlayerControl::IsOverlappingWithTerrain(
-					terrains,
+					terrains, ChunkCount,
 					PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight),
 					PlayerCollisionSize))
 				{
@@ -528,28 +532,17 @@ int Main(hInstance)
 
 			// 世界の範囲内に収める
 			{
-				const auto collisionBoundaryInfos = PlayerControl::CalculateCollisionBoundaryAsBlock(
-					PlayerControl::GetCollisionMinPosition(PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize),
-					PlayerCollisionSize,
-					ChunkCount
-				);
+				const Lattice3 footBlockPosition = PlayerControl::GetBlockPosition(
+					PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight));
 
-				for (const auto& info : collisionBoundaryInfos)
+				if (!PlayerControl::IsIntInRange(
+					footBlockPosition.x, WorldEdgeNoEntryBlockCount, Terrain::ChunkSize * ChunkCount - WorldEdgeNoEntryBlockCount) ||
+					!PlayerControl::IsIntInRange(
+						footBlockPosition.y, 0, Terrain::ChunkHeight) ||
+					!PlayerControl::IsIntInRange(
+						footBlockPosition.z, WorldEdgeNoEntryBlockCount, Terrain::ChunkSize * ChunkCount - WorldEdgeNoEntryBlockCount))
 				{
-					// XZ
-					if (!info.isContained)
-					{
-						cameraTransform.position = positionBeforeMove;
-						break;
-					}
-
-					// Y
-					if (!PlayerControl::IsIntInRange(info.rangeY.x, 0, Terrain::ChunkHeight - 1) ||
-						!PlayerControl::IsIntInRange(info.rangeY.y, 0, Terrain::ChunkHeight - 1))
-					{
-						cameraTransform.position = positionBeforeMove;
-						break;
-					}
+					cameraTransform.position = positionBeforeMove;
 				}
 			}
 
@@ -780,14 +773,16 @@ int Main(hInstance)
 				textUIDataRows.emplace_back(playerCollisionRangeText, Color::White());
 
 				// 床ブロックのY座標
-				const int floorY = PlayerControl::FindFloorHeight(terrains, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
+				const int floorY = PlayerControl::FindFloorHeight(
+					terrains, ChunkCount, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
 				const std::string floorYText = (floorY >= 0) ?
 					std::format("Floor Y : {}", floorY)
 					: "Floor Y : None";
 				textUIDataRows.emplace_back(floorYText, Color::White());
 
 				// 天井ブロックのY座標
-				const int ceilY = PlayerControl::FindCeilHeight(terrains, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
+				const int ceilY = PlayerControl::FindCeilHeight(
+					terrains, ChunkCount, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
 				const std::string ceilYText = (ceilY <= Terrain::ChunkHeight - 1) ?
 					std::format("Ceil Y : {}", ceilY)
 					: "Ceil Y : None";

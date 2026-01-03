@@ -47,10 +47,10 @@ namespace ForiverEngine
 			);
 		}
 
-		// 整数が上下限を超えた値でないか ([min, max] の範囲内にあるか)
-		static bool IsIntInRange(int value, int min, int max)
+		// 整数が上下限を超えた値でないか ([begin, end-1] の範囲内にあるか)
+		static bool IsIntInRange(int value, int begin, int end)
 		{
-			return min <= value && value <= max;
+			return begin <= value && value < end;
 		}
 
 		// チャンクインデックスが有効であるか
@@ -85,7 +85,7 @@ namespace ForiverEngine
 
 			const Quaternion newRotation = rotationAmount * transform.rotation;
 
-			if (std::abs((newRotation * Vector3::Forward()).y) < 0.99f) // 上下回転を制限 (前方向ベクトルのy成分で判定)
+			if (std::abs((newRotation * Vector3::Forward()).y) < 0.999f) // 上下回転を制限 (前方向ベクトルのy成分で判定)
 				return newRotation;
 			else
 				return transform.rotation;
@@ -301,18 +301,17 @@ namespace ForiverEngine
 		}
 
 		// 足元より下である中で、最も高いブロックのY座標を取得する (無いなら チャンクの高さの最小値-1 を返す)
-		template<int ChunkCount>
 		static int FindFloorHeight(
-			const std::array<std::array<Terrain, ChunkCount>, ChunkCount>& terrainChunks,
+			const HeapMultiDimAllocator::Array2D<Terrain>& terrainChunks, int chunkCount,
 			const Vector3& position, // 足元の座標
 			const Vector3& size // コリジョンのサイズ
 		)
 		{
 			const auto& [info, infoX, infoZ, infoXZ] =
-				CalculateCollisionBoundaryAsBlock(GetCollisionMinPosition(position, size), size, ChunkCount);
+				CalculateCollisionBoundaryAsBlock(GetCollisionMinPosition(position, size), size, chunkCount);
 
 			const std::function<int(const CollisionBoundaryAsBlockInfoPerChunk&)> FindFloorHeightForThisChunk =
-				[&terrainChunks, &position, &size](const auto& boundaryInfo)
+				[&terrainChunks, &chunkCount, &position, &size](const auto& boundaryInfo)
 				{
 					// 情報をアンパック
 					const auto& [isInsideChunk, localChunkIndex, rangeX, rangeY, rangeZ] = boundaryInfo;
@@ -323,15 +322,15 @@ namespace ForiverEngine
 
 					// チャンクを取得 (配列の範囲外なら、最小値を返す)
 					const Lattice2 chunkIndex = GetChunkIndex(GetBlockPosition(GetCollisionMinPosition(position, size))) + localChunkIndex;
-					if (!IsValidChunkIndex(chunkIndex, ChunkCount))
+					if (!IsValidChunkIndex(chunkIndex, chunkCount))
 						return -1;
 					const Terrain& chunk = terrainChunks[chunkIndex.x][chunkIndex.y];
 
 					int y = -1;
-					for (int z = rangeZ.x; z <= rangeZ.y; ++z)
-						for (int x = rangeX.x; x <= rangeX.y; ++x)
+					for (int x = rangeX.x; x <= rangeX.y; ++x)
+						for (int z = rangeZ.x; z <= rangeZ.y; ++z)
 						{
-							const int height = chunk.GetFloorHeight(x, z, rangeY.x - 1);
+							const int height = chunk.GetFloorHeight({ x, z }, rangeY.x - 1);
 							y = std::max(y, height);
 						}
 
@@ -347,18 +346,17 @@ namespace ForiverEngine
 		}
 
 		// 頭上より上である中で、最も低いブロックのY座標を取得する (無いなら チャンクの高さの最大値+1 を返す)
-		template<int ChunkCount>
 		static int FindCeilHeight(
-			const std::array<std::array<Terrain, ChunkCount>, ChunkCount>& terrainChunks,
+			const HeapMultiDimAllocator::Array2D<Terrain>& terrainChunks, int chunkCount,
 			const Vector3& position, // 足元の座標
 			const Vector3& size // コリジョンのサイズ
 		)
 		{
 			const auto& [info, infoX, infoZ, infoXZ] =
-				CalculateCollisionBoundaryAsBlock(GetCollisionMinPosition(position, size), size, ChunkCount);
+				CalculateCollisionBoundaryAsBlock(GetCollisionMinPosition(position, size), size, chunkCount);
 
 			const std::function<int(const CollisionBoundaryAsBlockInfoPerChunk&)> FindCeilHeightForThisChunk =
-				[&terrainChunks, &position, &size](const auto& boundaryInfo)
+				[&terrainChunks, &chunkCount, &position, &size](const auto& boundaryInfo)
 				{
 					// 情報をアンパック
 					const auto& [isInsideChunk, localChunkIndex, rangeX, rangeY, rangeZ] = boundaryInfo;
@@ -369,15 +367,15 @@ namespace ForiverEngine
 
 					// チャンクを取得 (配列の範囲外なら、最大値を返す)
 					const Lattice2 chunkIndex = GetChunkIndex(GetBlockPosition(GetCollisionMinPosition(position, size))) + localChunkIndex;
-					if (!IsValidChunkIndex(chunkIndex, ChunkCount))
+					if (!IsValidChunkIndex(chunkIndex, chunkCount))
 						return Terrain::ChunkHeight;
 					const Terrain& chunk = terrainChunks[chunkIndex.x][chunkIndex.y];
 
 					int y = Terrain::ChunkHeight;
-					for (int z = rangeZ.x; z <= rangeZ.y; ++z)
-						for (int x = rangeX.x; x <= rangeX.y; ++x)
+					for (int x = rangeX.x; x <= rangeX.y; ++x)
+						for (int z = rangeZ.x; z <= rangeZ.y; ++z)
 						{
-							const int height = chunk.GetCeilHeight(x, z, rangeY.y + 1);
+							const int height = chunk.GetCeilHeight({ x, z }, rangeY.y + 1);
 							y = std::min(y, height);
 						}
 
@@ -392,18 +390,17 @@ namespace ForiverEngine
 			return y;
 		}
 
-		template<int ChunkCount>
 		static bool IsOverlappingWithTerrain(
-			const std::array<std::array<Terrain, ChunkCount>, ChunkCount>& terrainChunks,
+			const HeapMultiDimAllocator::Array2D<Terrain>& terrainChunks, int chunkCount,
 			const Vector3& position, // 足元の座標
 			const Vector3& size // コリジョンのサイズ
 		)
 		{
 			const auto& [info, infoX, infoZ, infoXZ] =
-				CalculateCollisionBoundaryAsBlock(GetCollisionMinPosition(position, size), size, ChunkCount);
+				CalculateCollisionBoundaryAsBlock(GetCollisionMinPosition(position, size), size, chunkCount);
 
 			const std::function<bool(const CollisionBoundaryAsBlockInfoPerChunk&)> IsOverlappingForThisChunk =
-				[&terrainChunks, &position, &size](const auto& boundaryInfo)
+				[&terrainChunks, &chunkCount, &position, &size](const auto& boundaryInfo)
 				{
 					// 情報をアンパック
 					const auto& [isInsideChunk, localChunkIndex, rangeX, rangeY, rangeZ] = boundaryInfo;
@@ -414,15 +411,15 @@ namespace ForiverEngine
 
 					// チャンクを取得 (配列の範囲外なら、重なっていないとみなす)
 					const Lattice2 chunkIndex = GetChunkIndex(GetBlockPosition(GetCollisionMinPosition(position, size))) + localChunkIndex;
-					if (!IsValidChunkIndex(chunkIndex, ChunkCount))
+					if (!IsValidChunkIndex(chunkIndex, chunkCount))
 						return false;
 					const Terrain& chunk = terrainChunks[chunkIndex.x][chunkIndex.y];
 
-					for (int y = rangeY.x; y <= rangeY.y; ++y)
-						for (int z = rangeZ.x; z <= rangeZ.y; ++z)
-							for (int x = rangeX.x; x <= rangeX.y; ++x)
+					for (int x = rangeX.x; x <= rangeX.y; ++x)
+						for (int y = rangeY.x; y <= rangeY.y; ++y)
+							for (int z = rangeZ.x; z <= rangeZ.y; ++z)
 							{
-								if (chunk.GetBlock(x, y, z) != Block::Air)
+								if (chunk.GetBlock({ x, y, z }) != Block::Air)
 									return true;
 							}
 
@@ -495,18 +492,17 @@ namespace ForiverEngine
 
 		// チャンクを手動作成
 		// y[0, Terrain::ChunkHeight-1] の各層が存在するかどうかを layers で指定
-		inline static Terrain CreateChunk(const std::array<bool, Terrain::ChunkHeight>& layers)
+		inline static Terrain CreateChunkLayerd(const std::array<bool, Terrain::ChunkHeight>& layers)
 		{
-			Terrain chunk = Terrain::CreateVoid(
-				Terrain::ChunkSize, Terrain::ChunkHeight, Terrain::ChunkSize);
+			Terrain chunk = Terrain::CreateVoid();
 			for (int y = 0; y < Terrain::ChunkHeight; ++y)
 			{
 				if (layers[y])
 				{
-					for (int z = 0; z < Terrain::ChunkSize; ++z)
-						for (int x = 0; x < Terrain::ChunkSize; ++x)
+					for (int x = 0; x < Terrain::ChunkSize; ++x)
+						for (int z = 0; z < Terrain::ChunkSize; ++z)
 						{
-							chunk.SetBlock(x, y, z, Block::Stone);
+							chunk.SetBlock({ x, y, z }, Block::Stone);
 						}
 				}
 			}
@@ -515,29 +511,29 @@ namespace ForiverEngine
 		}
 
 		// ブロック、空気、ブロックの 3層構造のチャンクを作成
-		inline static Terrain CreateChunk_Block_Air_Block(const Lattice2& airYRange)
+		inline static Terrain CreateChunk3Layerd(const Lattice2& airYRange)
 		{
 			std::array<bool, Terrain::ChunkHeight> layers = {};
 			for (int y = 0; y < Terrain::ChunkHeight; ++y)
 			{
-				if (y < airYRange.x || airYRange.y < y)
+				if (!PlayerControl::IsIntInRange(y, airYRange.x, airYRange.y + 1))
 					layers[y] = true;
 			}
 
-			return CreateChunk(layers);
+			return CreateChunkLayerd(layers);
 		}
 
 		// 2x2のチャンク群を作成
 		// ブロック、空気、ブロックの 3層構造
 		// min, x隣, z隣, xz隣 の順に airYRanges を指定
-		inline static std::array<std::array<Terrain, 2>, 2> CreateChunks(const std::array<Lattice2, 4 >& airYRanges)
+		inline static HeapMultiDimAllocator::Array2D<Terrain> CreateChunk3Layerd2x2(const std::array<Lattice2, 4 >& airYRanges)
 		{
-			std::array<std::array<Terrain, 2>, 2>chunks = {};
+			auto chunks = HeapMultiDimAllocator::CreateArray2D<Terrain>(2, 2);
 
-			chunks[0][0] = CreateChunk_Block_Air_Block(airYRanges[0]);
-			chunks[1][0] = CreateChunk_Block_Air_Block(airYRanges[1]);
-			chunks[0][1] = CreateChunk_Block_Air_Block(airYRanges[2]);
-			chunks[1][1] = CreateChunk_Block_Air_Block(airYRanges[3]);
+			chunks[0][0] = CreateChunk3Layerd(airYRanges[0]);
+			chunks[1][0] = CreateChunk3Layerd(airYRanges[1]);
+			chunks[0][1] = CreateChunk3Layerd(airYRanges[2]);
+			chunks[1][1] = CreateChunk3Layerd(airYRanges[3]);
 
 			return chunks;
 		}
@@ -603,7 +599,7 @@ namespace ForiverEngine
 				Run_Rotate();
 				Run_MoveH();
 
-				Run_CreateChunks2x2();
+				Run_CreateChunk3Layerd2x2ForTest();
 				Run_CalculateCollisionBoundaryAsBlock();
 				Run_FindFloorHeight();
 				Run_FindCeilHeight();
@@ -652,9 +648,9 @@ namespace ForiverEngine
 			static void Run_IsIntInRange()
 			{
 				eq(PlayerControl::IsIntInRange(0, 0, 4), true);
-				eq(PlayerControl::IsIntInRange(4, 0, 4), true);
+				eq(PlayerControl::IsIntInRange(3, 0, 4), true);
 				eq(PlayerControl::IsIntInRange(-1, 0, 4), false);
-				eq(PlayerControl::IsIntInRange(5, 0, 4), false);
+				eq(PlayerControl::IsIntInRange(4, 0, 4), false);
 			}
 
 			static void Run_IsValidChunkIndex()
@@ -815,51 +811,56 @@ namespace ForiverEngine
 
 			static constexpr Vector3 PlayerCollisionSize = Vector3(0.8f, 1.8f, 0.8f);
 
-			static std::array<std::array<Terrain, 2>, 2> CreateChunks2x2()
+			static const HeapMultiDimAllocator::Array2D<Terrain>& CreateChunk3Layerd2x2ForTest()
 			{
-				static const auto chunks2x2 = CreateChunks({ Lattice2(4, 12), Lattice2(3, 13), Lattice2(5, 11), Lattice2(4, 12) });
+				static const auto chunks2x2 = CreateChunk3Layerd2x2({ Lattice2(4, 12), Lattice2(3, 13), Lattice2(5, 11), Lattice2(4, 12) });
 				return chunks2x2;
 			}
 
-			static void Run_CreateChunks2x2()
+			static void Run_CreateChunk3Layerd2x2ForTest()
 			{
-				const auto chunks2x2 = CreateChunks2x2();
+				const auto& chunks2x2 = CreateChunk3Layerd2x2ForTest();
+
+#define test(localChunkIndexX, localChunkIndexZ, blockPosition, expectedBlock) \
+eqen(chunks2x2[localChunkIndexX][localChunkIndexZ].GetBlock(Lattice3##blockPosition), Block::##expectedBlock); \
 
 				// x0z0
-				eqen(chunks2x2[0][0].GetBlock(0, 3, 0), Block::Stone);
-				eqen(chunks2x2[0][0].GetBlock(0, 4, 0), Block::Air);
-				eqen(chunks2x2[0][0].GetBlock(0, 12, 0), Block::Air);
-				eqen(chunks2x2[0][0].GetBlock(0, 13, 0), Block::Stone);
-				eqen(chunks2x2[0][0].GetBlock(12, 1, 15), Block::Stone);
-				eqen(chunks2x2[0][0].GetBlock(12, 8, 15), Block::Air);
-				eqen(chunks2x2[0][0].GetBlock(12, 64, 15), Block::Stone);
+				test(0, 0, (0, 3, 0), Stone);
+				test(0, 0, (0, 4, 0), Air);
+				test(0, 0, (0, 12, 0), Air);
+				test(0, 0, (0, 13, 0), Stone);
+				test(0, 0, (12, 1, 15), Stone);
+				test(0, 0, (12, 8, 15), Air);
+				test(0, 0, (12, 64, 15), Stone);
 
 				// x1z0
-				eqen(chunks2x2[1][0].GetBlock(0, 2, 0), Block::Stone);
-				eqen(chunks2x2[1][0].GetBlock(0, 3, 0), Block::Air);
-				eqen(chunks2x2[1][0].GetBlock(0, 13, 0), Block::Air);
-				eqen(chunks2x2[1][0].GetBlock(0, 14, 0), Block::Stone);
-				eqen(chunks2x2[1][0].GetBlock(12, 1, 15), Block::Stone);
-				eqen(chunks2x2[1][0].GetBlock(12, 8, 15), Block::Air);
-				eqen(chunks2x2[1][0].GetBlock(12, 64, 15), Block::Stone);
+				test(1, 0, (0, 2, 0), Stone);
+				test(1, 0, (0, 3, 0), Air);
+				test(1, 0, (0, 13, 0), Air);
+				test(1, 0, (0, 14, 0), Stone);
+				test(1, 0, (12, 1, 15), Stone);
+				test(1, 0, (12, 8, 15), Air);
+				test(1, 0, (12, 64, 15), Stone);
 
 				// x0z1
-				eqen(chunks2x2[0][1].GetBlock(0, 4, 0), Block::Stone);
-				eqen(chunks2x2[0][1].GetBlock(0, 5, 0), Block::Air);
-				eqen(chunks2x2[0][1].GetBlock(0, 11, 0), Block::Air);
-				eqen(chunks2x2[0][1].GetBlock(0, 12, 0), Block::Stone);
-				eqen(chunks2x2[0][1].GetBlock(12, 1, 15), Block::Stone);
-				eqen(chunks2x2[0][1].GetBlock(12, 8, 15), Block::Air);
-				eqen(chunks2x2[0][1].GetBlock(12, 64, 15), Block::Stone);
+				test(0, 1, (0, 4, 0), Stone);
+				test(0, 1, (0, 5, 0), Air);
+				test(0, 1, (0, 11, 0), Air);
+				test(0, 1, (0, 12, 0), Stone);
+				test(0, 1, (12, 1, 15), Stone);
+				test(0, 1, (12, 8, 15), Air);
+				test(0, 1, (12, 64, 15), Stone);
 
 				// x1z1
-				eqen(chunks2x2[1][1].GetBlock(0, 3, 0), Block::Stone);
-				eqen(chunks2x2[1][1].GetBlock(0, 4, 0), Block::Air);
-				eqen(chunks2x2[1][1].GetBlock(0, 12, 0), Block::Air);
-				eqen(chunks2x2[1][1].GetBlock(0, 13, 0), Block::Stone);
-				eqen(chunks2x2[1][1].GetBlock(12, 1, 15), Block::Stone);
-				eqen(chunks2x2[1][1].GetBlock(12, 8, 15), Block::Air);
-				eqen(chunks2x2[1][1].GetBlock(12, 64, 15), Block::Stone);
+				test(1, 1, (0, 3, 0), Stone);
+				test(1, 1, (0, 4, 0), Air);
+				test(1, 1, (0, 12, 0), Air);
+				test(1, 1, (0, 13, 0), Stone);
+				test(1, 1, (12, 1, 15), Stone);
+				test(1, 1, (12, 8, 15), Air);
+				test(1, 1, (12, 64, 15), Stone);
+
+#undef test
 			}
 
 			static void Run_CalculateCollisionBoundaryAsBlock()
@@ -942,7 +943,7 @@ eqobj( \
 			{
 #define test(worldPositionMin, expected) \
 eq( \
-	(PlayerControl::FindFloorHeight(CreateChunks2x2(), Vector3##worldPositionMin, PlayerCollisionSize)), \
+	(PlayerControl::FindFloorHeight(CreateChunk3Layerd2x2ForTest(), 2, Vector3##worldPositionMin, PlayerCollisionSize)), \
 	(expected) \
 ); \
 
@@ -985,7 +986,7 @@ eq( \
 			{
 #define test(worldPositionMin, expected) \
 eq( \
-	(PlayerControl::FindCeilHeight(CreateChunks2x2(), Vector3##worldPositionMin, PlayerCollisionSize)), \
+	(PlayerControl::FindCeilHeight(CreateChunk3Layerd2x2ForTest(), 2, Vector3##worldPositionMin, PlayerCollisionSize)), \
 	(expected) \
 ); \
 
@@ -1028,7 +1029,7 @@ eq( \
 			{
 #define test(worldPositionMin, expected) \
 eq( \
-	(PlayerControl::IsOverlappingWithTerrain(CreateChunks2x2(), Vector3##worldPositionMin, PlayerCollisionSize)), \
+	(PlayerControl::IsOverlappingWithTerrain(CreateChunk3Layerd2x2ForTest(), 2, Vector3##worldPositionMin, PlayerCollisionSize)), \
 	(expected) \
 ); \
 

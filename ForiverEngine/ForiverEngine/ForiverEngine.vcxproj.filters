@@ -228,6 +228,9 @@
     <ClInclude Include="scripts\common\Math\Random.h">
       <Filter>scripts\common\Math</Filter>
     </ClInclude>
+    <ClInclude Include="scripts\common\Utils\HeapMultiDimAllocator.h">
+      <Filter>scripts\common\Utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shaders\Basic.hlsl">

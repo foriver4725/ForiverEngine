@@ -75,16 +75,17 @@ namespace ForiverEngine
 			};
 		}
 
-		// インデックスは y,z,x の順にアクセスする
+		// x,y,z の順でアクセスする
 		// 各要素の値はブロックの識別値で、現在はテクスチャインデックスと同じにする
-		static Mesh CreateFromTerrainData(const std::vector<std::vector<std::vector<std::uint32_t>>>& terrainData, const Lattice2& localOffset)
+		static Mesh CreateFromTerrainData(
+			const HeapMultiDimAllocator::Array3D<std::uint32_t>& chunkDatas, const Lattice3& chunkCount, const Lattice2& localOffset)
 		{
 			struct Local
 			{
 				// ブロックのフェースが遮られているかチェックする
 				// ローカル座標
 				static bool IsBlockFaceOccluded(
-					const std::vector<std::vector<std::vector<std::uint32_t>>>& terrain,
+					const HeapMultiDimAllocator::Array3D<std::uint32_t>& chunkDatas, const Lattice3& chunkCount,
 					Lattice3 position, Lattice3 faceNormal
 				)
 				{
@@ -93,15 +94,15 @@ namespace ForiverEngine
 					const Lattice3 checkPosition = position + faceNormal;
 
 					// データの範囲外
-					if (checkPosition.x < 0 || checkPosition.x >= static_cast<int>(terrain[0][0].size())
-						|| checkPosition.y < 0 || checkPosition.y >= static_cast<int>(terrain.size())
-						|| checkPosition.z < 0 || checkPosition.z >= static_cast<int>(terrain[0].size()))
+					if (checkPosition.x < 0 || chunkCount.x <= checkPosition.x ||
+						checkPosition.y < 0 || chunkCount.y <= checkPosition.y ||
+						checkPosition.z < 0 || chunkCount.z <= checkPosition.z)
 					{
 						return false;
 					}
 
 					// ブロックが無い
-					if (terrain[checkPosition.y][checkPosition.z][checkPosition.x] == 0)
+					if (chunkDatas[checkPosition.x][checkPosition.y][checkPosition.z] == 0)
 					{
 						return false;
 					}
@@ -234,15 +235,15 @@ namespace ForiverEngine
 			mesh.vertices.reserve(4096);
 			mesh.indices.reserve(1024);
 
-			for (int y = 0; y < static_cast<int>(terrainData.size()); ++y)
-				for (int z = 0; z < static_cast<int>(terrainData[0].size()); ++z)
-					for (int x = 0; x < static_cast<int>(terrainData[0][0].size()); ++x)
+			for (int xi = 0; xi < chunkCount.x; ++xi)
+				for (int yi = 0; yi < chunkCount.y; ++yi)
+					for (int zi = 0; zi < chunkCount.z; ++zi)
 					{
-						const std::uint32_t block = terrainData[y][z][x];
+						const std::uint32_t block = chunkDatas[xi][yi][zi];
 						if (block == 0) continue; // ブロックが無いならスキップ
 
 						// ブロックの座標 (格子点なので、配列のインデックスと同義)
-						const Lattice3 localPosition = Lattice3(x, y, z);
+						const Lattice3 localPosition = Lattice3(xi, yi, zi);
 						const Lattice3 worldPosition = localPosition + Lattice3(localOffset.x, 0, localOffset.y);
 
 						// 面一覧 (具体的には、面の法線ベクトル)
@@ -258,7 +259,7 @@ namespace ForiverEngine
 
 						for (const auto& faceNormal : faceNormals)
 						{
-							if (!Local::IsBlockFaceOccluded(terrainData, localPosition, faceNormal))
+							if (!Local::IsBlockFaceOccluded(chunkDatas, chunkCount, localPosition, faceNormal))
 							{
 								Local::AddFace(mesh, worldPosition, faceNormal, block);
 							}

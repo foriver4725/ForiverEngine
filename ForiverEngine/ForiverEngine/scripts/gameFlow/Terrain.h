@@ -25,32 +25,31 @@ namespace ForiverEngine
 		static constexpr int ChunkSize = 16; // チャンクの1辺のサイズ (ブロック数)
 		static constexpr int ChunkHeight = 256; // チャンクの高さ (ブロック数)
 
+		Terrain() : data(nullptr) {}
+		Terrain(Terrain&& other) noexcept : data(std::move(other.data)) {}
+
+		Terrain& operator=(Terrain&& other) noexcept
+		{
+			data = std::move(other.data);
+			other.data = nullptr;
+			return *this;
+		}
+
 		/// <summary>
 		/// 何もない空気のみで作成する
 		/// </summary>
-		static Terrain CreateVoid(int xSize, int ySize, int zSize)
+		static Terrain CreateVoid()
 		{
 			Terrain terrain;
 
-			terrain.data = std::vector<std::vector<std::vector<Block>>>(
-				ySize,
-				std::vector<std::vector<Block>>(
-					zSize,
-					std::vector<Block>(
-						xSize,
-						Block::Air // 初期値は空気
-					)
-				)
-			);
+			terrain.data = HeapMultiDimAllocator::CreateArray3D<Block>(ChunkSize, ChunkHeight, ChunkSize);
+
+			for (int xi = 0; xi < ChunkSize; ++xi)
+				for (int yi = 0; yi < ChunkHeight; ++yi)
+					for (int zi = 0; zi < ChunkSize; ++zi)
+						terrain.SetBlock({ xi, yi, zi }, Block::Air);
 
 			return terrain;
-		}
-		/// <summary>
-		/// 何もない空気のみで作成する
-		/// </summary>
-		static Terrain CreateVoid(const Lattice3& size)
-		{
-			return CreateVoid(size.x, size.y, size.z);
 		}
 
 		/// <summary>
@@ -68,7 +67,7 @@ namespace ForiverEngine
 		static Terrain CreateFromNoise(const Lattice2& chunkIndex, const Vector2& noiseScale, int seed,
 			int heightBulk, int minDirtHeight, int minStoneHeight)
 		{
-			Terrain terrain = CreateVoid(ChunkSize, ChunkHeight, ChunkSize);
+			Terrain terrain = CreateVoid();
 
 			// [-32768, 32767]
 			const int seedX = (seed & 0xFFFF0000) >> 16;
@@ -85,18 +84,18 @@ namespace ForiverEngine
 					{
 						if (y >= minStoneHeight)
 						{
-							terrain.SetBlock(x, y, z, Block::Stone);
+							terrain.SetBlock({ x, y, z }, Block::Stone);
 						}
 						else if (y >= minDirtHeight)
 						{
 							if (y == height)
-								terrain.SetBlock(x, y, z, Block::Grass); // 最上段は草
+								terrain.SetBlock({ x, y, z }, Block::Grass); // 最上段は草
 							else
-								terrain.SetBlock(x, y, z, Block::Dirt);
+								terrain.SetBlock({ x, y, z }, Block::Dirt);
 						}
 						else
 						{
-							terrain.SetBlock(x, y, z, Block::Sand);
+							terrain.SetBlock({ x, y, z }, Block::Sand);
 						}
 					}
 				}
@@ -106,69 +105,57 @@ namespace ForiverEngine
 
 		Mesh CreateMesh(const Lattice2& localOffset) const
 		{
-			const std::vector<std::vector<std::vector<Block>>>* dataPtr = &data;
-			const std::vector<std::vector<std::vector<std::uint32_t>>>* dataPtrAsUint
-				= reinterpret_cast<const std::vector<std::vector<std::vector<std::uint32_t>>>*>(dataPtr);
-			return Mesh::CreateFromTerrainData(*dataPtrAsUint, localOffset);
+			// データの型が違うので、一時バッファにコピーして渡す
+			auto dataConverted = HeapMultiDimAllocator::CreateArray3D<std::uint32_t>(ChunkSize, ChunkHeight, ChunkSize);
+			for (int xi = 0; xi < ChunkSize; ++xi)
+				for (int yi = 0; yi < ChunkHeight; ++yi)
+					for (int zi = 0; zi < ChunkSize; ++zi)
+						dataConverted[xi][yi][zi] = static_cast<std::uint32_t>(data[xi][yi][zi]);
+
+			return Mesh::CreateFromTerrainData(dataConverted, { ChunkSize, ChunkHeight, ChunkSize }, localOffset);
 		}
 
-		Block GetBlock(int x, int y, int z) const
-		{
-			return data[y][z][x];
-		}
 		Block GetBlock(const Lattice3& position) const
 		{
-			return data[position.y][position.z][position.x];
+			return data[position.x][position.y][position.z];
 		}
 
-		void SetBlock(int x, int y, int z, Block block)
-		{
-			data[y][z][x] = block;
-		}
 		void SetBlock(const Lattice3& position, Block block)
 		{
-			data[position.y][position.z][position.x] = block;
+			data[position.x][position.y][position.z] = block;
 		}
 
 		/// <summary>
 		/// <para>地表ブロックのY座標を取得する (降順にY座標を見る. 無いならチャンクの高さの最小値-1)</para>
 		/// <para>ただし、Y座標の探索については、maxY 以下しか地表候補としてみない (地中でも正しく判定するため)</para>
 		/// </summary>
-		int GetFloorHeight(int x, int z, int maxY = ChunkHeight - 1) const
+		int GetFloorHeight(const Lattice2& positionXZ, int maxY = ChunkHeight - 1) const
 		{
 			for (int y = maxY; y >= 0; --y)
 			{
-				if (data[y][z][x] != Block::Air)
+				if (GetBlock({ positionXZ.x, y, positionXZ.y }) != Block::Air)
 					return y;
 			}
 
 			return -1; // 地面が無い
-		}
-		int GetFloorHeight(const Lattice2& position, int maxY = ChunkHeight - 1) const
-		{
-			return GetFloorHeight(position.x, position.y, maxY);
 		}
 
 		/// <summary>
 		/// <para>天井ブロックのY座標を取得する (昇順にY座標を見る. 無いならチャンクの高さの最大値+1)</para>
 		/// <para>ただし、Y座標の探索については、minY 以上しか天井候補としてみない (地中でも正しく判定するため)</para>
 		/// </summary>
-		int GetCeilHeight(int x, int z, int minY = 0) const
+		int GetCeilHeight(const Lattice2& positionXZ, int minY = 0) const
 		{
 			for (int y = minY; y <= ChunkHeight - 1; ++y)
 			{
-				if (data[y][z][x] != Block::Air)
+				if (GetBlock({ positionXZ.x, y, positionXZ.y }) != Block::Air)
 					return y;
 			}
 			return ChunkHeight; // 天井が無い
 		}
-		int GetCeilHeight(const Lattice2& position, int minY = 0) const
-		{
-			return GetCeilHeight(position.x, position.y, minY);
-		}
 
 	private:
 		// y, z, x の順番
-		std::vector<std::vector<std::vector<Block>>> data;
+		HeapMultiDimAllocator::Array3D<Block> data;
 	};
 }
