@@ -104,14 +104,12 @@ int Main(hInstance)
 
 	// 地形データ
 
-	constexpr int ChunkDrawDistance = 8; // 描画チャンク数 (プレイヤーを中心に 半径 ChunkDrawDistance の矩形内のチャンクのみ描画する)
-	constexpr int ChunkDrawMaxCount = (ChunkDrawDistance * 2 + 1) * (ChunkDrawDistance * 2 + 1);
 	constexpr Lattice3 WorldEdgeNoEntryBlockCount = Lattice3(2, 2, 2); // 世界の端から何マス、立ち入り禁止にするか (XYZ方向)
 	auto chunkCreationStates = Chunk::CreateChunksArray<std::atomic<ChunkCreationState>>(); // チャンク作成状態 (デフォルト:NotYet)
 	auto chunks = Chunk::CreateChunksArray<Chunk>(); // チャンクの配列
 	auto chunkMeshes = Chunk::CreateChunksArray<Mesh>(); // 地形の結合メッシュ
-	auto chunkVertexBufferViews = Chunk::CreateChunksArray<VertexBufferView>(); // 頂点バッファビュー (全部)
-	auto chunkIndexBufferViews = Chunk::CreateChunksArray<IndexBufferView>(); // インデックスバッファビュー (全部)
+	auto chunkVBVs = Chunk::CreateChunksArray<VertexBufferView>(); // 頂点バッファビュー (全部)
+	auto chunkIBVs = Chunk::CreateChunksArray<IndexBufferView>(); // インデックスバッファビュー (全部)
 	// 地形のデータ・メッシュを作成し、キャッシュしておく関数 (並列処理可能. 最初にこっちを実行する)
 	const std::function<void(const Lattice2&)> CreateChunkParallel = [&](const Lattice2& chunkIndex)
 		{
@@ -152,29 +150,34 @@ int Main(hInstance)
 
 			const auto [vertexBufferView, indexBufferView]
 				= D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, chunkMeshes[chunkIndex.x][chunkIndex.y]);
-			chunkVertexBufferViews[chunkIndex.x][chunkIndex.y] = vertexBufferView;
-			chunkIndexBufferViews[chunkIndex.x][chunkIndex.y] = indexBufferView;
+			chunkVBVs[chunkIndex.x][chunkIndex.y] = vertexBufferView;
+			chunkIBVs[chunkIndex.x][chunkIndex.y] = indexBufferView;
 
 			// メインスレッドで1フレーム内で終わらせるので、この状態更新でOK
 			chunkCreationStates[chunkIndex.x][chunkIndex.y].store(ChunkCreationState::FinishedAll, std::memory_order_release);
 		};
 
-	// 描画するチャンクが変化した時、ビューを再作成する
+	// 描画するチャンクが変化した時、頂点・インデックスバッファビューを再作成する
 	Lattice2 existingChunkIndex = PlayerControl::GetChunkIndex(PlayerControl::GetBlockPosition(cameraTransform.position));
-	Lattice2 chunkDrawIndexRangeX = Lattice2(
-		std::max(0, existingChunkIndex.x - ChunkDrawDistance),
-		std::min(Chunk::Count - 1, existingChunkIndex.x + ChunkDrawDistance)
-	);
-	Lattice2 chunkDrawIndexRangeZ = Lattice2(
-		std::max(0, existingChunkIndex.y - ChunkDrawDistance),
-		std::min(Chunk::Count - 1, existingChunkIndex.y + ChunkDrawDistance)
-	);
-	// 一応計算しておく (<= chunkDrawMaxCount)
-	int chunkDrawCount = (chunkDrawIndexRangeX.y - chunkDrawIndexRangeX.x + 1) * (chunkDrawIndexRangeZ.y - chunkDrawIndexRangeZ.x + 1);
-	// 描画するビューとインデックス
-	std::vector<VertexBufferView> chunkDrawingVertexBufferViews = {}; chunkDrawingVertexBufferViews.reserve(ChunkDrawMaxCount);
-	std::vector<IndexBufferView> chunkDrawingIndexBufferViews = {}; chunkDrawingIndexBufferViews.reserve(ChunkDrawMaxCount);
-	std::vector<int> chunkDrawingIndexCounts = {}; chunkDrawingIndexCounts.reserve(ChunkDrawMaxCount);
+	auto drawChunksIndexRangeInfo = Chunk::GetDrawChunksIndexRangeInfo(existingChunkIndex);
+	auto drawChunkVBVs = Chunk::CreateDrawChunksArray<VertexBufferView>();
+	auto drawChunkIBVs = Chunk::CreateDrawChunksArray<IndexBufferView>();
+	auto drawChunkMeshIndicesCount = Chunk::CreateDrawChunksArray<int>();
+	// 更新関数
+	// 指定されたチャンクを、描画するものとして配列に登録する
+	const std::function<void(const Lattice2&, const Lattice2&)> UpdateDrawChunksRenderDatas =
+		[&](const Lattice2& worldChunkIndex, const Lattice2& drawChunksWorldChunkIndexMin)
+		{
+			const VertexBufferView vbv = chunkVBVs[worldChunkIndex.x][worldChunkIndex.y];
+			const IndexBufferView ibv = chunkIBVs[worldChunkIndex.x][worldChunkIndex.y];
+			const int indicesCount = static_cast<int>(chunkMeshes[worldChunkIndex.x][worldChunkIndex.y].indices.size());
+
+			const Lattice2 localChunkIndex = worldChunkIndex - drawChunksWorldChunkIndexMin;
+
+			drawChunkVBVs[localChunkIndex.x][localChunkIndex.y] = vbv;
+			drawChunkIBVs[localChunkIndex.x][localChunkIndex.y] = ibv;
+			drawChunkMeshIndicesCount[localChunkIndex.x][localChunkIndex.y] = indicesCount;
+		};
 
 	// チャンク作成状態の初期化
 	{
@@ -185,20 +188,14 @@ int Main(hInstance)
 
 	// 地形の初回作成
 	{
-		for (int xi = chunkDrawIndexRangeX.x; xi <= chunkDrawIndexRangeX.y; ++xi)
-			for (int zi = chunkDrawIndexRangeZ.x; zi <= chunkDrawIndexRangeZ.y; ++zi)
+		for (int xi = drawChunksIndexRangeInfo.rangeX.x; xi <= drawChunksIndexRangeInfo.rangeX.y; ++xi)
+			for (int zi = drawChunksIndexRangeInfo.rangeZ.x; zi <= drawChunksIndexRangeInfo.rangeZ.y; ++zi)
 			{
 				// 初回は、メインスレッドで1フレームで全て終わらせる
 				CreateChunkParallel({ xi, zi });
 				CreateChunkNotParallel({ xi, zi });
 
-				const VertexBufferView vertexBufferView = chunkVertexBufferViews[xi][zi];
-				const IndexBufferView indexBufferView = chunkIndexBufferViews[xi][zi];
-				const int indexCount = static_cast<int>(chunkMeshes[xi][zi].indices.size());
-
-				chunkDrawingVertexBufferViews.push_back(vertexBufferView);
-				chunkDrawingIndexBufferViews.push_back(indexBufferView);
-				chunkDrawingIndexCounts.push_back(indexCount);
+				UpdateDrawChunksRenderDatas({ xi, zi }, drawChunksIndexRangeInfo.GetRangeMin());
 			}
 	}
 
@@ -339,7 +336,7 @@ int Main(hInstance)
 	const MeshQuad meshPP = MeshQuad::CreateFullSized();
 
 	// 頂点バッファビューとインデックスバッファビュー
-	const auto [vertexBufferViewPP, indexBufferViewPP]
+	const auto [vbvPP, ibvPP]
 		= D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, meshPP);
 
 	// CB 0
@@ -387,7 +384,7 @@ int Main(hInstance)
 	const MeshQuad meshText = MeshQuad::CreateFullSized();
 
 	// 頂点バッファビューとインデックスバッファビュー
-	const auto [vertexBufferViewText, indexBufferViewText]
+	const auto [vbvText, ibvText]
 		= D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, meshText);
 
 	// テキストUIデータ
@@ -607,8 +604,8 @@ int Main(hInstance)
 					// 頂点バッファビューとインデックスバッファビューを更新
 					const auto [vertexBufferView, indexBufferView]
 						= D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, chunkMeshes[chunkIndex.x][chunkIndex.y]);
-					chunkVertexBufferViews[chunkIndex.x][chunkIndex.y] = vertexBufferView;
-					chunkIndexBufferViews[chunkIndex.x][chunkIndex.y] = indexBufferView;
+					chunkVBVs[chunkIndex.x][chunkIndex.y] = vertexBufferView;
+					chunkIBVs[chunkIndex.x][chunkIndex.y] = indexBufferView;
 				}
 			}
 		}
@@ -628,34 +625,13 @@ int Main(hInstance)
 			{
 				// パラメータを更新
 				existingChunkIndex = currentExistingChunkIndex;
-				chunkDrawIndexRangeX = Lattice2(
-					std::max(0, existingChunkIndex.x - ChunkDrawDistance),
-					std::min(Chunk::Count - 1, existingChunkIndex.x + ChunkDrawDistance)
-				);
-				chunkDrawIndexRangeZ = Lattice2(
-					std::max(0, existingChunkIndex.y - ChunkDrawDistance),
-					std::min(Chunk::Count - 1, existingChunkIndex.y + ChunkDrawDistance)
-				);
-				// この後配列を更新するので、サイズが変わったかどうか保存しておく
-				const int currentChunkDrawCount = (chunkDrawIndexRangeX.y - chunkDrawIndexRangeX.x + 1) * (chunkDrawIndexRangeZ.y - chunkDrawIndexRangeZ.x + 1);
-				const int chunkDrawCountDiff = currentChunkDrawCount - chunkDrawCount;
-				chunkDrawCount = currentChunkDrawCount;
+				const int currentDrawChunkCountTotal = drawChunksIndexRangeInfo.chunkCount;
+				drawChunksIndexRangeInfo = Chunk::GetDrawChunksIndexRangeInfo(existingChunkIndex);
+				const int drawChunkCountTotalDiff = currentDrawChunkCountTotal - drawChunksIndexRangeInfo.chunkCount;
 
-				// ビューとインデックスを再作成
-
-				// 配列のサイズ数が減ったなら、その分を削除しておく
-				if (chunkDrawCountDiff < 0)
-				{
-					chunkDrawingVertexBufferViews.resize(chunkDrawingVertexBufferViews.size() + chunkDrawCountDiff);
-					chunkDrawingIndexBufferViews.resize(chunkDrawingIndexBufferViews.size() + chunkDrawCountDiff);
-					chunkDrawingIndexCounts.resize(chunkDrawingIndexCounts.size() + chunkDrawCountDiff);
-				}
-
-				// 配列の要素を更新していく
-				// 増えた分は push_back で追加していく
-				int index = 0;
-				for (int xi = chunkDrawIndexRangeX.x; xi <= chunkDrawIndexRangeX.y; ++xi)
-					for (int zi = chunkDrawIndexRangeZ.x; zi <= chunkDrawIndexRangeZ.y; ++zi)
+				// ビューとインデックスを再作成. 配列の要素を更新する
+				for (int xi = drawChunksIndexRangeInfo.rangeX.x; xi <= drawChunksIndexRangeInfo.rangeX.y; ++xi)
+					for (int zi = drawChunksIndexRangeInfo.rangeZ.x; zi <= drawChunksIndexRangeInfo.rangeZ.y; ++zi)
 					{
 						// チャンクが未作成ならば、作成を開始する
 						// 作成中にやっぱり描画しないとなっても、スレッドは止まらず並列処理完了まで動き続ける
@@ -663,24 +639,7 @@ int Main(hInstance)
 						TryStartCreateChunkParallel({ xi, zi });
 						CreateChunkNotParallel({ xi, zi });
 
-						const VertexBufferView vertexBufferView = chunkVertexBufferViews[xi][zi];
-						const IndexBufferView indexBufferView = chunkIndexBufferViews[xi][zi];
-						const int indexCount = static_cast<int>(chunkMeshes[xi][zi].indices.size());
-
-						if (index < chunkDrawingIndexCounts.size())
-						{
-							chunkDrawingVertexBufferViews[index] = vertexBufferView;
-							chunkDrawingIndexBufferViews[index] = indexBufferView;
-							chunkDrawingIndexCounts[index] = indexCount;
-						}
-						else
-						{
-							chunkDrawingVertexBufferViews.push_back(vertexBufferView);
-							chunkDrawingIndexBufferViews.push_back(indexBufferView);
-							chunkDrawingIndexCounts.push_back(indexCount);
-						}
-
-						++index;
+						UpdateDrawChunksRenderDatas({ xi, zi }, drawChunksIndexRangeInfo.GetRangeMin());
 					}
 			}
 		}
@@ -802,32 +761,36 @@ int Main(hInstance)
 		if (!currentBackRT)
 			ShowError(L"現在のバックレンダーターゲットの取得に失敗しました");
 
+		const auto& drawChunkVBVsPacked = Chunk::PackDrawChunksArray(drawChunkVBVs, drawChunksIndexRangeInfo);
+		const auto& drawChunkIBVsPacked = Chunk::PackDrawChunksArray(drawChunkIBVs, drawChunksIndexRangeInfo);
+		const auto& drawChunkMeshIndicesCountPacked = Chunk::PackDrawChunksArray(drawChunkMeshIndicesCount, drawChunksIndexRangeInfo);
+
 		// 影のデプス書き込み
 		if (cbvBuffer1VirtualPtr->CastShadow == 1)
 		{
 			D3D12BasicFlow::CommandBasicLoop(
 				commandList, commandQueue, commandAllocator, device,
 				rootSignatureShadow, graphicsPipelineStateShadow, shadowGraphicsBuffer,
-				rtvShadow, dsvShadow, descriptorHeapBasicShadow, chunkDrawingVertexBufferViews, chunkDrawingIndexBufferViews,
+				rtvShadow, dsvShadow, descriptorHeapBasicShadow, drawChunkVBVsPacked, drawChunkIBVsPacked,
 				GraphicsBufferState::PixelShaderResource, GraphicsBufferState::RenderTarget,
 				viewportScissorRectShadow, PrimitiveTopology::TriangleList, Color(DepthBufferClearValue, 0, 0, 0), DepthBufferClearValue,
-				chunkDrawingIndexCounts
+				drawChunkMeshIndicesCountPacked
 			);
 		}
 		// メインレンダリング
 		D3D12BasicFlow::CommandBasicLoop(
 			commandList, commandQueue, commandAllocator, device,
 			rootSignature, graphicsPipelineState, ppGraphicsBuffer,
-			rtvPP, dsv, descriptorHeapBasic, chunkDrawingVertexBufferViews, chunkDrawingIndexBufferViews,
+			rtvPP, dsv, descriptorHeapBasic, drawChunkVBVsPacked, drawChunkIBVsPacked,
 			GraphicsBufferState::PixelShaderResource, GraphicsBufferState::RenderTarget,
 			viewportScissorRect, PrimitiveTopology::TriangleList, RTClearColor, DepthBufferClearValue,
-			chunkDrawingIndexCounts
+			drawChunkMeshIndicesCountPacked
 		);
 		// ポストプロセス
 		D3D12BasicFlow::CommandBasicLoop(
 			commandList, commandQueue, commandAllocator, device,
 			rootSignaturePP, graphicsPipelineStatePP, textGraphicsBuffer,
-			rtvText, dsvPP_Dummy, descriptorHeapBasicPP, { vertexBufferViewPP }, { indexBufferViewPP },
+			rtvText, dsvPP_Dummy, descriptorHeapBasicPP, { vbvPP }, { ibvPP },
 			GraphicsBufferState::Present, GraphicsBufferState::RenderTarget,
 			viewportScissorRect, PrimitiveTopology::TriangleList, Color::Transparent(), DepthBufferClearValue,
 			{ static_cast<int>(meshPP.indices.size()) }
@@ -836,7 +799,7 @@ int Main(hInstance)
 		D3D12BasicFlow::CommandBasicLoop(
 			commandList, commandQueue, commandAllocator, device,
 			rootSignatureText, graphicsPipelineStateText, currentBackRT,
-			currentBackRTV, dsvText_Dummy, descriptorHeapBasicText, { vertexBufferViewText }, { indexBufferViewText },
+			currentBackRTV, dsvText_Dummy, descriptorHeapBasicText, { vbvText }, { ibvText },
 			GraphicsBufferState::Present, GraphicsBufferState::RenderTarget,
 			viewportScissorRect, PrimitiveTopology::TriangleList, Color::Transparent(), DepthBufferClearValue,
 			{ static_cast<int>(meshText.indices.size()) }

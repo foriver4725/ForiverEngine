@@ -26,6 +26,8 @@ namespace ForiverEngine
 		static constexpr int Size = 16;    // 1辺のサイズ (ブロック数)
 		static constexpr int Height = 256; // 高さ (ブロック数)
 		static constexpr int Count = 1024; // ワールド全体のチャンク数 (Count x Count 個)
+		static constexpr int DrawDistance = 8; // カメラからの描画チャンク数 (矩形)
+		static constexpr int DrawCountMax = DrawDistance * 2 + 1; // 描画するチャンク数の最大値 (カメラ中心に、最大 DrawCount x DrawCount 個)
 
 		Chunk() : data(nullptr) {}
 		Chunk(Chunk&& other) noexcept : data(std::move(other.data)) {}
@@ -40,6 +42,9 @@ namespace ForiverEngine
 		template<typename T>
 		using ChunksArray = HeapMultiDimAllocator::Array2D<T>;
 
+		template<typename T>
+		using DrawChunksArray = HeapMultiDimAllocator::Array2D<T>;
+
 		/// <summary>
 		/// <para>チャンク群の数だけ要素を持った、2次元配列を作成する</para>
 		/// <para>チャンクと1対1対応するデータを表現するのに使う</para>
@@ -49,6 +54,89 @@ namespace ForiverEngine
 		static ChunksArray<T> CreateChunksArray()
 		{
 			return HeapMultiDimAllocator::CreateArray2D<T>(Chunk::Count, Chunk::Count);
+		}
+
+		/// <summary>
+		/// <para>描画するチャンク群の最大数だけ要素を持った、2次元配列を作成する</para>
+		/// <para>実際に描画するチャンクと1対1対応するデータを表現するのに使う</para>
+		/// <para>実際の描画チャンク数は最大数より少なくなり得るので、配列の全ての要素が使われるとは限らないことに注意</para>
+		/// <para>アクセスは [x][z] の順</para>
+		/// </summary>
+		template<typename T>
+		static DrawChunksArray<T> CreateDrawChunksArray()
+		{
+			return HeapMultiDimAllocator::CreateArray2D<T>(DrawCountMax, DrawCountMax);
+		}
+
+		struct DrawChunksIndexRangeInfo
+		{
+			Lattice2 rangeX; // x方向のインデックス範囲
+			Lattice2 rangeZ; // z方向のインデックス範囲
+			int chunkCount;  // その範囲のチャンク数合計
+
+			// 範囲を組み替える [xMin, zMin]
+			constexpr Lattice2 GetRangeMin() const noexcept
+			{
+				return Lattice2(rangeX.x, rangeZ.x);
+			}
+			// 範囲を組み替える [xMax, zMax]
+			constexpr Lattice2 GetRangeMax() const noexcept
+			{
+				return Lattice2(rangeX.y, rangeZ.y);
+			}
+		};
+
+		/// <summary>
+		/// <para>実際に描画するチャンクの、インデックス範囲の情報を取得する</para>
+		/// <para>チャンク配列を超える場合があるので、必ずしも最大数描画できるとは限らない</para>
+		/// </summary>
+		static DrawChunksIndexRangeInfo GetDrawChunksIndexRangeInfo(const Lattice2& cameraExistingChunkIndex)
+		{
+			const int xMin = std::clamp(cameraExistingChunkIndex.x - DrawDistance, 0, Chunk::Count - 1);
+			const int xMax = std::clamp(cameraExistingChunkIndex.x + DrawDistance, 0, Chunk::Count - 1);
+			const int zMin = std::clamp(cameraExistingChunkIndex.y - DrawDistance, 0, Chunk::Count - 1);
+			const int zMax = std::clamp(cameraExistingChunkIndex.y + DrawDistance, 0, Chunk::Count - 1);
+
+			const int count = (xMax - xMin + 1) * (zMax - zMin + 1);
+
+			return DrawChunksIndexRangeInfo
+			{
+				.rangeX = Lattice2(xMin, xMax),
+				.rangeZ = Lattice2(zMin, zMax),
+				.chunkCount = count,
+			};
+		}
+
+		/// <summary>
+		/// <para>描画するチャンク群のデータ配列を、1次元配列にパックする</para>
+		/// <para>描画チャンクのインデックス範囲の情報を基に、実際に描画するもののみ抽出する</para>
+		/// <para>元のデータ配列は最大サイズ分確保していたため、この処理によって不要なデータが除去される</para>
+		/// </summary>
+		template<typename T>
+		static const std::vector<T>& PackDrawChunksArray(const DrawChunksArray<T>& data, const DrawChunksIndexRangeInfo& info)
+		{
+			static bool hasInitialized = false;
+			static std::vector<T> packedArray;
+
+			if (!hasInitialized)
+			{
+				hasInitialized = true;
+
+				packedArray = {};
+				packedArray.reserve(DrawCountMax * DrawCountMax);
+			}
+
+			packedArray.clear();
+			for (int xi = info.rangeX.x; xi <= info.rangeX.y; ++xi)
+				for (int zi = info.rangeZ.x; zi <= info.rangeZ.y; ++zi)
+				{
+					const Lattice2 rangeMin = info.GetRangeMin();
+					const Lattice2 localChunkIndex = Lattice2(xi, zi) - rangeMin;
+
+					packedArray.push_back(data[localChunkIndex.x][localChunkIndex.y]);
+				}
+
+			return packedArray;
 		}
 
 		/// <summary>
