@@ -84,6 +84,51 @@ namespace ForiverEngine
 			{
 				return Lattice2(rangeX.y, rangeZ.y);
 			}
+
+			struct IteratorXZ
+			{
+				Lattice2 current;
+				Lattice2 min;
+				Lattice2 max;
+
+				bool operator==(const IteratorXZ& other) const noexcept
+				{
+					return current == other.current;
+				}
+
+				bool operator!=(const IteratorXZ& other) const noexcept
+				{
+					return !(*this == other);
+				}
+
+				const Lattice2& operator*() const noexcept
+				{
+					return current;
+				}
+
+				// for(x) for(z) の順
+				IteratorXZ& operator++() noexcept
+				{
+					++current.y;
+					if (current.y > max.y)
+					{
+						current.y = min.y;
+						++current.x;
+					}
+
+					return *this;
+				}
+			};
+
+			IteratorXZ begin() const noexcept
+			{
+				return IteratorXZ{ GetRangeMin(), GetRangeMin(), GetRangeMax() };
+			}
+
+			IteratorXZ end() const noexcept
+			{
+				return IteratorXZ{ GetRangeMax() + Lattice2(1, 0), GetRangeMin(), GetRangeMax() };
+			}
 		};
 
 		/// <summary>
@@ -127,14 +172,11 @@ namespace ForiverEngine
 			}
 
 			packedArray.clear();
-			for (int xi = info.rangeX.x; xi <= info.rangeX.y; ++xi)
-				for (int zi = info.rangeZ.x; zi <= info.rangeZ.y; ++zi)
-				{
-					const Lattice2 rangeMin = info.GetRangeMin();
-					const Lattice2 localChunkIndex = Lattice2(xi, zi) - rangeMin;
-
-					packedArray.push_back(data[localChunkIndex.x][localChunkIndex.y]);
-				}
+			for (const Lattice2& worldChunkIndex : info)
+			{
+				const Lattice2 localChunkIndex = worldChunkIndex - info.GetRangeMin();
+				packedArray.push_back(data[localChunkIndex.x][localChunkIndex.y]);
+			}
 
 			return packedArray;
 		}
