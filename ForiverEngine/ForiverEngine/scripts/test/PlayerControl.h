@@ -284,15 +284,15 @@ namespace ForiverEngine
 
 			// チャンクを手動作成
 			// y[0, Terrain::ChunkHeight-1] の各層が存在するかどうかを layers で指定
-			static Terrain CreateChunkLayerd(const std::array<bool, Terrain::ChunkHeight>& layers)
+			static Chunk CreateChunkLayerd(const std::array<bool, Chunk::Height>& layers)
 			{
-				Terrain chunk = Terrain::CreateVoid();
-				for (int y = 0; y < Terrain::ChunkHeight; ++y)
+				Chunk chunk = Chunk::CreateVoid();
+				for (int y = 0; y < Chunk::Height; ++y)
 				{
 					if (layers[y])
 					{
-						for (int x = 0; x < Terrain::ChunkSize; ++x)
-							for (int z = 0; z < Terrain::ChunkSize; ++z)
+						for (int x = 0; x < Chunk::Size; ++x)
+							for (int z = 0; z < Chunk::Size; ++z)
 							{
 								chunk.SetBlock({ x, y, z }, Block::Stone);
 							}
@@ -303,10 +303,10 @@ namespace ForiverEngine
 			}
 
 			// ブロック、空気、ブロックの 3層構造のチャンクを作成
-			static Terrain CreateChunk3Layerd(const Lattice2& airYRange)
+			static Chunk CreateChunk3Layerd(const Lattice2& airYRange)
 			{
-				std::array<bool, Terrain::ChunkHeight> layers = {};
-				for (int y = 0; y < Terrain::ChunkHeight; ++y)
+				std::array<bool, Chunk::Height> layers = {};
+				for (int y = 0; y < Chunk::Height; ++y)
 				{
 					if (!TargetClass::IsIntInRange(y, airYRange.x, airYRange.y + 1))
 						layers[y] = true;
@@ -318,9 +318,9 @@ namespace ForiverEngine
 			// 2x2のチャンク群を作成
 			// ブロック、空気、ブロックの 3層構造
 			// min, x隣, z隣, xz隣 の順に airYRanges を指定
-			static HeapMultiDimAllocator::Array2D<Terrain> CreateChunk3Layerd2x2(const std::array<Lattice2, 4 >& airYRanges)
+			static HeapMultiDimAllocator::Array2D<Chunk> CreateChunk3Layerd2x2(const std::array<Lattice2, 4 >& airYRanges)
 			{
-				auto chunks = HeapMultiDimAllocator::CreateArray2D<Terrain>(2, 2);
+				auto chunks = HeapMultiDimAllocator::CreateArray2D<Chunk>(2, 2);
 
 				chunks[0][0] = CreateChunk3Layerd(airYRanges[0]);
 				chunks[1][0] = CreateChunk3Layerd(airYRanges[1]);
@@ -334,7 +334,7 @@ namespace ForiverEngine
 
 			static constexpr Vector3 PlayerCollisionSize = Vector3(0.8f, 1.8f, 0.8f);
 
-			static const HeapMultiDimAllocator::Array2D<Terrain>& CreateChunk3Layerd2x2ForTest()
+			static const HeapMultiDimAllocator::Array2D<Chunk>& CreateChunk3Layerd2x2ForTest()
 			{
 				static const auto chunks2x2 = CreateChunk3Layerd2x2({ Lattice2(4, 12), Lattice2(3, 13), Lattice2(5, 11), Lattice2(4, 12) });
 				return chunks2x2;
@@ -543,7 +543,7 @@ eq( \
 				test((15.4f, 8.0f, 31.4f), 12); // x0z1, x1z1 で判定
 
 				// チャンク配列の範囲外 (最小座標が範囲外)
-				test((32.1f, 8.0f, 15.4f), Terrain::ChunkHeight);
+				test((32.1f, 8.0f, 15.4f), Chunk::Height);
 
 #undef test
 			}

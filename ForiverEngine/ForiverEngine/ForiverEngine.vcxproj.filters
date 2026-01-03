@@ -180,7 +180,7 @@
     <ClInclude Include="scripts\gameFlow\PlayerControl.h">
       <Filter>scripts\gameFlow</Filter>
     </ClInclude>
-    <ClInclude Include="scripts\gameFlow\Terrain.h">
+    <ClInclude Include="scripts\gameFlow\Chunk.h">
       <Filter>scripts\gameFlow</Filter>
     </ClInclude>
     <ClInclude Include="scripts\component\Text\Include.h">

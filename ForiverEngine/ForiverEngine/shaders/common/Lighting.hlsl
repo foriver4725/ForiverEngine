@@ -14,7 +14,7 @@ struct LightingParams
 
 struct ShadowParams
 {
-    float CastShadow; // 影を落とすか (1.0: 落とす, 0.0: 落とさない)
+    int CastShadow; // 影を落とすか (1: 落とす, 0: 落とさない)
     
     Texture2D<float> SunDepthTexture; // 太陽からのカメラで書き込んだ、深度テクスチャ
     SamplerState Sampler;
@@ -41,7 +41,7 @@ float3 PSCalcLighting(LightingParams params)
 float PSCheckCastShadow(ShadowParams params)
 {
     // そもそも影を落とさない設定なら、ここで終了
-    if (params.CastShadow < 0.5)
+    if (params.CastShadow == 0)
     {
         return 0.0;
     }

@@ -77,16 +77,16 @@ namespace ForiverEngine
 
 		// x,y,z の順でアクセスする
 		// 各要素の値はブロックの識別値で、現在はテクスチャインデックスと同じにする
-		static Mesh CreateFromTerrainData(
-			const HeapMultiDimAllocator::Array3D<std::uint32_t>& chunkDatas, const Lattice3& chunkCount, const Lattice2& localOffset)
+		static Mesh CreateFromChunkData(
+			const HeapMultiDimAllocator::Array3D<std::uint32_t>& chunkData, const Lattice3& chunkSize, const Lattice2& chunkIndex)
 		{
 			struct Local
 			{
 				// ブロックのフェースが遮られているかチェックする
 				// ローカル座標
 				static bool IsBlockFaceOccluded(
-					const HeapMultiDimAllocator::Array3D<std::uint32_t>& chunkDatas, const Lattice3& chunkCount,
-					Lattice3 position, Lattice3 faceNormal
+					const HeapMultiDimAllocator::Array3D<std::uint32_t>& chunkData, const Lattice3& chunkSize,
+					const Lattice3& position, const Lattice3& faceNormal
 				)
 				{
 					// フェースに隣接するブロック
@@ -94,15 +94,15 @@ namespace ForiverEngine
 					const Lattice3 checkPosition = position + faceNormal;
 
 					// データの範囲外
-					if (checkPosition.x < 0 || chunkCount.x <= checkPosition.x ||
-						checkPosition.y < 0 || chunkCount.y <= checkPosition.y ||
-						checkPosition.z < 0 || chunkCount.z <= checkPosition.z)
+					if (checkPosition.x < 0 || chunkSize.x <= checkPosition.x ||
+						checkPosition.y < 0 || chunkSize.y <= checkPosition.y ||
+						checkPosition.z < 0 || chunkSize.z <= checkPosition.z)
 					{
 						return false;
 					}
 
 					// ブロックが無い
-					if (chunkDatas[checkPosition.x][checkPosition.y][checkPosition.z] == 0)
+					if (chunkData[checkPosition.x][checkPosition.y][checkPosition.z] == 0)
 					{
 						return false;
 					}
@@ -115,7 +115,7 @@ namespace ForiverEngine
 				// ワールド座標
 				static void AddFace(
 					Mesh& mesh,
-					Lattice3 position, Lattice3 faceNormal, std::uint32_t textureIndex
+					const Lattice3& position, const Lattice3& faceNormal, std::uint32_t textureIndex
 				)
 				{
 					// 無効な法線ならダメ
@@ -130,100 +130,96 @@ namespace ForiverEngine
 					mesh.indices.push_back(indexBegin + 1);
 					mesh.indices.push_back(indexBegin + 3);
 
-					const Vector3 positionAsVec = Vector3(
-						static_cast<float>(position.x),
-						static_cast<float>(position.y),
-						static_cast<float>(position.z)
-					);
+					const Vector3 positionVec = Vector3(position);
 					if (faceNormal == Lattice3::Up())
 					{
 						mesh.vertices.emplace_back(
-							Vector4(positionAsVec + Vector3(-0.5f, +0.5f, -0.5f)), Vector2(0.00f, 0.50f), Vector3::Up(),
-							positionAsVec, textureIndex);
+							Vector4(positionVec + Vector3(-0.5f, +0.5f, -0.5f)), Vector2(0.00f, 0.50f), Vector3::Up(),
+							positionVec, textureIndex);
 						mesh.vertices.emplace_back(
-							Vector4(positionAsVec + Vector3(-0.5f, +0.5f, +0.5f)), Vector2(0.00f, 0.25f), Vector3::Up(),
-							positionAsVec, textureIndex);
+							Vector4(positionVec + Vector3(-0.5f, +0.5f, +0.5f)), Vector2(0.00f, 0.25f), Vector3::Up(),
+							positionVec, textureIndex);
 						mesh.vertices.emplace_back(
-							Vector4(positionAsVec + Vector3(+0.5f, +0.5f, -0.5f)), Vector2(0.25f, 0.50f), Vector3::Up(),
-							positionAsVec, textureIndex);
+							Vector4(positionVec + Vector3(+0.5f, +0.5f, -0.5f)), Vector2(0.25f, 0.50f), Vector3::Up(),
+							positionVec, textureIndex);
 						mesh.vertices.emplace_back(
-							Vector4(positionAsVec + Vector3(+0.5f, +0.5f, +0.5f)), Vector2(0.25f, 0.25f), Vector3::Up(),
-							positionAsVec, textureIndex);
+							Vector4(positionVec + Vector3(+0.5f, +0.5f, +0.5f)), Vector2(0.25f, 0.25f), Vector3::Up(),
+							positionVec, textureIndex);
 					}
 					else if (faceNormal == Lattice3::Down())
 					{
 						mesh.vertices.emplace_back(
-							Vector4(positionAsVec + Vector3(-0.5f, -0.5f, +0.5f)), Vector2(0.25f, 0.50f), Vector3::Down(),
-							positionAsVec, textureIndex);
+							Vector4(positionVec + Vector3(-0.5f, -0.5f, +0.5f)), Vector2(0.25f, 0.50f), Vector3::Down(),
+							positionVec, textureIndex);
 						mesh.vertices.emplace_back(
-							Vector4(positionAsVec + Vector3(-0.5f, -0.5f, -0.5f)), Vector2(0.25f, 0.25f), Vector3::Down(),
-							positionAsVec, textureIndex);
+							Vector4(positionVec + Vector3(-0.5f, -0.5f, -0.5f)), Vector2(0.25f, 0.25f), Vector3::Down(),
+							positionVec, textureIndex);
 						mesh.vertices.emplace_back(
-							Vector4(positionAsVec + Vector3(+0.5f, -0.5f, +0.5f)), Vector2(0.50f, 0.50f), Vector3::Down(),
-							positionAsVec, textureIndex);
+							Vector4(positionVec + Vector3(+0.5f, -0.5f, +0.5f)), Vector2(0.50f, 0.50f), Vector3::Down(),
+							positionVec, textureIndex);
 						mesh.vertices.emplace_back(
-							Vector4(positionAsVec + Vector3(+0.5f, -0.5f, -0.5f)), Vector2(0.50f, 0.25f), Vector3::Down(),
-							positionAsVec, textureIndex);
+							Vector4(positionVec + Vector3(+0.5f, -0.5f, -0.5f)), Vector2(0.50f, 0.25f), Vector3::Down(),
+							positionVec, textureIndex);
 					}
 					else if (faceNormal == Lattice3::Right())
 					{
 						mesh.vertices.emplace_back(
-							Vector4(positionAsVec + Vector3(+0.5f, -0.5f, -0.5f)), Vector2(0.25f, 0.25f), Vector3::Right(),
-							positionAsVec, textureIndex);
+							Vector4(positionVec + Vector3(+0.5f, -0.5f, -0.5f)), Vector2(0.25f, 0.25f), Vector3::Right(),
+							positionVec, textureIndex);
 						mesh.vertices.emplace_back(
-							Vector4(positionAsVec + Vector3(+0.5f, +0.5f, -0.5f)), Vector2(0.25f, 0.00f), Vector3::Right(),
-							positionAsVec, textureIndex);
+							Vector4(positionVec + Vector3(+0.5f, +0.5f, -0.5f)), Vector2(0.25f, 0.00f), Vector3::Right(),
+							positionVec, textureIndex);
 						mesh.vertices.emplace_back(
-							Vector4(positionAsVec + Vector3(+0.5f, -0.5f, +0.5f)), Vector2(0.50f, 0.25f), Vector3::Right(),
-							positionAsVec, textureIndex);
+							Vector4(positionVec + Vector3(+0.5f, -0.5f, +0.5f)), Vector2(0.50f, 0.25f), Vector3::Right(),
+							positionVec, textureIndex);
 						mesh.vertices.emplace_back(
-							Vector4(positionAsVec + Vector3(+0.5f, +0.5f, +0.5f)), Vector2(0.50f, 0.00f), Vector3::Right(),
-							positionAsVec, textureIndex);
+							Vector4(positionVec + Vector3(+0.5f, +0.5f, +0.5f)), Vector2(0.50f, 0.00f), Vector3::Right(),
+							positionVec, textureIndex);
 					}
 					else if (faceNormal == Lattice3::Left())
 					{
 						mesh.vertices.emplace_back(
-							Vector4(positionAsVec + Vector3(-0.5f, -0.5f, +0.5f)), Vector2(0.00f, 0.25f), Vector3::Left(),
-							positionAsVec, textureIndex);
+							Vector4(positionVec + Vector3(-0.5f, -0.5f, +0.5f)), Vector2(0.00f, 0.25f), Vector3::Left(),
+							positionVec, textureIndex);
 						mesh.vertices.emplace_back(
-							Vector4(positionAsVec + Vector3(-0.5f, +0.5f, +0.5f)), Vector2(0.00f, 0.00f), Vector3::Left(),
-							positionAsVec, textureIndex);
+							Vector4(positionVec + Vector3(-0.5f, +0.5f, +0.5f)), Vector2(0.00f, 0.00f), Vector3::Left(),
+							positionVec, textureIndex);
 						mesh.vertices.emplace_back(
-							Vector4(positionAsVec + Vector3(-0.5f, -0.5f, -0.5f)), Vector2(0.25f, 0.25f), Vector3::Left(),
-							positionAsVec, textureIndex);
+							Vector4(positionVec + Vector3(-0.5f, -0.5f, -0.5f)), Vector2(0.25f, 0.25f), Vector3::Left(),
+							positionVec, textureIndex);
 						mesh.vertices.emplace_back(
-							Vector4(positionAsVec + Vector3(-0.5f, +0.5f, -0.5f)), Vector2(0.25f, 0.00f), Vector3::Left(),
-							positionAsVec, textureIndex);
+							Vector4(positionVec + Vector3(-0.5f, +0.5f, -0.5f)), Vector2(0.25f, 0.00f), Vector3::Left(),
+							positionVec, textureIndex);
 					}
 					else if (faceNormal == Lattice3::Forward())
 					{
 						mesh.vertices.emplace_back(
-							Vector4(positionAsVec + Vector3(+0.5f, -0.5f, +0.5f)), Vector2(0.75f, 0.25f), Vector3::Forward(),
-							positionAsVec, textureIndex);
+							Vector4(positionVec + Vector3(+0.5f, -0.5f, +0.5f)), Vector2(0.75f, 0.25f), Vector3::Forward(),
+							positionVec, textureIndex);
 						mesh.vertices.emplace_back(
-							Vector4(positionAsVec + Vector3(+0.5f, +0.5f, +0.5f)), Vector2(0.75f, 0.00f), Vector3::Forward(),
-							positionAsVec, textureIndex);
+							Vector4(positionVec + Vector3(+0.5f, +0.5f, +0.5f)), Vector2(0.75f, 0.00f), Vector3::Forward(),
+							positionVec, textureIndex);
 						mesh.vertices.emplace_back(
-							Vector4(positionAsVec + Vector3(-0.5f, -0.5f, +0.5f)), Vector2(1.00f, 0.25f), Vector3::Forward(),
-							positionAsVec, textureIndex);
+							Vector4(positionVec + Vector3(-0.5f, -0.5f, +0.5f)), Vector2(1.00f, 0.25f), Vector3::Forward(),
+							positionVec, textureIndex);
 						mesh.vertices.emplace_back(
-							Vector4(positionAsVec + Vector3(-0.5f, +0.5f, +0.5f)), Vector2(1.00f, 0.00f), Vector3::Forward(),
-							positionAsVec, textureIndex);
+							Vector4(positionVec + Vector3(-0.5f, +0.5f, +0.5f)), Vector2(1.00f, 0.00f), Vector3::Forward(),
+							positionVec, textureIndex);
 					}
 					else // faceNormal == Lattice3::Backward()
 					{
 						mesh.vertices.emplace_back(
-							Vector4(positionAsVec + Vector3(-0.5f, -0.5f, -0.5f)), Vector2(0.50f, 0.25f), Vector3::Backward(),
-							positionAsVec, textureIndex);
+							Vector4(positionVec + Vector3(-0.5f, -0.5f, -0.5f)), Vector2(0.50f, 0.25f), Vector3::Backward(),
+							positionVec, textureIndex);
 						mesh.vertices.emplace_back(
-							Vector4(positionAsVec + Vector3(-0.5f, +0.5f, -0.5f)), Vector2(0.50f, 0.00f), Vector3::Backward(),
-							positionAsVec, textureIndex);
+							Vector4(positionVec + Vector3(-0.5f, +0.5f, -0.5f)), Vector2(0.50f, 0.00f), Vector3::Backward(),
+							positionVec, textureIndex);
 						mesh.vertices.emplace_back(
-							Vector4(positionAsVec + Vector3(+0.5f, -0.5f, -0.5f)), Vector2(0.75f, 0.25f), Vector3::Backward(),
-							positionAsVec, textureIndex);
+							Vector4(positionVec + Vector3(+0.5f, -0.5f, -0.5f)), Vector2(0.75f, 0.25f), Vector3::Backward(),
+							positionVec, textureIndex);
 						mesh.vertices.emplace_back(
-							Vector4(positionAsVec + Vector3(+0.5f, +0.5f, -0.5f)), Vector2(0.75f, 0.00f), Vector3::Backward(),
-							positionAsVec, textureIndex);
+							Vector4(positionVec + Vector3(+0.5f, +0.5f, -0.5f)), Vector2(0.75f, 0.00f), Vector3::Backward(),
+							positionVec, textureIndex);
 					}
 				}
 			};
@@ -235,19 +231,19 @@ namespace ForiverEngine
 			mesh.vertices.reserve(4096);
 			mesh.indices.reserve(1024);
 
-			for (int xi = 0; xi < chunkCount.x; ++xi)
-				for (int yi = 0; yi < chunkCount.y; ++yi)
-					for (int zi = 0; zi < chunkCount.z; ++zi)
+			for (int xi = 0; xi < chunkSize.x; ++xi)
+				for (int yi = 0; yi < chunkSize.y; ++yi)
+					for (int zi = 0; zi < chunkSize.z; ++zi)
 					{
-						const std::uint32_t block = chunkDatas[xi][yi][zi];
+						const std::uint32_t block = chunkData[xi][yi][zi];
 						if (block == 0) continue; // ブロックが無いならスキップ
 
 						// ブロックの座標 (格子点なので、配列のインデックスと同義)
 						const Lattice3 localPosition = Lattice3(xi, yi, zi);
-						const Lattice3 worldPosition = localPosition + Lattice3(localOffset.x, 0, localOffset.y);
+						const Lattice3 worldPosition = localPosition + Lattice3(chunkIndex.x * chunkSize.x, 0, chunkIndex.y * chunkSize.z);
 
 						// 面一覧 (具体的には、面の法線ベクトル)
-						constexpr Lattice3 faceNormals[] =
+						constexpr Lattice3 FaceNormals[] =
 						{
 							Lattice3::Up(),
 							Lattice3::Down(),
@@ -257,9 +253,9 @@ namespace ForiverEngine
 							Lattice3::Backward(),
 						};
 
-						for (const auto& faceNormal : faceNormals)
+						for (const auto& faceNormal : FaceNormals)
 						{
-							if (!Local::IsBlockFaceOccluded(chunkDatas, chunkCount, localPosition, faceNormal))
+							if (!Local::IsBlockFaceOccluded(chunkData, chunkSize, localPosition, faceNormal))
 							{
 								Local::AddFace(mesh, worldPosition, faceNormal, block);
 							}

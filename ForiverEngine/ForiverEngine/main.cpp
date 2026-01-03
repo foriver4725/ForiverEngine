@@ -110,29 +110,27 @@ int Main(hInstance)
 	constexpr int ChunkDrawMaxCount = (ChunkDrawDistance * 2 + 1) * (ChunkDrawDistance * 2 + 1);
 	constexpr Lattice3 WorldEdgeNoEntryBlockCount = Lattice3(2, 2, 2); // 世界の端から何マス、立ち入り禁止にするか (XYZ方向)
 	// x,z の順でアクセス
-	auto terrainChunkCreationStates
-		= HeapMultiDimAllocator::CreateArray2D<std::atomic<ChunkCreationState>>(ChunkCount, ChunkCount); // チャンク作成状態 (デフォルト:NotYet)
-	auto terrains = HeapMultiDimAllocator::CreateArray2D<Terrain>(ChunkCount, ChunkCount); // チャンクの配列
-	auto terrainMeshes = HeapMultiDimAllocator::CreateArray2D<Mesh>(ChunkCount, ChunkCount); // 地形の結合メッシュ
-	auto terrainVertexBufferViews = HeapMultiDimAllocator::CreateArray2D<VertexBufferView>(ChunkCount, ChunkCount); // 頂点バッファビュー (全部)
-	auto terrainIndexBufferViews = HeapMultiDimAllocator::CreateArray2D<IndexBufferView>(ChunkCount, ChunkCount); // インデックスバッファビュー (全部)
+	auto chunkCreationStates = HeapMultiDimAllocator::CreateArray2D<std::atomic<ChunkCreationState>>(ChunkCount, ChunkCount); // チャンク作成状態 (デフォルト:NotYet)
+	auto chunks = HeapMultiDimAllocator::CreateArray2D<Chunk>(ChunkCount, ChunkCount); // チャンクの配列
+	auto chunkMeshes = HeapMultiDimAllocator::CreateArray2D<Mesh>(ChunkCount, ChunkCount); // 地形の結合メッシュ
+	auto chunkVertexBufferViews = HeapMultiDimAllocator::CreateArray2D<VertexBufferView>(ChunkCount, ChunkCount); // 頂点バッファビュー (全部)
+	auto chunkIndexBufferViews = HeapMultiDimAllocator::CreateArray2D<IndexBufferView>(ChunkCount, ChunkCount); // インデックスバッファビュー (全部)
 	// 地形のデータ・メッシュを作成し、キャッシュしておく関数 (並列処理可能. 最初にこっちを実行する)
-	const std::function<void(int, int)> CreateTerrainChunkCanParallel = [&](int chunkX, int chunkZ)
+	const std::function<void(const Lattice2&)> CreateChunkParallel = [&](const Lattice2& chunkIndex)
 		{
-			Terrain terrain = Terrain::CreateFromNoise({ chunkX, chunkZ }, { 0.015f, 12.0f }, TerrainSeed, 16, 18, 24);
+			Chunk chunk = Chunk::CreateFromNoise(chunkIndex, { 0.015f, 12.0f }, TerrainSeed, 16, 18, 24);
 
-			const Lattice2 localOffset = Lattice2(chunkX * Terrain::ChunkSize, chunkZ * Terrain::ChunkSize);
-			terrainMeshes[chunkX][chunkZ] = terrain.CreateMesh(localOffset);
-			terrains[chunkX][chunkZ] = std::move(terrain);
+			chunkMeshes[chunkIndex.x][chunkIndex.y] = chunk.CreateMesh(chunkIndex);
+			chunks[chunkIndex.x][chunkIndex.y] = std::move(chunk);
 
-			terrainChunkCreationStates[chunkX][chunkZ].store(ChunkCreationState::FinishedParallel, std::memory_order_release);
+			chunkCreationStates[chunkIndex.x][chunkIndex.y].store(ChunkCreationState::FinishedParallel, std::memory_order_release);
 		};
 	// ↑の並列処理を実行開始する関数
-	const std::function<void(int, int)> TryStartCreateTerrainChunkCanParallel = [&](int chunkX, int chunkZ)
+	const std::function<void(const Lattice2&)> TryStartCreateChunkParallel = [&](const Lattice2& chunkIndex)
 		{
 			ChunkCreationState expectedState = ChunkCreationState::NotYet;
 
-			if (!terrainChunkCreationStates[chunkX][chunkZ]
+			if (!chunkCreationStates[chunkIndex.x][chunkIndex.y]
 				.compare_exchange_strong(
 					expectedState,
 					ChunkCreationState::CreatingParallel,
@@ -144,44 +142,48 @@ int Main(hInstance)
 
 			std::thread([=]()
 				{
-					CreateTerrainChunkCanParallel(chunkX, chunkZ);
+					CreateChunkParallel(chunkIndex);
 				}).detach();
 		};
 	// 地形の頂点・インデックスバッファビューを作成し、キャッシュしておく関数 (GPUが絡むので並列処理不可. 並列処理の方が完了した後、メインスレッドで実行する)
-	const std::function<void(int, int)> CreateTerrainChunkCannotParallel = [&](int chunkX, int chunkZ)
+	const std::function<void(const Lattice2&)> CreateChunkNotParallel = [&](const Lattice2& chunkIndex)
 		{
-			if (terrainChunkCreationStates[chunkX][chunkZ]
+			if (chunkCreationStates[chunkIndex.x][chunkIndex.y]
 				.load(std::memory_order_acquire)
 				!= ChunkCreationState::FinishedParallel)
 				return;
 
 			const auto [vertexBufferView, indexBufferView]
-				= D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, terrainMeshes[chunkX][chunkZ]);
-			terrainVertexBufferViews[chunkX][chunkZ] = vertexBufferView;
-			terrainIndexBufferViews[chunkX][chunkZ] = indexBufferView;
+				= D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, chunkMeshes[chunkIndex.x][chunkIndex.y]);
+			chunkVertexBufferViews[chunkIndex.x][chunkIndex.y] = vertexBufferView;
+			chunkIndexBufferViews[chunkIndex.x][chunkIndex.y] = indexBufferView;
 
 			// メインスレッドで1フレーム内で終わらせるので、この状態更新でOK
-			terrainChunkCreationStates[chunkX][chunkZ]
-				.store(ChunkCreationState::FinishedAll, std::memory_order_release);
+			chunkCreationStates[chunkIndex.x][chunkIndex.y].store(ChunkCreationState::FinishedAll, std::memory_order_release);
 		};
+
 	// 描画するチャンクが変化した時、ビューを再作成する
-	Lattice2 chunkIndex = PlayerControl::GetChunkIndex(PlayerControl::GetBlockPosition(cameraTransform.position));
-	Lattice2 chunkDrawIndexRangeX =
-		Lattice2(std::max(0, chunkIndex.x - ChunkDrawDistance), std::min(ChunkCount - 1, chunkIndex.x + ChunkDrawDistance));
-	Lattice2 chunkDrawIndexRangeZ =
-		Lattice2(std::max(0, chunkIndex.y - ChunkDrawDistance), std::min(ChunkCount - 1, chunkIndex.y + ChunkDrawDistance));
+	Lattice2 existingChunkIndex = PlayerControl::GetChunkIndex(PlayerControl::GetBlockPosition(cameraTransform.position));
+	Lattice2 chunkDrawIndexRangeX = Lattice2(
+		std::max(0, existingChunkIndex.x - ChunkDrawDistance),
+		std::min(ChunkCount - 1, existingChunkIndex.x + ChunkDrawDistance)
+	);
+	Lattice2 chunkDrawIndexRangeZ = Lattice2(
+		std::max(0, existingChunkIndex.y - ChunkDrawDistance),
+		std::min(ChunkCount - 1, existingChunkIndex.y + ChunkDrawDistance)
+	);
 	// 一応計算しておく (<= chunkDrawMaxCount)
 	int chunkDrawCount = (chunkDrawIndexRangeX.y - chunkDrawIndexRangeX.x + 1) * (chunkDrawIndexRangeZ.y - chunkDrawIndexRangeZ.x + 1);
 	// 描画するビューとインデックス
-	std::vector<VertexBufferView> drawingVertexBufferViews; drawingVertexBufferViews.reserve(ChunkDrawMaxCount);
-	std::vector<IndexBufferView> drawingIndexBufferViews; drawingIndexBufferViews.reserve(ChunkDrawMaxCount);
-	std::vector<int> drawingIndexCounts; drawingIndexCounts.reserve(ChunkDrawMaxCount);
+	std::vector<VertexBufferView> chunkDrawingVertexBufferViews = {}; chunkDrawingVertexBufferViews.reserve(ChunkDrawMaxCount);
+	std::vector<IndexBufferView> chunkDrawingIndexBufferViews = {}; chunkDrawingIndexBufferViews.reserve(ChunkDrawMaxCount);
+	std::vector<int> chunkDrawingIndexCounts = {}; chunkDrawingIndexCounts.reserve(ChunkDrawMaxCount);
 
 	// チャンク作成状態の初期化
 	{
 		for (int xi = 0; xi < ChunkCount; ++xi)
 			for (int zi = 0; zi < ChunkCount; ++zi)
-				terrainChunkCreationStates[xi][zi].store(ChunkCreationState::NotYet);
+				chunkCreationStates[xi][zi].store(ChunkCreationState::NotYet);
 	}
 
 	// 地形の初回作成
@@ -190,16 +192,16 @@ int Main(hInstance)
 			for (int zi = chunkDrawIndexRangeZ.x; zi <= chunkDrawIndexRangeZ.y; ++zi)
 			{
 				// 初回は、メインスレッドで1フレームで全て終わらせる
-				CreateTerrainChunkCanParallel(xi, zi);
-				CreateTerrainChunkCannotParallel(xi, zi);
+				CreateChunkParallel({ xi, zi });
+				CreateChunkNotParallel({ xi, zi });
 
-				const VertexBufferView vertexBufferView = terrainVertexBufferViews[xi][zi];
-				const IndexBufferView indexBufferView = terrainIndexBufferViews[xi][zi];
-				const int indexCount = static_cast<int>(terrainMeshes[xi][zi].indices.size());
+				const VertexBufferView vertexBufferView = chunkVertexBufferViews[xi][zi];
+				const IndexBufferView indexBufferView = chunkIndexBufferViews[xi][zi];
+				const int indexCount = static_cast<int>(chunkMeshes[xi][zi].indices.size());
 
-				drawingVertexBufferViews.push_back(vertexBufferView);
-				drawingIndexBufferViews.push_back(indexBufferView);
-				drawingIndexCounts.push_back(indexCount);
+				chunkDrawingVertexBufferViews.push_back(vertexBufferView);
+				chunkDrawingIndexBufferViews.push_back(indexBufferView);
+				chunkDrawingIndexCounts.push_back(indexCount);
 			}
 	}
 
@@ -214,8 +216,8 @@ int Main(hInstance)
 	// b1
 	struct alignas(256) CBData1
 	{
-		Vector3 SelectingBlockPosition; // 選択中のブロック位置 (ワールド座標)
-		float IsSelectingAnyBlock; // ブロックを選択中かどうか (bool 型として扱う)
+		Lattice3 SelectingBlockWorldPosition; // 選択中のブロック位置
+		int IsSelectingBlock; // ブロックを選択中かどうか (bool 型として扱う)
 		Color SelectColor; // 選択中のブロックの乗算色 (a でブレンド率を指定)
 
 		Vector3 DirectionalLightDirection; // 太陽光の向き (正規化済み)
@@ -223,7 +225,7 @@ int Main(hInstance)
 		Color DirectionalLightColor; // 太陽光の色 (a は使わない)
 		Color AmbientLightColor; // 環境光の色 (a は使わない)
 
-		float CastShadow; // 影を落とすかどうか (bool 型として扱う)
+		int CastShadow; // 影を落とすかどうか (bool 型として扱う)
 		float Pad1[3];
 		Color ShadowColor; // 影の色 (色係数. a は使わない)
 	};
@@ -237,8 +239,8 @@ int Main(hInstance)
 	};
 	CBData1 cbData1 =
 	{
-		.SelectingBlockPosition = Vector3::Zero(),
-		.IsSelectingAnyBlock = 0,
+		.SelectingBlockWorldPosition = Lattice3::Zero(),
+		.IsSelectingBlock = 0,
 		.SelectColor = Color::CreateFromUint8(255, 255, 0, 100),
 
 		.DirectionalLightDirection = SunDirection,
@@ -457,10 +459,10 @@ int Main(hInstance)
 			{
 				// 床のY座標を算出しておく
 				const int floorY = PlayerControl::FindFloorHeight(
-					terrains, ChunkCount, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
+					chunks, ChunkCount, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
 				// 天井のY座標を算出しておく
 				const int ceilY = PlayerControl::FindCeilHeight(
-					terrains, ChunkCount, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
+					chunks, ChunkCount, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
 
 				// 落下分の加速度を加算し、鉛直移動する
 				velocityV -= (G * GravityScale) * WindowHelper::GetDeltaSeconds<float>();
@@ -476,7 +478,7 @@ int Main(hInstance)
 					: false;
 				// 天井判定
 				const bool isCeiling =
-					(ceilY <= (Terrain::ChunkHeight - 1)) ?
+					(ceilY <= (Chunk::Height - 1)) ?
 					((PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight).y + PlayerCollisionSize.y)
 						>= (ceilY - 0.5f - CeilingCheckOffset))
 					: false;
@@ -529,7 +531,7 @@ int Main(hInstance)
 				// 当たり判定
 				// めり込んでいるなら、元の位置に戻す
 				if (PlayerControl::IsOverlappingWithTerrain(
-					terrains, ChunkCount,
+					chunks, ChunkCount,
 					PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight),
 					PlayerCollisionSize))
 				{
@@ -543,12 +545,12 @@ int Main(hInstance)
 					PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight));
 
 				if (!PlayerControl::IsIntInRange(
-					footBlockPosition.x, WorldEdgeNoEntryBlockCount.x, Terrain::ChunkSize * ChunkCount - WorldEdgeNoEntryBlockCount.x) ||
+					footBlockPosition.x, WorldEdgeNoEntryBlockCount.x, Chunk::Size * ChunkCount - WorldEdgeNoEntryBlockCount.x) ||
 					// TODO: Y方向は上手く判定できないので、一旦無効化
 					/*!PlayerControl::IsIntInRange(
 						footBlockPosition.y, WorldEdgeNoEntryBlockCount.y, Terrain::ChunkHeight - WorldEdgeNoEntryBlockCount.y) ||*/
 					!PlayerControl::IsIntInRange(
-						footBlockPosition.z, WorldEdgeNoEntryBlockCount.z, Terrain::ChunkSize * ChunkCount - WorldEdgeNoEntryBlockCount.z))
+						footBlockPosition.z, WorldEdgeNoEntryBlockCount.z, Chunk::Size * ChunkCount - WorldEdgeNoEntryBlockCount.z))
 				{
 					cameraTransform.position = positionBeforeMove;
 				}
@@ -560,47 +562,33 @@ int Main(hInstance)
 
 		// ブロックを選択する
 		{
+			// 値を初期化
+			cbvBuffer1VirtualPtr->IsSelectingBlock = 0;
+			cbvBuffer1VirtualPtr->SelectingBlockWorldPosition = Lattice3::Zero();
+
 			const Vector3 rayOrigin = cameraTransform.position;
 			const Vector3 rayDirection = cameraTransform.GetForward().Normed();
 
-			Block hitBlock = Block::Air;
-			Lattice3 hitPosition = Lattice3::Zero();
 			for (float d = 0.0f; d <= ReachDistance; d += ReachDetectStep)
 			{
 				const Vector3 rayPosition = rayOrigin + rayDirection * d;
-				const Lattice3 rayPositionAsLattice = Lattice3(
-					static_cast<int>(std::round(rayPosition.x)),
-					static_cast<int>(std::round(rayPosition.y)),
-					static_cast<int>(std::round(rayPosition.z))
-				);
+				const Lattice3 rayBlockPosition = PlayerControl::GetBlockPosition(rayPosition);
 
-				const Lattice2 chunkIndex = PlayerControl::GetChunkIndex(PlayerControl::GetBlockPosition(rayPosition));
+				const Lattice2 chunkIndex = PlayerControl::GetChunkIndex(rayBlockPosition);
 				if (!PlayerControl::IsValidChunkIndex(chunkIndex, ChunkCount))
 					continue;
-				const Terrain& targetTerrain = terrains[chunkIndex.x][chunkIndex.y];
-				const Lattice3 rayLocalPosition = Lattice3(
-					std::clamp(rayPositionAsLattice.x - chunkIndex.x * Terrain::ChunkSize, 0, Terrain::ChunkSize - 1),
-					std::clamp(rayPositionAsLattice.y, 0, Terrain::ChunkHeight - 1),
-					std::clamp(rayPositionAsLattice.z - chunkIndex.y * Terrain::ChunkSize, 0, Terrain::ChunkSize - 1)
-				);
 
-				const Block blockAtRay = targetTerrain.GetBlock(rayLocalPosition);
+				const Chunk& targettingChunk = chunks[chunkIndex.x][chunkIndex.y];
+				const Lattice3 rayLocalPosition = PlayerControl::GetChunkLocalPosition(rayBlockPosition);
+				const Block blockAtRay = targettingChunk.GetBlock(rayLocalPosition);
+
 				if (blockAtRay != Block::Air)
 				{
-					hitBlock = blockAtRay;
-					hitPosition = rayPositionAsLattice;
+					cbvBuffer1VirtualPtr->IsSelectingBlock = 1;
+					cbvBuffer1VirtualPtr->SelectingBlockWorldPosition = rayBlockPosition;
+
 					break;
 				}
-			}
-
-			cbvBuffer1VirtualPtr->IsSelectingAnyBlock = (hitBlock != Block::Air) ? 1.0f : 0.0f;
-			if (hitBlock != Block::Air)
-			{
-				cbvBuffer1VirtualPtr->SelectingBlockPosition = Vector3(
-					static_cast<float>(hitPosition.x),
-					static_cast<float>(hitPosition.y),
-					static_cast<float>(hitPosition.z)
-				);
 			}
 		}
 
@@ -610,31 +598,22 @@ int Main(hInstance)
 		{
 			if (InputHelper::GetKeyInfo(Key::Enter).pressedNow)
 			{
-				if (cbvBuffer1VirtualPtr->IsSelectingAnyBlock > 0.5f)
+				if (cbvBuffer1VirtualPtr->IsSelectingBlock == 1)
 				{
 					hasBrokenBlock = true;
 
-					const Lattice3 blockPositionAsLattice = Lattice3(cbvBuffer1VirtualPtr->SelectingBlockPosition);
-					const Lattice2 chunkIndex = PlayerControl::GetChunkIndex(PlayerControl::GetBlockPosition(cbvBuffer1VirtualPtr->SelectingBlockPosition));
+					const Lattice2 chunkIndex = PlayerControl::GetChunkIndex(cbvBuffer1VirtualPtr->SelectingBlockWorldPosition);
 
 					// 地形データとメッシュを更新
-					terrains[chunkIndex.x][chunkIndex.y].SetBlock(
-						Lattice3(
-							blockPositionAsLattice.x - chunkIndex.x * Terrain::ChunkSize,
-							blockPositionAsLattice.y,
-							blockPositionAsLattice.z - chunkIndex.y * Terrain::ChunkSize
-						),
-						Block::Air);
-					const Lattice2 localOffset = Lattice2(
-						chunkIndex.x * Terrain::ChunkSize,
-						chunkIndex.y * Terrain::ChunkSize);
-					terrainMeshes[chunkIndex.x][chunkIndex.y] = terrains[chunkIndex.x][chunkIndex.y].CreateMesh(localOffset);
+					chunks[chunkIndex.x][chunkIndex.y].SetBlock(
+						PlayerControl::GetChunkLocalPosition(cbvBuffer1VirtualPtr->SelectingBlockWorldPosition), Block::Air);
+					chunkMeshes[chunkIndex.x][chunkIndex.y] = chunks[chunkIndex.x][chunkIndex.y].CreateMesh(chunkIndex);
 
 					// 頂点バッファビューとインデックスバッファビューを更新
 					const auto [vertexBufferView, indexBufferView]
-						= D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, terrainMeshes[chunkIndex.x][chunkIndex.y]);
-					terrainVertexBufferViews[chunkIndex.x][chunkIndex.y] = vertexBufferView;
-					terrainIndexBufferViews[chunkIndex.x][chunkIndex.y] = indexBufferView;
+						= D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, chunkMeshes[chunkIndex.x][chunkIndex.y]);
+					chunkVertexBufferViews[chunkIndex.x][chunkIndex.y] = vertexBufferView;
+					chunkIndexBufferViews[chunkIndex.x][chunkIndex.y] = indexBufferView;
 				}
 			}
 		}
@@ -644,8 +623,8 @@ int Main(hInstance)
 		// 更新時、そのチャンクがまだ未作成ならば、その作成をまず行う
 		{
 			// 存在するチャンクが変化したかチェック
-			const Lattice2 currentChunkIndex = PlayerControl::GetChunkIndex(PlayerControl::GetBlockPosition(cameraTransform.position));
-			const bool hasExistingChunkChanged = (currentChunkIndex != chunkIndex);
+			const Lattice2 currentExistingChunkIndex = PlayerControl::GetChunkIndex(PlayerControl::GetBlockPosition(cameraTransform.position));
+			const bool hasExistingChunkChanged = (currentExistingChunkIndex != existingChunkIndex);
 
 			// 結局配列を更新する必要があるのか?
 			const bool shouldUpdateDrawChunks = hasExistingChunkChanged || hasBrokenBlock;
@@ -653,11 +632,15 @@ int Main(hInstance)
 			if (shouldUpdateDrawChunks)
 			{
 				// パラメータを更新
-				chunkIndex = currentChunkIndex;
-				chunkDrawIndexRangeX =
-					Lattice2(std::max(0, chunkIndex.x - ChunkDrawDistance), std::min(ChunkCount - 1, chunkIndex.x + ChunkDrawDistance));
-				chunkDrawIndexRangeZ =
-					Lattice2(std::max(0, chunkIndex.y - ChunkDrawDistance), std::min(ChunkCount - 1, chunkIndex.y + ChunkDrawDistance));
+				existingChunkIndex = currentExistingChunkIndex;
+				chunkDrawIndexRangeX = Lattice2(
+					std::max(0, existingChunkIndex.x - ChunkDrawDistance),
+					std::min(ChunkCount - 1, existingChunkIndex.x + ChunkDrawDistance)
+				);
+				chunkDrawIndexRangeZ = Lattice2(
+					std::max(0, existingChunkIndex.y - ChunkDrawDistance),
+					std::min(ChunkCount - 1, existingChunkIndex.y + ChunkDrawDistance)
+				);
 				// この後配列を更新するので、サイズが変わったかどうか保存しておく
 				const int currentChunkDrawCount = (chunkDrawIndexRangeX.y - chunkDrawIndexRangeX.x + 1) * (chunkDrawIndexRangeZ.y - chunkDrawIndexRangeZ.x + 1);
 				const int chunkDrawCountDiff = currentChunkDrawCount - chunkDrawCount;
@@ -668,38 +651,38 @@ int Main(hInstance)
 				// 配列のサイズ数が減ったなら、その分を削除しておく
 				if (chunkDrawCountDiff < 0)
 				{
-					drawingVertexBufferViews.resize(drawingVertexBufferViews.size() + chunkDrawCountDiff);
-					drawingIndexBufferViews.resize(drawingIndexBufferViews.size() + chunkDrawCountDiff);
-					drawingIndexCounts.resize(drawingIndexCounts.size() + chunkDrawCountDiff);
+					chunkDrawingVertexBufferViews.resize(chunkDrawingVertexBufferViews.size() + chunkDrawCountDiff);
+					chunkDrawingIndexBufferViews.resize(chunkDrawingIndexBufferViews.size() + chunkDrawCountDiff);
+					chunkDrawingIndexCounts.resize(chunkDrawingIndexCounts.size() + chunkDrawCountDiff);
 				}
 
 				// 配列の要素を更新していく
 				// 増えた分は push_back で追加していく
 				int index = 0;
-				for (int chunkX = chunkDrawIndexRangeX.x; chunkX <= chunkDrawIndexRangeX.y; ++chunkX)
-					for (int chunkZ = chunkDrawIndexRangeZ.x; chunkZ <= chunkDrawIndexRangeZ.y; ++chunkZ)
+				for (int xi = chunkDrawIndexRangeX.x; xi <= chunkDrawIndexRangeX.y; ++xi)
+					for (int zi = chunkDrawIndexRangeZ.x; zi <= chunkDrawIndexRangeZ.y; ++zi)
 					{
 						// チャンクが未作成ならば、作成を開始する
 						// 作成中にやっぱり描画しないとなっても、スレッドは止まらず並列処理完了まで動き続ける
 						// そのため、並列処理でない部分をその後いつ呼んでも問題ない (状態ガードをちゃんと入れているので)
-						TryStartCreateTerrainChunkCanParallel(chunkX, chunkZ);
-						CreateTerrainChunkCannotParallel(chunkX, chunkZ);
+						TryStartCreateChunkParallel({ xi, zi });
+						CreateChunkNotParallel({ xi, zi });
 
-						const VertexBufferView vertexBufferView = terrainVertexBufferViews[chunkX][chunkZ];
-						const IndexBufferView indexBufferView = terrainIndexBufferViews[chunkX][chunkZ];
-						const int indexCount = static_cast<int>(terrainMeshes[chunkX][chunkZ].indices.size());
+						const VertexBufferView vertexBufferView = chunkVertexBufferViews[xi][zi];
+						const IndexBufferView indexBufferView = chunkIndexBufferViews[xi][zi];
+						const int indexCount = static_cast<int>(chunkMeshes[xi][zi].indices.size());
 
-						if (index < drawingIndexCounts.size())
+						if (index < chunkDrawingIndexCounts.size())
 						{
-							drawingVertexBufferViews[index] = vertexBufferView;
-							drawingIndexBufferViews[index] = indexBufferView;
-							drawingIndexCounts[index] = indexCount;
+							chunkDrawingVertexBufferViews[index] = vertexBufferView;
+							chunkDrawingIndexBufferViews[index] = indexBufferView;
+							chunkDrawingIndexCounts[index] = indexCount;
 						}
 						else
 						{
-							drawingVertexBufferViews.push_back(vertexBufferView);
-							drawingIndexBufferViews.push_back(indexBufferView);
-							drawingIndexCounts.push_back(indexCount);
+							chunkDrawingVertexBufferViews.push_back(vertexBufferView);
+							chunkDrawingIndexBufferViews.push_back(indexBufferView);
+							chunkDrawingIndexCounts.push_back(indexCount);
 						}
 
 						++index;
@@ -744,27 +727,21 @@ int Main(hInstance)
 				textUIDataRows.emplace_back(positionText, Color::White());
 
 				// 現在いるチャンクのインデックス
-				const Lattice2 currentChunkIndex = PlayerControl::GetChunkIndex(PlayerControl::GetBlockPosition(cameraTransform.position));
-				const bool isCurrentChunkIndexValid = PlayerControl::IsValidChunkIndex(currentChunkIndex, ChunkCount);
-				const std::string chunkIndexText = isCurrentChunkIndexValid ?
-					std::format("Chunk Index : {}", ToString(currentChunkIndex))
+				const std::string chunkIndexText = PlayerControl::IsValidChunkIndex(existingChunkIndex, ChunkCount) ?
+					std::format("Chunk Index : {}", ToString(existingChunkIndex))
 					: "Chunk Index : Invalid";
 				textUIDataRows.emplace_back(chunkIndexText, Color::White());
 
 				// チャンク内でのローカルブロック座標
-				const Lattice3 currentChunkLocalBlockPosition = isCurrentChunkIndexValid ?
-					PlayerControl::GetChunkLocalPosition(PlayerControl::GetBlockPosition(cameraTransform.position))
-					: Lattice3::Zero();
-				const std::string chunkLocalBlockPositionText = isCurrentChunkIndexValid ?
-					std::format("Chunk Local Position : {}", ToString(currentChunkLocalBlockPosition))
+				const std::string chunkLocalBlockPositionText = PlayerControl::IsValidChunkIndex(existingChunkIndex, ChunkCount) ?
+					std::format("Chunk Local Position : {}",
+						ToString(PlayerControl::GetChunkLocalPosition(PlayerControl::GetBlockPosition(cameraTransform.position))))
 					: "Chunk Local Position : Invalid";
 				textUIDataRows.emplace_back(chunkLocalBlockPositionText, Color::White());
 
 				// 選択しているブロックのブロック座標
-				const Lattice3 selectingBlockPositionAsLattice = PlayerControl::GetBlockPosition(
-					cbvBuffer1VirtualPtr->SelectingBlockPosition);
-				const std::string selectingBlockPositionText = cbvBuffer1VirtualPtr->IsSelectingAnyBlock ?
-					std::format("LookAt : {}", ToString(selectingBlockPositionAsLattice))
+				const std::string selectingBlockPositionText = (cbvBuffer1VirtualPtr->IsSelectingBlock == 1) ?
+					std::format("LookAt : {}", ToString(cbvBuffer1VirtualPtr->SelectingBlockWorldPosition))
 					: "LookAt : None";
 				textUIDataRows.emplace_back(selectingBlockPositionText, Color::White());
 
@@ -780,21 +757,17 @@ int Main(hInstance)
 					);
 				textUIDataRows.emplace_back(playerCollisionRangeText, Color::White());
 
-				// 床ブロックのY座標
+				// 床&天井ブロックのY座標
 				const int floorY = PlayerControl::FindFloorHeight(
-					terrains, ChunkCount, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
-				const std::string floorYText = (floorY >= 0) ?
-					std::format("Floor Y : {}", floorY)
-					: "Floor Y : None";
-				textUIDataRows.emplace_back(floorYText, Color::White());
-
-				// 天井ブロックのY座標
+					chunks, ChunkCount, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
 				const int ceilY = PlayerControl::FindCeilHeight(
-					terrains, ChunkCount, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
-				const std::string ceilYText = (ceilY <= Terrain::ChunkHeight - 1) ?
-					std::format("Ceil Y : {}", ceilY)
-					: "Ceil Y : None";
-				textUIDataRows.emplace_back(ceilYText, Color::White());
+					chunks, ChunkCount, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
+				const std::string floorCeilHeightText = std::format(
+					"Floor&Ceil Height : ({},{})",
+					(floorY >= 0) ? std::to_string(floorY) : "None",
+					(ceilY <= Chunk::Height - 1) ? std::to_string(ceilY) : "None"
+				);
+				textUIDataRows.emplace_back(floorCeilHeightText, Color::White());
 
 				// 本体のデータを更新
 				textUIData.ClearAll();
@@ -835,25 +808,25 @@ int Main(hInstance)
 			ShowError(L"現在のバックレンダーターゲットの取得に失敗しました");
 
 		// 影のデプス書き込み
-		if (cbvBuffer1VirtualPtr->CastShadow > 0.5f)
+		if (cbvBuffer1VirtualPtr->CastShadow == 1)
 		{
 			D3D12BasicFlow::CommandBasicLoop(
 				commandList, commandQueue, commandAllocator, device,
 				rootSignatureShadow, graphicsPipelineStateShadow, shadowGraphicsBuffer,
-				rtvShadow, dsvShadow, descriptorHeapBasicShadow, drawingVertexBufferViews, drawingIndexBufferViews,
+				rtvShadow, dsvShadow, descriptorHeapBasicShadow, chunkDrawingVertexBufferViews, chunkDrawingIndexBufferViews,
 				GraphicsBufferState::PixelShaderResource, GraphicsBufferState::RenderTarget,
 				viewportScissorRectShadow, PrimitiveTopology::TriangleList, Color(DepthBufferClearValue, 0, 0, 0), DepthBufferClearValue,
-				drawingIndexCounts
+				chunkDrawingIndexCounts
 			);
 		}
 		// メインレンダリング
 		D3D12BasicFlow::CommandBasicLoop(
 			commandList, commandQueue, commandAllocator, device,
 			rootSignature, graphicsPipelineState, ppGraphicsBuffer,
-			rtvPP, dsv, descriptorHeapBasic, drawingVertexBufferViews, drawingIndexBufferViews,
+			rtvPP, dsv, descriptorHeapBasic, chunkDrawingVertexBufferViews, chunkDrawingIndexBufferViews,
 			GraphicsBufferState::PixelShaderResource, GraphicsBufferState::RenderTarget,
 			viewportScissorRect, PrimitiveTopology::TriangleList, RTClearColor, DepthBufferClearValue,
-			drawingIndexCounts
+			chunkDrawingIndexCounts
 		);
 		// ポストプロセス
 		D3D12BasicFlow::CommandBasicLoop(

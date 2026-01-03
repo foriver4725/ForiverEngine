@@ -8,15 +8,15 @@ cbuffer _0 : register(b0)
 
 cbuffer _1 : register(b1)
 {
-    float3 _SelectingBlockPosition;
-    float _IsSelectingAnyBlock;
+    int3 _SelectingBlockWorldPosition;
+    int _IsSelectingBlock;
     float4 _SelectColor;
     
     float3 _DirectionalLightDirection;
     float4 _DirectionalLightColor;
     float4 _AmbientLightColor;
     
-    float _CastShadow;
+    int _CastShadow;
     float4 _ShadowColor;
 }
 
@@ -53,12 +53,12 @@ struct PSOutput
 float PSCheckIsSelectedBlock(float3 centerWorldPosition)
 {
     // そもそも選択中のブロックが無い
-    if (_IsSelectingAnyBlock < 0.5)
+    if (_IsSelectingBlock == 0)
     {
         return 0.0;
     }
     
-    if (all(abs(centerWorldPosition - _SelectingBlockPosition) < float3(0.01, 0.01, 0.01)))
+    if (all(abs(centerWorldPosition - (float3) _SelectingBlockWorldPosition) < float3(0.01, 0.01, 0.01)))
     {
         return 1.0;
     }
