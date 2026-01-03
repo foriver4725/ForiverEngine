@@ -188,14 +188,15 @@ int Main(hInstance)
 
 	// 地形の初回作成
 	{
-		for (const Lattice2& worldChunkIndex : drawChunksIndexRangeInfo)
-		{
-			// 初回は、メインスレッドで1フレームで全て終わらせる
-			CreateChunkParallel(worldChunkIndex);
-			CreateChunkNotParallel(worldChunkIndex);
+		for (int xi = drawChunksIndexRangeInfo.rangeX.x; xi <= drawChunksIndexRangeInfo.rangeX.y; ++xi)
+			for (int zi = drawChunksIndexRangeInfo.rangeZ.x; zi <= drawChunksIndexRangeInfo.rangeZ.y; ++zi)
+			{
+				// 初回は、メインスレッドで1フレームで全て終わらせる
+				CreateChunkParallel({ xi, zi });
+				CreateChunkNotParallel({ xi, zi });
 
-			UpdateDrawChunksRenderDatas(worldChunkIndex, drawChunksIndexRangeInfo.GetRangeMin());
-		}
+				UpdateDrawChunksRenderDatas({ xi, zi }, drawChunksIndexRangeInfo.GetRangeMin());
+			}
 	}
 
 	// b0
@@ -629,16 +630,17 @@ int Main(hInstance)
 				const int drawChunkCountTotalDiff = currentDrawChunkCountTotal - drawChunksIndexRangeInfo.chunkCount;
 
 				// ビューとインデックスを再作成. 配列の要素を更新する
-				for (const Lattice2& worldChunkIndex : drawChunksIndexRangeInfo)
-				{
-					// チャンクが未作成ならば、作成を開始する
-					// 作成中にやっぱり描画しないとなっても、スレッドは止まらず並列処理完了まで動き続ける
-					// そのため、並列処理でない部分をその後いつ呼んでも問題ない (状態ガードをちゃんと入れているので)
-					TryStartCreateChunkParallel(worldChunkIndex);
-					CreateChunkNotParallel(worldChunkIndex);
+				for (int xi = drawChunksIndexRangeInfo.rangeX.x; xi <= drawChunksIndexRangeInfo.rangeX.y; ++xi)
+					for (int zi = drawChunksIndexRangeInfo.rangeZ.x; zi <= drawChunksIndexRangeInfo.rangeZ.y; ++zi)
+					{
+						// チャンクが未作成ならば、作成を開始する
+						// 作成中にやっぱり描画しないとなっても、スレッドは止まらず並列処理完了まで動き続ける
+						// そのため、並列処理でない部分をその後いつ呼んでも問題ない (状態ガードをちゃんと入れているので)
+						TryStartCreateChunkParallel({ xi, zi });
+						CreateChunkNotParallel({ xi, zi });
 
-					UpdateDrawChunksRenderDatas(worldChunkIndex, drawChunksIndexRangeInfo.GetRangeMin());
-				}
+						UpdateDrawChunksRenderDatas({ xi, zi }, drawChunksIndexRangeInfo.GetRangeMin());
+					}
 			}
 		}
 
