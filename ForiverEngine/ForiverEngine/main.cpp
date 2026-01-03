@@ -2,6 +2,9 @@
 #include <scripts/helper/Include.h>
 #include <scripts/component/Include.h>
 #include <scripts/gameFlow/Include.h>
+#if _DEBUG
+#include <scripts/test/Include.h>
+#endif
 
 int Main(hInstance)
 {
@@ -22,10 +25,12 @@ int Main(hInstance)
 	Random::SetSeed(RandomSeed);
 
 	// テストコード実行
-#if 0
-	Test_PlayerControl::RunAll();
+#if _DEBUG && 0
+
+	Test::PlayerControl::RunAll();
 
 	ShowError(L"全てのテストに成功しました");
+
 #endif
 
 	//////////////////////////////

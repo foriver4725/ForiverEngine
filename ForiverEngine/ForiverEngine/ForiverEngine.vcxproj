@@ -230,6 +230,9 @@
     <ClInclude Include="scripts\helper\headers\InputHelper.h" />
     <ClInclude Include="scripts\helper\headers\WindowHelper.h" />
     <ClInclude Include="scripts\helper\Include.h" />
+    <ClInclude Include="scripts\test\Include.h" />
+    <ClInclude Include="scripts\test\IncludeInternal.h" />
+    <ClInclude Include="scripts\test\PlayerControl.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shaders\Basic.hlsl">

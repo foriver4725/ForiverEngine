@@ -100,6 +100,9 @@
     <Filter Include="scripts\common\Math\LinearAlgebra\sources">
       <UniqueIdentifier>{2f71f299-a9a1-4ce5-afe0-7ece2c71e78a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="scripts\test">
+      <UniqueIdentifier>{b394b368-17b2-4a50-8031-7b9a5fb6adea}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="oss\SimplexNoise.h">
@@ -230,6 +233,15 @@
     </ClInclude>
     <ClInclude Include="scripts\common\Utils\HeapMultiDimAllocator.h">
       <Filter>scripts\common\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\test\Include.h">
+      <Filter>scripts\test</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\test\PlayerControl.h">
+      <Filter>scripts\test</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\test\IncludeInternal.h">
+      <Filter>scripts\test</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
