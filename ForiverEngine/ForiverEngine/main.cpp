@@ -428,13 +428,7 @@ int Main(hInstance)
 				const Lattice3 footBlockPosition = PlayerControl::GetBlockPosition(
 					PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight));
 
-				if (!PlayerControl::IsIntInRange(
-					footBlockPosition.x, ChunksManager::WorldEdgeNoEntryBlockCount.x, Chunk::Size * Chunk::Count - ChunksManager::WorldEdgeNoEntryBlockCount.x) ||
-					// TODO: Y方向は上手く判定できないので、一旦無効化
-					/*!PlayerControl::IsIntInRange(
-						footBlockPosition.y, WorldEdgeNoEntryBlockCount.y, Chunk::Height - WorldEdgeNoEntryBlockCount.y) ||*/
-					!PlayerControl::IsIntInRange(
-						footBlockPosition.z, ChunksManager::WorldEdgeNoEntryBlockCount.z, Chunk::Size * Chunk::Count - ChunksManager::WorldEdgeNoEntryBlockCount.z))
+				if (!ChunksManager::IsInsideWorldBounds(footBlockPosition))
 				{
 					cameraTransform.position = positionBeforeMove;
 				}

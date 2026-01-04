@@ -57,6 +57,36 @@ namespace ForiverEngine
 #pragma endregion
 
 		/// <summary>
+		/// <para>ワールドの範囲内にいるか調べる</para>
+		/// <para>世界の端から WorldEdgeNoEntryBlockCount 分は立ち入り禁止とする</para>
+		/// </summary>
+		static bool IsInsideWorldBounds(const Lattice3& playerFootWorldBlockPosition) noexcept
+		{
+			constexpr Lattice3 AllowedBlockPositionMin = Lattice3(
+				WorldEdgeNoEntryBlockCount.x,
+				WorldEdgeNoEntryBlockCount.y,
+				WorldEdgeNoEntryBlockCount.z
+			);
+			constexpr Lattice3 AllowedBlockPositionMax = Lattice3(
+				Chunk::Size * Chunk::Count - WorldEdgeNoEntryBlockCount.x,
+				Chunk::Height - WorldEdgeNoEntryBlockCount.y,
+				Chunk::Size * Chunk::Count - WorldEdgeNoEntryBlockCount.z
+			);
+
+			if (!PlayerControl::IsIntInRange(playerFootWorldBlockPosition.x, AllowedBlockPositionMin.x, AllowedBlockPositionMax.x))
+				return false;
+
+			// TODO: Y方向は上手く判定できないので、一旦無効化
+			/*if (!PlayerControl::IsIntInRange(playerFootWorldBlockPosition.y, AllowedBlockPositionMin.y, AllowedBlockPositionMax.y))
+				return false;*/
+
+			if (!PlayerControl::IsIntInRange(playerFootWorldBlockPosition.z, AllowedBlockPositionMin.z, AllowedBlockPositionMax.z))
+				return false;
+
+			return true;
+		}
+
+		/// <summary>
 		/// 指定されたチャンク・指定された座標のブロックを更新する
 		/// その後、そのチャンクのデータを再生成する
 		/// </summary>
