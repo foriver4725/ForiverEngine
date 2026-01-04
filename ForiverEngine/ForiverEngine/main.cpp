@@ -451,6 +451,8 @@ int Main(hInstance)
 			{
 				const Vector3 rayPosition = rayOrigin + rayDirection * d;
 				const Lattice3 rayBlockPosition = PlayerControl::GetBlockPosition(rayPosition);
+				if (!chunksManager.IsInsideWorldBounds(rayBlockPosition))
+					continue;
 
 				const Lattice2 chunkIndex = PlayerControl::GetChunkIndex(rayBlockPosition);
 				if (!PlayerControl::IsValidChunkIndex(chunkIndex))

@@ -10,7 +10,7 @@ namespace ForiverEngine
 	class ChunksManager
 	{
 	public:
-		static constexpr Lattice3 WorldEdgeNoEntryBlockCount = Lattice3(2, 2, 2); // 世界の端から何マス、立ち入り禁止にするか (XYZ方向)
+		static constexpr Lattice3 WorldEdgeMargin = Lattice3(2, 0, 2); // チャンクデータの端から何マスを、世界の範囲外とみなすか
 
 		ChunksManager(const Lattice2& playerFirstExistingChunkIndex)
 		{
@@ -57,30 +57,21 @@ namespace ForiverEngine
 #pragma endregion
 
 		/// <summary>
-		/// <para>ワールドの範囲内にいるか調べる</para>
-		/// <para>世界の端から WorldEdgeNoEntryBlockCount 分は立ち入り禁止とする</para>
+		/// <para>ワールドの範囲内であるか調べる</para>
+		/// <para>チャンクデータの端にある程度近づいた時点で、範囲外判定にする</para>
 		/// </summary>
-		static bool IsInsideWorldBounds(const Lattice3& playerFootWorldBlockPosition) noexcept
+		static bool IsInsideWorldBounds(const Lattice3& worldBlockPosition) noexcept
 		{
-			constexpr Lattice3 AllowedBlockPositionMin = Lattice3(
-				WorldEdgeNoEntryBlockCount.x,
-				WorldEdgeNoEntryBlockCount.y,
-				WorldEdgeNoEntryBlockCount.z
-			);
-			constexpr Lattice3 AllowedBlockPositionMax = Lattice3(
-				Chunk::Size * Chunk::Count - WorldEdgeNoEntryBlockCount.x,
-				Chunk::Height - WorldEdgeNoEntryBlockCount.y,
-				Chunk::Size * Chunk::Count - WorldEdgeNoEntryBlockCount.z
-			);
+			constexpr Lattice3 AllowedBlockPositionBegin = WorldEdgeMargin;
+			static const Lattice3 AllowedBlockPositionEnd =
+				Lattice3(Chunk::Size * Chunk::Count, Chunk::Height, Chunk::Size * Chunk::Count) - WorldEdgeMargin; // 最大値 + 1
 
-			if (!MathUtils::IsInRange(playerFootWorldBlockPosition.x, AllowedBlockPositionMin.x, AllowedBlockPositionMax.x))
+			if (!MathUtils::IsInRange(worldBlockPosition.x, AllowedBlockPositionBegin.x, AllowedBlockPositionEnd.x))
 				return false;
-
-			// TODO: Y方向は上手く判定できないので、一旦無効化
-			/*if (!MathUtils::IsInRange(playerFootWorldBlockPosition.y, AllowedBlockPositionMin.y, AllowedBlockPositionMax.y))
-				return false;*/
-
-			if (!MathUtils::IsInRange(playerFootWorldBlockPosition.z, AllowedBlockPositionMin.z, AllowedBlockPositionMax.z))
+			// TODO: Y座標は上手くいっていない (クラッシュなどする)
+			if (!MathUtils::IsInRange(worldBlockPosition.y, AllowedBlockPositionBegin.y, AllowedBlockPositionEnd.y))
+				return false;
+			if (!MathUtils::IsInRange(worldBlockPosition.z, AllowedBlockPositionBegin.z, AllowedBlockPositionEnd.z))
 				return false;
 
 			return true;
