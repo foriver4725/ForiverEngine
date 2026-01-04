@@ -45,7 +45,7 @@ namespace ForiverEngine
 		}
 
 		/// <summary>
-		/// 頂点バッファビューとインデックスバッファビューを一括で作成する
+		/// メッシュから VBV, IBV を作成して返す
 		/// </summary>
 		template<typename TVertexData>
 		static MeshViews CreateMeshViews(const Device& device, const IMesh<TVertexData>& mesh)
