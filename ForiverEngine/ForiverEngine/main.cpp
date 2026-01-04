@@ -13,6 +13,14 @@ int Main(hInstance)
 	constexpr Lattice2 WindowSize = Lattice2(1344, 756);
 	const HWND hwnd = WindowHelper::OnInit(hInstance, L"ForiverEngine", L"ForiverEngine", WindowSize);
 
+	// テストコード実行
+#if _DEBUG && 0
+	Test::PlayerControl::RunAll();
+
+	ShowError(L"全てのテストに成功しました");
+	return 0;
+#endif
+
 #ifdef _DEBUG
 	if (!D3D12Helper::EnableDebugLayer())
 		ShowError(L"DebugLayer の有効化に失敗しました");
@@ -23,15 +31,6 @@ int Main(hInstance)
 
 	constexpr std::uint32_t RandomSeed = 0x12345678;
 	Random::SetSeed(RandomSeed);
-
-	// テストコード実行
-#if _DEBUG && 0
-
-	Test::PlayerControl::RunAll();
-
-	ShowError(L"全てのテストに成功しました");
-
-#endif
 
 	//////////////////////////////
 	// プレイヤー挙動のパラメータ
