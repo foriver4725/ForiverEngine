@@ -73,14 +73,14 @@ namespace ForiverEngine
 				Chunk::Size * Chunk::Count - WorldEdgeNoEntryBlockCount.z
 			);
 
-			if (!PlayerControl::IsIntInRange(playerFootWorldBlockPosition.x, AllowedBlockPositionMin.x, AllowedBlockPositionMax.x))
+			if (!MathUtils::IsInRange(playerFootWorldBlockPosition.x, AllowedBlockPositionMin.x, AllowedBlockPositionMax.x))
 				return false;
 
 			// TODO: Y方向は上手く判定できないので、一旦無効化
-			/*if (!PlayerControl::IsIntInRange(playerFootWorldBlockPosition.y, AllowedBlockPositionMin.y, AllowedBlockPositionMax.y))
+			/*if (!MathUtils::IsInRange(playerFootWorldBlockPosition.y, AllowedBlockPositionMin.y, AllowedBlockPositionMax.y))
 				return false;*/
 
-			if (!PlayerControl::IsIntInRange(playerFootWorldBlockPosition.z, AllowedBlockPositionMin.z, AllowedBlockPositionMax.z))
+			if (!MathUtils::IsInRange(playerFootWorldBlockPosition.z, AllowedBlockPositionMin.z, AllowedBlockPositionMax.z))
 				return false;
 
 			return true;

@@ -47,18 +47,12 @@ namespace ForiverEngine
 			);
 		}
 
-		// 整数が上下限を超えた値でないか ([begin, end-1] の範囲内にあるか)
-		static bool IsIntInRange(int value, int begin, int end)
-		{
-			return begin <= value && value < end;
-		}
-
 		// チャンクインデックスが有効であるか
 		// 即ち、上下限を超えた値でないか
 		static bool IsValidChunkIndex(const Lattice2& chunkIndex, int chunkCount = Chunk::Count)
 		{
-			return IsIntInRange(chunkIndex.x, 0, chunkCount)
-				&& IsIntInRange(chunkIndex.y, 0, chunkCount);
+			return MathUtils::IsInRange(chunkIndex.x, 0, chunkCount)
+				&& MathUtils::IsInRange(chunkIndex.y, 0, chunkCount);
 		}
 
 		// プレイヤーの足元の座標を計算
@@ -179,8 +173,8 @@ namespace ForiverEngine
 			const bool isValidChunkFlags[4] =
 			{
 				true,
-				IsIntInRange(chunkIndexMax.x, 0, chunkCount),
-				IsIntInRange(chunkIndexMax.y, 0, chunkCount),
+				MathUtils::IsInRange(chunkIndexMax.x, 0, chunkCount),
+				MathUtils::IsInRange(chunkIndexMax.y, 0, chunkCount),
 				IsValidChunkIndex(chunkIndexMax, chunkCount)
 			};
 

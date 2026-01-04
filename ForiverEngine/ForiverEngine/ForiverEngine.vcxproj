@@ -206,6 +206,7 @@
     <ClInclude Include="scripts\common\Math\LinearAlgebra\headers\Vector4.h" />
     <ClInclude Include="scripts\common\Math\LinearAlgebra\Include.h" />
     <ClInclude Include="scripts\common\Math\LinearAlgebra\ToString.h" />
+    <ClInclude Include="scripts\common\Math\MathUtils.h" />
     <ClInclude Include="scripts\common\Math\Noise.h" />
     <ClInclude Include="scripts\common\Math\Random.h" />
     <ClInclude Include="scripts\common\Utils\HeapMultiDimAllocator.h" />

@@ -17,7 +17,6 @@ namespace ForiverEngine
 				Run_GetBlockPosition_3();
 				Run_GetChunkIndex();
 				Run_GetChunkLocalPosition();
-				Run_IsIntInRange();
 				Run_IsValidChunkIndex();
 				Run_GetFootPosition();
 				Run_GetCollisionMinPosition();
@@ -70,14 +69,6 @@ namespace ForiverEngine
 				eqla(TargetClass::GetChunkLocalPosition(Lattice3(0, 0, 16)), Lattice3(0, 0, 0));
 				eqla(TargetClass::GetChunkLocalPosition(Lattice3(0, 0, 17)), Lattice3(0, 0, 1));
 				eqla(TargetClass::GetChunkLocalPosition(Lattice3(16, 0, 16)), Lattice3(0, 0, 0));
-			}
-
-			static void Run_IsIntInRange()
-			{
-				eq(TargetClass::IsIntInRange(0, 0, 4), true);
-				eq(TargetClass::IsIntInRange(3, 0, 4), true);
-				eq(TargetClass::IsIntInRange(-1, 0, 4), false);
-				eq(TargetClass::IsIntInRange(4, 0, 4), false);
 			}
 
 			static void Run_IsValidChunkIndex()
@@ -308,7 +299,7 @@ namespace ForiverEngine
 				std::array<bool, Chunk::Height> layers = {};
 				for (int y = 0; y < Chunk::Height; ++y)
 				{
-					if (!TargetClass::IsIntInRange(y, airYRange.x, airYRange.y + 1))
+					if (!MathUtils::IsInRange(y, airYRange.x, airYRange.y + 1))
 						layers[y] = true;
 				}
 
