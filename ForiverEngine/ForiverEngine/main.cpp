@@ -93,7 +93,7 @@ int Main(hInstance)
 	CameraTransform sunCameraTransform = CreateSunCameraTransform();
 
 	// 地形データ
-	Lattice2 existingChunkIndex = PlayerControl::GetChunkIndex(PlayerControl::GetBlockPosition(cameraTransform.position));
+	Lattice2 existingChunkIndex = Chunk::GetIndex(PlayerControl::GetBlockPosition(cameraTransform.position));
 	ChunksManager chunksManager = ChunksManager(existingChunkIndex);
 	chunksManager.UpdateDrawChunks(existingChunkIndex, false, device); // 初回作成
 
@@ -454,12 +454,12 @@ int Main(hInstance)
 				if (!chunksManager.IsInsideWorldBounds(rayBlockPosition))
 					continue;
 
-				const Lattice2 chunkIndex = PlayerControl::GetChunkIndex(rayBlockPosition);
-				if (!PlayerControl::IsValidChunkIndex(chunkIndex))
+				const Lattice2 chunkIndex = Chunk::GetIndex(rayBlockPosition);
+				if (!Chunk::IsValidIndex(chunkIndex))
 					continue;
 
 				const Chunk& targettingChunk = chunksManager.GetChunks()[chunkIndex.x][chunkIndex.y];
-				const Lattice3 rayLocalPosition = PlayerControl::GetChunkLocalPosition(rayBlockPosition);
+				const Lattice3 rayLocalPosition = Chunk::GetLocalBlockPosition(rayBlockPosition);
 				const Block blockAtRay = targettingChunk.GetBlock(rayLocalPosition);
 
 				if (blockAtRay != Block::Air)
@@ -482,9 +482,9 @@ int Main(hInstance)
 				{
 					hasBrokenBlock = true;
 
-					const Lattice2 chunkIndex = PlayerControl::GetChunkIndex(cbvBuffer1VirtualPtr->SelectingBlockWorldPosition);
+					const Lattice2 chunkIndex = Chunk::GetIndex(cbvBuffer1VirtualPtr->SelectingBlockWorldPosition);
 					const Lattice3 localBlockPosition
-						= PlayerControl::GetChunkLocalPosition(cbvBuffer1VirtualPtr->SelectingBlockWorldPosition);
+						= Chunk::GetLocalBlockPosition(cbvBuffer1VirtualPtr->SelectingBlockWorldPosition);
 
 					chunksManager.UpdateChunkBlock(chunkIndex, localBlockPosition, Block::Air, device);
 				}
@@ -495,7 +495,7 @@ int Main(hInstance)
 		// プレイヤーの存在するチャンクが変化した、またはブロックを壊した場合に更新する
 		// 更新時、そのチャンクがまだ未作成ならば、その作成をまず行う
 		{
-			const Lattice2 currentExistingChunkIndex = PlayerControl::GetChunkIndex(PlayerControl::GetBlockPosition(cameraTransform.position));
+			const Lattice2 currentExistingChunkIndex = Chunk::GetIndex(PlayerControl::GetBlockPosition(cameraTransform.position));
 
 			if ((currentExistingChunkIndex != existingChunkIndex) || hasBrokenBlock)
 			{
@@ -547,15 +547,15 @@ int Main(hInstance)
 				textUIDataRows.emplace_back(selectingBlockPositionText, Color::White());
 
 				// 現在いるチャンクのインデックス
-				const std::string chunkIndexText = PlayerControl::IsValidChunkIndex(existingChunkIndex) ?
+				const std::string chunkIndexText = Chunk::IsValidIndex(existingChunkIndex) ?
 					std::format("Chunk Index : {}", ToString(existingChunkIndex))
 					: "Chunk Index : Invalid";
 				textUIDataRows.emplace_back(chunkIndexText, Color::White());
 
 				// チャンク内でのローカルブロック座標
-				const std::string chunkLocalBlockPositionText = PlayerControl::IsValidChunkIndex(existingChunkIndex) ?
+				const std::string chunkLocalBlockPositionText = Chunk::IsValidIndex(existingChunkIndex) ?
 					std::format("Chunk Local Position : {}",
-						ToString(PlayerControl::GetChunkLocalPosition(PlayerControl::GetBlockPosition(cameraTransform.position))))
+						ToString(Chunk::GetLocalBlockPosition(PlayerControl::GetBlockPosition(cameraTransform.position))))
 					: "Chunk Local Position : Invalid";
 				textUIDataRows.emplace_back(chunkLocalBlockPositionText, Color::White());
 

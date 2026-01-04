@@ -90,7 +90,7 @@ namespace ForiverEngine
 		/// <para>実際に描画するチャンクの、インデックス範囲の情報を作成する</para>
 		/// <para>チャンク配列を超える場合があるので、必ずしも最大数描画できるとは限らない</para>
 		/// </summary>
-		static DrawChunksIndexRangeInfo CreateDrawChunksIndexRangeInfo(const Lattice2& cameraExistingChunkIndex)
+		static DrawChunksIndexRangeInfo CreateDrawChunksIndexRangeInfo(const Lattice2& cameraExistingChunkIndex) noexcept
 		{
 			const int xMin = std::clamp(cameraExistingChunkIndex.x - DrawDistance, 0, Chunk::Count - 1);
 			const int xMax = std::clamp(cameraExistingChunkIndex.x + DrawDistance, 0, Chunk::Count - 1);
@@ -105,6 +105,38 @@ namespace ForiverEngine
 				.rangeZ = Lattice2(zMin, zMax),
 				.chunkCount = count,
 			};
+		}
+
+		/// <summary>
+		/// チャンクインデックスを取得
+		/// </summary>
+		static constexpr Lattice2 GetIndex(const Lattice3& worldBlockPosition) noexcept
+		{
+			return Lattice2(
+				worldBlockPosition.x / Size,
+				worldBlockPosition.z / Size
+			);
+		}
+
+		/// <summary>
+		/// チャンク内のローカルブロック座標に変換
+		/// </summary>
+		static constexpr Lattice3 GetLocalBlockPosition(const Lattice3& worldBlockPosition) noexcept
+		{
+			return Lattice3(
+				worldBlockPosition.x % Size,
+				worldBlockPosition.y,
+				worldBlockPosition.z % Size
+			);
+		}
+
+		/// <summary>
+		/// チャンクインデックスが有効であるか = 上下限を超えた値でないか
+		/// </summary>
+		static constexpr bool IsValidIndex(const Lattice2& chunkIndex) noexcept
+		{
+			return MathUtils::IsInRange(chunkIndex.x, 0, Count)
+				&& MathUtils::IsInRange(chunkIndex.y, 0, Count);
 		}
 
 		/// <summary>
@@ -173,18 +205,6 @@ namespace ForiverEngine
 			return chunk;
 		}
 
-		Mesh CreateMesh(const Lattice2& chunkIndex) const
-		{
-			// データの型が違うので、一時バッファにコピーして渡す
-			auto dataConverted = HeapMultiDimAllocator::CreateArray3D<std::uint32_t>(Size, Height, Size);
-			for (int xi = 0; xi < Size; ++xi)
-				for (int yi = 0; yi < Height; ++yi)
-					for (int zi = 0; zi < Size; ++zi)
-						dataConverted[xi][yi][zi] = static_cast<std::uint32_t>(data[xi][yi][zi]);
-
-			return Mesh::CreateFromChunkData(dataConverted, { Size, Height, Size }, chunkIndex);
-		}
-
 		Block GetBlock(const Lattice3& position) const
 		{
 			return data[position.x][position.y][position.z];
@@ -222,6 +242,198 @@ namespace ForiverEngine
 					return y;
 			}
 			return Height; // 天井が無い
+		}
+
+		Mesh CreateMesh(const Lattice2& chunkIndex) const
+		{
+			Mesh mesh = {};
+			// ある程度 reserve しておく
+			mesh.vertices.reserve(4096);
+			mesh.indices.reserve(1024);
+
+			for (int xi = 0; xi < Chunk::Size; ++xi)
+				for (int yi = 0; yi < Chunk::Height; ++yi)
+					for (int zi = 0; zi < Chunk::Size; ++zi)
+					{
+						const Block block = data[xi][yi][zi];
+						if (block == Block::Air) continue; // ブロックが無いならスキップ
+
+						// ブロックの座標 (格子点なので、配列のインデックスと同義)
+						const Lattice3 localBlockPosition = Lattice3(xi, yi, zi);
+						const Lattice3 worldBlockPosition = localBlockPosition + Lattice3(chunkIndex.x * Chunk::Size, 0, chunkIndex.y * Chunk::Size);
+
+						// 面一覧 (具体的には、面の法線ベクトル)
+						constexpr Lattice3 FaceNormals[] =
+						{
+							Lattice3::Up(),
+							Lattice3::Down(),
+							Lattice3::Right(),
+							Lattice3::Left(),
+							Lattice3::Forward(),
+							Lattice3::Backward(),
+						};
+
+						for (const Lattice3& faceNormal : FaceNormals)
+						{
+							// ブロックのフェースが遮られているかチェックする
+							{
+								// フェースに隣接するブロック
+								// ここにブロックがあるかないかで、面が遮られているか判定する
+								const Lattice3 checkPosition = localBlockPosition + faceNormal;
+
+								// 他チャンクに隣接するので、遮られていない扱いにする
+								if (!MathUtils::IsInRange(checkPosition.x, 0, Size));
+								else if (!MathUtils::IsInRange(checkPosition.y, 0, Height));
+								else if (!MathUtils::IsInRange(checkPosition.z, 0, Size));
+								// ブロックがある = 遮られている
+								else if (data[checkPosition.x][checkPosition.y][checkPosition.z] != Block::Air)
+									continue;
+							}
+
+							// 指定されたフェースをメッシュに追加する
+							// ワールドから見た向きで、テクスチャの配置は固定する
+							// ワールド座標
+							{
+								// Indices
+								// [indexBegin, indexBegin+3] が今回追加した分のインデックス
+								const std::uint16_t indexBegin = static_cast<std::uint16_t>(mesh.vertices.size());
+								mesh.indices.push_back(indexBegin + 0);
+								mesh.indices.push_back(indexBegin + 1);
+								mesh.indices.push_back(indexBegin + 2);
+								mesh.indices.push_back(indexBegin + 2);
+								mesh.indices.push_back(indexBegin + 1);
+								mesh.indices.push_back(indexBegin + 3);
+
+								// Vertices
+								const Vector3 worldPosition = Vector3(worldBlockPosition);
+								const Vector3 faceNormalAsVector = Vector3(faceNormal);
+								const std::uint32_t textureIndex = static_cast<std::uint32_t>(block);
+								if (faceNormal == Lattice3::Up())
+								{
+									mesh.vertices.emplace_back(
+										Vector4(worldPosition + Vector3(-0.5f, +0.5f, -0.5f)), Vector2(0.00f, 0.50f),
+										faceNormalAsVector, worldPosition, textureIndex
+									);
+									mesh.vertices.emplace_back(
+										Vector4(worldPosition + Vector3(-0.5f, +0.5f, +0.5f)), Vector2(0.00f, 0.25f),
+										faceNormalAsVector, worldPosition, textureIndex
+									);
+									mesh.vertices.emplace_back(
+										Vector4(worldPosition + Vector3(+0.5f, +0.5f, -0.5f)), Vector2(0.25f, 0.50f),
+										faceNormalAsVector, worldPosition, textureIndex
+									);
+									mesh.vertices.emplace_back(
+										Vector4(worldPosition + Vector3(+0.5f, +0.5f, +0.5f)), Vector2(0.25f, 0.25f),
+										faceNormalAsVector, worldPosition, textureIndex
+									);
+								}
+								else if (faceNormal == Lattice3::Down())
+								{
+									mesh.vertices.emplace_back(
+										Vector4(worldPosition + Vector3(-0.5f, -0.5f, +0.5f)), Vector2(0.25f, 0.50f),
+										faceNormalAsVector, worldPosition, textureIndex
+									);
+									mesh.vertices.emplace_back(
+										Vector4(worldPosition + Vector3(-0.5f, -0.5f, -0.5f)), Vector2(0.25f, 0.25f),
+										faceNormalAsVector, worldPosition, textureIndex
+									);
+									mesh.vertices.emplace_back(
+										Vector4(worldPosition + Vector3(+0.5f, -0.5f, +0.5f)), Vector2(0.50f, 0.50f),
+										faceNormalAsVector, worldPosition, textureIndex
+									);
+									mesh.vertices.emplace_back(
+										Vector4(worldPosition + Vector3(+0.5f, -0.5f, -0.5f)), Vector2(0.50f, 0.25f),
+										faceNormalAsVector, worldPosition, textureIndex
+									);
+								}
+								else if (faceNormal == Lattice3::Right())
+								{
+									mesh.vertices.emplace_back(
+										Vector4(worldPosition + Vector3(+0.5f, -0.5f, -0.5f)), Vector2(0.25f, 0.25f),
+										faceNormalAsVector, worldPosition, textureIndex
+									);
+									mesh.vertices.emplace_back(
+										Vector4(worldPosition + Vector3(+0.5f, +0.5f, -0.5f)), Vector2(0.25f, 0.00f),
+										faceNormalAsVector, worldPosition, textureIndex
+									);
+									mesh.vertices.emplace_back(
+										Vector4(worldPosition + Vector3(+0.5f, -0.5f, +0.5f)), Vector2(0.50f, 0.25f),
+										faceNormalAsVector, worldPosition, textureIndex
+									);
+									mesh.vertices.emplace_back(
+										Vector4(worldPosition + Vector3(+0.5f, +0.5f, +0.5f)), Vector2(0.50f, 0.00f),
+										faceNormalAsVector, worldPosition, textureIndex
+									);
+								}
+								else if (faceNormal == Lattice3::Left())
+								{
+									mesh.vertices.emplace_back(
+										Vector4(worldPosition + Vector3(-0.5f, -0.5f, +0.5f)), Vector2(0.00f, 0.25f),
+										faceNormalAsVector, worldPosition, textureIndex
+									);
+									mesh.vertices.emplace_back(
+										Vector4(worldPosition + Vector3(-0.5f, +0.5f, +0.5f)), Vector2(0.00f, 0.00f),
+										faceNormalAsVector, worldPosition, textureIndex
+									);
+									mesh.vertices.emplace_back(
+										Vector4(worldPosition + Vector3(-0.5f, -0.5f, -0.5f)), Vector2(0.25f, 0.25f),
+										faceNormalAsVector, worldPosition, textureIndex
+									);
+									mesh.vertices.emplace_back(
+										Vector4(worldPosition + Vector3(-0.5f, +0.5f, -0.5f)), Vector2(0.25f, 0.00f),
+										faceNormalAsVector, worldPosition, textureIndex
+									);
+								}
+								else if (faceNormal == Lattice3::Forward())
+								{
+									mesh.vertices.emplace_back(
+										Vector4(worldPosition + Vector3(+0.5f, -0.5f, +0.5f)), Vector2(0.75f, 0.25f),
+										faceNormalAsVector, worldPosition, textureIndex
+									);
+									mesh.vertices.emplace_back(
+										Vector4(worldPosition + Vector3(+0.5f, +0.5f, +0.5f)), Vector2(0.75f, 0.00f),
+										faceNormalAsVector, worldPosition, textureIndex
+									);
+									mesh.vertices.emplace_back(
+										Vector4(worldPosition + Vector3(-0.5f, -0.5f, +0.5f)), Vector2(1.00f, 0.25f),
+										faceNormalAsVector, worldPosition, textureIndex
+									);
+									mesh.vertices.emplace_back(
+										Vector4(worldPosition + Vector3(-0.5f, +0.5f, +0.5f)), Vector2(1.00f, 0.00f),
+										faceNormalAsVector, worldPosition, textureIndex
+									);
+								}
+								else // faceNormal == Lattice3::Backward()
+								{
+									mesh.vertices.emplace_back(
+										Vector4(worldPosition + Vector3(-0.5f, -0.5f, -0.5f)), Vector2(0.50f, 0.25f),
+										faceNormalAsVector, worldPosition, textureIndex
+									);
+									mesh.vertices.emplace_back(
+										Vector4(worldPosition + Vector3(-0.5f, +0.5f, -0.5f)), Vector2(0.50f, 0.00f),
+										faceNormalAsVector, worldPosition, textureIndex
+									);
+									mesh.vertices.emplace_back(
+										Vector4(worldPosition + Vector3(+0.5f, -0.5f, -0.5f)), Vector2(0.75f, 0.25f),
+										faceNormalAsVector, worldPosition, textureIndex
+									);
+									mesh.vertices.emplace_back(
+										Vector4(worldPosition + Vector3(+0.5f, +0.5f, -0.5f)), Vector2(0.75f, 0.00f),
+										faceNormalAsVector, worldPosition, textureIndex
+									);
+								}
+							}
+						}
+					}
+
+			// 頂点が1つも無い場合、ダミーで何か入れておく
+			if (mesh.vertices.size() <= 0)
+			{
+				// 空気なので、表示はされない
+				mesh = Mesh::CreateCube(Vector3::Zero(), static_cast<std::uint32_t>(Block::Air));
+			}
+
+			return mesh;
 		}
 
 	private:

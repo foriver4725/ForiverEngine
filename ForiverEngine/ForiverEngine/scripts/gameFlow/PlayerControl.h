@@ -28,33 +28,6 @@ namespace ForiverEngine
 			);
 		}
 
-		// どのチャンクに属しているかを取得
-		static Lattice2 GetChunkIndex(const Lattice3& worldBlockPosition, int chunkSize = Chunk::Size)
-		{
-			return Lattice2(
-				worldBlockPosition.x / chunkSize,
-				worldBlockPosition.z / chunkSize
-			);
-		}
-
-		// チャンク内のローカルブロック座標に変換
-		static Lattice3 GetChunkLocalPosition(const Lattice3& worldBlockPosition, int chunkSize = Chunk::Size)
-		{
-			return Lattice3(
-				worldBlockPosition.x % chunkSize,
-				worldBlockPosition.y,
-				worldBlockPosition.z % chunkSize
-			);
-		}
-
-		// チャンクインデックスが有効であるか
-		// 即ち、上下限を超えた値でないか
-		static bool IsValidChunkIndex(const Lattice2& chunkIndex, int chunkCount = Chunk::Count)
-		{
-			return MathUtils::IsInRange(chunkIndex.x, 0, chunkCount)
-				&& MathUtils::IsInRange(chunkIndex.y, 0, chunkCount);
-		}
-
 		// プレイヤーの足元の座標を計算
 		static Vector3 GetFootPosition(const Vector3& worldPosition, float eyeHeight)
 		{
@@ -142,7 +115,7 @@ namespace ForiverEngine
 		/// <para>それ以外のチャンクで範囲外ならば、そのチャンクでのみ属さない扱いになる</para>
 		/// </summary>
 		static std::array<CollisionBoundaryAsBlockInfoPerChunk, 4> CalculateCollisionBoundaryAsBlock(
-			const Vector3& worldPositionMin, const Vector3& collisionSize, int chunkSize = Chunk::Size, int chunkCount = Chunk::Count)
+			const Vector3& worldPositionMin, const Vector3& collisionSize)
 		{
 			using InfoPerChunk = CollisionBoundaryAsBlockInfoPerChunk;
 
@@ -152,11 +125,11 @@ namespace ForiverEngine
 			const Lattice3 worldBlockPositionMin = GetBlockPosition(worldPositionMin);
 			const Lattice3 worldBlockPositionMax = GetBlockPosition(worldPositionMin + collisionSize);
 
-			const Lattice2 chunkIndexMin = GetChunkIndex(worldBlockPositionMin);
-			const Lattice2 chunkIndexMax = GetChunkIndex(worldBlockPositionMax);
+			const Lattice2 chunkIndexMin = Chunk::GetIndex(worldBlockPositionMin);
+			const Lattice2 chunkIndexMax = Chunk::GetIndex(worldBlockPositionMax);
 
 			// 開始地点のチャンクが配列の範囲外
-			if (!IsValidChunkIndex(chunkIndexMin, chunkCount))
+			if (!Chunk::IsValidIndex(chunkIndexMin))
 			{
 				return
 				{
@@ -173,9 +146,9 @@ namespace ForiverEngine
 			const bool isValidChunkFlags[4] =
 			{
 				true,
-				MathUtils::IsInRange(chunkIndexMax.x, 0, chunkCount),
-				MathUtils::IsInRange(chunkIndexMax.y, 0, chunkCount),
-				IsValidChunkIndex(chunkIndexMax, chunkCount)
+				MathUtils::IsInRange(chunkIndexMax.x, 0, Chunk::Count),
+				MathUtils::IsInRange(chunkIndexMax.y, 0, Chunk::Count),
+				Chunk::IsValidIndex(chunkIndexMax)
 			};
 
 			// X,Z 方向にチャンクを跨いでいるか
@@ -183,8 +156,8 @@ namespace ForiverEngine
 			const bool isCrossingChunkZ = chunkIndexMin.y < chunkIndexMax.y;
 
 			// そのチャンク内でのローカルブロック座標
-			const Lattice3 localBlockPositionMin = GetChunkLocalPosition(worldBlockPositionMin);
-			const Lattice3 localBlockPositionMax = GetChunkLocalPosition(worldBlockPositionMax);
+			const Lattice3 localBlockPositionMin = Chunk::GetLocalBlockPosition(worldBlockPositionMin);
+			const Lattice3 localBlockPositionMax = Chunk::GetLocalBlockPosition(worldBlockPositionMax);
 
 			// 2x2 チャンク内でのローカルブロック座標に変換
 			// 例えばチャンクが [16, 256, 16] のサイズで、チャンク配列が 2x2 のサイズだったら、
@@ -194,9 +167,9 @@ namespace ForiverEngine
 			const Lattice3 localBlockPositionMinIn2x2Chunks = localBlockPositionMin;
 			const Lattice3 localBlockPositionMaxIn2x2Chunks = localBlockPositionMax
 				+ Lattice3(
-					isCrossingChunkX ? chunkSize : 0,
+					isCrossingChunkX ? Chunk::Size : 0,
 					0,
-					isCrossingChunkZ ? chunkSize : 0
+					isCrossingChunkZ ? Chunk::Size : 0
 				);
 
 			std::array<InfoPerChunk, 4> result = {};
@@ -244,23 +217,23 @@ namespace ForiverEngine
 				{
 					rangeX = Lattice2(
 						rangeX2x2.x,
-						std::min(rangeX2x2.y, chunkSize - 1)
+						std::min(rangeX2x2.y, Chunk::Size - 1)
 					);
 					rangeZ = Lattice2(
 						rangeZ2x2.x,
-						std::min(rangeZ2x2.y, chunkSize - 1)
+						std::min(rangeZ2x2.y, Chunk::Size - 1)
 					);
 				}
 				// x1,z0
 				else if (i == 1)
 				{
 					rangeX = Lattice2(
-						std::max(rangeX2x2.x - chunkSize, 0),
-						rangeX2x2.y - chunkSize
+						std::max(rangeX2x2.x - Chunk::Size, 0),
+						rangeX2x2.y - Chunk::Size
 					);
 					rangeZ = Lattice2(
 						rangeZ2x2.x,
-						std::min(rangeZ2x2.y, chunkSize - 1)
+						std::min(rangeZ2x2.y, Chunk::Size - 1)
 					);
 				}
 				// x0,z1
@@ -268,23 +241,23 @@ namespace ForiverEngine
 				{
 					rangeX = Lattice2(
 						rangeX2x2.x,
-						std::min(rangeX2x2.y, chunkSize - 1)
+						std::min(rangeX2x2.y, Chunk::Size - 1)
 					);
 					rangeZ = Lattice2(
-						std::max(rangeZ2x2.x - chunkSize, 0),
-						rangeZ2x2.y - chunkSize
+						std::max(rangeZ2x2.x - Chunk::Size, 0),
+						rangeZ2x2.y - Chunk::Size
 					);
 				}
 				// x1,z1
 				else // i == 3
 				{
 					rangeX = Lattice2(
-						std::max(rangeX2x2.x - chunkSize, 0),
-						rangeX2x2.y - chunkSize
+						std::max(rangeX2x2.x - Chunk::Size, 0),
+						rangeX2x2.y - Chunk::Size
 					);
 					rangeZ = Lattice2(
-						std::max(rangeZ2x2.x - chunkSize, 0),
-						rangeZ2x2.y - chunkSize
+						std::max(rangeZ2x2.x - Chunk::Size, 0),
+						rangeZ2x2.y - Chunk::Size
 					);
 				}
 
@@ -298,14 +271,13 @@ namespace ForiverEngine
 		/// 足元より下である中で、最も高いブロックのY座標を取得する (無いなら チャンクの高さの最小値-1 を返す)
 		/// </summary>
 		static int FindFloorHeight(
-			const Chunk::ChunksArray<Chunk>& chunks, const Vector3& footWorldPosition, const Vector3& collisionSize,
-			int chunkSize = Chunk::Size, int chunkCount = Chunk::Count)
+			const Chunk::ChunksArray<Chunk>& chunks, const Vector3& footWorldPosition, const Vector3& collisionSize)
 		{
 			const auto& [info, infoX, infoZ, infoXZ] =
-				CalculateCollisionBoundaryAsBlock(GetCollisionMinPosition(footWorldPosition, collisionSize), collisionSize, chunkSize, chunkCount);
+				CalculateCollisionBoundaryAsBlock(GetCollisionMinPosition(footWorldPosition, collisionSize), collisionSize);
 
 			const std::function<int(const CollisionBoundaryAsBlockInfoPerChunk&)> FindFloorHeightForThisChunk =
-				[&chunks, &footWorldPosition, &collisionSize, chunkCount](const auto& info)
+				[&chunks, &footWorldPosition, &collisionSize](const auto& info)
 				{
 					// 情報をアンパック
 					const auto& [isInsideChunk, localChunkIndex, rangeX, rangeY, rangeZ] = info;
@@ -315,8 +287,9 @@ namespace ForiverEngine
 						return -1;
 
 					// チャンクを取得 (配列の範囲外なら、最小値を返す)
-					const Lattice2 chunkIndex = GetChunkIndex(GetBlockPosition(GetCollisionMinPosition(footWorldPosition, collisionSize))) + localChunkIndex;
-					if (!IsValidChunkIndex(chunkIndex, chunkCount))
+					const Lattice2 chunkIndex = Chunk::GetIndex(GetBlockPosition(GetCollisionMinPosition(footWorldPosition, collisionSize)))
+						+ localChunkIndex;
+					if (!Chunk::IsValidIndex(chunkIndex))
 						return -1;
 					const Chunk& chunk = chunks[chunkIndex.x][chunkIndex.y];
 
@@ -343,29 +316,29 @@ namespace ForiverEngine
 		/// 頭上より上である中で、最も低いブロックのY座標を取得する (無いなら チャンクの高さの最大値+1 を返す)
 		/// </summary>
 		static int FindCeilHeight(
-			const Chunk::ChunksArray<Chunk>& chunks, const Vector3& footWorldPosition, const Vector3& collisionSize,
-			int chunkSize = Chunk::Size, int chunkHeight = Chunk::Height, int chunkCount = Chunk::Count)
+			const Chunk::ChunksArray<Chunk>& chunks, const Vector3& footWorldPosition, const Vector3& collisionSize)
 		{
 			const auto& [info, infoX, infoZ, infoXZ] =
-				CalculateCollisionBoundaryAsBlock(GetCollisionMinPosition(footWorldPosition, collisionSize), collisionSize, chunkSize, chunkCount);
+				CalculateCollisionBoundaryAsBlock(GetCollisionMinPosition(footWorldPosition, collisionSize), collisionSize);
 
 			const std::function<int(const CollisionBoundaryAsBlockInfoPerChunk&)> FindCeilHeightForThisChunk =
-				[&chunks, &footWorldPosition, &collisionSize, chunkHeight, chunkCount](const auto& info)
+				[&chunks, &footWorldPosition, &collisionSize](const auto& info)
 				{
 					// 情報をアンパック
 					const auto& [isInsideChunk, localChunkIndex, rangeX, rangeY, rangeZ] = info;
 
 					// このチャンクにコリジョンが属していないので、最大値を返す
 					if (!isInsideChunk)
-						return chunkHeight;
+						return Chunk::Height;
 
 					// チャンクを取得 (配列の範囲外なら、最大値を返す)
-					const Lattice2 chunkIndex = GetChunkIndex(GetBlockPosition(GetCollisionMinPosition(footWorldPosition, collisionSize))) + localChunkIndex;
-					if (!IsValidChunkIndex(chunkIndex, chunkCount))
-						return chunkHeight;
+					const Lattice2 chunkIndex = Chunk::GetIndex(GetBlockPosition(GetCollisionMinPosition(footWorldPosition, collisionSize)))
+						+ localChunkIndex;
+					if (!Chunk::IsValidIndex(chunkIndex))
+						return Chunk::Height;
 					const Chunk& chunk = chunks[chunkIndex.x][chunkIndex.y];
 
-					int y = chunkHeight;
+					int y = Chunk::Height;
 					for (int x = rangeX.x; x <= rangeX.y; ++x)
 						for (int z = rangeZ.x; z <= rangeZ.y; ++z)
 						{
@@ -376,7 +349,7 @@ namespace ForiverEngine
 					return y;
 				};
 
-			int y = chunkHeight;
+			int y = Chunk::Height;
 			y = std::min(y, FindCeilHeightForThisChunk(info));
 			y = std::min(y, FindCeilHeightForThisChunk(infoX));
 			y = std::min(y, FindCeilHeightForThisChunk(infoZ));
@@ -388,14 +361,13 @@ namespace ForiverEngine
 		/// 地形との当たり判定
 		/// </summary>
 		static bool IsOverlappingWithTerrain(
-			const Chunk::ChunksArray<Chunk>& chunks, const Vector3& footWorldPosition, const Vector3& collisionSize,
-			int chunkSize = Chunk::Size, int chunkCount = Chunk::Count)
+			const Chunk::ChunksArray<Chunk>& chunks, const Vector3& footWorldPosition, const Vector3& collisionSize)
 		{
 			const auto& [info, infoX, infoZ, infoXZ] =
-				CalculateCollisionBoundaryAsBlock(GetCollisionMinPosition(footWorldPosition, collisionSize), collisionSize, chunkSize, chunkCount);
+				CalculateCollisionBoundaryAsBlock(GetCollisionMinPosition(footWorldPosition, collisionSize), collisionSize);
 
 			const std::function<bool(const CollisionBoundaryAsBlockInfoPerChunk&)> IsOverlappingForThisChunk =
-				[&chunks, &footWorldPosition, &collisionSize, chunkCount](const auto& info)
+				[&chunks, &footWorldPosition, &collisionSize](const auto& info)
 				{
 					// 情報をアンパック
 					const auto& [isInsideChunk, localChunkIndex, rangeX, rangeY, rangeZ] = info;
@@ -405,8 +377,9 @@ namespace ForiverEngine
 						return false;
 
 					// チャンクを取得 (配列の範囲外なら、重なっていないとみなす)
-					const Lattice2 chunkIndex = GetChunkIndex(GetBlockPosition(GetCollisionMinPosition(footWorldPosition, collisionSize))) + localChunkIndex;
-					if (!IsValidChunkIndex(chunkIndex, chunkCount))
+					const Lattice2 chunkIndex = Chunk::GetIndex(GetBlockPosition(GetCollisionMinPosition(footWorldPosition, collisionSize)))
+						+ localChunkIndex;
+					if (!Chunk::IsValidIndex(chunkIndex))
 						return false;
 					const Chunk& chunk = chunks[chunkIndex.x][chunkIndex.y];
 
