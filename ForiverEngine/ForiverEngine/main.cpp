@@ -146,8 +146,8 @@ int Main(hInstance)
 	// CBV 用バッファ
 	CBData0* cbvBuffer0VirtualPtr = nullptr;
 	CBData1* cbvBuffer1VirtualPtr = nullptr;
-	const GraphicsBuffer cbvBuffer0 = D3D12BasicFlow::InitCBVBuffer<CBData0>(device, cbData0, &cbvBuffer0VirtualPtr);
-	const GraphicsBuffer cbvBuffer1 = D3D12BasicFlow::InitCBVBuffer<CBData1>(device, cbData1, &cbvBuffer1VirtualPtr);
+	const GraphicsBuffer cbvBuffer0 = D3D12BasicFlow::InitCBVBuffer(device, cbData0, &cbvBuffer0VirtualPtr);
+	const GraphicsBuffer cbvBuffer1 = D3D12BasicFlow::InitCBVBuffer(device, cbData1, &cbvBuffer1VirtualPtr);
 
 	// SRV 用バッファ
 	const auto srvBufferAndData = D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue, commandAllocator,
@@ -193,7 +193,7 @@ int Main(hInstance)
 		.Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(terrainTransform, sunCameraTransform),
 	};
 	CBData0Shadow* cbvBuffer0ShadowVirtualPtr = nullptr;
-	const GraphicsBuffer cbvBufferShadow = D3D12BasicFlow::InitCBVBuffer<CBData0Shadow>(device, cbData0Shadow, &cbvBuffer0ShadowVirtualPtr);
+	const GraphicsBuffer cbvBufferShadow = D3D12BasicFlow::InitCBVBuffer(device, cbData0Shadow, &cbvBuffer0ShadowVirtualPtr);
 
 	// DescriptorHeap
 	const DescriptorHeap descriptorHeapBasicShadow
@@ -247,7 +247,7 @@ int Main(hInstance)
 		.LimitLuminance = 0.5f,
 		.AAPower = 8.0f,
 	};
-	const GraphicsBuffer cbvBufferPP = D3D12BasicFlow::InitCBVBuffer<CBData0PP>(device, cbData0PP);
+	const GraphicsBuffer cbvBufferPP = D3D12BasicFlow::InitCBVBuffer(device, cbData0PP);
 
 	// DescriptorHeap
 	const DescriptorHeap descriptorHeapBasicPP
@@ -303,7 +303,7 @@ int Main(hInstance)
 		.InvalidFontTextureIndex = static_cast<std::uint32_t>(Text::InvalidFontTextureIndex),
 		.FontTextureTextLength = static_cast<std::uint32_t>(TextUIData::FontTextureTextLength),
 	};
-	const GraphicsBuffer cbvBufferText = D3D12BasicFlow::InitCBVBuffer<CBData0Text>(device, cbData0Text);
+	const GraphicsBuffer cbvBufferText = D3D12BasicFlow::InitCBVBuffer(device, cbData0Text);
 
 	// DescriptorHeap
 	const DescriptorHeap descriptorHeapBasicText
