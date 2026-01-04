@@ -243,6 +243,9 @@
     <ClInclude Include="scripts\test\IncludeInternal.h">
       <Filter>scripts\test</Filter>
     </ClInclude>
+    <ClInclude Include="scripts\gameFlow\ChunksManager.h">
+      <Filter>scripts\gameFlow</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shaders\Basic.hlsl">

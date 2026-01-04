@@ -87,10 +87,10 @@ namespace ForiverEngine
 		};
 
 		/// <summary>
-		/// <para>実際に描画するチャンクの、インデックス範囲の情報を取得する</para>
+		/// <para>実際に描画するチャンクの、インデックス範囲の情報を作成する</para>
 		/// <para>チャンク配列を超える場合があるので、必ずしも最大数描画できるとは限らない</para>
 		/// </summary>
-		static DrawChunksIndexRangeInfo GetDrawChunksIndexRangeInfo(const Lattice2& cameraExistingChunkIndex)
+		static DrawChunksIndexRangeInfo CreateDrawChunksIndexRangeInfo(const Lattice2& cameraExistingChunkIndex)
 		{
 			const int xMin = std::clamp(cameraExistingChunkIndex.x - DrawDistance, 0, Chunk::Count - 1);
 			const int xMax = std::clamp(cameraExistingChunkIndex.x + DrawDistance, 0, Chunk::Count - 1);
@@ -105,38 +105,6 @@ namespace ForiverEngine
 				.rangeZ = Lattice2(zMin, zMax),
 				.chunkCount = count,
 			};
-		}
-
-		/// <summary>
-		/// <para>描画するチャンク群のデータ配列を、1次元配列にパックする</para>
-		/// <para>描画チャンクのインデックス範囲の情報を基に、実際に描画するもののみ抽出する</para>
-		/// <para>元のデータ配列は最大サイズ分確保していたため、この処理によって不要なデータが除去される</para>
-		/// </summary>
-		template<typename T>
-		static const std::vector<T>& PackDrawChunksArray(const DrawChunksArray<T>& data, const DrawChunksIndexRangeInfo& info)
-		{
-			static bool hasInitialized = false;
-			static std::vector<T> packedArray;
-
-			if (!hasInitialized)
-			{
-				hasInitialized = true;
-
-				packedArray = {};
-				packedArray.reserve(DrawCountMax * DrawCountMax);
-			}
-
-			packedArray.clear();
-			for (int xi = info.rangeX.x; xi <= info.rangeX.y; ++xi)
-				for (int zi = info.rangeZ.x; zi <= info.rangeZ.y; ++zi)
-				{
-					const Lattice2 rangeMin = info.GetRangeMin();
-					const Lattice2 localChunkIndex = Lattice2(xi, zi) - rangeMin;
-
-					packedArray.push_back(data[localChunkIndex.x][localChunkIndex.y]);
-				}
-
-			return packedArray;
 		}
 
 		/// <summary>

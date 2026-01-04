@@ -92,111 +92,10 @@ int Main(hInstance)
 		};
 	CameraTransform sunCameraTransform = CreateSunCameraTransform();
 
-	// 地形チャンクの作成進捗状態
-	enum class ChunkCreationState : std::uint8_t
-	{
-		NotYet, // 未作成
-		CreatingParallel, // 並列処理中
-		FinishedParallel, // 並列処理完了済み
-		FinishedAll, // 全部完了済み
-	};
-
 	// 地形データ
-
-	constexpr Lattice3 WorldEdgeNoEntryBlockCount = Lattice3(2, 2, 2); // 世界の端から何マス、立ち入り禁止にするか (XYZ方向)
-	auto chunkCreationStates = Chunk::CreateChunksArray<std::atomic<ChunkCreationState>>(); // チャンク作成状態 (デフォルト:NotYet)
-	auto chunks = Chunk::CreateChunksArray<Chunk>(); // チャンクの配列
-	auto chunkMeshes = Chunk::CreateChunksArray<Mesh>(); // 地形の結合メッシュ
-	auto chunkVBVs = Chunk::CreateChunksArray<VertexBufferView>(); // 頂点バッファビュー (全部)
-	auto chunkIBVs = Chunk::CreateChunksArray<IndexBufferView>(); // インデックスバッファビュー (全部)
-	// 地形のデータ・メッシュを作成し、キャッシュしておく関数 (並列処理可能. 最初にこっちを実行する)
-	const std::function<void(const Lattice2&)> CreateChunkParallel = [&](const Lattice2& chunkIndex)
-		{
-			Chunk chunk = Chunk::CreateFromNoise(chunkIndex, { 0.015f, 12.0f }, 16, 18, 24);
-
-			chunkMeshes[chunkIndex.x][chunkIndex.y] = chunk.CreateMesh(chunkIndex);
-			chunks[chunkIndex.x][chunkIndex.y] = std::move(chunk);
-
-			chunkCreationStates[chunkIndex.x][chunkIndex.y].store(ChunkCreationState::FinishedParallel, std::memory_order_release);
-		};
-	// ↑の並列処理を実行開始する関数
-	const std::function<void(const Lattice2&)> TryStartCreateChunkParallel = [&](const Lattice2& chunkIndex)
-		{
-			ChunkCreationState expectedState = ChunkCreationState::NotYet;
-
-			if (!chunkCreationStates[chunkIndex.x][chunkIndex.y]
-				.compare_exchange_strong(
-					expectedState,
-					ChunkCreationState::CreatingParallel,
-					std::memory_order_acq_rel))
-			{
-				// 既に該当処理が開始済みなので、何もしない
-				return;
-			}
-
-			std::thread([=]()
-				{
-					CreateChunkParallel(chunkIndex);
-				}).detach();
-		};
-	// 地形の頂点・インデックスバッファビューを作成し、キャッシュしておく関数 (GPUが絡むので並列処理不可. 並列処理の方が完了した後、メインスレッドで実行する)
-	const std::function<void(const Lattice2&)> CreateChunkNotParallel = [&](const Lattice2& chunkIndex)
-		{
-			if (chunkCreationStates[chunkIndex.x][chunkIndex.y]
-				.load(std::memory_order_acquire)
-				!= ChunkCreationState::FinishedParallel)
-				return;
-
-			const auto [vertexBufferView, indexBufferView]
-				= D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, chunkMeshes[chunkIndex.x][chunkIndex.y]);
-			chunkVBVs[chunkIndex.x][chunkIndex.y] = vertexBufferView;
-			chunkIBVs[chunkIndex.x][chunkIndex.y] = indexBufferView;
-
-			// メインスレッドで1フレーム内で終わらせるので、この状態更新でOK
-			chunkCreationStates[chunkIndex.x][chunkIndex.y].store(ChunkCreationState::FinishedAll, std::memory_order_release);
-		};
-
-	// 描画するチャンクが変化した時、頂点・インデックスバッファビューを再作成する
 	Lattice2 existingChunkIndex = PlayerControl::GetChunkIndex(PlayerControl::GetBlockPosition(cameraTransform.position));
-	auto drawChunksIndexRangeInfo = Chunk::GetDrawChunksIndexRangeInfo(existingChunkIndex);
-	auto drawChunkVBVs = Chunk::CreateDrawChunksArray<VertexBufferView>();
-	auto drawChunkIBVs = Chunk::CreateDrawChunksArray<IndexBufferView>();
-	auto drawChunkMeshIndicesCount = Chunk::CreateDrawChunksArray<int>();
-	// 更新関数
-	// 指定されたチャンクを、描画するものとして配列に登録する
-	const std::function<void(const Lattice2&, const Lattice2&)> UpdateDrawChunksRenderDatas =
-		[&](const Lattice2& worldChunkIndex, const Lattice2& drawChunksWorldChunkIndexMin)
-		{
-			const VertexBufferView vbv = chunkVBVs[worldChunkIndex.x][worldChunkIndex.y];
-			const IndexBufferView ibv = chunkIBVs[worldChunkIndex.x][worldChunkIndex.y];
-			const int indicesCount = static_cast<int>(chunkMeshes[worldChunkIndex.x][worldChunkIndex.y].indices.size());
-
-			const Lattice2 localChunkIndex = worldChunkIndex - drawChunksWorldChunkIndexMin;
-
-			drawChunkVBVs[localChunkIndex.x][localChunkIndex.y] = vbv;
-			drawChunkIBVs[localChunkIndex.x][localChunkIndex.y] = ibv;
-			drawChunkMeshIndicesCount[localChunkIndex.x][localChunkIndex.y] = indicesCount;
-		};
-
-	// チャンク作成状態の初期化
-	{
-		for (int xi = 0; xi < Chunk::Count; ++xi)
-			for (int zi = 0; zi < Chunk::Count; ++zi)
-				chunkCreationStates[xi][zi].store(ChunkCreationState::NotYet);
-	}
-
-	// 地形の初回作成
-	{
-		for (int xi = drawChunksIndexRangeInfo.rangeX.x; xi <= drawChunksIndexRangeInfo.rangeX.y; ++xi)
-			for (int zi = drawChunksIndexRangeInfo.rangeZ.x; zi <= drawChunksIndexRangeInfo.rangeZ.y; ++zi)
-			{
-				// 初回は、メインスレッドで1フレームで全て終わらせる
-				CreateChunkParallel({ xi, zi });
-				CreateChunkNotParallel({ xi, zi });
-
-				UpdateDrawChunksRenderDatas({ xi, zi }, drawChunksIndexRangeInfo.GetRangeMin());
-			}
-	}
+	ChunksManager chunksManager = ChunksManager(existingChunkIndex);
+	chunksManager.UpdateDrawChunks(existingChunkIndex, false, device); // 初回作成
 
 	// b0
 	struct alignas(256) CBData0
@@ -331,12 +230,9 @@ int Main(hInstance)
 	const DescriptorHandleAtCPU rtvPP = D3D12BasicFlow::InitRTV(device, ppGraphicsBuffer, Format::RGBA_U8_01);
 	const DescriptorHandleAtCPU dsvPP_Dummy = DescriptorHandleAtCPU{ .ptr = NULL };
 
-	// 板ポリのメッシュ
+	// メッシュ, VBV, IBV
 	const MeshQuad meshPP = MeshQuad::CreateFullSized();
-
-	// 頂点バッファビューとインデックスバッファビュー
-	const auto [vbvPP, ibvPP]
-		= D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, meshPP);
+	const auto [vbvPP, ibvPP] = D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, meshPP);
 
 	// CB 0
 	struct alignas(256) CBData0PP
@@ -379,12 +275,9 @@ int Main(hInstance)
 	const DescriptorHandleAtCPU rtvText = D3D12BasicFlow::InitRTV(device, textGraphicsBuffer, Format::RGBA_U8_01);
 	const DescriptorHandleAtCPU dsvText_Dummy = DescriptorHandleAtCPU{ .ptr = NULL };
 
-	// 板ポリのメッシュ
+	// メッシュ, VBV, IBV
 	const MeshQuad meshText = MeshQuad::CreateFullSized();
-
-	// 頂点バッファビューとインデックスバッファビュー
-	const auto [vbvText, ibvText]
-		= D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, meshText);
+	const auto [vbvText, ibvText] = D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, meshText);
 
 	// テキストUIデータ
 	TextUIData textUIData = TextUIData::CreateEmpty(WindowSize / TextUIData::FontTextureTextLength);
@@ -452,10 +345,10 @@ int Main(hInstance)
 			{
 				// 床のY座標を算出しておく
 				const int floorY = PlayerControl::FindFloorHeight(
-					chunks, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
+					chunksManager.GetChunks(), PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
 				// 天井のY座標を算出しておく
 				const int ceilY = PlayerControl::FindCeilHeight(
-					chunks, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
+					chunksManager.GetChunks(), PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
 
 				// 落下分の加速度を加算し、鉛直移動する
 				velocityV -= (G * GravityScale) * WindowHelper::GetDeltaSeconds<float>();
@@ -524,7 +417,7 @@ int Main(hInstance)
 				// 当たり判定
 				// めり込んでいるなら、元の位置に戻す
 				if (PlayerControl::IsOverlappingWithTerrain(
-					chunks, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize))
+					chunksManager.GetChunks(), PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize))
 				{
 					cameraTransform.position = positionBeforeMoveH;
 				}
@@ -536,12 +429,12 @@ int Main(hInstance)
 					PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight));
 
 				if (!PlayerControl::IsIntInRange(
-					footBlockPosition.x, WorldEdgeNoEntryBlockCount.x, Chunk::Size * Chunk::Count - WorldEdgeNoEntryBlockCount.x) ||
+					footBlockPosition.x, ChunksManager::WorldEdgeNoEntryBlockCount.x, Chunk::Size * Chunk::Count - ChunksManager::WorldEdgeNoEntryBlockCount.x) ||
 					// TODO: Y方向は上手く判定できないので、一旦無効化
 					/*!PlayerControl::IsIntInRange(
 						footBlockPosition.y, WorldEdgeNoEntryBlockCount.y, Chunk::Height - WorldEdgeNoEntryBlockCount.y) ||*/
 					!PlayerControl::IsIntInRange(
-						footBlockPosition.z, WorldEdgeNoEntryBlockCount.z, Chunk::Size * Chunk::Count - WorldEdgeNoEntryBlockCount.z))
+						footBlockPosition.z, ChunksManager::WorldEdgeNoEntryBlockCount.z, Chunk::Size * Chunk::Count - ChunksManager::WorldEdgeNoEntryBlockCount.z))
 				{
 					cameraTransform.position = positionBeforeMove;
 				}
@@ -569,7 +462,7 @@ int Main(hInstance)
 				if (!PlayerControl::IsValidChunkIndex(chunkIndex))
 					continue;
 
-				const Chunk& targettingChunk = chunks[chunkIndex.x][chunkIndex.y];
+				const Chunk& targettingChunk = chunksManager.GetChunks()[chunkIndex.x][chunkIndex.y];
 				const Lattice3 rayLocalPosition = PlayerControl::GetChunkLocalPosition(rayBlockPosition);
 				const Block blockAtRay = targettingChunk.GetBlock(rayLocalPosition);
 
@@ -594,17 +487,10 @@ int Main(hInstance)
 					hasBrokenBlock = true;
 
 					const Lattice2 chunkIndex = PlayerControl::GetChunkIndex(cbvBuffer1VirtualPtr->SelectingBlockWorldPosition);
+					const Lattice3 localBlockPosition
+						= PlayerControl::GetChunkLocalPosition(cbvBuffer1VirtualPtr->SelectingBlockWorldPosition);
 
-					// 地形データとメッシュを更新
-					chunks[chunkIndex.x][chunkIndex.y].SetBlock(
-						PlayerControl::GetChunkLocalPosition(cbvBuffer1VirtualPtr->SelectingBlockWorldPosition), Block::Air);
-					chunkMeshes[chunkIndex.x][chunkIndex.y] = chunks[chunkIndex.x][chunkIndex.y].CreateMesh(chunkIndex);
-
-					// 頂点バッファビューとインデックスバッファビューを更新
-					const auto [vertexBufferView, indexBufferView]
-						= D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, chunkMeshes[chunkIndex.x][chunkIndex.y]);
-					chunkVBVs[chunkIndex.x][chunkIndex.y] = vertexBufferView;
-					chunkIBVs[chunkIndex.x][chunkIndex.y] = indexBufferView;
+					chunksManager.UpdateChunkBlock(chunkIndex, localBlockPosition, Block::Air, device);
 				}
 			}
 		}
@@ -613,33 +499,12 @@ int Main(hInstance)
 		// プレイヤーの存在するチャンクが変化した、またはブロックを壊した場合に更新する
 		// 更新時、そのチャンクがまだ未作成ならば、その作成をまず行う
 		{
-			// 存在するチャンクが変化したかチェック
 			const Lattice2 currentExistingChunkIndex = PlayerControl::GetChunkIndex(PlayerControl::GetBlockPosition(cameraTransform.position));
-			const bool hasExistingChunkChanged = (currentExistingChunkIndex != existingChunkIndex);
 
-			// 結局配列を更新する必要があるのか?
-			const bool shouldUpdateDrawChunks = hasExistingChunkChanged || hasBrokenBlock;
-
-			if (shouldUpdateDrawChunks)
+			if ((currentExistingChunkIndex != existingChunkIndex) || hasBrokenBlock)
 			{
-				// パラメータを更新
 				existingChunkIndex = currentExistingChunkIndex;
-				const int currentDrawChunkCountTotal = drawChunksIndexRangeInfo.chunkCount;
-				drawChunksIndexRangeInfo = Chunk::GetDrawChunksIndexRangeInfo(existingChunkIndex);
-				const int drawChunkCountTotalDiff = currentDrawChunkCountTotal - drawChunksIndexRangeInfo.chunkCount;
-
-				// ビューとインデックスを再作成. 配列の要素を更新する
-				for (int xi = drawChunksIndexRangeInfo.rangeX.x; xi <= drawChunksIndexRangeInfo.rangeX.y; ++xi)
-					for (int zi = drawChunksIndexRangeInfo.rangeZ.x; zi <= drawChunksIndexRangeInfo.rangeZ.y; ++zi)
-					{
-						// チャンクが未作成ならば、作成を開始する
-						// 作成中にやっぱり描画しないとなっても、スレッドは止まらず並列処理完了まで動き続ける
-						// そのため、並列処理でない部分をその後いつ呼んでも問題ない (状態ガードをちゃんと入れているので)
-						TryStartCreateChunkParallel({ xi, zi });
-						CreateChunkNotParallel({ xi, zi });
-
-						UpdateDrawChunksRenderDatas({ xi, zi }, drawChunksIndexRangeInfo.GetRangeMin());
-					}
+				chunksManager.UpdateDrawChunks(currentExistingChunkIndex, true, device);
 			}
 		}
 
@@ -699,10 +564,11 @@ int Main(hInstance)
 				textUIDataRows.emplace_back(chunkLocalBlockPositionText, Color::White());
 
 				// 描画しているチャンクの範囲
+				const auto& drawRangeInfo = chunksManager.GetDrawRangeInfo();
 				const std::string drawChunksRangeText = std::format(
 					"Drawing Chunks : {}-{}",
-					ToString(drawChunksIndexRangeInfo.GetRangeMin()),
-					ToString(drawChunksIndexRangeInfo.GetRangeMax())
+					ToString(drawRangeInfo.GetRangeMin()),
+					ToString(drawRangeInfo.GetRangeMax())
 				);
 				textUIDataRows.emplace_back(drawChunksRangeText, Color::White());
 
@@ -720,9 +586,9 @@ int Main(hInstance)
 
 				// 床&天井ブロックのY座標
 				const int floorY = PlayerControl::FindFloorHeight(
-					chunks, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
+					chunksManager.GetChunks(), PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
 				const int ceilY = PlayerControl::FindCeilHeight(
-					chunks, PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
+					chunksManager.GetChunks(), PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
 				const std::string floorCeilHeightText = std::format(
 					"Floor&Ceil Height : ({},{})",
 					(floorY >= 0) ? std::to_string(floorY) : "None",
@@ -768,9 +634,9 @@ int Main(hInstance)
 		if (!currentBackRT)
 			ShowError(L"現在のバックレンダーターゲットの取得に失敗しました");
 
-		const auto& drawChunkVBVsPacked = Chunk::PackDrawChunksArray(drawChunkVBVs, drawChunksIndexRangeInfo);
-		const auto& drawChunkIBVsPacked = Chunk::PackDrawChunksArray(drawChunkIBVs, drawChunksIndexRangeInfo);
-		const auto& drawChunkMeshIndicesCountPacked = Chunk::PackDrawChunksArray(drawChunkMeshIndicesCount, drawChunksIndexRangeInfo);
+		const auto& packedDrawVBVs = chunksManager.PackDrawVBVs();
+		const auto& packedDrawIBVs = chunksManager.PackDrawIBVs();
+		const auto& packedDrawMeshIndicesCounts = chunksManager.PackDrawMeshIndicesCounts();
 
 		// 影のデプス書き込み
 		if (cbvBuffer1VirtualPtr->CastShadow == 1)
@@ -778,20 +644,20 @@ int Main(hInstance)
 			D3D12BasicFlow::CommandBasicLoop(
 				commandList, commandQueue, commandAllocator, device,
 				rootSignatureShadow, graphicsPipelineStateShadow, shadowGraphicsBuffer,
-				rtvShadow, dsvShadow, descriptorHeapBasicShadow, drawChunkVBVsPacked, drawChunkIBVsPacked,
+				rtvShadow, dsvShadow, descriptorHeapBasicShadow, packedDrawVBVs, packedDrawIBVs,
 				GraphicsBufferState::PixelShaderResource, GraphicsBufferState::RenderTarget,
 				viewportScissorRectShadow, PrimitiveTopology::TriangleList, Color(DepthBufferClearValue, 0, 0, 0), DepthBufferClearValue,
-				drawChunkMeshIndicesCountPacked
+				packedDrawMeshIndicesCounts
 			);
 		}
 		// メインレンダリング
 		D3D12BasicFlow::CommandBasicLoop(
 			commandList, commandQueue, commandAllocator, device,
 			rootSignature, graphicsPipelineState, ppGraphicsBuffer,
-			rtvPP, dsv, descriptorHeapBasic, drawChunkVBVsPacked, drawChunkIBVsPacked,
+			rtvPP, dsv, descriptorHeapBasic, packedDrawVBVs, packedDrawIBVs,
 			GraphicsBufferState::PixelShaderResource, GraphicsBufferState::RenderTarget,
 			viewportScissorRect, PrimitiveTopology::TriangleList, RTClearColor, DepthBufferClearValue,
-			drawChunkMeshIndicesCountPacked
+			packedDrawMeshIndicesCounts
 		);
 		// ポストプロセス
 		D3D12BasicFlow::CommandBasicLoop(

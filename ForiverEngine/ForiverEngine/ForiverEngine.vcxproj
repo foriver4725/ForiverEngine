@@ -221,6 +221,7 @@
     <ClInclude Include="scripts\component\Transform\CameraTransform.h" />
     <ClInclude Include="scripts\component\Transform\Include.h" />
     <ClInclude Include="scripts\component\Transform\Transform.h" />
+    <ClInclude Include="scripts\gameFlow\ChunksManager.h" />
     <ClInclude Include="scripts\gameFlow\D3D12BasicFlow.h" />
     <ClInclude Include="scripts\gameFlow\Include.h" />
     <ClInclude Include="scripts\gameFlow\PlayerControl.h" />
