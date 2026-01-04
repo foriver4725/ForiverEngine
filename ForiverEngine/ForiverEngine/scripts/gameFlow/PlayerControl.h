@@ -110,7 +110,7 @@ namespace ForiverEngine
 		/// <para>コリジョンのxz方向のサイズは、1より小さい想定</para>
 		/// <para>[最小インデックスのチャンク, X方向に1つ進んだチャンク, Z方向に1つ進んだチャンク, XZ両方向に1つ進んだチャンク] の順に情報を返す</para>
 		/// <para>そのチャンクに属さない場合、XYZの範囲値は (0,0)</para>
-		/// <para>[チャンクインデックスの範囲チェック]</para>
+		/// <para>[チャンク群における範囲内かチェック]</para>
 		/// <para>開始座標のチャンクで範囲外ならば、全てのチャンクで属さない扱いになる</para>
 		/// <para>それ以外のチャンクで範囲外ならば、そのチャンクでのみ属さない扱いになる</para>
 		/// </summary>
@@ -128,6 +128,17 @@ namespace ForiverEngine
 			const Lattice2 chunkIndexMin = Chunk::GetIndex(worldBlockPositionMin);
 			const Lattice2 chunkIndexMax = Chunk::GetIndex(worldBlockPositionMax);
 
+			// Y座標が範囲外
+			if (!MathUtils::IsInRange(worldBlockPositionMin.y, 0, Chunk::Height))
+			{
+				return
+				{
+					InfoPerChunk::CreateUncontained(Lattice2(0, 0)),
+					InfoPerChunk::CreateUncontained(Lattice2(1, 0)),
+					InfoPerChunk::CreateUncontained(Lattice2(0, 1)),
+					InfoPerChunk::CreateUncontained(Lattice2(1, 1)),
+				};
+			}
 			// 開始地点のチャンクが配列の範囲外
 			if (!Chunk::IsValidIndex(chunkIndexMin))
 			{
@@ -139,7 +150,8 @@ namespace ForiverEngine
 					InfoPerChunk::CreateUncontained(Lattice2(1, 1)),
 				};
 			}
-			// 以降、開始地点のチャンクには、必ずコリジョンが属する
+			// 以降、開始地点がチャンク群における範囲内であることが保証されている
+			// Y座標については、他のチャンク全てにおいても、チャンク群における範囲内であることが保証されている
 
 			// 各チャンクが配列の範囲内か
 			// x0z0, x1z0, x0z1, x1z1 の順番
