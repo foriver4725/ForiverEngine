@@ -19,8 +19,7 @@ namespace ForiverEngine
 		/// <summary>
 		/// DirectX12 の基本的なオブジェクト群を一括で作成する
 		/// </summary>
-		static std::tuple<Factory, Device, CommandAllocator, CommandList, CommandQueue>
-			CreateStandardObjects()
+		static std::tuple<Factory, Device, CommandAllocator, CommandList, CommandQueue> CreateStandardObjects()
 		{
 			const Factory factory = D3D12Helper::CreateFactory();
 			if (!factory)
@@ -46,76 +45,42 @@ namespace ForiverEngine
 		}
 
 		/// <summary>
-		/// 頂点バッファビューとインデックスバッファビューを一括で作成する (ブロック)
+		/// 頂点バッファビューとインデックスバッファビューを一括で作成する
 		/// </summary>
-		static std::tuple<VertexBufferView, IndexBufferView>
-			CreateVertexAndIndexBufferViews(const Device& device, const Mesh& mesh)
+		template<typename TVertexData>
+		static MeshViews CreateMeshViews(const Device& device, const IMesh<TVertexData>& mesh)
 		{
-			const std::vector<VertexData>& vertices = mesh.vertices;                 // メッシュのプロパティ
-			const VertexData* verticesPtr = vertices.data();                         // 先頭ポインタ
+			const std::vector<TVertexData>& vertices = mesh.GetVertices();           // メッシュのプロパティ
+			const TVertexData* verticesPtr = vertices.data();                        // 先頭ポインタ
 			const int vertexSize = static_cast<int>(sizeof(vertices[0]));            // 要素1つ分のメモリサイズ
 			const int verticesSize = static_cast<int>(vertices.size() * vertexSize); // 全体のメモリサイズ
 
-			const std::vector<std::uint32_t>& indices = mesh.indices;                // メッシュのプロパティ
+			const std::vector<std::uint32_t>& indices = mesh.GetIndices();           // メッシュのプロパティ
 			const std::uint32_t* indicesPtr = indices.data();                        // 先頭ポインタ
 			const int indexSize = static_cast<int>(sizeof(indices[0]));              // 要素1つ分のメモリサイズ
 			const int indicesSize = static_cast<int>(indices.size() * indexSize);    // 全体のメモリサイズ
 
-			const GraphicsBuffer vertexBuffer = D3D12Helper::CreateGraphicsBuffer1D(device, verticesSize, true);
-			if (!vertexBuffer)
+			const GraphicsBuffer vb = D3D12Helper::CreateGraphicsBuffer1D(device, verticesSize, true);
+			if (!vb)
 				ShowError(L"頂点バッファーの作成に失敗しました");
-			if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer1D(vertexBuffer, static_cast<const void*>(verticesPtr), verticesSize))
+			if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer1D(vb, static_cast<const void*>(verticesPtr), verticesSize))
 				ShowError(L"頂点バッファーを GPU 側にコピーすることに失敗しました");
-			const VertexBufferView vertexBufferView = D3D12Helper::CreateVertexBufferView(vertexBuffer, verticesSize, vertexSize);
+			const VertexBufferView vbv = D3D12Helper::CreateVertexBufferView(vb, verticesSize, vertexSize);
 
-			const GraphicsBuffer indexBuffer = D3D12Helper::CreateGraphicsBuffer1D(device, indicesSize, true);
-			if (!indexBuffer)
+			const GraphicsBuffer ib = D3D12Helper::CreateGraphicsBuffer1D(device, indicesSize, true);
+			if (!ib)
 				ShowError(L"インデックスバッファーの作成に失敗しました");
-			if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer1D(indexBuffer, static_cast<const void*>(indicesPtr), indicesSize))
+			if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer1D(ib, static_cast<const void*>(indicesPtr), indicesSize))
 				ShowError(L"インデックスバッファーを GPU 側にコピーすることに失敗しました");
-			const IndexBufferView indexBufferView = D3D12Helper::CreateIndexBufferView(indexBuffer, indicesSize, Format::R_U32);
+			const IndexBufferView ibv = D3D12Helper::CreateIndexBufferView(ib, indicesSize, Format::R_U32);
 
-			return { vertexBufferView, indexBufferView };
-		}
-
-		/// <summary>
-		/// 頂点バッファビューとインデックスバッファビューを一括で作成する (板ポリ)
-		/// </summary>
-		static std::tuple<VertexBufferView, IndexBufferView>
-			CreateVertexAndIndexBufferViews(const Device& device, const MeshQuad& mesh)
-		{
-			const std::vector<VertexDataQuad>& vertices = mesh.vertices;             // メッシュのプロパティ
-			const VertexDataQuad* verticesPtr = vertices.data();                     // 先頭ポインタ
-			const int vertexSize = static_cast<int>(sizeof(vertices[0]));            // 要素1つ分のメモリサイズ
-			const int verticesSize = static_cast<int>(vertices.size() * vertexSize); // 全体のメモリサイズ
-
-			const std::vector<std::uint32_t>& indices = mesh.indices;                // メッシュのプロパティ
-			const std::uint32_t* indicesPtr = indices.data();                        // 先頭ポインタ
-			const int indexSize = static_cast<int>(sizeof(indices[0]));              // 要素1つ分のメモリサイズ
-			const int indicesSize = static_cast<int>(indices.size() * indexSize);    // 全体のメモリサイズ
-
-			const GraphicsBuffer vertexBuffer = D3D12Helper::CreateGraphicsBuffer1D(device, verticesSize, true);
-			if (!vertexBuffer)
-				ShowError(L"頂点バッファーの作成に失敗しました");
-			if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer1D(vertexBuffer, static_cast<const void*>(verticesPtr), verticesSize))
-				ShowError(L"頂点バッファーを GPU 側にコピーすることに失敗しました");
-			const VertexBufferView vertexBufferView = D3D12Helper::CreateVertexBufferView(vertexBuffer, verticesSize, vertexSize);
-
-			const GraphicsBuffer indexBuffer = D3D12Helper::CreateGraphicsBuffer1D(device, indicesSize, true);
-			if (!indexBuffer)
-				ShowError(L"インデックスバッファーの作成に失敗しました");
-			if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer1D(indexBuffer, static_cast<const void*>(indicesPtr), indicesSize))
-				ShowError(L"インデックスバッファーを GPU 側にコピーすることに失敗しました");
-			const IndexBufferView indexBufferView = D3D12Helper::CreateIndexBufferView(indexBuffer, indicesSize, Format::R_U32);
-
-			return { vertexBufferView, indexBufferView };
+			return { vbv, ibv };
 		}
 
 		/// <summary>
 		/// シェーダーをロードして、頂点シェーダーとピクセルシェーダーにコンパイルする
 		/// </summary>
-		static std::tuple<Blob, Blob>
-			CompileShader_VS_PS(const std::string& path)
+		static std::tuple<Blob, Blob> CompileShader_VS_PS(const std::string& path)
 		{
 			Blob vs = Blob();
 			Blob ps = Blob();
@@ -136,19 +101,17 @@ namespace ForiverEngine
 		/// <summary>
 		/// RootSignature と GraphicsPipelineState を一括で作成して返す
 		/// </summary>
-		static std::tuple<RootSignature, PipelineState>
-			CreateRootSignatureAndGraphicsPipelineState
-			(
-				const Device& device,
-				const RootParameter& rootParameter,
-				const SamplerConfig& samplerConfig,
-				const Blob& shaderVS,
-				const Blob& shaderPS,
-				const std::vector<VertexLayout>& vertexLayouts,
-				FillMode fillMode,
-				CullMode cullMode,
-				bool useDSV
-			)
+		static std::tuple<RootSignature, PipelineState> CreateRootSignatureAndGraphicsPipelineState(
+			const Device& device,
+			const RootParameter& rootParameter,
+			const SamplerConfig& samplerConfig,
+			const Blob& shaderVS,
+			const Blob& shaderPS,
+			const std::vector<VertexLayout>& vertexLayouts,
+			FillMode fillMode,
+			CullMode cullMode,
+			bool useDSV
+		)
 		{
 			std::wstring errorMessage = L"";
 
@@ -172,8 +135,7 @@ namespace ForiverEngine
 		/// <para>CBV を作る用のバッファ</para>
 		/// </summary>
 		template<typename TCBData>
-		static GraphicsBuffer
-			InitCBVBuffer(const Device& device, const TCBData& data, TCBData** outBufferVirtualPtr = nullptr)
+		static GraphicsBuffer InitCBVBuffer(const Device& device, const TCBData& data, TCBData** outBufferVirtualPtr = nullptr)
 		{
 			if (outBufferVirtualPtr)
 				*outBufferVirtualPtr = nullptr;
@@ -196,15 +158,13 @@ namespace ForiverEngine
 		/// <para>作成したバッファと、ロードしたテクスチャのメタデータを返す</para>
 		/// <para>SRV を作る用のバッファ</para>
 		/// </summary>
-		static std::tuple<GraphicsBuffer, Texture>
-			InitSRVBuffer
-			(
-				const Device& device,
-				const CommandList& commandList,
-				const CommandQueue& commandQueue,
-				const CommandAllocator& commandAllocator,
-				const std::vector<std::string>& paths
-			)
+		static std::tuple<GraphicsBuffer, Texture> InitSRVBuffer(
+			const Device& device,
+			const CommandList& commandList,
+			const CommandQueue& commandQueue,
+			const CommandAllocator& commandAllocator,
+			const std::vector<std::string>& paths
+		)
 		{
 			Texture texture = Texture();
 
@@ -234,15 +194,13 @@ namespace ForiverEngine
 		/// <para>作成したバッファを返す</para>
 		/// <para>SRV を作る用のバッファ</para>
 		/// </summary>
-		static GraphicsBuffer
-			InitSRVBuffer
-			(
-				const Device& device,
-				const CommandList& commandList,
-				const CommandQueue& commandQueue,
-				const CommandAllocator& commandAllocator,
-				const Texture& texture
-			)
+		static GraphicsBuffer InitSRVBuffer(
+			const Device& device,
+			const CommandList& commandList,
+			const CommandQueue& commandQueue,
+			const CommandAllocator& commandAllocator,
+			const Texture& texture
+		)
 		{
 			const GraphicsBuffer textureBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, texture,
 				GraphicsBufferUsagePermission::None, GraphicsBufferState::CopyDestination, Color::Transparent());
@@ -261,13 +219,11 @@ namespace ForiverEngine
 		/// <para>※ バッファの個数は、ルートパラメーターで登録したものと同じにすること</para>
 		/// <para>※ シェーダーからは見える</para>
 		/// </summary>
-		static DescriptorHeap
-			InitDescriptorHeapBasic
-			(
-				const Device& device,
-				const std::vector<GraphicsBuffer>& cbvBuffers,
-				const std::vector<std::tuple<GraphicsBuffer, Texture>>& srvBuffers
-			)
+		static DescriptorHeap InitDescriptorHeapBasic(
+			const Device& device,
+			const std::vector<GraphicsBuffer>& cbvBuffers,
+			const std::vector<std::tuple<GraphicsBuffer, Texture>>& srvBuffers
+		)
 		{
 			const int cbvBufferCount = static_cast<int>(cbvBuffers.size());
 			const int srvBufferCount = static_cast<int>(srvBuffers.size());
@@ -296,8 +252,8 @@ namespace ForiverEngine
 		/// <para>SwapChain 内の RT 全てに対して、専用の DescriptorHeap を作成し、RTV をその DescriptorHeap の中に作成して返す</para>
 		/// <para>戻り値は関数で、インデックスを基に、RT/RTV を取得出来る</para>
 		/// </summary>
-		static std::tuple<std::function<GraphicsBuffer(int)>, std::function<DescriptorHandleAtCPU(int)>>
-			InitRTV(const Device& device, const SwapChain& swapChain, Format format)
+		static std::tuple<std::function<GraphicsBuffer(int)>, std::function<DescriptorHandleAtCPU(int)>> InitRTV(
+			const Device& device, const SwapChain& swapChain, Format format)
 		{
 			const int descriptorCount = D3D12Helper::GetRTCount(swapChain);
 			if (descriptorCount <= 0)
@@ -323,8 +279,7 @@ namespace ForiverEngine
 		/// <para>与えられた RT に対して、専用の DescriptorHeap を作成し、RTV をその DescriptorHeap の中に作成して返す</para>
 		/// <para>作成した RTV を返す</para>
 		/// </summary>
-		static DescriptorHandleAtCPU
-			InitRTV(const Device& device, const GraphicsBuffer& rt, Format format)
+		static DescriptorHandleAtCPU InitRTV(const Device& device, const GraphicsBuffer& rt, Format format)
 		{
 			const DescriptorHeap descriptorHeapRTV = D3D12Helper::CreateDescriptorHeap(device, DescriptorHeapType::RTV, 1, false);
 			if (!descriptorHeapRTV)
@@ -344,8 +299,7 @@ namespace ForiverEngine
 		/// <para>記録用のバッファなので、1つのみ作成する</para>
 		/// <para>ステンシルは使わないので、深度のみとして作成する</para>
 		/// </summary>
-		static DescriptorHandleAtCPU
-			InitDSV(const Device& device, const Lattice2& size)
+		static DescriptorHandleAtCPU InitDSV(const Device& device, const Lattice2& size)
 		{
 			const Texture depthBufferMetadata = Texture::CreateManually({}, size, Format::D_F32);
 			const GraphicsBuffer depthBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, depthBufferMetadata,
@@ -369,8 +323,7 @@ namespace ForiverEngine
 		/// <para>[Command]</para>
 		/// <para>コマンドリストをクローズして実行し、GPUの処理が完了するまで待機する</para>
 		/// </summary>
-		static void
-			CommandCloseAndWaitForCompletion(const CommandList& commandList, const CommandQueue& commandQueue, const Device& device)
+		static void CommandCloseAndWaitForCompletion(const CommandList& commandList, const CommandQueue& commandQueue, const Device& device)
 		{
 			D3D12Helper::CommandClose(commandList);
 
@@ -384,16 +337,15 @@ namespace ForiverEngine
 		/// <para>テクスチャデータを GPU 側にアップロードする</para>
 		/// <para>内部で中間バッファを作成し、転送する</para>
 		/// </summary>
-		static void
-			UploadTextureToGPU
-			(
-				const CommandList& commandList,
-				const CommandQueue& commandQueue,
-				const CommandAllocator& commandAllocator,
-				const Device& device,
-				const GraphicsBuffer& textureBuffer,
-				const Texture& textureAsMetadata
-			)
+		static void UploadTextureToGPU
+		(
+			const CommandList& commandList,
+			const CommandQueue& commandQueue,
+			const CommandAllocator& commandAllocator,
+			const Device& device,
+			const GraphicsBuffer& textureBuffer,
+			const Texture& textureAsMetadata
+		)
 		{
 			const GraphicsBuffer intermediateBuffer = D3D12Helper::CreateGraphicsBuffer1D(
 				device,
@@ -444,26 +396,25 @@ namespace ForiverEngine
 		/// <param name="rtvClearColor">RTV のクリアカラー</param>
 		/// <param name="depthClearValue">DSV のクリア深度値 (ステンシルは使わないので、深度値のみ. [0, 1])</param>
 		/// <param name="indexTotalCountArray">ドローコール時のインデックス総数 (サイズはドローコール数と同じ!)</param>
-		static void
-			CommandBasicLoop
-			(
-				// 基本オブジェクト
-				const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator,
-				const Device& device,
-				// パイプライン関連
-				const RootSignature& rootSignature, const PipelineState& graphicsPipelineState, const GraphicsBuffer& rt,
-				// Descriptor
-				const DescriptorHandleAtCPU& rtv, const DescriptorHandleAtCPU& dsv,
-				const DescriptorHeap& descriptorHeapBasic,
-				const std::vector<VertexBufferView>& vertexBufferViewArray,
-				const std::vector<IndexBufferView>& indexBufferViewArray,
-				// 数値情報
-				GraphicsBufferState rtStateOutsideRender, GraphicsBufferState rtStateInsideRender,
-				const ViewportScissorRect& viewportScissorRect, PrimitiveTopology primitiveTopology,
-				Color rtvClearColor, float depthClearValue,
-				// ドローコール関連
-				const std::vector<int>& indexTotalCountArray
-			)
+		static void CommandBasicLoop
+		(
+			// 基本オブジェクト
+			const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator,
+			const Device& device,
+			// パイプライン関連
+			const RootSignature& rootSignature, const PipelineState& graphicsPipelineState, const GraphicsBuffer& rt,
+			// Descriptor
+			const DescriptorHandleAtCPU& rtv, const DescriptorHandleAtCPU& dsv,
+			const DescriptorHeap& descriptorHeapBasic,
+			const std::vector<VertexBufferView>& vertexBufferViewArray,
+			const std::vector<IndexBufferView>& indexBufferViewArray,
+			// 数値情報
+			GraphicsBufferState rtStateOutsideRender, GraphicsBufferState rtStateInsideRender,
+			const ViewportScissorRect& viewportScissorRect, PrimitiveTopology primitiveTopology,
+			Color rtvClearColor, float depthClearValue,
+			// ドローコール関連
+			const std::vector<int>& indexTotalCountArray
+		)
 		{
 			// ドローコール数を取得
 			// 要素数が等しいかも、ついでにチェック
@@ -513,8 +464,7 @@ namespace ForiverEngine
 		/// <summary>
 		/// MVP行列を計算して返す
 		/// </summary>
-		static Matrix4x4
-			CalculateMVPMatrix(const Transform& transform, const CameraTransform& cameraTransform)
+		static Matrix4x4 CalculateMVPMatrix(const Transform& transform, const CameraTransform& cameraTransform)
 		{
 			const Matrix4x4 m = transform.CalculateModelMatrix();
 			const Matrix4x4 vp = cameraTransform.CalculateVPMatrix();

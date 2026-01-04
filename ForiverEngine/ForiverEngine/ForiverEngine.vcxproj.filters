@@ -249,6 +249,9 @@
     <ClInclude Include="scripts\common\Math\MathUtils.h">
       <Filter>scripts\common\Math</Filter>
     </ClInclude>
+    <ClInclude Include="scripts\component\Mesh\IMesh.h">
+      <Filter>scripts\component\Mesh</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shaders\Basic.hlsl">

@@ -232,7 +232,7 @@ int Main(hInstance)
 
 	// メッシュ, VBV, IBV
 	const MeshQuad meshPP = MeshQuad::CreateFullSized();
-	const auto [vbvPP, ibvPP] = D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, meshPP);
+	const MeshViews meshViewsPP = D3D12BasicFlow::CreateMeshViews(device, meshPP);
 
 	// CB 0
 	struct alignas(256) CBData0PP
@@ -277,7 +277,7 @@ int Main(hInstance)
 
 	// メッシュ, VBV, IBV
 	const MeshQuad meshText = MeshQuad::CreateFullSized();
-	const auto [vbvText, ibvText] = D3D12BasicFlow::CreateVertexAndIndexBufferViews(device, meshText);
+	const MeshViews meshViewsText = D3D12BasicFlow::CreateMeshViews(device, meshText);
 
 	// テキストUIデータ
 	TextUIData textUIData = TextUIData::CreateEmpty(WindowSize / TextUIData::FontTextureTextLength);
@@ -659,7 +659,7 @@ int Main(hInstance)
 		D3D12BasicFlow::CommandBasicLoop(
 			commandList, commandQueue, commandAllocator, device,
 			rootSignaturePP, graphicsPipelineStatePP, textGraphicsBuffer,
-			rtvText, dsvPP_Dummy, descriptorHeapBasicPP, { vbvPP }, { ibvPP },
+			rtvText, dsvPP_Dummy, descriptorHeapBasicPP, { meshViewsPP.vbv }, { meshViewsPP.ibv },
 			GraphicsBufferState::Present, GraphicsBufferState::RenderTarget,
 			viewportScissorRect, PrimitiveTopology::TriangleList, Color::Transparent(), DepthBufferClearValue,
 			{ static_cast<int>(meshPP.indices.size()) }
@@ -668,7 +668,7 @@ int Main(hInstance)
 		D3D12BasicFlow::CommandBasicLoop(
 			commandList, commandQueue, commandAllocator, device,
 			rootSignatureText, graphicsPipelineStateText, currentBackRT,
-			currentBackRTV, dsvText_Dummy, descriptorHeapBasicText, { vbvText }, { ibvText },
+			currentBackRTV, dsvText_Dummy, descriptorHeapBasicText, { meshViewsText.vbv }, { meshViewsText.ibv },
 			GraphicsBufferState::Present, GraphicsBufferState::RenderTarget,
 			viewportScissorRect, PrimitiveTopology::TriangleList, Color::Transparent(), DepthBufferClearValue,
 			{ static_cast<int>(meshText.indices.size()) }
