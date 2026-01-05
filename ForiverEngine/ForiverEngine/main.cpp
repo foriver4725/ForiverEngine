@@ -514,16 +514,26 @@ int Main(hInstance)
 
 				// フレームタイム
 				constexpr int FrameTimeTextUpdateIntervalFrames = 16; // テキストの更新間隔 (フレーム数)
+				static std::array<double, FrameTimeTextUpdateIntervalFrames> frameTimes = {};
 				static int frameTimeTextUpdateCounter = 0;
-				static double frameTimeTextValue = 0.0;
+				static double frameTimeMean = 0.0;
 				{
-					// フレーム数をカウントし、一定周期でフレームタイムを更新する
-					if (++frameTimeTextUpdateCounter >= FrameTimeTextUpdateIntervalFrames)
-						frameTimeTextUpdateCounter = 0;
-					if (frameTimeTextUpdateCounter % FrameTimeTextUpdateIntervalFrames == 0)
-						frameTimeTextValue = WindowHelper::GetDeltaMilliseconds();
+					// データを保存
+					frameTimes[frameTimeTextUpdateCounter % FrameTimeTextUpdateIntervalFrames]
+						= WindowHelper::GetDeltaMilliseconds();
+
+					// 一定間隔で、平均値を更新
+					frameTimeTextUpdateCounter = (frameTimeTextUpdateCounter + 1) % FrameTimeTextUpdateIntervalFrames;
+					if (frameTimeTextUpdateCounter == 0)
+					{
+						double frameTimeSum = 0.0;
+						for (const double ft : frameTimes)
+							frameTimeSum += ft;
+
+						frameTimeMean = frameTimeSum / FrameTimeTextUpdateIntervalFrames;
+					}
 				}
-				const std::string frameTimeText = std::format("Frame Time : {:.2f} ms", frameTimeTextValue);
+				const std::string frameTimeText = std::format("Frame Time : {:.2f} ms", frameTimeMean);
 				textUIDataRows.emplace_back(frameTimeText, Color::White());
 
 				// プレイヤーの足元のブロック座標
