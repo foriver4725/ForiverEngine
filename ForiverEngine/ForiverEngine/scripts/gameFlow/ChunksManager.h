@@ -12,6 +12,8 @@ namespace ForiverEngine
 	public:
 		static constexpr Lattice3 WorldEdgeMargin = Lattice3(2, 0, 2); // チャンクデータの端から何マスを、世界の範囲外とみなすか
 
+		ChunksManager() = default;
+
 		ChunksManager(const Lattice2& playerFirstExistingChunkIndex)
 		{
 			generationStates = Chunk::CreateChunksArray<std::atomic<ChunkGenerationState>>();

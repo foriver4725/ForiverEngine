@@ -329,14 +329,23 @@ namespace ForiverEngine
 
 			static constexpr Vector3 PlayerCollisionSize = Vector3(0.8f, 1.8f, 0.8f);
 
-			static ChunksManager CreateChunksManager3Layerd2x2ForTest()
+			static const ChunksManager& CreateChunksManager3Layerd2x2ForTest()
 			{
-				return CreateChunksManager3Layerd2x2({ Lattice2(4, 12), Lattice2(3, 13), Lattice2(5, 11), Lattice2(4, 12) });
+				static bool hasCreated = false;
+				static ChunksManager chunksManager;
+
+				if (!hasCreated)
+				{
+					hasCreated = true;
+					chunksManager = CreateChunksManager3Layerd2x2({ Lattice2(4, 12), Lattice2(3, 13), Lattice2(5, 11), Lattice2(4, 12) });
+				}
+
+				return chunksManager;
 			}
 
 			static void Run_CreateChunksManager3Layerd2x2ForTest()
 			{
-				const ChunksManager chunksManager = CreateChunksManager3Layerd2x2ForTest();
+				const ChunksManager& chunksManager = CreateChunksManager3Layerd2x2ForTest();
 
 #define test(chunkIndex, blockPosition, expectedBlock) \
 eqen(ExstractChunk(chunksManager, Lattice2##chunkIndex).GetBlock(Lattice3##blockPosition), Block::##expectedBlock); \
