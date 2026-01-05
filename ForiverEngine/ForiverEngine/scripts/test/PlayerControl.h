@@ -303,10 +303,13 @@ namespace ForiverEngine
 				chunksManager_Dummy->chunks[chunkIndex.x][chunkIndex.y] = std::move(newChunk);
 			}
 
-			// チャンク群を作成し、2x2 データを [0, 0], [1, 0], [0, 1], [1, 1] に設定する
+			// チャンク群を作成し、以下のチャンクについてデータを設定する (= 引数の配列における順番)
+			// [0,0], [1,0], [0,1], [1,1],
+			// [-2,-2], [-1,-2], [-2,-1], [-1,-1]
 			// ブロック、空気、ブロックの 3層構造
 			// min, x隣, z隣, xz隣 の順に airYRanges を指定
-			static ChunksManager CreateChunksManager3Layerd2x2(const std::array<Lattice2, 4 >& airYRanges)
+			// データを設定したチャンクの隣接チャンクは空にしておく
+			static ChunksManager CreateChunksManager3Layerd2x2WithDiagonal(const std::array<Lattice2, 8>& airYRanges)
 			{
 				ChunksManager chunksManager = ChunksManager(Lattice2::Zero());
 
@@ -314,6 +317,10 @@ namespace ForiverEngine
 				OverwriteChunk(chunksManager, { 1, 0 }, CreateChunk3Layerd(airYRanges[1]));
 				OverwriteChunk(chunksManager, { 0, 1 }, CreateChunk3Layerd(airYRanges[2]));
 				OverwriteChunk(chunksManager, { 1, 1 }, CreateChunk3Layerd(airYRanges[3]));
+				OverwriteChunk(chunksManager, { Chunk::Count - 2, Chunk::Count - 2 }, CreateChunk3Layerd(airYRanges[4]));
+				OverwriteChunk(chunksManager, { Chunk::Count - 1, Chunk::Count - 2 }, CreateChunk3Layerd(airYRanges[5]));
+				OverwriteChunk(chunksManager, { Chunk::Count - 2, Chunk::Count - 1 }, CreateChunk3Layerd(airYRanges[6]));
+				OverwriteChunk(chunksManager, { Chunk::Count - 1, Chunk::Count - 1 }, CreateChunk3Layerd(airYRanges[7]));
 
 				// 隣接チャンクは空にしておく
 				OverwriteChunk(chunksManager, { 0, 2 }, Chunk::CreateVoid());
@@ -321,6 +328,11 @@ namespace ForiverEngine
 				OverwriteChunk(chunksManager, { 2, 0 }, Chunk::CreateVoid());
 				OverwriteChunk(chunksManager, { 2, 1 }, Chunk::CreateVoid());
 				OverwriteChunk(chunksManager, { 2, 2 }, Chunk::CreateVoid());
+				OverwriteChunk(chunksManager, { Chunk::Count - 1, Chunk::Count - 3 }, Chunk::CreateVoid());
+				OverwriteChunk(chunksManager, { Chunk::Count - 2, Chunk::Count - 3 }, Chunk::CreateVoid());
+				OverwriteChunk(chunksManager, { Chunk::Count - 3, Chunk::Count - 1 }, Chunk::CreateVoid());
+				OverwriteChunk(chunksManager, { Chunk::Count - 3, Chunk::Count - 2 }, Chunk::CreateVoid());
+				OverwriteChunk(chunksManager, { Chunk::Count - 3, Chunk::Count - 3 }, Chunk::CreateVoid());
 
 				return chunksManager;
 			}
@@ -337,7 +349,10 @@ namespace ForiverEngine
 				if (!hasCreated)
 				{
 					hasCreated = true;
-					chunksManager = CreateChunksManager3Layerd2x2({ Lattice2(4, 12), Lattice2(3, 13), Lattice2(5, 11), Lattice2(4, 12) });
+					chunksManager = CreateChunksManager3Layerd2x2WithDiagonal({
+						Lattice2(4, 12), Lattice2(3, 13), Lattice2(5, 11), Lattice2(4, 12),
+						Lattice2(4, 12), Lattice2(3, 13), Lattice2(5, 11), Lattice2(4, 12),
+						});
 				}
 
 				return chunksManager;
@@ -386,6 +401,42 @@ eqen(ExstractChunk(chunksManager, Lattice2##chunkIndex).GetBlock(Lattice3##block
 				test((1, 1), (12, 8, 15), Air);
 				test((1, 1), (12, 64, 15), Stone);
 
+				// x-2z-2
+				test((Chunk::Count - 2, Chunk::Count - 2), (0, 3, 0), Stone);
+				test((Chunk::Count - 2, Chunk::Count - 2), (0, 4, 0), Air);
+				test((Chunk::Count - 2, Chunk::Count - 2), (0, 12, 0), Air);
+				test((Chunk::Count - 2, Chunk::Count - 2), (0, 13, 0), Stone);
+				test((Chunk::Count - 2, Chunk::Count - 2), (12, 1, 15), Stone);
+				test((Chunk::Count - 2, Chunk::Count - 2), (12, 8, 15), Air);
+				test((Chunk::Count - 2, Chunk::Count - 2), (12, 64, 15), Stone);
+
+				// x-1z-2
+				test((Chunk::Count - 1, Chunk::Count - 2), (0, 2, 0), Stone);
+				test((Chunk::Count - 1, Chunk::Count - 2), (0, 3, 0), Air);
+				test((Chunk::Count - 1, Chunk::Count - 2), (0, 13, 0), Air);
+				test((Chunk::Count - 1, Chunk::Count - 2), (0, 14, 0), Stone);
+				test((Chunk::Count - 1, Chunk::Count - 2), (12, 1, 15), Stone);
+				test((Chunk::Count - 1, Chunk::Count - 2), (12, 8, 15), Air);
+				test((Chunk::Count - 1, Chunk::Count - 2), (12, 64, 15), Stone);
+
+				// x-2z-1
+				test((Chunk::Count - 2, Chunk::Count - 1), (0, 4, 0), Stone);
+				test((Chunk::Count - 2, Chunk::Count - 1), (0, 5, 0), Air);
+				test((Chunk::Count - 2, Chunk::Count - 1), (0, 11, 0), Air);
+				test((Chunk::Count - 2, Chunk::Count - 1), (0, 12, 0), Stone);
+				test((Chunk::Count - 2, Chunk::Count - 1), (12, 1, 15), Stone);
+				test((Chunk::Count - 2, Chunk::Count - 1), (12, 8, 15), Air);
+				test((Chunk::Count - 2, Chunk::Count - 1), (12, 64, 15), Stone);
+
+				// x-1z-1
+				test((Chunk::Count - 1, Chunk::Count - 1), (0, 3, 0), Stone);
+				test((Chunk::Count - 1, Chunk::Count - 1), (0, 4, 0), Air);
+				test((Chunk::Count - 1, Chunk::Count - 1), (0, 12, 0), Air);
+				test((Chunk::Count - 1, Chunk::Count - 1), (0, 13, 0), Stone);
+				test((Chunk::Count - 1, Chunk::Count - 1), (12, 1, 15), Stone);
+				test((Chunk::Count - 1, Chunk::Count - 1), (12, 8, 15), Air);
+				test((Chunk::Count - 1, Chunk::Count - 1), (12, 64, 15), Stone);
+
 #undef test
 			}
 
@@ -399,7 +450,30 @@ eqen(ExstractChunk(chunksManager, Lattice2##chunkIndex).GetBlock(Lattice3##block
 	b11, x11, y11, z11 \
 ) \
 eqobj( \
-	(CollisionBoundaryInfoWrapper{TargetClass::CalculateCollisionBoundaryAsBlock(Vector3##worldPositionMin, PlayerCollisionSize)}), \
+	(CollisionBoundaryInfoWrapper{TargetClass::CalculateCollisionBoundaryAsBlock( \
+		Vector3##worldPositionMin, \
+		PlayerCollisionSize \
+	)}), \
+	(CollisionBoundaryInfoWrapper{{ \
+		TargetClass::CollisionBoundaryAsBlockInfoPerChunk { ##b00, Lattice2(0, 0), Lattice2##x00, Lattice2##y00, Lattice2##z00 }, \
+		TargetClass::CollisionBoundaryAsBlockInfoPerChunk { ##b10, Lattice2(1, 0), Lattice2##x10, Lattice2##y10, Lattice2##z10 }, \
+		TargetClass::CollisionBoundaryAsBlockInfoPerChunk { ##b01, Lattice2(0, 1), Lattice2##x01, Lattice2##y01, Lattice2##z01 }, \
+		TargetClass::CollisionBoundaryAsBlockInfoPerChunk { ##b11, Lattice2(1, 1), Lattice2##x11, Lattice2##y11, Lattice2##z11 }, \
+	}}) \
+); \
+
+#define test_diag( \
+	worldPositionMin, \
+	b00, x00, y00, z00, \
+	b10, x10, y10, z10, \
+	b01, x01, y01, z01, \
+	b11, x11, y11, z11 \
+) \
+eqobj( \
+	(CollisionBoundaryInfoWrapper{TargetClass::CalculateCollisionBoundaryAsBlock( \
+		Vector3##worldPositionMin + Vector3((Chunk::Count - 2) * Chunk::Size, 0, (Chunk::Count - 2) * Chunk::Size), \
+		PlayerCollisionSize \
+	)}), \
 	(CollisionBoundaryInfoWrapper{{ \
 		TargetClass::CollisionBoundaryAsBlockInfoPerChunk { ##b00, Lattice2(0, 0), Lattice2##x00, Lattice2##y00, Lattice2##z00 }, \
 		TargetClass::CollisionBoundaryAsBlockInfoPerChunk { ##b10, Lattice2(1, 0), Lattice2##x10, Lattice2##y10, Lattice2##z10 }, \
@@ -444,20 +518,15 @@ eqobj( \
 					true, (0, 0), (4, 6), (0, 0)
 				);
 
-				// TODO: テストが難しい
-#if 0
 				// チャンク配列の範囲外 (最小座標は範囲内)
-				test(
+				test_diag(
 					(31.4f, 4.0f, 15.4f),
 					true, (15, 15), (4, 6), (15, 15),
 					false, (0, 0), (0, 0), (0, 0),
 					true, (15, 15), (4, 6), (0, 0),
 					false, (0, 0), (0, 0), (0, 0)
 				);
-#endif
 
-				// TODO: テストが難しい
-#if 0
 				// チャンク配列の範囲外 (最小座標が範囲外)
 				test(
 					(-1.0f, 4.0f, -1.0f),
@@ -466,16 +535,30 @@ eqobj( \
 					false, (0, 0), (0, 0), (0, 0),
 					false, (0, 0), (0, 0), (0, 0)
 				);
-#endif
 
 #undef test
+#undef test_diag
 			}
 
 			static void Run_FindFloorHeight()
 			{
 #define test(worldPositionMin, expected) \
 eq( \
-	(TargetClass::FindFloorHeight(CreateChunksManager3Layerd2x2ForTest().GetChunks(), Vector3##worldPositionMin, PlayerCollisionSize)), \
+	(TargetClass::FindFloorHeight( \
+		CreateChunksManager3Layerd2x2ForTest().GetChunks(), \
+		Vector3##worldPositionMin, \
+		PlayerCollisionSize \
+	)), \
+	(expected) \
+); \
+
+#define test_diag(worldPositionMin, expected) \
+eq( \
+	(TargetClass::FindFloorHeight( \
+		CreateChunksManager3Layerd2x2ForTest().GetChunks(), \
+		Vector3##worldPositionMin + Vector3((Chunk::Count - 2) * Chunk::Size, 0, (Chunk::Count - 2) * Chunk::Size), \
+		PlayerCollisionSize \
+	)), \
 	(expected) \
 ); \
 
@@ -495,39 +578,45 @@ eq( \
 				test((5.0f, 8.0f, 15.4f), 4); // x0z0, x0z1 で判定
 				test((15.4f, 8.0f, 15.4f), 4); // x0z0, x1z0, x0z1, x1z1 で判定
 
-				// TODO: テストが難しい
-#if 0
 				// チャンク配列の範囲外 (最小座標は範囲内)
 				// 1チャンクの中に収まっている
 				// xのみ範囲外, zのみ範囲外, xz両方範囲外
-				test((31.4f, 8.0f, 5.0f), 2); // x1z0 で判定
-				test((5.0f, 8.0f, 31.4f), 4); // x0z1 で判定
-				test((31.4f, 8.0f, 31.4f), 3); // x1z1 で判定
-#endif
+				test_diag((31.4f, 8.0f, 5.0f), 2); // x1z0 で判定
+				test_diag((5.0f, 8.0f, 31.4f), 4); // x0z1 で判定
+				test_diag((31.4f, 8.0f, 31.4f), 3); // x1z1 で判定
 
-				// TODO: テストが難しい
-#if 0
 				// チャンク配列の範囲外 (最小座標は範囲内)
 				// 複数チャンクに跨っている
 				// x範囲外z跨っている, z範囲外x跨っている, xz両方範囲外
-				test((31.4f, 8.0f, 15.4f), 3); // x1z0, x1z1 で判定
-				test((15.4f, 8.0f, 31.4f), 4); // x0z1, x1z1 で判定
-#endif
+				test_diag((31.4f, 8.0f, 15.4f), 3); // x1z0, x1z1 で判定
+				test_diag((15.4f, 8.0f, 31.4f), 4); // x0z1, x1z1 で判定
 
-				// TODO: テストが難しい
-#if 0
 				// チャンク配列の範囲外 (最小座標が範囲外)
 				test((-1.0f, 8.0f, -1.0f), -1);
-#endif
 
 #undef test
+#undef test_diag
 			}
 
 			static void Run_FindCeilHeight()
 			{
 #define test(worldPositionMin, expected) \
 eq( \
-	(TargetClass::FindCeilHeight(CreateChunksManager3Layerd2x2ForTest().GetChunks(), Vector3##worldPositionMin, PlayerCollisionSize)), \
+	(TargetClass::FindCeilHeight( \
+		CreateChunksManager3Layerd2x2ForTest().GetChunks(), \
+		Vector3##worldPositionMin, \
+		PlayerCollisionSize \
+	)), \
+	(expected) \
+); \
+
+#define test_diag(worldPositionMin, expected) \
+eq( \
+	(TargetClass::FindCeilHeight( \
+		CreateChunksManager3Layerd2x2ForTest().GetChunks(), \
+		Vector3##worldPositionMin + Vector3((Chunk::Count - 2) * Chunk::Size, 0, (Chunk::Count - 2) * Chunk::Size), \
+		PlayerCollisionSize \
+	)), \
 	(expected) \
 ); \
 
@@ -547,39 +636,45 @@ eq( \
 				test((5.0f, 8.0f, 15.4f), 12); // x0z0, x0z1 で判定
 				test((15.4f, 8.0f, 15.4f), 12); // x0z0, x1z0, x0z1, x1z1 で判定
 
-				// TODO: テストが難しい
-#if 0
 				// チャンク配列の範囲外 (最小座標は範囲内)
 				// 1チャンクの中に収まっている
 				// xのみ範囲外, zのみ範囲外, xz両方範囲外
-				test((31.4f, 8.0f, 5.0f), 14); // x1z0 で判定
-				test((5.0f, 8.0f, 31.4f), 12); // x0z1 で判定
-				test((31.4f, 8.0f, 31.4f), 13); // x1z1 で判定
-#endif
+				test_diag((31.4f, 8.0f, 5.0f), 14); // x1z0 で判定
+				test_diag((5.0f, 8.0f, 31.4f), 12); // x0z1 で判定
+				test_diag((31.4f, 8.0f, 31.4f), 13); // x1z1 で判定
 
-				// TODO: テストが難しい
-#if 0
 				// チャンク配列の範囲外 (最小座標は範囲内)
 				// 複数チャンクに跨っている
 				// x範囲外z跨っている, z範囲外x跨っている, xz両方範囲外
-				test((31.4f, 8.0f, 15.4f), 13); // x1z0, x1z1 で判定
-				test((15.4f, 8.0f, 31.4f), 12); // x0z1, x1z1 で判定
-#endif
+				test_diag((31.4f, 8.0f, 15.4f), 13); // x1z0, x1z1 で判定
+				test_diag((15.4f, 8.0f, 31.4f), 12); // x0z1, x1z1 で判定
 
-				// TODO: テストが難しい
-#if 0
 				// チャンク配列の範囲外 (最小座標が範囲外)
 				test((-1.0f, 8.0f, -1.0f), Chunk::Height);
-#endif
 
 #undef test
+#undef test_diag
 			}
 
 			static void Run_IsOverlappingWithTerrain()
 			{
 #define test(worldPositionMin, expected) \
 eq( \
-	(TargetClass::IsOverlappingWithTerrain(CreateChunksManager3Layerd2x2ForTest().GetChunks(), Vector3##worldPositionMin, PlayerCollisionSize)), \
+	(TargetClass::IsOverlappingWithTerrain( \
+		CreateChunksManager3Layerd2x2ForTest().GetChunks(), \
+		Vector3##worldPositionMin, \
+		PlayerCollisionSize \
+	)), \
+	(expected) \
+); \
+
+#define test_diag(worldPositionMin, expected) \
+eq( \
+	(TargetClass::IsOverlappingWithTerrain( \
+		CreateChunksManager3Layerd2x2ForTest().GetChunks(), \
+		Vector3##worldPositionMin + Vector3((Chunk::Count - 2) * Chunk::Size, 0, (Chunk::Count - 2) * Chunk::Size), \
+		PlayerCollisionSize \
+	)), \
 	(expected) \
 ); \
 
@@ -602,25 +697,20 @@ eq( \
 				test((5.0f, 3.50f, 5.0f), false); // x0z0 で判定
 				test((5.0f, 3.51f, 5.0f), false); // x0z0 で判定
 
-				// TODO: テストが難しい
-#if 0
 				// チャンク配列の範囲外 (最小座標は範囲内)
-				test((31.4f, 2.49f, 5.0f), true); // x1z0 で判定
-				test((31.4f, 2.51f, 5.0f), false); // x1z0 で判定
-				test((31.4f, 2.49f, 15.4f), true); // x1z0, x1z1 で判定
-				test((31.4f, 2.51f, 15.4f), true); // x1z0, x1z1 で判定
-				test((31.4f, 3.49f, 15.4f), true); // x1z0, x1z1 で判定
-				test((31.4f, 3.51f, 15.4f), false); // x1z0, x1z1 で判定
-#endif
+				test_diag((31.4f, 2.49f, 5.0f), true); // x1z0 で判定
+				test_diag((31.4f, 2.51f, 5.0f), false); // x1z0 で判定
+				test_diag((31.4f, 2.49f, 15.4f), true); // x1z0, x1z1 で判定
+				test_diag((31.4f, 2.51f, 15.4f), true); // x1z0, x1z1 で判定
+				test_diag((31.4f, 3.49f, 15.4f), true); // x1z0, x1z1 で判定
+				test_diag((31.4f, 3.51f, 15.4f), false); // x1z0, x1z1 で判定
 
-				// TODO: テストが難しい
-#if 0
 				// チャンク配列の範囲外 (最小座標が範囲外)
 				test((-1.0f, 2.0f, -1.0f), false);
 				test((-1.0f, 8.0f, -1.0f), false);
-#endif
 
 #undef test
+#undef test_diag
 			}
 
 #pragma endregion

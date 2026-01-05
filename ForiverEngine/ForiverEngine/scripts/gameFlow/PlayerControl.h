@@ -128,8 +128,12 @@ namespace ForiverEngine
 			const Lattice2 chunkIndexMin = Chunk::GetIndex(worldBlockPositionMin);
 			const Lattice2 chunkIndexMax = Chunk::GetIndex(worldBlockPositionMax);
 
-			// Y座標が範囲外
-			if (!MathUtils::IsInRange(worldBlockPositionMin.y, 0, Chunk::Height))
+			//　開始座標が範囲外
+			if (
+				!MathUtils::IsInRange(worldBlockPositionMin.x, 0, Chunk::Size * Chunk::Count) ||
+				!MathUtils::IsInRange(worldBlockPositionMin.y, 0, Chunk::Height) ||
+				!MathUtils::IsInRange(worldBlockPositionMin.z, 0, Chunk::Size * Chunk::Count)
+				)
 			{
 				return
 				{
@@ -150,8 +154,8 @@ namespace ForiverEngine
 					InfoPerChunk::CreateUncontained(Lattice2(1, 1)),
 				};
 			}
-			// 以降、開始地点がチャンク群における範囲内であることが保証されている
-			// Y座標については、他のチャンク全てにおいても、チャンク群における範囲内であることが保証されている
+			// 以降、開始座標とそのチャンクが共に、チャンク群における範囲内であることが保証されている
+			// また、ブロック座標は必ず 非負整数 となるはず
 
 			// 各チャンクが配列の範囲内か
 			// x0z0, x1z0, x0z1, x1z1 の順番
