@@ -34,28 +34,6 @@ int Main(hInstance)
 	constexpr std::uint32_t RandomSeed = 0x12345678;
 	Random::SetSeed(RandomSeed);
 
-	//////////////////////////////
-	// プレイヤー挙動のパラメータ
-
-	constexpr Vector3 PlayerCollisionSize = Vector3(0.5f, 1.8f, 0.5f);
-	constexpr float GravityScale = 1.0f; // 重力の倍率
-	constexpr float SpeedH = 3.0f; // 水平移動速度 (m/s)
-	constexpr float DashSpeedH = 6.0f; // ダッシュ時の水平移動速度 (m/s)
-	constexpr float CameraSensitivityH = 180.0f; // 水平感度 (度/s)
-	constexpr float CameraSensitivityV = 90.0f; // 垂直感度 (度/s)
-	constexpr float MinVelocityV = -100.0f; // 最大落下速度 (m/s)
-	constexpr float JumpHeight = 1.3f; // ジャンプ高さ (m)
-	constexpr float EyeHeight = 1.6f; // 目の高さ (m)
-	constexpr float GroundedCheckOffset = 0.01f; // 接地判定のオフセット (m). 埋まっている判定と区別するため、少しずらす
-	constexpr float CeilingCheckOffset = 0.01f; // 天井判定のオフセット (m). 埋まっている判定と区別するため、少しずらす
-	float velocityV = 0; // 鉛直速度
-
-	// 向いているブロックを選択
-	constexpr float ReachDistance = 5.0f; // 選択可能な最大距離 (m)
-	constexpr float ReachDetectStep = 0.1f; // レイキャストの刻み幅 (m)
-
-	//////////////////////////////
-
 	constexpr Color RTClearColor = Color::CreateFromUint8(60, 150, 210); // 空色
 
 	const auto [factory, device, commandAllocator, commandList, commandQueue]
@@ -75,8 +53,8 @@ int Main(hInstance)
 	const DescriptorHandleAtCPU dsv = D3D12BasicFlow::InitDSV(device, WindowSize);
 
 	constexpr Transform terrainTransform = Transform::Identity();
-	CameraTransform cameraTransform = CameraTransform::CreatePerspective(
-		Vector3(64, 32, 64), Quaternion::Identity(), 60.0f * DegToRad, 1.0f * WindowSize.x / WindowSize.y);
+	PlayerController playerController = PlayerController(CameraTransform::CreatePerspective(
+		Vector3(64, 32, 64), Quaternion::Identity(), 60.0f * DegToRad, 1.0f * WindowSize.x / WindowSize.y));
 
 	// 太陽からのカメラ 平行投影
 	constexpr Color SunShadowColor = Color(0.7f, 0.7f, 0.7f);
@@ -87,7 +65,7 @@ int Main(hInstance)
 	const std::function<CameraTransform()> CreateSunCameraTransform = [&]()
 		{
 			return CameraTransform::CreateOrthographic(
-				PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight) - SunDirection * SunDistanceFromPlayer,
+				playerController.GetFootPosition() - SunDirection * SunDistanceFromPlayer,
 				Quaternion::VectorToVector(Vector3::Forward(), SunDirection),
 				SunClipSizeXY, SunClipRangeZ
 			);
@@ -95,7 +73,7 @@ int Main(hInstance)
 	CameraTransform sunCameraTransform = CreateSunCameraTransform();
 
 	// 地形データ
-	Lattice2 existingChunkIndex = Chunk::GetIndex(PlayerControl::GetBlockPosition(cameraTransform.position));
+	Lattice2 existingChunkIndex = Chunk::GetIndex(playerController.GetFootBlockPosition());
 	ChunksManager chunksManager = ChunksManager(existingChunkIndex);
 	chunksManager.UpdateDrawChunks(existingChunkIndex, false, device); // 初回作成
 
@@ -128,7 +106,7 @@ int Main(hInstance)
 	{
 		.Matrix_M = terrainTransform.CalculateModelMatrix(),
 		.Matrix_M_IT = terrainTransform.CalculateModelMatrixInversed().Transposed(),
-		.Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(terrainTransform, cameraTransform),
+		.Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(terrainTransform, playerController.GetTransform()),
 		.DirectionalLight_Matrix_VP = sunCameraTransform.CalculateVPMatrix(),
 	};
 	CBData1 cbData1 =
@@ -330,115 +308,17 @@ int Main(hInstance)
 		if (InputHelper::GetKeyInfo(Key::Escape).pressedNow)
 			break;
 
-		// 回転
-		cameraTransform.rotation = PlayerControl::Rotate(
-			cameraTransform,
-			InputHelper::GetAsAxis2D(Key::Up, Key::Down, Key::Left, Key::Right),
-			Vector2(CameraSensitivityH, CameraSensitivityV) * DegToRad,
-			WindowHelper::GetDeltaSeconds()
-		);
-
-		// 移動
+		// プレイヤーの挙動
+		const PlayerController::Inputs playerInputs =
 		{
-			// 移動前の座標を保存しておく
-			const Vector3 positionBeforeMove = cameraTransform.position;
-
-			// 鉛直移動と当たり判定
-			{
-				// 床のY座標を算出しておく
-				const int floorY = PlayerControl::FindFloorHeight(
-					chunksManager.GetChunks(), PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
-				// 天井のY座標を算出しておく
-				const int ceilY = PlayerControl::FindCeilHeight(
-					chunksManager.GetChunks(), PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
-
-				// 落下分の加速度を加算し、鉛直移動する
-				velocityV -= (G * GravityScale) * WindowHelper::GetDeltaSeconds();
-				velocityV = std::max(velocityV, MinVelocityV);
-				if (std::abs(velocityV) > 0.01f)
-					cameraTransform.position += Vector3::Up() * (velocityV * WindowHelper::GetDeltaSeconds());
-
-				// 設置判定
-				const bool isGrounded =
-					(floorY >= 0) ?
-					(PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight).y
-						<= (floorY + 0.5f + GroundedCheckOffset))
-					: false;
-				// 天井判定
-				const bool isCeiling =
-					(ceilY <= (Chunk::Height - 1)) ?
-					((PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight).y + PlayerCollisionSize.y)
-						>= (ceilY - 0.5f - CeilingCheckOffset))
-					: false;
-
-				// 接地したら、めり込みを補正して、鉛直速度を0にする
-				if (isGrounded)
-				{
-					const float footY = floorY + 0.5f + EyeHeight;
-					if (cameraTransform.position.y < footY)
-						cameraTransform.position.y = footY;
-
-					if (velocityV < 0)
-						velocityV = 0;
-				}
-				// 天井にぶつかったら、めり込みを補正して、鉛直速度を0にする
-				else if (isCeiling)
-				{
-					const float headY = ceilY - 0.5f - PlayerCollisionSize.y + EyeHeight;
-					if (cameraTransform.position.y > headY)
-						cameraTransform.position.y = headY;
-
-					if (velocityV > 0)
-						velocityV = 0;
-				}
-
-				// 接地しているなら、ジャンプ入力を受け付ける
-				if (isGrounded)
-				{
-					if (InputHelper::GetKeyInfo(Key::Space).pressedNow)
-						velocityV += std::sqrt(2.0f * G * JumpHeight);
-				}
-			}
-
-
-			// 水平移動と当たり判定
-			{
-				// 移動前の座標を保存しておく
-				const Vector3 positionBeforeMoveH = cameraTransform.position;
-
-				const Vector2 moveInput = InputHelper::GetAsAxis2D(Key::W, Key::S, Key::A, Key::D);
-				const bool canDash = moveInput.y > 0.5f; // 前進しているときのみダッシュ可能
-
-				cameraTransform.position = PlayerControl::MoveH(
-					cameraTransform,
-					moveInput,
-					(canDash && InputHelper::GetKeyInfo(Key::LShift).pressed) ? DashSpeedH : SpeedH,
-					WindowHelper::GetDeltaSeconds()
-				);
-
-				// 当たり判定
-				// めり込んでいるなら、元の位置に戻す
-				if (PlayerControl::IsOverlappingWithTerrain(
-					chunksManager.GetChunks(), PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize))
-				{
-					cameraTransform.position = positionBeforeMoveH;
-				}
-			}
-
-			// 世界の範囲内に収める
-			{
-				const Lattice3 footBlockPosition = PlayerControl::GetBlockPosition(
-					PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight));
-
-				if (!ChunksManager::IsInsideWorldBounds(footBlockPosition))
-				{
-					cameraTransform.position = positionBeforeMove;
-				}
-			}
-
-			// 移動が完了したので、CB 更新
-			cbvBuffer0VirtualPtr->Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(terrainTransform, cameraTransform);
-		}
+			.move = InputHelper::GetAsAxis2D(Key::W, Key::S, Key::A, Key::D),
+			.look = InputHelper::GetAsAxis2D(Key::Up, Key::Down, Key::Left, Key::Right),
+			.dashPressed = InputHelper::GetKeyInfo(Key::LShift).pressed,
+			.jumpPressedNow = InputHelper::GetKeyInfo(Key::Space).pressedNow,
+		};
+		playerController.OnEveryFrame(chunksManager.GetChunks(), playerInputs, WindowHelper::GetDeltaSeconds());
+		// CB 更新
+		cbvBuffer0VirtualPtr->Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(terrainTransform, playerController.GetTransform());
 
 		// ブロックを選択する
 		{
@@ -446,10 +326,10 @@ int Main(hInstance)
 			cbvBuffer1VirtualPtr->IsSelectingBlock = 0;
 			cbvBuffer1VirtualPtr->SelectingBlockWorldPosition = Lattice3::Zero();
 
-			const Vector3 rayOrigin = cameraTransform.position;
-			const Vector3 rayDirection = cameraTransform.GetForward().Normed();
+			const Vector3 rayOrigin = playerController.GetTransform().position;
+			const Vector3 rayDirection = playerController.GetTransform().GetForward();
 
-			for (float d = 0.0f; d <= ReachDistance; d += ReachDetectStep)
+			for (float d = 0.0f; d <= PlayerController::ReachDistance; d += PlayerController::ReachDetectStep)
 			{
 				const Vector3 rayPosition = rayOrigin + rayDirection * d;
 				const Lattice3 rayBlockPosition = PlayerControl::GetBlockPosition(rayPosition);
@@ -475,7 +355,7 @@ int Main(hInstance)
 		}
 
 		// 現在プレイヤーが存在するチャンクのインデックスを取得しておく
-		const Lattice2 currentExistingChunkIndex = Chunk::GetIndex(PlayerControl::GetBlockPosition(cameraTransform.position));
+		const Lattice2 currentExistingChunkIndex = Chunk::GetIndex(playerController.GetFootBlockPosition());
 
 		// ブロックを壊す
 		// チャンクデータを更新し、描画データにも反映させる
@@ -539,10 +419,8 @@ int Main(hInstance)
 				textUIDataRows.emplace_back(frameTimeText, Color::White());
 
 				// プレイヤーの足元のブロック座標
-				const Lattice3 playerFootPositionAsLattice = PlayerControl::GetBlockPosition(
-					PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight));
 				const std::string positionText =
-					std::format("Position : {}", ToString(playerFootPositionAsLattice));
+					std::format("Position : {}", ToString(playerController.GetFootBlockPosition()));
 				textUIDataRows.emplace_back(positionText, Color::White());
 
 				// 選択しているブロックのブロック座標
@@ -560,7 +438,7 @@ int Main(hInstance)
 				// チャンク内でのローカルブロック座標
 				const std::string chunkLocalBlockPositionText = Chunk::IsValidIndex(existingChunkIndex) ?
 					std::format("Chunk Local Position : {}",
-						ToString(Chunk::GetLocalBlockPosition(PlayerControl::GetBlockPosition(cameraTransform.position))))
+						ToString(Chunk::GetLocalBlockPosition(playerController.GetFootBlockPosition())))
 					: "Chunk Local Position : Invalid";
 				textUIDataRows.emplace_back(chunkLocalBlockPositionText, Color::White());
 
@@ -574,22 +452,17 @@ int Main(hInstance)
 				textUIDataRows.emplace_back(drawChunksRangeText, Color::White());
 
 				// プレイヤーのコリジョンの、ワールドブロック座標の範囲
-				const Vector3 playerCollisionMin = PlayerControl::GetCollisionMinPosition(PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
-				const Vector3 playerCollisionMax = playerCollisionMin + PlayerCollisionSize;
-				const Lattice3 playerCollisionMinAsBlock = PlayerControl::GetBlockPosition(playerCollisionMin);
-				const Lattice3 playerCollisionMaxAsBlock = PlayerControl::GetBlockPosition(playerCollisionMax);
+				const auto [playerCollisionMin, playerCollisionMax] = playerController.GetCollisionRange();
 				const std::string playerCollisionRangeText =
 					std::format("Player Collision Range : {}-{}",
-						ToString(playerCollisionMinAsBlock),
-						ToString(playerCollisionMaxAsBlock)
+						ToString(PlayerControl::GetBlockPosition(playerCollisionMin)),
+						ToString(PlayerControl::GetBlockPosition(playerCollisionMax))
 					);
 				textUIDataRows.emplace_back(playerCollisionRangeText, Color::White());
 
 				// 床&天井ブロックのY座標
-				const int floorY = PlayerControl::FindFloorHeight(
-					chunksManager.GetChunks(), PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
-				const int ceilY = PlayerControl::FindCeilHeight(
-					chunksManager.GetChunks(), PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
+				const int floorY = playerController.FindFloorHeight(chunksManager.GetChunks());
+				const int ceilY = playerController.FindCeilHeight(chunksManager.GetChunks());
 				const std::string floorCeilHeightText = std::format(
 					"Floor&Ceil Height : ({},{})",
 					(floorY >= 0) ? std::to_string(floorY) : "None",

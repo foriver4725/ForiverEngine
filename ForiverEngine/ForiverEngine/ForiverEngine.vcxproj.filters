@@ -252,6 +252,9 @@
     <ClInclude Include="scripts\component\Mesh\IMesh.h">
       <Filter>scripts\component\Mesh</Filter>
     </ClInclude>
+    <ClInclude Include="scripts\gameFlow\PlayerController.h">
+      <Filter>scripts\gameFlow</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shaders\Basic.hlsl">

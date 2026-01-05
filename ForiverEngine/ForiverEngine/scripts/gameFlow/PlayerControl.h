@@ -44,29 +44,6 @@ namespace ForiverEngine
 			);
 		}
 
-		static Quaternion Rotate(const Transform& transform, const Vector2& rotateInput, const Vector2& rotateSpeed, float deltaSeconds)
-		{
-			const Quaternion rotationAmount =
-				Quaternion::FromAxisAngle(Vector3::Up(), rotateInput.x * rotateSpeed.x * deltaSeconds) *
-				Quaternion::FromAxisAngle(transform.GetRight(), -rotateInput.y * rotateSpeed.y * deltaSeconds);
-
-			const Quaternion newRotation = rotationAmount * transform.rotation;
-
-			if (std::abs((newRotation * Vector3::Forward()).y) < 0.999f) // 上下回転を制限 (前方向ベクトルのy成分で判定)
-				return newRotation;
-			else
-				return transform.rotation;
-		}
-
-		static Vector3 MoveH(const Transform& transform, const Vector2& moveInput, float moveSpeed, float deltaSeconds)
-		{
-			Vector3 moveDirection = transform.rotation * Vector3(moveInput.x, 0.0f, moveInput.y);
-			moveDirection.y = 0.0f; // 水平成分のみ
-			moveDirection.Norm(); // 最後に正規化する
-
-			return transform.position + moveDirection * (moveSpeed * deltaSeconds);
-		}
-
 		struct CollisionBoundaryAsBlockInfoPerChunk
 		{
 			bool isContained; // このチャンクにコリジョン立方体が属しているか
