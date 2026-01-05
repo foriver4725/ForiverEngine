@@ -2,7 +2,7 @@
 #include <scripts/helper/Include.h>
 #include <scripts/component/Include.h>
 #include <scripts/gameFlow/Include.h>
-#if _DEBUG
+#ifdef _DEBUG
 #include <scripts/test/Include.h>
 #endif
 
@@ -14,11 +14,13 @@ int Main(hInstance)
 	const HWND hwnd = WindowHelper::OnInit(hInstance, L"ForiverEngine", L"ForiverEngine", WindowSize);
 
 	// テストコード実行
-#if _DEBUG && 0
+#ifdef _DEBUG
+#if 0
 	Test::PlayerControl::RunAll();
 
 	ShowError(L"全てのテストに成功しました");
 	return 0;
+#endif
 #endif
 
 #ifdef _DEBUG
