@@ -29,12 +29,12 @@ namespace ForiverEngine
 		/// <summary>
 		/// 前フレームからの経過時間 [ms]
 		/// </summary>
-		template<std::floating_point TReturnValue>
+		template<std::floating_point TReturnValue = double>
 		static TReturnValue GetDeltaMilliseconds() { return static_cast<TReturnValue>(deltaTime); }
 		/// <summary>
 		/// 前フレームからの経過時間 [s]
 		/// </summary>
-		template<std::floating_point TReturnValue>
+		template<std::floating_point TReturnValue = float>
 		static TReturnValue GetDeltaSeconds() { return static_cast<TReturnValue>(deltaTime * 1.0e-3); }
 
 		/// <summary>

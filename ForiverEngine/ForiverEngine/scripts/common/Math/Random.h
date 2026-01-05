@@ -22,13 +22,13 @@ namespace ForiverEngine
 		/// <summary>
 		/// 乱数生成. [min, max] の整数
 		/// </summary>
-		template <std::integral TInt>
+		template <std::integral TInt = int>
 		static TInt Range(TInt min, TInt max) { return std::uniform_int_distribution<TInt>{min, max}(engine); }
 
 		/// <summary>
 		/// 乱数生成. [min, max) の実数
 		/// </summary>
-		template <std::floating_point TFloat>
+		template <std::floating_point TFloat = float>
 		static TFloat Range(TFloat min, TFloat max) { return std::uniform_real_distribution<TFloat>{min, max}(engine); }
 
 	private:

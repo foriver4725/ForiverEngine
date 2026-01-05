@@ -333,7 +333,7 @@ int Main(hInstance)
 			cameraTransform,
 			InputHelper::GetAsAxis2D(Key::Up, Key::Down, Key::Left, Key::Right),
 			Vector2(CameraSensitivityH, CameraSensitivityV) * DegToRad,
-			WindowHelper::GetDeltaSeconds<float>()
+			WindowHelper::GetDeltaSeconds()
 		);
 
 		// 移動
@@ -351,10 +351,10 @@ int Main(hInstance)
 					chunksManager.GetChunks(), PlayerControl::GetFootPosition(cameraTransform.position, EyeHeight), PlayerCollisionSize);
 
 				// 落下分の加速度を加算し、鉛直移動する
-				velocityV -= (G * GravityScale) * WindowHelper::GetDeltaSeconds<float>();
+				velocityV -= (G * GravityScale) * WindowHelper::GetDeltaSeconds();
 				velocityV = std::max(velocityV, MinVelocityV);
 				if (std::abs(velocityV) > 0.01f)
-					cameraTransform.position += Vector3::Up() * (velocityV * WindowHelper::GetDeltaSeconds<float>());
+					cameraTransform.position += Vector3::Up() * (velocityV * WindowHelper::GetDeltaSeconds());
 
 				// 設置判定
 				const bool isGrounded =
@@ -411,7 +411,7 @@ int Main(hInstance)
 					cameraTransform,
 					moveInput,
 					(canDash && InputHelper::GetKeyInfo(Key::LShift).pressed) ? DashSpeedH : SpeedH,
-					WindowHelper::GetDeltaSeconds<float>()
+					WindowHelper::GetDeltaSeconds()
 				);
 
 				// 当たり判定
@@ -521,7 +521,7 @@ int Main(hInstance)
 					if (++frameTimeTextUpdateCounter >= FrameTimeTextUpdateIntervalFrames)
 						frameTimeTextUpdateCounter = 0;
 					if (frameTimeTextUpdateCounter % FrameTimeTextUpdateIntervalFrames == 0)
-						frameTimeTextValue = WindowHelper::GetDeltaMilliseconds<double>();
+						frameTimeTextValue = WindowHelper::GetDeltaMilliseconds();
 				}
 				const std::string frameTimeText = std::format("Frame Time : {:.2f} ms", frameTimeTextValue);
 				textUIDataRows.emplace_back(frameTimeText, Color::White());
