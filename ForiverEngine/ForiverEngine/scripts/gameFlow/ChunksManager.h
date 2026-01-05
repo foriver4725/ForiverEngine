@@ -80,8 +80,8 @@ namespace ForiverEngine
 		}
 
 		/// <summary>
-		/// 指定されたチャンク・指定された座標のブロックを更新する
-		/// その後、そのチャンクのデータを再生成する
+		/// <para>指定されたチャンク・指定された座標のブロックを更新する</para>
+		/// <para>その後、そのチャンクのデータを再生成する</para>
 		/// </summary>
 		void UpdateChunkBlock(const Lattice2& chunkIndex, const Lattice3& localBlockPosition, const Block& newBlock, const Device& device)
 		{
@@ -94,7 +94,8 @@ namespace ForiverEngine
 		};
 
 		/// <summary>
-		/// 描画するチャンクの範囲を更新し、描画するチャンクが未生成ならば新規生成する (引数で並列生成か指定可能)
+		/// <para>描画するチャンクの範囲を更新し、描画するチャンクが未生成ならば新規生成する (引数で並列生成か指定可能)</para>
+		/// <para>また、描画データに値をコピーする</para>
 		/// </summary>
 		void UpdateDrawChunks(const Lattice2& playerExistingChunkIndex, bool parallelIfGenerate, const Device& deviceIfGenerate)
 		{

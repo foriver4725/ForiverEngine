@@ -472,36 +472,29 @@ int Main(hInstance)
 			}
 		}
 
+		// 現在プレイヤーが存在するチャンクのインデックスを取得しておく
+		const Lattice2 currentExistingChunkIndex = Chunk::GetIndex(PlayerControl::GetBlockPosition(cameraTransform.position));
+
 		// ブロックを壊す
-		// この場合、描画チャンクを必ず更新する
-		bool hasBrokenBlock = false;
+		// チャンクデータを更新し、描画データにも反映させる
+		if (InputHelper::GetKeyInfo(Key::Enter).pressedNow)
 		{
-			if (InputHelper::GetKeyInfo(Key::Enter).pressedNow)
+			if (cbvBuffer1VirtualPtr->IsSelectingBlock == 1)
 			{
-				if (cbvBuffer1VirtualPtr->IsSelectingBlock == 1)
-				{
-					hasBrokenBlock = true;
+				const Lattice2 chunkIndex = Chunk::GetIndex(cbvBuffer1VirtualPtr->SelectingBlockWorldPosition);
+				const Lattice3 localBlockPosition
+					= Chunk::GetLocalBlockPosition(cbvBuffer1VirtualPtr->SelectingBlockWorldPosition);
 
-					const Lattice2 chunkIndex = Chunk::GetIndex(cbvBuffer1VirtualPtr->SelectingBlockWorldPosition);
-					const Lattice3 localBlockPosition
-						= Chunk::GetLocalBlockPosition(cbvBuffer1VirtualPtr->SelectingBlockWorldPosition);
-
-					chunksManager.UpdateChunkBlock(chunkIndex, localBlockPosition, Block::Air, device);
-				}
+				chunksManager.UpdateChunkBlock(chunkIndex, localBlockPosition, Block::Air, device);
+				chunksManager.UpdateDrawChunks(currentExistingChunkIndex, true, device);
 			}
 		}
 
-		// 描画距離内のチャンクのみ、描画する配列に追加
-		// プレイヤーの存在するチャンクが変化した、またはブロックを壊した場合に更新する
-		// 更新時、そのチャンクがまだ未作成ならば、その作成をまず行う
+		// プレイヤーの存在チャンクが変化したなら、描画チャンクを更新する
+		if (currentExistingChunkIndex != existingChunkIndex)
 		{
-			const Lattice2 currentExistingChunkIndex = Chunk::GetIndex(PlayerControl::GetBlockPosition(cameraTransform.position));
-
-			if ((currentExistingChunkIndex != existingChunkIndex) || hasBrokenBlock)
-			{
-				existingChunkIndex = currentExistingChunkIndex;
-				chunksManager.UpdateDrawChunks(currentExistingChunkIndex, true, device);
-			}
+			existingChunkIndex = currentExistingChunkIndex;
+			chunksManager.UpdateDrawChunks(currentExistingChunkIndex, true, device);
 		}
 
 		// テキストの更新
