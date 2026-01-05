@@ -16,26 +16,58 @@ namespace ForiverEngine
 	public:
 		DELETE_DEFAULT_METHODS(WindowHelper);
 
-	private:
-		inline static bool isCursorEnabled = true;
 	public:
-		static bool IsCursorEnabled() { return isCursorEnabled; }
+		static bool GetIsCursorEnabled() { return isCursorEnabled; }
 
-		/// <summary>
-		/// ターゲットFPS
-		/// </summary>
 		static int GetTargetFps() { return targetFps; }
 
-		/// <summary>
-		/// 前フレームからの経過時間 [ms]
-		/// </summary>
 		template<std::floating_point TReturnValue = double>
 		static TReturnValue GetDeltaMilliseconds() { return static_cast<TReturnValue>(deltaTime); }
-		/// <summary>
-		/// 前フレームからの経過時間 [s]
-		/// </summary>
+
 		template<std::floating_point TReturnValue = float>
 		static TReturnValue GetDeltaSeconds() { return static_cast<TReturnValue>(deltaTime * 1.0e-3); }
+
+		/// <summary>
+		/// <para>カーソルの表示・非表示を切り替える</para>
+		/// <para>重複実行でもOK</para>
+		/// </summary>
+		static void SetCursorEnabled(bool enabled);
+
+		/// <summary>
+		/// ターゲットFPSを設定する
+		/// </summary>
+		static void SetTargetFps(int fps);
+
+		/// <summary>
+		/// エラーのメッセージボックスを出す
+		/// </summary>
+		static void PopupErrorDialog(const std::wstring& message);
+
+		/// <summary>
+		/// WinMain() 後、ただちに呼び出すこと
+		/// </summary>
+		static HWND OnInit(
+			HINSTANCE hInstance, const std::wstring& windowClassName, const std::wstring& windowTitle, const Lattice2& windowSize);
+
+		/// <summary>
+		/// <para>フレーム開始時に呼び出すこと</para>
+		/// <para>フレームループを終了するなら false を、それ以外は true を返す</para>
+		/// </summary>
+		static bool OnBeginFrame(HWND hwnd);
+
+		/// <summary>
+		/// フレーム終了時に呼び出すこと
+		/// </summary>
+		static void OnEndFrame();
+
+	private:
+		inline static bool isCursorEnabled = true;
+
+		inline static int targetFps = -1;
+		inline static double targetFrameTime = -1; // [ms]
+		inline static LARGE_INTEGER timeFrequency{}; // 時間計測で使う値 (1回だけ初期化)
+		inline static double timeAtBeginFrame = -1; // フレーム開始時の時間をメモっておく用
+		inline static double deltaTime = -1; // 前フレームからの経過時間 [ms] を計算し、外部公開する
 
 		/// <summary>
 		/// ウィンドウを初期化する
@@ -63,12 +95,6 @@ namespace ForiverEngine
 		static bool HandleAllMessages();
 
 		/// <summary>
-		/// <para>カーソルの表示・非表示を切り替える</para>
-		/// <para>重複実行でもOK</para>
-		/// </summary>
-		static void SetCursorEnabled(bool enabled);
-
-		/// <summary>
 		/// <para>ウィンドウ中央のスクリーン座標を返す</para>
 		/// </summary>
 		static Lattice2 GetScreenCenter(HWND hwnd);
@@ -77,11 +103,6 @@ namespace ForiverEngine
 		/// <para>カーソルをウィンドウ中央に固定する</para>
 		/// </summary>
 		static void FixCursorAtCenter(HWND hwnd);
-
-		/// <summary>
-		/// ターゲットFPSを設定する
-		/// </summary>
-		static void SetTargetFps(int fps);
 
 		/// <summary>
 		/// 時間計測の初期化
@@ -107,34 +128,5 @@ namespace ForiverEngine
 		/// フレーム終了時の時間を記録し、必要ならばスリープする
 		/// </summary>
 		static void CollectTimeAtEndFrameAndSleepIfNeeded();
-
-		/// <summary>
-		/// エラーのメッセージボックスを出す
-		/// </summary>
-		static void PopupErrorDialog(const std::wstring& message);
-
-		/// <summary>
-		/// WinMain() 後、ただちに呼び出すこと
-		/// </summary>
-		static HWND OnInit(
-			HINSTANCE hInstance, const std::wstring& windowClassName, const std::wstring& windowTitle, const Lattice2& windowSize);
-
-		/// <summary>
-		/// <para>フレーム開始時に呼び出すこと</para>
-		/// <para>フレームループを終了するなら false を、それ以外は true を返す</para>
-		/// </summary>
-		static bool OnBeginFrame(HWND hwnd);
-
-		/// <summary>
-		/// フレーム終了時に呼び出すこと
-		/// </summary>
-		static void OnEndFrame();
-
-	private:
-		inline static int targetFps = -1;
-		inline static double targetFrameTime = -1; // [ms]
-		inline static LARGE_INTEGER timeFrequency{}; // 時間計測で使う値 (1回だけ初期化)
-		inline static double timeAtBeginFrame = -1; // フレーム開始時の時間をメモっておく用
-		inline static double deltaTime = -1; // 前フレームからの経過時間 [ms] を計算し、外部公開する
 	};
 }

@@ -3,6 +3,70 @@
 
 namespace ForiverEngine
 {
+	void WindowHelper::SetCursorEnabled(bool enabled)
+	{
+		if (enabled && !isCursorEnabled)
+		{
+			// カーソルを表示
+			ShowCursor(TRUE);
+			isCursorEnabled = true;
+		}
+		else if (!enabled && isCursorEnabled)
+		{
+			// カーソルを非表示
+			ShowCursor(FALSE);
+			isCursorEnabled = false;
+		}
+	}
+
+	void WindowHelper::SetTargetFps(int fps)
+	{
+		WindowHelper::targetFps = fps;
+		WindowHelper::targetFrameTime = (fps > 0) ? (1000.0 / fps) : -1;
+	}
+
+	void WindowHelper::PopupErrorDialog(const std::wstring& message)
+	{
+		MessageBox(nullptr, message.c_str(), L"error", MB_OK | MB_ICONERROR);
+	}
+
+	HWND WindowHelper::OnInit(
+		HINSTANCE hInstance, const std::wstring& windowClassName, const std::wstring& windowTitle, const Lattice2& windowSize)
+	{
+		if (!InitializeWindowFromHInstance(hInstance, OnWindowProcedure, windowClassName))
+			ShowError(L"ウィンドウの初期化に失敗しました");
+
+		const HWND hwnd = ForiverEngine::WindowHelper::CreateTheWindow(windowClassName, windowTitle, windowSize);
+
+		ForiverEngine::InputHelper::InitKeyTable();
+		ForiverEngine::WindowHelper::InitTime();
+
+		return hwnd;
+	}
+
+	bool WindowHelper::OnBeginFrame(HWND hwnd)
+	{
+		RecordTimeAtBeginFrame();
+
+		InputHelper::OnEveryFrame();
+
+		if (!HandleAllMessages())
+			return false;
+
+		if (!GetIsCursorEnabled())
+			FixCursorAtCenter(hwnd);
+
+		return true;
+	}
+
+	void WindowHelper::OnEndFrame()
+	{
+		CollectTimeAtEndFrameAndSleepIfNeeded();
+		ResetTimeAtBeginFrame();
+	}
+
+
+
 	bool WindowHelper::InitializeWindowFromHInstance(HINSTANCE hInstance, WNDPROC windowProcedure, const std::wstring& className)
 	{
 		WNDCLASSW w = {};
@@ -110,22 +174,6 @@ namespace ForiverEngine
 		return true;
 	}
 
-	void WindowHelper::SetCursorEnabled(bool enabled)
-	{
-		if (enabled && !isCursorEnabled)
-		{
-			// カーソルを表示
-			ShowCursor(TRUE);
-			isCursorEnabled = true;
-		}
-		else if (!enabled && isCursorEnabled)
-		{
-			// カーソルを非表示
-			ShowCursor(FALSE);
-			isCursorEnabled = false;
-		}
-	}
-
 	Lattice2 WindowHelper::GetScreenCenter(HWND hwnd)
 	{
 		RECT rect;
@@ -145,12 +193,6 @@ namespace ForiverEngine
 	{
 		const Lattice2 center = GetScreenCenter(hwnd);
 		SetCursorPos(center.x, center.y);
-	}
-
-	void WindowHelper::SetTargetFps(int fps)
-	{
-		WindowHelper::targetFps = fps;
-		WindowHelper::targetFrameTime = (fps > 0) ? (1000.0 / fps) : -1;
 	}
 
 	void WindowHelper::InitTime()
@@ -205,45 +247,5 @@ namespace ForiverEngine
 				WindowHelper::deltaTime = newTimeAtEndFrame - timeAtBeginFrame;
 			}
 		}
-	}
-
-	void WindowHelper::PopupErrorDialog(const std::wstring& message)
-	{
-		MessageBox(nullptr, message.c_str(), L"error", MB_OK | MB_ICONERROR);
-	}
-
-	HWND WindowHelper::OnInit(
-		HINSTANCE hInstance, const std::wstring& windowClassName, const std::wstring& windowTitle, const Lattice2& windowSize)
-	{
-		if (!InitializeWindowFromHInstance(hInstance, OnWindowProcedure, windowClassName))
-			ShowError(L"ウィンドウの初期化に失敗しました");
-
-		const HWND hwnd = ForiverEngine::WindowHelper::CreateTheWindow(windowClassName, windowTitle, windowSize);
-
-		ForiverEngine::InputHelper::InitKeyTable();
-		ForiverEngine::WindowHelper::InitTime();
-
-		return hwnd;
-	}
-
-	bool WindowHelper::OnBeginFrame(HWND hwnd)
-	{
-		RecordTimeAtBeginFrame();
-
-		InputHelper::OnEveryFrame();
-
-		if (!HandleAllMessages())
-			return false;
-
-		if (!IsCursorEnabled())
-			FixCursorAtCenter(hwnd);
-
-		return true;
-	}
-
-	void WindowHelper::OnEndFrame()
-	{
-		CollectTimeAtEndFrameAndSleepIfNeeded();
-		ResetTimeAtBeginFrame();
 	}
 }
