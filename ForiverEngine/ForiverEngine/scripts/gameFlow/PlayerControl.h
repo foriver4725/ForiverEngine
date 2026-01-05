@@ -170,6 +170,8 @@ namespace ForiverEngine
 			// X,Z 方向にチャンクを跨いでいるか
 			const bool isCrossingChunkX = chunkIndexMin.x < chunkIndexMax.x;
 			const bool isCrossingChunkZ = chunkIndexMin.y < chunkIndexMax.y;
+			// Y 方向にチャンクを跨いでいるか
+			const bool isCrossingChunkY = worldBlockPositionMax.y >= Chunk::Height;
 
 			// そのチャンク内でのローカルブロック座標
 			const Lattice3 localBlockPositionMin = Chunk::GetLocalBlockPosition(worldBlockPositionMin);
@@ -220,13 +222,16 @@ namespace ForiverEngine
 
 				// 2x2 チャンク内でのローカルブロック座標
 				const Lattice2 rangeX2x2 = Lattice2(localBlockPositionMinIn2x2Chunks.x, localBlockPositionMaxIn2x2Chunks.x);
-				const Lattice2 rangeY2x2 = Lattice2(localBlockPositionMin.y, localBlockPositionMax.y);
+				const Lattice2 rangeY2x2 = Lattice2(localBlockPositionMinIn2x2Chunks.y, localBlockPositionMaxIn2x2Chunks.y);
 				const Lattice2 rangeZ2x2 = Lattice2(localBlockPositionMinIn2x2Chunks.z, localBlockPositionMaxIn2x2Chunks.z);
 
 				// これから、このチャンクにおけるローカルブロック座標に直す
 				Lattice2 rangeX;
-				const Lattice2 rangeY = rangeY2x2;
 				Lattice2 rangeZ;
+				// Y座標は、この段階で計算できる
+				const Lattice2 rangeY = isCrossingChunkY
+					? Lattice2(rangeY2x2.x, Chunk::Height - 1)
+					: Lattice2(rangeY2x2.x, rangeY2x2.y);
 
 				// x0,z0
 				if (i == 0)
