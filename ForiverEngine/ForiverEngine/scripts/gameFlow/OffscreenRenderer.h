@@ -13,17 +13,20 @@ namespace ForiverEngine
 		/// <summary>
 		/// <para>オフスクリーンレンダラーを作成する</para>
 		/// <para>RT, SR 両方に使えるバッファを一つ作成し、それを t0 にバインドする</para>
-		/// <para>cbs, srTextures はそれぞれ b0~, t1~ にバインドされる</para>
+		/// <para>cbData, srTextures はそれぞれ b0, t1~ にバインドされる</para>
+		/// <para>CB は1つのみ設定可能</para>
 		/// </summary>
-		OffscreenRenderer(
+		template<typename TCBData>
+			requires (!std::same_as<std::decay_t<TCBData>, OffscreenRenderer>)
+		explicit OffscreenRenderer(
 			const Device& device,
 			const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator,
 			const Lattice2& windowSize,
 			const std::string& shaderFilePath,
-			const std::vector<GraphicsBuffer>& cbs, const std::vector<Texture>& srTextures
+			const TCBData& cbData, const std::vector<Texture>& srTextures
 		)
 		{
-			cbCount = static_cast<int>(cbs.size());
+			cbCount = 1;
 			srCount = static_cast<int>(srTextures.size());
 
 			// RT,SR となるバッファを作成
@@ -47,7 +50,9 @@ namespace ForiverEngine
 			// VBV, IBV
 			meshViews = D3D12BasicFlow::CreateMeshViews(device, mesh);
 
-			// CB はこのままでOK
+			// CB
+			const GraphicsBuffer cb = D3D12BasicFlow::InitCBVBuffer(device, cbData);
+			const std::vector<GraphicsBuffer> cbs = { cb };
 
 			// SR
 			std::vector<std::pair<GraphicsBuffer, Texture>> srs = {};

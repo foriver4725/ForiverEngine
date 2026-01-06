@@ -193,7 +193,7 @@ int Main(hInstance)
 	//////////////////////////////
 	// ポストプロセス
 
-	// CB 0
+	// b0
 	struct alignas(256) CBData0PP
 	{
 		std::uint32_t WindowSize[2];
@@ -206,13 +206,12 @@ int Main(hInstance)
 		.LimitLuminance = 0.5f,
 		.AAPower = 8.0f,
 	};
-	const GraphicsBuffer cb0PP = D3D12BasicFlow::InitCBVBuffer(device, cbData0PP);
 
 	const OffscreenRenderer offscreenRendererPP = OffscreenRenderer(
 		device, commandList, commandQueue, commandAllocator,
 		WindowSize,
 		"./shaders/PP.hlsl",
-		{ cb0PP },
+		cbData0PP,
 		{}
 	);
 
@@ -244,13 +243,12 @@ int Main(hInstance)
 		.InvalidFontTextureIndex = static_cast<std::uint32_t>(Text::InvalidFontTextureIndex),
 		.FontTextureTextLength = static_cast<std::uint32_t>(TextUIData::FontTextureTextLength),
 	};
-	const GraphicsBuffer cb0Text = D3D12BasicFlow::InitCBVBuffer(device, cbData0Text);
 
 	OffscreenRenderer offscreenRendererText = OffscreenRenderer(
 		device, commandList, commandQueue, commandAllocator,
 		WindowSize,
 		"./shaders/Text.hlsl",
-		{ cb0Text },
+		cbData0Text,
 		{ fontTexture, textUIDataTexture }
 	);
 
