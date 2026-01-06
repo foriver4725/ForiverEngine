@@ -12,6 +12,8 @@ namespace ForiverEngine
 	public:
 		DELETE_DEFAULT_METHODS(PlayerControl);
 
+		static constexpr Lattice3 WorldEdgeMargin = Lattice3(2, 0, 2); // チャンクデータの端から何マスを、世界の範囲外とみなすか
+
 		// ブロック座標に変換 (整数座標)
 		static int GetBlockPosition(const float position)
 		{
@@ -42,6 +44,25 @@ namespace ForiverEngine
 				footWorldPosition.y,
 				footWorldPosition.z - collisionSize.z * 0.5f
 			);
+		}
+
+		// ワールドの範囲内であるか調べる
+		// チャンクデータの端にある程度近づいた時点で、範囲外判定にする
+		static bool IsInsideWorldBounds(const Lattice3& worldBlockPosition) noexcept
+		{
+			constexpr Lattice3 AllowedBlockPositionBegin = WorldEdgeMargin;
+			static const Lattice3 AllowedBlockPositionEnd =
+				Lattice3(Chunk::Size * Chunk::Count, Chunk::Height, Chunk::Size * Chunk::Count) - WorldEdgeMargin; // 最大値 + 1
+
+			if (!MathUtils::IsInRange(worldBlockPosition.x, AllowedBlockPositionBegin.x, AllowedBlockPositionEnd.x))
+				return false;
+			// TODO: Y座標は上手くいっていない
+			if (!MathUtils::IsInRange(worldBlockPosition.y, AllowedBlockPositionBegin.y, AllowedBlockPositionEnd.y))
+				return false;
+			if (!MathUtils::IsInRange(worldBlockPosition.z, AllowedBlockPositionBegin.z, AllowedBlockPositionEnd.z))
+				return false;
+
+			return true;
 		}
 
 		struct CollisionBoundaryAsBlockInfoPerChunk

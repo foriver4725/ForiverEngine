@@ -10,8 +10,6 @@ namespace ForiverEngine
 	class ChunksManager
 	{
 	public:
-		static constexpr Lattice3 WorldEdgeMargin = Lattice3(2, 0, 2); // チャンクデータの端から何マスを、世界の範囲外とみなすか
-
 		ChunksManager() = default;
 
 		ChunksManager(const Lattice2& playerFirstExistingChunkIndex)
@@ -57,27 +55,6 @@ namespace ForiverEngine
 		}
 
 #pragma endregion
-
-		/// <summary>
-		/// <para>ワールドの範囲内であるか調べる</para>
-		/// <para>チャンクデータの端にある程度近づいた時点で、範囲外判定にする</para>
-		/// </summary>
-		static bool IsInsideWorldBounds(const Lattice3& worldBlockPosition) noexcept
-		{
-			constexpr Lattice3 AllowedBlockPositionBegin = WorldEdgeMargin;
-			static const Lattice3 AllowedBlockPositionEnd =
-				Lattice3(Chunk::Size * Chunk::Count, Chunk::Height, Chunk::Size * Chunk::Count) - WorldEdgeMargin; // 最大値 + 1
-
-			if (!MathUtils::IsInRange(worldBlockPosition.x, AllowedBlockPositionBegin.x, AllowedBlockPositionEnd.x))
-				return false;
-			// TODO: Y座標は上手くいっていない (クラッシュなどする)
-			if (!MathUtils::IsInRange(worldBlockPosition.y, AllowedBlockPositionBegin.y, AllowedBlockPositionEnd.y))
-				return false;
-			if (!MathUtils::IsInRange(worldBlockPosition.z, AllowedBlockPositionBegin.z, AllowedBlockPositionEnd.z))
-				return false;
-
-			return true;
-		}
 
 		/// <summary>
 		/// <para>指定されたチャンク・指定された座標のブロックを更新する</para>

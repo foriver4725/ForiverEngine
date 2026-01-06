@@ -314,7 +314,7 @@ int Main(hInstance)
 			.move = InputHelper::GetAsAxis2D(Key::W, Key::S, Key::A, Key::D),
 			.look = InputHelper::GetAsAxis2D(Key::Up, Key::Down, Key::Left, Key::Right),
 			.dashPressed = InputHelper::GetKeyInfo(Key::LShift).pressed,
-			.jumpPressedNow = InputHelper::GetKeyInfo(Key::Space).pressedNow,
+			.jumpPressed = InputHelper::GetKeyInfo(Key::Space).pressed,
 		};
 		playerController.OnEveryFrame(chunksManager.GetChunks(), playerInputs, WindowHelper::GetDeltaSeconds());
 		// CB 更新
@@ -322,35 +322,17 @@ int Main(hInstance)
 
 		// ブロックを選択する
 		{
-			// 値を初期化
-			cbvBuffer1VirtualPtr->IsSelectingBlock = 0;
-			cbvBuffer1VirtualPtr->SelectingBlockWorldPosition = Lattice3::Zero();
+			const Lattice3 lookingBlockPosition = playerController.PickLookingBlock(chunksManager.GetChunks());
 
-			const Vector3 rayOrigin = playerController.GetTransform().position;
-			const Vector3 rayDirection = playerController.GetTransform().GetForward();
-
-			for (float d = 0.0f; d <= PlayerController::ReachDistance; d += PlayerController::ReachDetectStep)
+			if (lookingBlockPosition == Lattice3(-1, -1, -1))
 			{
-				const Vector3 rayPosition = rayOrigin + rayDirection * d;
-				const Lattice3 rayBlockPosition = PlayerControl::GetBlockPosition(rayPosition);
-				if (!chunksManager.IsInsideWorldBounds(rayBlockPosition))
-					continue;
-
-				const Lattice2 chunkIndex = Chunk::GetIndex(rayBlockPosition);
-				if (!Chunk::IsValidIndex(chunkIndex))
-					continue;
-
-				const Chunk& targettingChunk = chunksManager.GetChunks()[chunkIndex.x][chunkIndex.y];
-				const Lattice3 rayLocalPosition = Chunk::GetLocalBlockPosition(rayBlockPosition);
-				const Block blockAtRay = targettingChunk.GetBlock(rayLocalPosition);
-
-				if (blockAtRay != Block::Air)
-				{
-					cbvBuffer1VirtualPtr->IsSelectingBlock = 1;
-					cbvBuffer1VirtualPtr->SelectingBlockWorldPosition = rayBlockPosition;
-
-					break;
-				}
+				cbvBuffer1VirtualPtr->IsSelectingBlock = 0;
+				cbvBuffer1VirtualPtr->SelectingBlockWorldPosition = Lattice3::Zero();
+			}
+			else
+			{
+				cbvBuffer1VirtualPtr->IsSelectingBlock = 1;
+				cbvBuffer1VirtualPtr->SelectingBlockWorldPosition = lookingBlockPosition;
 			}
 		}
 
@@ -359,7 +341,7 @@ int Main(hInstance)
 
 		// ブロックを壊す
 		// チャンクデータを更新し、描画データにも反映させる
-		if (InputHelper::GetKeyInfo(Key::Enter).pressedNow)
+		if (InputHelper::GetKeyInfo(Key::Enter).pressed)
 		{
 			if (cbvBuffer1VirtualPtr->IsSelectingBlock == 1)
 			{

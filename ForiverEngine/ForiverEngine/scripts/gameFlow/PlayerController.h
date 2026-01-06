@@ -75,9 +75,13 @@ namespace ForiverEngine
 			Vector2 move;
 			Vector2 look;
 			bool dashPressed;
-			bool jumpPressedNow;
+			bool jumpPressed;
 		};
 
+		/// <summary>
+		/// <para>毎フレーム呼び出すこと</para>
+		/// <para>プレイヤーの移動・回転・ジャンプ処理を行う</para>
+		/// </summary>
 		void OnEveryFrame(const Chunk::ChunksArray<Chunk>& chunks, const Inputs& inputs, float deltaSeconds)
 		{
 			// 回転
@@ -142,11 +146,8 @@ namespace ForiverEngine
 					}
 
 					// 接地しているなら、ジャンプ入力を受け付ける
-					if (isGrounded)
-					{
-						if (inputs.jumpPressedNow)
-							velocityV += std::sqrt(2.0f * G * JumpHeight);
-					}
+					if (isGrounded && inputs.jumpPressed)
+						velocityV += std::sqrt(2.0f * G * JumpHeight);
 				}
 
 				// 水平移動と当たり判定
@@ -172,11 +173,42 @@ namespace ForiverEngine
 				}
 
 				// 世界の範囲内に収める
-				if (!ChunksManager::IsInsideWorldBounds(GetFootBlockPosition()))
+				if (!PlayerControl::IsInsideWorldBounds(GetFootBlockPosition()))
 				{
 					transform.position = positionBeforeMove;
 				}
 			}
+		}
+
+		/// <summary>
+		/// <para>現在見ているブロックのブロック座標を取得する</para>
+		/// <para>見ているブロックが無かったら、(-1, -1, -1) を返す</para>
+		/// </summary>
+		Lattice3 PickLookingBlock(const Chunk::ChunksArray<Chunk>& chunks) const
+		{
+			const Vector3 rayOrigin = transform.position;
+			const Vector3 rayDirection = transform.GetForward();
+
+			for (float d = 0.0f; d <= ReachDistance; d += ReachDetectStep)
+			{
+				const Vector3 rayPosition = rayOrigin + rayDirection * d;
+				const Lattice3 rayBlockPosition = PlayerControl::GetBlockPosition(rayPosition);
+				if (!PlayerControl::IsInsideWorldBounds(rayBlockPosition))
+					continue;
+
+				const Lattice2 chunkIndex = Chunk::GetIndex(rayBlockPosition);
+				if (!Chunk::IsValidIndex(chunkIndex))
+					continue;
+
+				const Chunk& targetingChunk = chunks[chunkIndex.x][chunkIndex.y];
+				const Lattice3 rayLocalPosition = Chunk::GetLocalBlockPosition(rayBlockPosition);
+				const Block blockAtRay = targetingChunk.GetBlock(rayLocalPosition);
+
+				if (blockAtRay != Block::Air)
+					return rayBlockPosition;
+			}
+
+			return Lattice3(-1, -1, -1);
 		}
 
 	private:
