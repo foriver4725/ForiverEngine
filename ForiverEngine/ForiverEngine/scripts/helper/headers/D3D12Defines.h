@@ -133,10 +133,10 @@ public: \
 	// ピクセルフォーマットの分類 桁の定数値 (ビットフラグ)
 	struct FormatTypeDigit
 	{
-		static constexpr int Dimension1 = 0;
-		static constexpr int Dimension2 = 1;
-		static constexpr int Dimension3 = 2;
-		static constexpr int Dimension4 = 3;
+		static constexpr int Dim1 = 0;
+		static constexpr int Dim2 = 1;
+		static constexpr int Dim3 = 2;
+		static constexpr int Dim4 = 3;
 
 		static constexpr int TypeInt = 8;
 		static constexpr int TypeFloat = 9;
@@ -158,30 +158,30 @@ public: \
 		{
 		case Format::Unknown:    return 0;
 
-		case Format::RGBA_F32:   return BitFlag::AddFlags(0, { Digit::Dimension4, Digit::TypeFloat, Digit::Bite4, Digit::ForColor });
-		case Format::RGBA_U32:   return BitFlag::AddFlags(0, { Digit::Dimension4, Digit::TypeInt,   Digit::Bite4, Digit::ForColor });
-		case Format::RGB_F32:    return BitFlag::AddFlags(0, { Digit::Dimension3, Digit::TypeFloat, Digit::Bite4, Digit::ForColor });
-		case Format::RGB_U32:    return BitFlag::AddFlags(0, { Digit::Dimension3, Digit::TypeInt,   Digit::Bite4, Digit::ForColor });
-		case Format::RG_F32:     return BitFlag::AddFlags(0, { Digit::Dimension2, Digit::TypeFloat, Digit::Bite4, Digit::ForColor });
-		case Format::RG_U32:     return BitFlag::AddFlags(0, { Digit::Dimension2, Digit::TypeInt,   Digit::Bite4, Digit::ForColor });
-		case Format::R_F32:      return BitFlag::AddFlags(0, { Digit::Dimension1, Digit::TypeFloat, Digit::Bite4, Digit::ForColor });
-		case Format::R_U32:      return BitFlag::AddFlags(0, { Digit::Dimension1, Digit::TypeInt,   Digit::Bite4, Digit::ForColor });
+		case Format::RGBA_F32:   return BitFlag::AddFlags(0, { Digit::Dim4, Digit::TypeFloat, Digit::Bite4, Digit::ForColor });
+		case Format::RGBA_U32:   return BitFlag::AddFlags(0, { Digit::Dim4, Digit::TypeInt,   Digit::Bite4, Digit::ForColor });
+		case Format::RGB_F32:    return BitFlag::AddFlags(0, { Digit::Dim3, Digit::TypeFloat, Digit::Bite4, Digit::ForColor });
+		case Format::RGB_U32:    return BitFlag::AddFlags(0, { Digit::Dim3, Digit::TypeInt,   Digit::Bite4, Digit::ForColor });
+		case Format::RG_F32:     return BitFlag::AddFlags(0, { Digit::Dim2, Digit::TypeFloat, Digit::Bite4, Digit::ForColor });
+		case Format::RG_U32:     return BitFlag::AddFlags(0, { Digit::Dim2, Digit::TypeInt,   Digit::Bite4, Digit::ForColor });
+		case Format::R_F32:      return BitFlag::AddFlags(0, { Digit::Dim1, Digit::TypeFloat, Digit::Bite4, Digit::ForColor });
+		case Format::R_U32:      return BitFlag::AddFlags(0, { Digit::Dim1, Digit::TypeInt,   Digit::Bite4, Digit::ForColor });
 
-		case Format::RGBA_F16:   return BitFlag::AddFlags(0, { Digit::Dimension4, Digit::TypeFloat, Digit::Bite2, Digit::ForColor });
-		case Format::RGBA_U16:   return BitFlag::AddFlags(0, { Digit::Dimension4, Digit::TypeInt,   Digit::Bite2, Digit::ForColor });
-		case Format::RG_F16:     return BitFlag::AddFlags(0, { Digit::Dimension2, Digit::TypeFloat, Digit::Bite2, Digit::ForColor });
-		case Format::RG_U16:     return BitFlag::AddFlags(0, { Digit::Dimension2, Digit::TypeInt,   Digit::Bite2, Digit::ForColor });
-		case Format::R_F16:      return BitFlag::AddFlags(0, { Digit::Dimension1, Digit::TypeFloat, Digit::Bite2, Digit::ForColor });
-		case Format::R_U16:      return BitFlag::AddFlags(0, { Digit::Dimension1, Digit::TypeInt,   Digit::Bite2, Digit::ForColor });
+		case Format::RGBA_F16:   return BitFlag::AddFlags(0, { Digit::Dim4, Digit::TypeFloat, Digit::Bite2, Digit::ForColor });
+		case Format::RGBA_U16:   return BitFlag::AddFlags(0, { Digit::Dim4, Digit::TypeInt,   Digit::Bite2, Digit::ForColor });
+		case Format::RG_F16:     return BitFlag::AddFlags(0, { Digit::Dim2, Digit::TypeFloat, Digit::Bite2, Digit::ForColor });
+		case Format::RG_U16:     return BitFlag::AddFlags(0, { Digit::Dim2, Digit::TypeInt,   Digit::Bite2, Digit::ForColor });
+		case Format::R_F16:      return BitFlag::AddFlags(0, { Digit::Dim1, Digit::TypeFloat, Digit::Bite2, Digit::ForColor });
+		case Format::R_U16:      return BitFlag::AddFlags(0, { Digit::Dim1, Digit::TypeInt,   Digit::Bite2, Digit::ForColor });
 
-		case Format::RGBA_U8:    return BitFlag::AddFlags(0, { Digit::Dimension4, Digit::TypeInt,   Digit::Bite1, Digit::ForColor });
-		case Format::RGBA_U8_01: return BitFlag::AddFlags(0, { Digit::Dimension4, Digit::TypeInt,   Digit::Bite1, Digit::ForColor });
-		case Format::RG_U8:      return BitFlag::AddFlags(0, { Digit::Dimension2, Digit::TypeInt,   Digit::Bite1, Digit::ForColor });
-		case Format::RG_U8_01:   return BitFlag::AddFlags(0, { Digit::Dimension2, Digit::TypeInt,   Digit::Bite1, Digit::ForColor });
-		case Format::R_U8:       return BitFlag::AddFlags(0, { Digit::Dimension1, Digit::TypeInt,   Digit::Bite1, Digit::ForColor });
-		case Format::R_U8_01:    return BitFlag::AddFlags(0, { Digit::Dimension1, Digit::TypeInt,   Digit::Bite1, Digit::ForColor });
+		case Format::RGBA_U8:    return BitFlag::AddFlags(0, { Digit::Dim4, Digit::TypeInt,   Digit::Bite1, Digit::ForColor });
+		case Format::RGBA_U8_01: return BitFlag::AddFlags(0, { Digit::Dim4, Digit::TypeInt,   Digit::Bite1, Digit::ForColor });
+		case Format::RG_U8:      return BitFlag::AddFlags(0, { Digit::Dim2, Digit::TypeInt,   Digit::Bite1, Digit::ForColor });
+		case Format::RG_U8_01:   return BitFlag::AddFlags(0, { Digit::Dim2, Digit::TypeInt,   Digit::Bite1, Digit::ForColor });
+		case Format::R_U8:       return BitFlag::AddFlags(0, { Digit::Dim1, Digit::TypeInt,   Digit::Bite1, Digit::ForColor });
+		case Format::R_U8_01:    return BitFlag::AddFlags(0, { Digit::Dim1, Digit::TypeInt,   Digit::Bite1, Digit::ForColor });
 
-		case Format::D_F32:      return BitFlag::AddFlags(0, { Digit::Dimension1, Digit::TypeFloat, Digit::Bite4, Digit::ForDepth });
+		case Format::D_F32:      return BitFlag::AddFlags(0, { Digit::Dim1, Digit::TypeFloat, Digit::Bite4, Digit::ForDepth });
 
 		default:                 return 0;
 		}
@@ -442,13 +442,13 @@ public: \
 			int channelAmount = 0;
 			int biteAmountPerChannel = 0;
 			{
-				if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::Dimension1))
+				if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::Dim1))
 					channelAmount = 1;
-				else if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::Dimension2))
+				else if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::Dim2))
 					channelAmount = 2;
-				else if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::Dimension3))
+				else if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::Dim3))
 					channelAmount = 3;
-				else if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::Dimension4))
+				else if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::Dim4))
 					channelAmount = 4;
 				else
 					channelAmount = 0; // 不明
