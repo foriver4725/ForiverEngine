@@ -153,18 +153,10 @@ namespace ForiverEngine
 		}
 
 		/// <summary>
-		/// <para>GraphicsBuffer を作成して、テクスチャデータを GPU にアップロードする</para>
-		/// <para>テクスチャは与えられたパスからロードし、パスが1つなら2Dテクスチャとして、複数あるなら2Dテクスチャ配列として処理される</para>
-		/// <para>作成したバッファと、ロードしたテクスチャのメタデータを返す</para>
-		/// <para>SRV を作る用のバッファ</para>
+		/// <para>テクスチャをロードする</para>
+		/// <para>パスが1つなら2Dテクスチャとして、複数あるなら2Dテクスチャ配列としてロードする</para>
 		/// </summary>
-		static std::tuple<GraphicsBuffer, Texture> InitSRVBuffer(
-			const Device& device,
-			const CommandList& commandList,
-			const CommandQueue& commandQueue,
-			const CommandAllocator& commandAllocator,
-			const std::vector<std::string>& paths
-		)
+		static Texture LoadTexture(const std::vector<std::string>& paths)
 		{
 			Texture texture = Texture();
 
@@ -177,14 +169,7 @@ namespace ForiverEngine
 			if (!texture.IsValid())
 				ShowError(L"テクスチャ(群)のロードに失敗しました");
 
-			const GraphicsBuffer textureBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, texture,
-				GraphicsBufferUsagePermission::None, GraphicsBufferState::CopyDestination, Color::Transparent());
-			if (!textureBuffer)
-				ShowError(L"テクスチャ(配列)バッファの作成に失敗しました");
-
-			D3D12BasicFlow::UploadTextureToGPU(commandList, commandQueue, commandAllocator, device, textureBuffer, texture);
-
-			return { textureBuffer, texture };
+			return texture;
 		}
 
 		/// <summary>

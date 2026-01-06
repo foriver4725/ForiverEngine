@@ -130,13 +130,12 @@ int Main(hInstance)
 	const GraphicsBuffer cbvBuffer1 = D3D12BasicFlow::InitCBVBuffer(device, cbData1, &cbvBuffer1VirtualPtr);
 
 	// SRV 用バッファ
-	const auto srvBufferAndData = D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue, commandAllocator,
-		{
+	const Texture textureArray = D3D12BasicFlow::LoadTexture({
 			"assets/textures/air_invalid.png",
 			"assets/textures/grass_stone.png",
 			"assets/textures/dirt_sand.png",
 		});
-	const Texture textureArrayMetadata = std::get<1>(srvBufferAndData);
+	const auto srvBuffer = D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue, commandAllocator, textureArray);
 
 	// DescriptorHeap に登録
 	DescriptorHeap descriptorHeapBasic = DescriptorHeap(); // 後で作成する!!
@@ -185,7 +184,7 @@ int Main(hInstance)
 	// メインレンダリングの方に、情報を渡す
 
 	descriptorHeapBasic = D3D12BasicFlow::InitDescriptorHeapBasic(
-		device, { cbvBuffer0, cbvBuffer1 }, { srvBufferAndData, { shadowGraphicsBuffer, shadowTextureMetadata } });
+		device, { cbvBuffer0, cbvBuffer1 }, { {srvBuffer, textureArray}, {shadowGraphicsBuffer, shadowTextureMetadata} });
 
 	//////////
 
@@ -207,13 +206,13 @@ int Main(hInstance)
 		.LimitLuminance = 0.5f,
 		.AAPower = 8.0f,
 	};
-	const GraphicsBuffer cbvBufferPP = D3D12BasicFlow::InitCBVBuffer(device, cbData0PP);
+	const GraphicsBuffer cbData0PPBuffer = D3D12BasicFlow::InitCBVBuffer(device, cbData0PP);
 
 	const OffscreenRenderer offscreenRendererPP = OffscreenRenderer(
-		device,
+		device, commandList, commandQueue, commandAllocator,
 		WindowSize,
 		"./shaders/PP.hlsl",
-		{ cbvBufferPP },
+		{ cbData0PPBuffer },
 		{}
 	);
 
@@ -226,10 +225,9 @@ int Main(hInstance)
 	TextUIData textUIData = TextUIData::CreateEmpty(WindowSize / TextUIData::FontTextureTextLength);
 
 	// t1
-	const auto fontTextureBufferAndData = D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue, commandAllocator, { "assets/font.png" });
+	const Texture fontTexture = D3D12BasicFlow::LoadTexture({ "assets/font.png" });
 	// t2
 	Texture textUIDataTexture = textUIData.CreateTexture();
-	GraphicsBuffer textUIDataGraphicsBuffer = D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue, commandAllocator, textUIDataTexture);
 
 	// b0
 	struct alignas(256) CBData0Text
@@ -241,19 +239,19 @@ int Main(hInstance)
 	};
 	const CBData0Text cbData0Text = CBData0Text
 	{
-		.FontTextureSize = { static_cast<std::uint32_t>(std::get<1>(fontTextureBufferAndData).width), static_cast<std::uint32_t>(std::get<1>(fontTextureBufferAndData).height) },
+		.FontTextureSize = { static_cast<std::uint32_t>(fontTexture.width), static_cast<std::uint32_t>(fontTexture.height) },
 		.TextUIDataSize = { static_cast<std::uint32_t>(textUIData.GetDataSize().x), static_cast<std::uint32_t>(textUIData.GetDataSize().y)},
 		.InvalidFontTextureIndex = static_cast<std::uint32_t>(Text::InvalidFontTextureIndex),
 		.FontTextureTextLength = static_cast<std::uint32_t>(TextUIData::FontTextureTextLength),
 	};
-	const GraphicsBuffer cbvBufferText = D3D12BasicFlow::InitCBVBuffer(device, cbData0Text);
+	const GraphicsBuffer cbData0TextBuffer = D3D12BasicFlow::InitCBVBuffer(device, cbData0Text);
 
-	const OffscreenRenderer offscreenRendererText = OffscreenRenderer(
-		device,
+	OffscreenRenderer offscreenRendererText = OffscreenRenderer(
+		device, commandList, commandQueue, commandAllocator,
 		WindowSize,
 		"./shaders/Text.hlsl",
-		{ cbvBufferText },
-		{ fontTextureBufferAndData, { textUIDataGraphicsBuffer, textUIDataTexture } }
+		{ cbData0TextBuffer },
+		{ fontTexture, textUIDataTexture }
 	);
 
 	//////////////////////////////
@@ -435,13 +433,8 @@ int Main(hInstance)
 
 			// バッファを再作成してアップロードし直す
 			textUIDataTexture = textUIData.CreateTexture();
-			textUIDataGraphicsBuffer = D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue, commandAllocator, textUIDataTexture);
-			D3D12Helper::CreateSRVAndRegistToDescriptorHeap(
-				device, offscreenRendererText.GetDescriptorHeapBasic(),
-				textUIDataGraphicsBuffer,
-				static_cast<int>(ShaderRegister::t2) + 1, // CBVが1つあるので...
-				textUIDataTexture
-			);
+			offscreenRendererText.ReUploadTexture(device, commandList, commandQueue, commandAllocator,
+				textUIDataTexture, ShaderRegister::t2);
 		}
 
 		// 太陽カメラの位置を、プレイヤーの頭上らへんにする

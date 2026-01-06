@@ -13,24 +13,26 @@ namespace ForiverEngine
 		/// <summary>
 		/// <para>オフスクリーンレンダラーを作成する</para>
 		/// <para>RT, SR 両方に使えるバッファを一つ作成し、それを t0 にバインドする</para>
-		/// <para>constantBuffers, shaderResourceBuffers はそれぞれ b0~, t1~ にバインドされる</para>
+		/// <para>cbs, srTextures はそれぞれ b0~, t1~ にバインドされる</para>
 		/// </summary>
 		OffscreenRenderer(
 			const Device& device,
+			const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator,
 			const Lattice2& windowSize,
 			const std::string& shaderFilePath,
-			const std::vector<GraphicsBuffer>& constantBuffers,
-			const std::vector<std::pair<GraphicsBuffer, Texture>>& shaderResourceBuffers
+			const std::vector<GraphicsBuffer>& cbs, const std::vector<Texture>& srTextures
 		)
 		{
+			cbCount = static_cast<int>(cbs.size());
+			srCount = static_cast<int>(srTextures.size());
+
 			// RT,SR となるバッファを作成
 			const Texture rtMetadata = Texture::CreateManually({}, windowSize, Format::RGBA_U8_01);
 			rt = D3D12Helper::CreateGraphicsBufferTexture2D(device, rtMetadata,
 				GraphicsBufferUsagePermission::AllowRenderTarget, GraphicsBufferState::PixelShaderResource, Color::Transparent());
 
 			// RootSignature, PipelineState
-			const RootParameter rootParameter = RootParameter::CreateBasic(
-				static_cast<int>(constantBuffers.size()), static_cast<int>(shaderResourceBuffers.size() + 1));
+			const RootParameter rootParameter = RootParameter::CreateBasic(cbCount, srCount + 1);
 			const SamplerConfig samplerConfig = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
 			const auto [shaderVS, shaderPS] = D3D12BasicFlow::CompileShader_VS_PS(shaderFilePath);
 			std::tie(rootSignature, pipelineState) = D3D12BasicFlow::CreateRootSignatureAndGraphicsPipelineState(
@@ -45,13 +47,21 @@ namespace ForiverEngine
 			// VBV, IBV
 			meshViews = D3D12BasicFlow::CreateMeshViews(device, mesh);
 
-			// 作成したバッファ (RT,SR) を先頭に追加する (t0)
-			std::vector<std::pair<GraphicsBuffer, Texture>> shaderResourceBuffersReal = { { rt, rtMetadata } };
-			shaderResourceBuffersReal.insert(shaderResourceBuffersReal.end(),
-				shaderResourceBuffers.begin(), shaderResourceBuffers.end());
+			// CB はこのままでOK
+
+			// SR
+			std::vector<std::pair<GraphicsBuffer, Texture>> srs = {};
+			srs.reserve(srCount + 1);
+			srs.push_back({ rt, rtMetadata }); // RT,SR 用バッファを t0 に設定
+			for (const Texture& srTexture : srTextures)
+			{
+				const GraphicsBuffer sr = D3D12BasicFlow::InitSRVBuffer(
+					device, commandList, commandQueue, commandAllocator, srTexture);
+				srs.push_back({ sr, srTexture });
+			}
 
 			// DescriptorHeap
-			descriptorHeapBasic = D3D12BasicFlow::InitDescriptorHeapBasic(device, constantBuffers, shaderResourceBuffersReal);
+			descriptorHeapBasic = D3D12BasicFlow::InitDescriptorHeapBasic(device, cbs, srs);
 		}
 
 		const GraphicsBuffer& GetRT() const
@@ -62,9 +72,19 @@ namespace ForiverEngine
 		{
 			return rtv;
 		}
-		const DescriptorHeap& GetDescriptorHeapBasic() const
+
+		/// <summary>
+		/// <para>指定したテクスチャからバッファを作成し、GPU に再アップロードする</para>
+		/// <para>shaderRegister で指定した t レジスタにバインドされる</para>
+		/// </summary>
+		void ReUploadTexture(const Device& device,
+			const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator,
+			const Texture& texture, ShaderRegister shaderRegister
+		)
 		{
-			return descriptorHeapBasic;
+			const GraphicsBuffer sr = D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue, commandAllocator, texture);
+			D3D12Helper::CreateSRVAndRegistToDescriptorHeap(device, descriptorHeapBasic, sr,
+				static_cast<int>(shaderRegister) + cbCount, texture);
 		}
 
 		/// <summary>
@@ -101,5 +121,8 @@ namespace ForiverEngine
 		DescriptorHeap descriptorHeapBasic;
 		MeshQuad mesh;
 		MeshViews meshViews;
+
+		int cbCount;
+		int srCount; // 実際は RT,SR 用のバッファも追加で1つある
 	};
 }
