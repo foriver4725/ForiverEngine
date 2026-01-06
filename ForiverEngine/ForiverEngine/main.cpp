@@ -341,17 +341,27 @@ int Main(hInstance)
 
 		// ブロックを壊す
 		// チャンクデータを更新し、描画データにも反映させる
-		if (InputHelper::GetKeyInfo(Key::Enter).pressed)
 		{
-			if (cbvBuffer1VirtualPtr->IsSelectingBlock == 1)
-			{
-				const Lattice2 chunkIndex = Chunk::GetIndex(cbvBuffer1VirtualPtr->SelectingBlockWorldPosition);
-				const Lattice3 localBlockPosition
-					= Chunk::GetLocalBlockPosition(cbvBuffer1VirtualPtr->SelectingBlockWorldPosition);
+			static float mineCooldownTimer = 0.0f;
 
-				chunksManager.UpdateChunkBlock(chunkIndex, localBlockPosition, Block::Air, device);
-				chunksManager.UpdateDrawChunks(currentExistingChunkIndex, true, device);
+			if (mineCooldownTimer <= 0.0f && InputHelper::GetKeyInfo(Key::Enter).pressed)
+			{
+				mineCooldownTimer = PlayerController::MineCooldownSeconds;
+
+				if (cbvBuffer1VirtualPtr->IsSelectingBlock == 1)
+				{
+					const Lattice2 chunkIndex = Chunk::GetIndex(cbvBuffer1VirtualPtr->SelectingBlockWorldPosition);
+					const Lattice3 localBlockPosition
+						= Chunk::GetLocalBlockPosition(cbvBuffer1VirtualPtr->SelectingBlockWorldPosition);
+
+					chunksManager.UpdateChunkBlock(chunkIndex, localBlockPosition, Block::Air, device);
+					chunksManager.UpdateDrawChunks(currentExistingChunkIndex, true, device);
+				}
 			}
+
+			mineCooldownTimer -= WindowHelper::GetDeltaSeconds();
+			if (mineCooldownTimer < 0.0f)
+				mineCooldownTimer = 0.0f;
 		}
 
 		// プレイヤーの存在チャンクが変化したなら、描画チャンクを更新する

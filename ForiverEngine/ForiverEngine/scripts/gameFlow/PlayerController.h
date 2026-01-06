@@ -27,6 +27,8 @@ namespace ForiverEngine
 		static constexpr float ReachDistance = 5.0f; // リーチ距離 (m)
 		static constexpr float ReachDetectStep = 0.1f; // リーチ判定時のレイステップ幅 (m)
 
+		static constexpr float MineCooldownSeconds = 0.2f; // ブロックを掘る際のクールダウン時間 (秒)
+
 		PlayerController(const CameraTransform& initTransform) noexcept
 			: transform(initTransform), velocityV(0.0f)
 		{
