@@ -225,6 +225,7 @@
     <ClInclude Include="scripts\component\Transform\Transform.h" />
     <ClInclude Include="scripts\gameFlow\ChunksManager.h" />
     <ClInclude Include="scripts\gameFlow\D3D12BasicFlow.h" />
+    <ClInclude Include="scripts\gameFlow\DebugText.h" />
     <ClInclude Include="scripts\gameFlow\Include.h" />
     <ClInclude Include="scripts\gameFlow\OffscreenRenderer.h" />
     <ClInclude Include="scripts\gameFlow\PlayerControl.h" />

@@ -349,60 +349,18 @@ int Main(hInstance)
 						frameTimeMean = frameTimeSum / FrameTimeTextUpdateIntervalFrames;
 					}
 				}
-				const std::string frameTimeText = std::format("Frame Time : {:.2f} ms", frameTimeMean);
-				textUIDataRows.emplace_back(frameTimeText, Color::White());
 
-				// プレイヤーの足元のブロック座標
-				const std::string positionText =
-					std::format("Position : {}", ToString(playerController.GetFootBlockPosition()));
-				textUIDataRows.emplace_back(positionText, Color::White());
-
-				// 選択しているブロックのブロック座標
-				const std::string selectingBlockPositionText = (cbvBuffer1VirtualPtr->IsSelectingBlock == 1) ?
-					std::format("LookAt : {}", ToString(cbvBuffer1VirtualPtr->SelectingBlockWorldPosition))
-					: "LookAt : None";
-				textUIDataRows.emplace_back(selectingBlockPositionText, Color::White());
-
-				// 現在いるチャンクのインデックス
-				const std::string chunkIndexText = Chunk::IsValidIndex(existingChunkIndex) ?
-					std::format("Chunk Index : {}", ToString(existingChunkIndex))
-					: "Chunk Index : Invalid";
-				textUIDataRows.emplace_back(chunkIndexText, Color::White());
-
-				// チャンク内でのローカルブロック座標
-				const std::string chunkLocalBlockPositionText = Chunk::IsValidIndex(existingChunkIndex) ?
-					std::format("Chunk Local Position : {}",
-						ToString(Chunk::GetLocalBlockPosition(playerController.GetFootBlockPosition())))
-					: "Chunk Local Position : Invalid";
-				textUIDataRows.emplace_back(chunkLocalBlockPositionText, Color::White());
-
-				// 描画しているチャンクの範囲
-				const auto& drawRangeInfo = chunksManager.GetDrawRangeInfo();
-				const std::string drawChunksRangeText = std::format(
-					"Drawing Chunks : {}-{}",
-					ToString(drawRangeInfo.GetRangeMin()),
-					ToString(drawRangeInfo.GetRangeMax())
+				textUIDataRows.emplace_back(DebugText::FrameTime(frameTimeMean), DebugText::Color);
+				textUIDataRows.emplace_back(DebugText::Position(playerController), DebugText::Color);
+				textUIDataRows.emplace_back(DebugText::LookAtPosition(
+					cbvBuffer1VirtualPtr->IsSelectingBlock == 1,
+					cbvBuffer1VirtualPtr->SelectingBlockWorldPosition), DebugText::Color
 				);
-				textUIDataRows.emplace_back(drawChunksRangeText, Color::White());
-
-				// プレイヤーのコリジョンの、ワールドブロック座標の範囲
-				const auto [playerCollisionMin, playerCollisionMax] = playerController.GetCollisionRange();
-				const std::string playerCollisionRangeText =
-					std::format("Player Collision Range : {}-{}",
-						ToString(PlayerControl::GetBlockPosition(playerCollisionMin)),
-						ToString(PlayerControl::GetBlockPosition(playerCollisionMax))
-					);
-				textUIDataRows.emplace_back(playerCollisionRangeText, Color::White());
-
-				// 床&天井ブロックのY座標
-				const int floorY = playerController.FindFloorHeight(chunksManager.GetChunks());
-				const int ceilY = playerController.FindCeilHeight(chunksManager.GetChunks());
-				const std::string floorCeilHeightText = std::format(
-					"Floor&Ceil Height : ({},{})",
-					(floorY >= 0) ? std::to_string(floorY) : "None",
-					(ceilY <= Chunk::Height - 1) ? std::to_string(ceilY) : "None"
-				);
-				textUIDataRows.emplace_back(floorCeilHeightText, Color::White());
+				textUIDataRows.emplace_back(DebugText::ChunkIndex(playerController), DebugText::Color);
+				textUIDataRows.emplace_back(DebugText::ChunkLocalPosition(playerController), DebugText::Color);
+				textUIDataRows.emplace_back(DebugText::DrawChunksRange(chunksManager), DebugText::Color);
+				textUIDataRows.emplace_back(DebugText::CollisionRange(playerController), DebugText::Color);
+				textUIDataRows.emplace_back(DebugText::FloorCeilHeight(playerController, chunksManager), DebugText::Color);
 
 				// 本体のデータを更新
 				textUIData.ClearAll();

@@ -7,3 +7,4 @@
 #include "./PlayerControl.h"
 #include "./PlayerController.h"
 #include "./SunCamera.h"
+#include "./DebugText.h"

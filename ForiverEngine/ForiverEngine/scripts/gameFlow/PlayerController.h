@@ -49,14 +49,6 @@ namespace ForiverEngine
 			return PlayerControl::GetBlockPosition(GetFootPosition());
 		}
 
-		std::pair<Vector3, Vector3> GetCollisionRange() const noexcept
-		{
-			const Vector3 minPosition = PlayerControl::GetCollisionMinPosition(GetFootPosition(), CollisionSize);
-			const Vector3 maxPosition = minPosition + CollisionSize;
-
-			return { minPosition, maxPosition };
-		}
-
 		int FindFloorHeight(const Chunk::ChunksArray<Chunk>& chunks) const
 		{
 			return PlayerControl::FindFloorHeight(chunks, GetFootPosition(), CollisionSize);
