@@ -206,13 +206,13 @@ int Main(hInstance)
 		.LimitLuminance = 0.5f,
 		.AAPower = 8.0f,
 	};
-	const GraphicsBuffer cbData0PPBuffer = D3D12BasicFlow::InitCBVBuffer(device, cbData0PP);
+	const GraphicsBuffer cb0PP = D3D12BasicFlow::InitCBVBuffer(device, cbData0PP);
 
 	const OffscreenRenderer offscreenRendererPP = OffscreenRenderer(
 		device, commandList, commandQueue, commandAllocator,
 		WindowSize,
 		"./shaders/PP.hlsl",
-		{ cbData0PPBuffer },
+		{ cb0PP },
 		{}
 	);
 
@@ -244,13 +244,13 @@ int Main(hInstance)
 		.InvalidFontTextureIndex = static_cast<std::uint32_t>(Text::InvalidFontTextureIndex),
 		.FontTextureTextLength = static_cast<std::uint32_t>(TextUIData::FontTextureTextLength),
 	};
-	const GraphicsBuffer cbData0TextBuffer = D3D12BasicFlow::InitCBVBuffer(device, cbData0Text);
+	const GraphicsBuffer cb0Text = D3D12BasicFlow::InitCBVBuffer(device, cbData0Text);
 
 	OffscreenRenderer offscreenRendererText = OffscreenRenderer(
 		device, commandList, commandQueue, commandAllocator,
 		WindowSize,
 		"./shaders/Text.hlsl",
-		{ cbData0TextBuffer },
+		{ cb0Text },
 		{ fontTexture, textUIDataTexture }
 	);
 
