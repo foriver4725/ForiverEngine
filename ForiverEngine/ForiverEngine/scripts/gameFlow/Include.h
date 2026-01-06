@@ -6,3 +6,4 @@
 #include "./ChunksManager.h"
 #include "./PlayerControl.h"
 #include "./PlayerController.h"
+#include "./SunCamera.h"

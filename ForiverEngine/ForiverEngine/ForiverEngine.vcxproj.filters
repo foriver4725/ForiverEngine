@@ -258,6 +258,9 @@
     <ClInclude Include="scripts\gameFlow\OffscreenRenderer.h">
       <Filter>scripts\gameFlow</Filter>
     </ClInclude>
+    <ClInclude Include="scripts\gameFlow\SunCamera.h">
+      <Filter>scripts\gameFlow</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shaders\Basic.hlsl">

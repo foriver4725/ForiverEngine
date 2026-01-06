@@ -56,21 +56,8 @@ int Main(hInstance)
 	PlayerController playerController = PlayerController(CameraTransform::CreatePerspective(
 		Vector3(64, 32, 64), Quaternion::Identity(), 60.0f * DegToRad, 1.0f * WindowSize.x / WindowSize.y));
 
-	// 太陽からのカメラ 平行投影
-	constexpr Color SunShadowColor = Color(0.7f, 0.7f, 0.7f);
-	constexpr float SunDistanceFromPlayer = 100;
-	constexpr Vector2 SunClipSizeXY = Vector2(1024, 1024);
-	constexpr Vector2 SunClipRangeZ = Vector2(0.1f, 500.0f);
-	const Vector3 SunDirection = Vector3(1.0f, -1.0f, 1.0f).Normed();
-	const std::function<CameraTransform()> CreateSunCameraTransform = [&]()
-		{
-			return CameraTransform::CreateOrthographic(
-				playerController.GetFootPosition() - SunDirection * SunDistanceFromPlayer,
-				Quaternion::VectorToVector(Vector3::Forward(), SunDirection),
-				SunClipSizeXY, SunClipRangeZ
-			);
-		};
-	CameraTransform sunCameraTransform = CreateSunCameraTransform();
+	SunCamera sunCamera = SunCamera();
+	sunCamera.LookAtPlayer(playerController.GetFootPosition());
 
 	// 地形データ
 	Lattice2 existingChunkIndex = Chunk::GetIndex(playerController.GetFootBlockPosition());
@@ -107,7 +94,7 @@ int Main(hInstance)
 		.Matrix_M = terrainTransform.CalculateModelMatrix(),
 		.Matrix_M_IT = terrainTransform.CalculateModelMatrixInversed().Transposed(),
 		.Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(terrainTransform, playerController.GetTransform()),
-		.DirectionalLight_Matrix_VP = sunCameraTransform.CalculateVPMatrix(),
+		.DirectionalLight_Matrix_VP = sunCamera.CalculateVPMatrix(),
 	};
 	CBData1 cbData1 =
 	{
@@ -115,12 +102,12 @@ int Main(hInstance)
 		.IsSelectingBlock = 0,
 		.SelectColor = Color::CreateFromUint8(255, 255, 0, 100),
 
-		.DirectionalLightDirection = SunDirection,
+		.DirectionalLightDirection = SunCamera::Direction,
 		.DirectionalLightColor = Color::White() * 1.2f,
 		.AmbientLightColor = Color::White() * 0.5f,
 
 		.CastShadow = 0, // TODO: 影の計算がおかしいので、今は影を無くしておく!
-		.ShadowColor = SunShadowColor,
+		.ShadowColor = SunCamera::ShadowColor,
 	};
 
 	// CBV 用バッファ
@@ -169,7 +156,7 @@ int Main(hInstance)
 	};
 	CBData0Shadow cbData0Shadow =
 	{
-		.Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(terrainTransform, sunCameraTransform),
+		.Matrix_MVP = sunCamera.CalculateVPMatrix() * terrainTransform.CalculateModelMatrix(),
 	};
 	CBData0Shadow* cbvBuffer0ShadowVirtualPtr = nullptr;
 	const GraphicsBuffer cbvBufferShadow = D3D12BasicFlow::InitCBVBuffer(device, cbData0Shadow, &cbvBuffer0ShadowVirtualPtr);
@@ -438,10 +425,10 @@ int Main(hInstance)
 		// 太陽カメラの位置を、プレイヤーの頭上らへんにする
 		// CBuffer の更新も行う
 		{
-			sunCameraTransform = CreateSunCameraTransform();
+			sunCamera.LookAtPlayer(playerController.GetFootPosition());
 
-			cbvBuffer0VirtualPtr->DirectionalLight_Matrix_VP = sunCameraTransform.CalculateVPMatrix();
-			cbvBuffer0ShadowVirtualPtr->Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(terrainTransform, sunCameraTransform);
+			cbvBuffer0VirtualPtr->DirectionalLight_Matrix_VP = sunCamera.CalculateVPMatrix();
+			cbvBuffer0ShadowVirtualPtr->Matrix_MVP = sunCamera.CalculateVPMatrix() * terrainTransform.CalculateModelMatrix();
 		}
 
 		const int currentBackRTIndex = D3D12Helper::GetCurrentBackRTIndex(swapChain);

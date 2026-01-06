@@ -230,6 +230,7 @@
     <ClInclude Include="scripts\gameFlow\PlayerControl.h" />
     <ClInclude Include="scripts\gameFlow\Chunk.h" />
     <ClInclude Include="scripts\gameFlow\PlayerController.h" />
+    <ClInclude Include="scripts\gameFlow\SunCamera.h" />
     <ClInclude Include="scripts\helper\headers\D3D12Defines.h" />
     <ClInclude Include="scripts\helper\headers\D3D12Helper.h" />
     <ClInclude Include="scripts\helper\headers\InputHelper.h" />
