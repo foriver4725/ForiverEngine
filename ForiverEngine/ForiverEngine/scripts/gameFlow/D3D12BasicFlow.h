@@ -445,16 +445,5 @@ namespace ForiverEngine
 			if (!D3D12Helper::ClearCommandAllocatorAndList(commandAllocator, commandList))
 				ShowError(L"CommandAllocator, CommandList のクリアに失敗しました");
 		}
-
-		/// <summary>
-		/// MVP行列を計算して返す
-		/// </summary>
-		static Matrix4x4 CalculateMVPMatrix(const Transform& transform, const CameraTransform& cameraTransform)
-		{
-			const Matrix4x4 m = transform.CalculateModelMatrix();
-			const Matrix4x4 vp = cameraTransform.CalculateVPMatrix();
-
-			return vp * m;
-		}
 	};
 }

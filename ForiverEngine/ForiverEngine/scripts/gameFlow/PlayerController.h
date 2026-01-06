@@ -34,11 +34,6 @@ namespace ForiverEngine
 		{
 		}
 
-		const CameraTransform& GetTransform() const noexcept
-		{
-			return transform;
-		}
-
 		Vector3 GetFootPosition() const noexcept
 		{
 			return PlayerControl::GetFootPosition(transform.position, EyeHeight);
@@ -62,6 +57,11 @@ namespace ForiverEngine
 		bool IsOverlappingWithTerrain(const Chunk::ChunksArray<Chunk>& chunks) const
 		{
 			return PlayerControl::IsOverlappingWithTerrain(chunks, GetFootPosition(), CollisionSize);
+		}
+
+		Matrix4x4 CalculateVPMatrix() const noexcept
+		{
+			return transform.CalculateVPMatrix();
 		}
 
 		struct Inputs

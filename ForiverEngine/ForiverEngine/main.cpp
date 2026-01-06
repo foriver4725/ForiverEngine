@@ -93,7 +93,7 @@ int Main(hInstance)
 	{
 		.Matrix_M = terrainTransform.CalculateModelMatrix(),
 		.Matrix_M_IT = terrainTransform.CalculateModelMatrixInversed().Transposed(),
-		.Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(terrainTransform, playerController.GetTransform()),
+		.Matrix_MVP = playerController.CalculateVPMatrix() * terrainTransform.CalculateModelMatrix(),
 		.DirectionalLight_Matrix_VP = sunCamera.CalculateVPMatrix(),
 	};
 	CBData1 cbData1 =
@@ -259,8 +259,7 @@ int Main(hInstance)
 			.jumpPressed = InputHelper::GetKeyInfo(Key::Space).pressed,
 		};
 		playerController.OnEveryFrame(chunksManager.GetChunks(), playerInputs, WindowHelper::GetDeltaSeconds());
-		// CB 更新
-		cbvBuffer0VirtualPtr->Matrix_MVP = D3D12BasicFlow::CalculateMVPMatrix(terrainTransform, playerController.GetTransform());
+		cbvBuffer0VirtualPtr->Matrix_MVP = playerController.CalculateVPMatrix() * terrainTransform.CalculateModelMatrix();
 
 		// ブロックを選択する
 		{
@@ -278,39 +277,41 @@ int Main(hInstance)
 			}
 		}
 
-		// 現在プレイヤーが存在するチャンクのインデックスを取得しておく
-		const Lattice2 currentExistingChunkIndex = Chunk::GetIndex(playerController.GetFootBlockPosition());
-
-		// ブロックを壊す
-		// チャンクデータを更新し、描画データにも反映させる
 		{
-			static float mineCooldownTimer = 0.0f;
+			// 現在プレイヤーが存在するチャンクのインデックスを取得しておく
+			const Lattice2 currentExistingChunkIndex = Chunk::GetIndex(playerController.GetFootBlockPosition());
 
-			if (mineCooldownTimer <= 0.0f && InputHelper::GetKeyInfo(Key::Enter).pressed)
+			// ブロックを壊す
+			// チャンクデータを更新し、描画データにも反映させる
 			{
-				mineCooldownTimer = PlayerController::MineCooldownSeconds;
+				static float mineCooldownTimer = 0.0f;
 
-				if (cbvBuffer1VirtualPtr->IsSelectingBlock == 1)
+				if (mineCooldownTimer <= 0.0f && InputHelper::GetKeyInfo(Key::Enter).pressed)
 				{
-					const Lattice2 chunkIndex = Chunk::GetIndex(cbvBuffer1VirtualPtr->SelectingBlockWorldPosition);
-					const Lattice3 localBlockPosition
-						= Chunk::GetLocalBlockPosition(cbvBuffer1VirtualPtr->SelectingBlockWorldPosition);
+					mineCooldownTimer = PlayerController::MineCooldownSeconds;
 
-					chunksManager.UpdateChunkBlock(chunkIndex, localBlockPosition, Block::Air, device);
-					chunksManager.UpdateDrawChunks(currentExistingChunkIndex, true, device);
+					if (cbvBuffer1VirtualPtr->IsSelectingBlock == 1)
+					{
+						const Lattice2 chunkIndex = Chunk::GetIndex(cbvBuffer1VirtualPtr->SelectingBlockWorldPosition);
+						const Lattice3 localBlockPosition
+							= Chunk::GetLocalBlockPosition(cbvBuffer1VirtualPtr->SelectingBlockWorldPosition);
+
+						chunksManager.UpdateChunkBlock(chunkIndex, localBlockPosition, Block::Air, device);
+						chunksManager.UpdateDrawChunks(currentExistingChunkIndex, true, device);
+					}
 				}
+
+				mineCooldownTimer -= WindowHelper::GetDeltaSeconds();
+				if (mineCooldownTimer < 0.0f)
+					mineCooldownTimer = 0.0f;
 			}
 
-			mineCooldownTimer -= WindowHelper::GetDeltaSeconds();
-			if (mineCooldownTimer < 0.0f)
-				mineCooldownTimer = 0.0f;
-		}
-
-		// プレイヤーの存在チャンクが変化したなら、描画チャンクを更新する
-		if (currentExistingChunkIndex != existingChunkIndex)
-		{
-			existingChunkIndex = currentExistingChunkIndex;
-			chunksManager.UpdateDrawChunks(currentExistingChunkIndex, true, device);
+			// プレイヤーの存在チャンクが変化したなら、描画チャンクを更新する
+			if (currentExistingChunkIndex != existingChunkIndex)
+			{
+				existingChunkIndex = currentExistingChunkIndex;
+				chunksManager.UpdateDrawChunks(currentExistingChunkIndex, true, device);
+			}
 		}
 
 		// テキストの更新
@@ -381,7 +382,6 @@ int Main(hInstance)
 		}
 
 		// 太陽カメラの位置を、プレイヤーの頭上らへんにする
-		// CBuffer の更新も行う
 		{
 			sunCamera.LookAtPlayer(playerController.GetFootPosition());
 
