@@ -222,7 +222,7 @@ namespace ForiverEngine
 		static DescriptorHeap InitDescriptorHeapBasic(
 			const Device& device,
 			const std::vector<GraphicsBuffer>& cbvBuffers,
-			const std::vector<std::tuple<GraphicsBuffer, Texture>>& srvBuffers
+			const std::vector<std::pair<GraphicsBuffer, Texture>>& srvBuffers
 		)
 		{
 			const int cbvBufferCount = static_cast<int>(cbvBuffers.size());

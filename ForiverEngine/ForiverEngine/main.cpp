@@ -194,26 +194,6 @@ int Main(hInstance)
 	//////////////////////////////
 	// ポストプロセス
 
-	const Texture ppTextureMetadata = Texture::CreateManually({}, WindowSize, Format::RGBA_U8_01);
-	// RT, SR で切り替えて使う 2D テクスチャ
-	const GraphicsBuffer ppGraphicsBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, ppTextureMetadata,
-		GraphicsBufferUsagePermission::AllowRenderTarget, GraphicsBufferState::PixelShaderResource, Color::Transparent());
-
-	const RootParameter rootParameterPP = RootParameter::CreateBasic(1, 1);
-	const SamplerConfig samplerConfigPP = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
-	const auto [shaderVSPP, shaderPSPP] = D3D12BasicFlow::CompileShader_VS_PS("./shaders/PP.hlsl");
-	const auto [rootSignaturePP, graphicsPipelineStatePP]
-		= D3D12BasicFlow::CreateRootSignatureAndGraphicsPipelineState(
-			device, rootParameterPP, samplerConfigPP, shaderVSPP, shaderPSPP, VertexLayoutsQuad, FillMode::Solid, CullMode::Back, false);
-
-	// RTVのみ作成
-	const DescriptorHandleAtCPU rtvPP = D3D12BasicFlow::InitRTV(device, ppGraphicsBuffer, Format::RGBA_U8_01);
-	const DescriptorHandleAtCPU dsvPP_Dummy = DescriptorHandleAtCPU{ .ptr = NULL };
-
-	// メッシュ, VBV, IBV
-	const MeshQuad meshPP = MeshQuad::CreateFullSized();
-	const MeshViews meshViewsPP = D3D12BasicFlow::CreateMeshViews(device, meshPP);
-
 	// CB 0
 	struct alignas(256) CBData0PP
 	{
@@ -229,35 +209,18 @@ int Main(hInstance)
 	};
 	const GraphicsBuffer cbvBufferPP = D3D12BasicFlow::InitCBVBuffer(device, cbData0PP);
 
-	// DescriptorHeap
-	const DescriptorHeap descriptorHeapBasicPP
-		= D3D12BasicFlow::InitDescriptorHeapBasic(device, { cbvBufferPP }, { {ppGraphicsBuffer, ppTextureMetadata} });
+	const OffscreenRenderer offscreenRendererPP = OffscreenRenderer(
+		device,
+		WindowSize,
+		"./shaders/PP.hlsl",
+		{ cbvBufferPP },
+		{}
+	);
 
 	//////////////////////////////
 
 	//////////////////////////////
 	// テキスト描画 (ポストプロセスの後)
-
-	// RT と同じ. sRGB 不可.
-	const Texture textTextureMetadata = Texture::CreateManually({}, WindowSize, Format::RGBA_U8_01);
-	// RT, SR で切り替えて使う 2D テクスチャ
-	const GraphicsBuffer textGraphicsBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, textTextureMetadata,
-		GraphicsBufferUsagePermission::AllowRenderTarget, GraphicsBufferState::PixelShaderResource, Color::Transparent());
-
-	const RootParameter rootParameterText = RootParameter::CreateBasic(1, 3);
-	const SamplerConfig samplerConfigText = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
-	const auto [shaderVSText, shaderPSText] = D3D12BasicFlow::CompileShader_VS_PS("./shaders/Text.hlsl");
-	const auto [rootSignatureText, graphicsPipelineStateText]
-		= D3D12BasicFlow::CreateRootSignatureAndGraphicsPipelineState(
-			device, rootParameterText, samplerConfigText, shaderVSText, shaderPSText, VertexLayoutsQuad, FillMode::Solid, CullMode::Back, false);
-
-	// RTVのみ作成
-	const DescriptorHandleAtCPU rtvText = D3D12BasicFlow::InitRTV(device, textGraphicsBuffer, Format::RGBA_U8_01);
-	const DescriptorHandleAtCPU dsvText_Dummy = DescriptorHandleAtCPU{ .ptr = NULL };
-
-	// メッシュ, VBV, IBV
-	const MeshQuad meshText = MeshQuad::CreateFullSized();
-	const MeshViews meshViewsText = D3D12BasicFlow::CreateMeshViews(device, meshText);
 
 	// テキストUIデータ
 	TextUIData textUIData = TextUIData::CreateEmpty(WindowSize / TextUIData::FontTextureTextLength);
@@ -285,17 +248,13 @@ int Main(hInstance)
 	};
 	const GraphicsBuffer cbvBufferText = D3D12BasicFlow::InitCBVBuffer(device, cbData0Text);
 
-	// DescriptorHeap
-	const DescriptorHeap descriptorHeapBasicText
-		= D3D12BasicFlow::InitDescriptorHeapBasic(
-			device,
-			{ cbvBufferText },
-			{
-				{ textGraphicsBuffer, textTextureMetadata },
-				fontTextureBufferAndData,
-				{ textUIDataGraphicsBuffer, textUIDataTexture },
-			}
-			);
+	const OffscreenRenderer offscreenRendererText = OffscreenRenderer(
+		device,
+		WindowSize,
+		"./shaders/Text.hlsl",
+		{ cbvBufferText },
+		{ fontTextureBufferAndData, { textUIDataGraphicsBuffer, textUIDataTexture } }
+	);
 
 	//////////////////////////////
 
@@ -478,7 +437,7 @@ int Main(hInstance)
 			textUIDataTexture = textUIData.CreateTexture();
 			textUIDataGraphicsBuffer = D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue, commandAllocator, textUIDataTexture);
 			D3D12Helper::CreateSRVAndRegistToDescriptorHeap(
-				device, descriptorHeapBasicText,
+				device, offscreenRendererText.GetDescriptorHeapBasic(),
 				textUIDataGraphicsBuffer,
 				static_cast<int>(ShaderRegister::t2) + 1, // CBVが1つあるので...
 				textUIDataTexture
@@ -519,29 +478,23 @@ int Main(hInstance)
 		// メインレンダリング
 		D3D12BasicFlow::CommandBasicLoop(
 			commandList, commandQueue, commandAllocator, device,
-			rootSignature, graphicsPipelineState, ppGraphicsBuffer,
-			rtvPP, dsv, descriptorHeapBasic, packedDrawVBVs, packedDrawIBVs,
+			rootSignature, graphicsPipelineState, offscreenRendererPP.GetRT(),
+			offscreenRendererPP.GetRTV(), dsv, descriptorHeapBasic, packedDrawVBVs, packedDrawIBVs,
 			GraphicsBufferState::PixelShaderResource, GraphicsBufferState::RenderTarget,
 			viewportScissorRect, PrimitiveTopology::TriangleList, RTClearColor, DepthBufferClearValue,
 			packedDrawMeshIndicesCounts
 		);
 		// ポストプロセス
-		D3D12BasicFlow::CommandBasicLoop(
+		offscreenRendererPP.Draw(
 			commandList, commandQueue, commandAllocator, device,
-			rootSignaturePP, graphicsPipelineStatePP, textGraphicsBuffer,
-			rtvText, dsvPP_Dummy, descriptorHeapBasicPP, { meshViewsPP.vbv }, { meshViewsPP.ibv },
-			GraphicsBufferState::Present, GraphicsBufferState::RenderTarget,
-			viewportScissorRect, PrimitiveTopology::TriangleList, Color::Transparent(), DepthBufferClearValue,
-			{ static_cast<int>(meshPP.indices.size()) }
+			offscreenRendererText.GetRT(), offscreenRendererText.GetRTV(),
+			viewportScissorRect
 		);
 		// テキスト描画
-		D3D12BasicFlow::CommandBasicLoop(
+		offscreenRendererText.Draw(
 			commandList, commandQueue, commandAllocator, device,
-			rootSignatureText, graphicsPipelineStateText, currentBackRT,
-			currentBackRTV, dsvText_Dummy, descriptorHeapBasicText, { meshViewsText.vbv }, { meshViewsText.ibv },
-			GraphicsBufferState::Present, GraphicsBufferState::RenderTarget,
-			viewportScissorRect, PrimitiveTopology::TriangleList, Color::Transparent(), DepthBufferClearValue,
-			{ static_cast<int>(meshText.indices.size()) }
+			currentBackRT, currentBackRTV,
+			viewportScissorRect
 		);
 		if (!D3D12Helper::Present(swapChain))
 			ShowError(L"画面のフリップに失敗しました");
