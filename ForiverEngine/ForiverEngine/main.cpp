@@ -282,8 +282,7 @@ int Main(hInstance)
 			// 現在プレイヤーが存在するチャンクのインデックスを取得しておく
 			const Lattice2 currentExistingChunkIndex = Chunk::GetIndex(playerController.GetFootBlockPosition());
 
-			// ブロックを壊す
-			// チャンクデータを更新し、描画データにも反映させる
+			// ブロックを採掘する
 			{
 				static float mineCooldownTimer = 0.0f;
 
@@ -293,25 +292,10 @@ int Main(hInstance)
 					{
 						mineCooldownTimer = PlayerController::MineCooldownSeconds;
 
-						// ブロックを見ているかチェック
 						if (cbvBuffer1VirtualPtr->IsSelectingBlock == 1)
 						{
-							// この座標のブロックを壊そうとしている
-							const Lattice3 mineWorldBlockPosition = cbvBuffer1VirtualPtr->SelectingBlockWorldPosition;
-
-							// ワールドの範囲内か・高度範囲内か チェック
-							if (
-								PlayerControl::IsInsideWorldBounds(mineWorldBlockPosition) &&
-								MathUtils::IsInRange(mineWorldBlockPosition.y,
-									PlayerControl::CanMinePlaceBlockHeightRange.x, PlayerControl::CanMinePlaceBlockHeightRange.y)
-								)
-							{
-								const Lattice2 chunkIndex = Chunk::GetIndex(mineWorldBlockPosition);
-								const Lattice3 mineLocalBlockPosition = Chunk::GetLocalBlockPosition(mineWorldBlockPosition);
-
-								chunksManager.UpdateChunkBlock(chunkIndex, mineLocalBlockPosition, Block::Air, device);
-								chunksManager.UpdateDrawChunks(currentExistingChunkIndex, true, device);
-							}
+							const auto _ = playerController.TryMineBlock(
+								chunksManager, cbvBuffer1VirtualPtr->SelectingBlockWorldPosition, device);
 						}
 					}
 				}
@@ -322,7 +306,6 @@ int Main(hInstance)
 			}
 
 			// ブロックを設置する
-			// チャンクデータを更新し、描画データにも反映させる
 			{
 				static float placeCooldownTimer = 0.0f;
 
@@ -332,34 +315,10 @@ int Main(hInstance)
 					{
 						placeCooldownTimer = PlayerController::PlaceCooldownSeconds;
 
-						// ブロックを見ているかチェック
 						if (cbvBuffer1VirtualPtr->IsSelectingBlock == 1)
 						{
-							// この座標にブロックを置こうとしている
-							const Lattice3 placeWorldBlockPosition = lookingBlockPosition + lookingBlockFaceNormal;
-
-							// ワールドの範囲内か・高度範囲内か チェック
-							if (
-								PlayerControl::IsInsideWorldBounds(placeWorldBlockPosition) &&
-								MathUtils::IsInRange(placeWorldBlockPosition.y,
-									PlayerControl::CanMinePlaceBlockHeightRange.x, PlayerControl::CanMinePlaceBlockHeightRange.y)
-								)
-							{
-								const Lattice2 chunkIndex = Chunk::GetIndex(placeWorldBlockPosition);
-								const Lattice3 placeLocalBlockPosition = Chunk::GetLocalBlockPosition(placeWorldBlockPosition);
-
-								// 一応、既にブロックがあるならダメ
-								if (chunksManager.GetChunkBlock(chunkIndex, placeLocalBlockPosition) == Block::Air)
-								{
-									// 自分自身の当たり判定が、その場所に被らないかチェック
-									if (!playerController.IsOverlappingWithBlock(chunksManager.GetChunks(), placeWorldBlockPosition))
-									{
-										// ブロックを設置
-										chunksManager.UpdateChunkBlock(chunkIndex, placeLocalBlockPosition, Block::Stone, device);
-										chunksManager.UpdateDrawChunks(currentExistingChunkIndex, true, device);
-									}
-								}
-							}
+							const auto _ = playerController.TryPlaceBlock(
+								chunksManager, lookingBlockPosition + lookingBlockFaceNormal, device);
 						}
 					}
 				}

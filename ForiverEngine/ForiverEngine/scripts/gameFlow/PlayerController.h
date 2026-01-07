@@ -277,6 +277,74 @@ namespace ForiverEngine
 			return { Lattice3::Zero(), Lattice3::Zero() };
 		}
 
+		/// <summary>
+		/// <para>指定したブロックを掘ろうとする</para>
+		/// <para>掘れたら true を返す、掘れなかったら false を返す</para>
+		/// <para>掘った際にチャンクデータを更新し、描画データにも反映させる</para>
+		/// <para>(この処理に device を用いる)</para>
+		/// </summary>
+		bool TryMineBlock(ChunksManager& chunksManager, const Lattice3& worldBlockPosition, const Device& device)
+		{
+			// ワールドの範囲内か?
+			if (!PlayerControl::IsInsideWorldBounds(worldBlockPosition))
+				return false;
+
+			// 高度が範囲内か?
+			if (!MathUtils::IsInRange(worldBlockPosition.y,
+				PlayerControl::CanMinePlaceBlockHeightRange.x, PlayerControl::CanMinePlaceBlockHeightRange.y))
+				return false;
+
+			const Lattice2 chunkIndex = Chunk::GetIndex(worldBlockPosition);
+			const Lattice3 localBlockPosition = Chunk::GetLocalBlockPosition(worldBlockPosition);
+
+			// ブロックが無いならダメ (一応)
+			if (chunksManager.GetChunkBlock(chunkIndex, localBlockPosition) == Block::Air)
+				return false;
+
+			const Lattice2 playerExistingChunkIndex = Chunk::GetIndex(GetFootBlockPosition());
+
+			chunksManager.UpdateChunkBlock(chunkIndex, localBlockPosition, Block::Air, device);
+			chunksManager.UpdateDrawChunks(playerExistingChunkIndex, true, device);
+
+			return true;
+		}
+
+		/// <summary>
+		/// <para>指定したブロックを置こうとする</para>
+		/// <para>置けたら true を返す、置けなかったら false を返す</para>
+		/// <para>置いた際にチャンクデータを更新し、描画データにも反映させる</para>
+		/// <para>(この処理に device を用いる)</para>
+		/// </summary>
+		bool TryPlaceBlock(ChunksManager& chunksManager, const Lattice3& worldBlockPosition, const Device& device)
+		{
+			// ワールドの範囲内か?
+			if (!PlayerControl::IsInsideWorldBounds(worldBlockPosition))
+				return false;
+
+			// 高度が範囲内か?
+			if (!MathUtils::IsInRange(worldBlockPosition.y,
+				PlayerControl::CanMinePlaceBlockHeightRange.x, PlayerControl::CanMinePlaceBlockHeightRange.y))
+				return false;
+
+			const Lattice2 chunkIndex = Chunk::GetIndex(worldBlockPosition);
+			const Lattice3 localBlockPosition = Chunk::GetLocalBlockPosition(worldBlockPosition);
+
+			// 既にブロックがあるならダメ (一応)
+			if (chunksManager.GetChunkBlock(chunkIndex, localBlockPosition) != Block::Air)
+				return false;
+
+			// 自身の当たり判定が被っているならダメ
+			if (IsOverlappingWithBlock(chunksManager.GetChunks(), worldBlockPosition))
+				return false;
+
+			const Lattice2 playerExistingChunkIndex = Chunk::GetIndex(GetFootBlockPosition());
+
+			chunksManager.UpdateChunkBlock(chunkIndex, localBlockPosition, Block::Stone, device);
+			chunksManager.UpdateDrawChunks(playerExistingChunkIndex, true, device);
+
+			return true;
+		}
+
 	private:
 		CameraTransform transform; // 一人称
 
