@@ -413,7 +413,8 @@ int Main(hInstance)
 				textUIDataRows.emplace_back(DebugText::Position(playerController), DebugText::Color);
 				textUIDataRows.emplace_back(DebugText::LookAtPosition(
 					cbvBuffer1VirtualPtr->IsSelectingBlock == 1,
-					cbvBuffer1VirtualPtr->SelectingBlockWorldPosition), DebugText::Color
+					cbvBuffer1VirtualPtr->SelectingBlockWorldPosition,
+					lookingBlockFaceNormal), DebugText::Color
 				);
 				textUIDataRows.emplace_back(DebugText::ChunkIndex(playerController), DebugText::Color);
 				textUIDataRows.emplace_back(DebugText::ChunkLocalPosition(playerController), DebugText::Color);

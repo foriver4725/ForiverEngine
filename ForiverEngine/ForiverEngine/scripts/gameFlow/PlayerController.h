@@ -223,6 +223,22 @@ namespace ForiverEngine
 					float maxDot = std::numeric_limits<float>::lowest();
 					for (const Lattice3& normal : faceNormals)
 					{
+						// ブロックが隣接している場合、そちらのフェースは無視する
+						{
+							const Lattice3 adjacentBlockPosition = rayBlockPosition + normal;
+							const Lattice2 adjacentChunkIndex = Chunk::GetIndex(adjacentBlockPosition);
+
+							if (Chunk::IsValidIndex(adjacentChunkIndex))
+							{
+								const Chunk& adjacentChunk = chunks[adjacentChunkIndex.x][adjacentChunkIndex.y];
+								const Lattice3 adjacentLocalPosition = Chunk::GetLocalBlockPosition(adjacentBlockPosition);
+								const Block adjacentBlock = adjacentChunk.GetBlock(adjacentLocalPosition);
+
+								if (adjacentBlock != Block::Air)
+									continue; // 隣接ブロックがあるなら無視
+							}
+						}
+
 						const float dot = Vector3::Dot(blockToRay, Vector3(normal));
 						if (dot > maxDot)
 						{

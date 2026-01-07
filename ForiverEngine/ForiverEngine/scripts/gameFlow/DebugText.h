@@ -31,15 +31,16 @@ namespace ForiverEngine
 			);
 		}
 
-		static std::string LookAtPosition(bool isLooking, const Lattice3& lookingBlockPosition)
+		static std::string LookAtPosition(bool isLooking, const Lattice3& lookingBlockPosition, const Lattice3& lookingBlockFaceNormal)
 		{
 			if (isLooking)
 				return std::format(
-					"LookAt : {}",
-					ToString(lookingBlockPosition)
+					"LookAt : {} (Face={})",
+					ToString(lookingBlockPosition),
+					ToString(lookingBlockFaceNormal)
 				);
 			else
-				return "LookAt : None";
+				return "LookAt : None (Face=None)";
 		}
 
 		static std::string ChunkIndex(const PlayerController& playerController)
