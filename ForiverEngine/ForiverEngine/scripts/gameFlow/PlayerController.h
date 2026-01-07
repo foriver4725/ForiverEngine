@@ -206,7 +206,8 @@ namespace ForiverEngine
 			{
 				const Vector3 rayPosition = rayOrigin + rayDirection * d;
 				const Lattice3 rayBlockPosition = PlayerControl::GetBlockPosition(rayPosition);
-				if (!PlayerControl::IsInsideWorldBounds(rayBlockPosition))
+				if (!PlayerControl::IsInsideWorldBounds(rayBlockPosition) ||
+					!MathUtils::IsInRange(rayBlockPosition.y, 0, Chunk::Height))
 					continue;
 
 				const Lattice2 chunkIndex = Chunk::GetIndex(rayBlockPosition);
@@ -239,6 +240,9 @@ namespace ForiverEngine
 						// ブロックが隣接している場合、そちらのフェースは無視する
 						{
 							const Lattice3 adjacentBlockPosition = rayBlockPosition + normal;
+							if (!PlayerControl::IsInsideWorldBounds(adjacentBlockPosition) ||
+								!MathUtils::IsInRange(adjacentBlockPosition.y, 0, Chunk::Height))
+								continue; // 隣接ブロックが世界の範囲外なら無視
 							const Lattice2 adjacentChunkIndex = Chunk::GetIndex(adjacentBlockPosition);
 
 							if (Chunk::IsValidIndex(adjacentChunkIndex))

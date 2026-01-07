@@ -327,18 +327,24 @@ int Main(hInstance)
 							// この座標にブロックを置こうとしている
 							const Lattice3 placeWorldBlockPosition = lookingBlockPosition + lookingBlockFaceNormal;
 
-							// 一応、既にブロックがあるならダメ
-							const Lattice2 chunkIndex = Chunk::GetIndex(cbvBuffer1VirtualPtr->SelectingBlockWorldPosition);
-							const Lattice3 placeLocalBlockPosition
-								= Chunk::GetLocalBlockPosition(placeWorldBlockPosition);
-							if (chunksManager.GetChunkBlock(chunkIndex, placeLocalBlockPosition) == Block::Air)
+							// ワールドの範囲内かチェック
+							// 設置可能高度範囲内かチェック
+							if (PlayerControl::IsInsideWorldBounds(placeWorldBlockPosition) &&
+								MathUtils::IsInRange(placeWorldBlockPosition.y, 0, PlayerControl::BlockPlaceablePositionYEnd))
 							{
-								// 自分自身の当たり判定が、その場所に被らないかチェック
-								if (!playerController.IsOverlappingWithBlock(chunksManager.GetChunks(), placeWorldBlockPosition))
+								// 一応、既にブロックがあるならダメ
+								const Lattice2 chunkIndex = Chunk::GetIndex(cbvBuffer1VirtualPtr->SelectingBlockWorldPosition);
+								const Lattice3 placeLocalBlockPosition
+									= Chunk::GetLocalBlockPosition(placeWorldBlockPosition);
+								if (chunksManager.GetChunkBlock(chunkIndex, placeLocalBlockPosition) == Block::Air)
 								{
-									// ブロックを設置
-									chunksManager.UpdateChunkBlock(chunkIndex, placeLocalBlockPosition, Block::Stone, device);
-									chunksManager.UpdateDrawChunks(currentExistingChunkIndex, true, device);
+									// 自分自身の当たり判定が、その場所に被らないかチェック
+									if (!playerController.IsOverlappingWithBlock(chunksManager.GetChunks(), placeWorldBlockPosition))
+									{
+										// ブロックを設置
+										chunksManager.UpdateChunkBlock(chunkIndex, placeLocalBlockPosition, Block::Stone, device);
+										chunksManager.UpdateDrawChunks(currentExistingChunkIndex, true, device);
+									}
 								}
 							}
 						}
