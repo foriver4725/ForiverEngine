@@ -13,7 +13,10 @@ namespace ForiverEngine
 		DELETE_DEFAULT_METHODS(PlayerControl);
 
 		static constexpr Lattice2 WorldEdgeMargin = Lattice2(2, 2); // チャンクデータの端から何マスを、世界の範囲外とみなすか (X,Z)
-		static constexpr int BlockPlaceablePositionYEnd = Chunk::Height - 64; // ブロックを置けるY座標の最大値 + 1
+
+		// ブロックを採掘/設置できるY座標の範囲 (最小値, 最大値+1)
+		// TODO: プレイヤーが Y=1 に立つと地面をすり抜ける!
+		static constexpr Lattice2 CanMinePlaceBlockHeightRange = Lattice2(4, Chunk::Height - 64);
 
 		// ブロック座標に変換 (整数座標)
 		static int GetBlockPosition(const float position)

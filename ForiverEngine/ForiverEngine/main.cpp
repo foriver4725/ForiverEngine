@@ -293,14 +293,25 @@ int Main(hInstance)
 					{
 						mineCooldownTimer = PlayerController::MineCooldownSeconds;
 
+						// ブロックを見ているかチェック
 						if (cbvBuffer1VirtualPtr->IsSelectingBlock == 1)
 						{
-							const Lattice2 chunkIndex = Chunk::GetIndex(cbvBuffer1VirtualPtr->SelectingBlockWorldPosition);
-							const Lattice3 localBlockPosition
-								= Chunk::GetLocalBlockPosition(cbvBuffer1VirtualPtr->SelectingBlockWorldPosition);
+							// この座標のブロックを壊そうとしている
+							const Lattice3 mineWorldBlockPosition = cbvBuffer1VirtualPtr->SelectingBlockWorldPosition;
 
-							chunksManager.UpdateChunkBlock(chunkIndex, localBlockPosition, Block::Air, device);
-							chunksManager.UpdateDrawChunks(currentExistingChunkIndex, true, device);
+							// ワールドの範囲内か・高度範囲内か チェック
+							if (
+								PlayerControl::IsInsideWorldBounds(mineWorldBlockPosition) &&
+								MathUtils::IsInRange(mineWorldBlockPosition.y,
+									PlayerControl::CanMinePlaceBlockHeightRange.x, PlayerControl::CanMinePlaceBlockHeightRange.y)
+								)
+							{
+								const Lattice2 chunkIndex = Chunk::GetIndex(mineWorldBlockPosition);
+								const Lattice3 mineLocalBlockPosition = Chunk::GetLocalBlockPosition(mineWorldBlockPosition);
+
+								chunksManager.UpdateChunkBlock(chunkIndex, mineLocalBlockPosition, Block::Air, device);
+								chunksManager.UpdateDrawChunks(currentExistingChunkIndex, true, device);
+							}
 						}
 					}
 				}
@@ -327,15 +338,17 @@ int Main(hInstance)
 							// この座標にブロックを置こうとしている
 							const Lattice3 placeWorldBlockPosition = lookingBlockPosition + lookingBlockFaceNormal;
 
-							// ワールドの範囲内かチェック
-							// 設置可能高度範囲内かチェック
-							if (PlayerControl::IsInsideWorldBounds(placeWorldBlockPosition) &&
-								MathUtils::IsInRange(placeWorldBlockPosition.y, 0, PlayerControl::BlockPlaceablePositionYEnd))
+							// ワールドの範囲内か・高度範囲内か チェック
+							if (
+								PlayerControl::IsInsideWorldBounds(placeWorldBlockPosition) &&
+								MathUtils::IsInRange(placeWorldBlockPosition.y,
+									PlayerControl::CanMinePlaceBlockHeightRange.x, PlayerControl::CanMinePlaceBlockHeightRange.y)
+								)
 							{
+								const Lattice2 chunkIndex = Chunk::GetIndex(placeWorldBlockPosition);
+								const Lattice3 placeLocalBlockPosition = Chunk::GetLocalBlockPosition(placeWorldBlockPosition);
+
 								// 一応、既にブロックがあるならダメ
-								const Lattice2 chunkIndex = Chunk::GetIndex(cbvBuffer1VirtualPtr->SelectingBlockWorldPosition);
-								const Lattice3 placeLocalBlockPosition
-									= Chunk::GetLocalBlockPosition(placeWorldBlockPosition);
 								if (chunksManager.GetChunkBlock(chunkIndex, placeLocalBlockPosition) == Block::Air)
 								{
 									// 自分自身の当たり判定が、その場所に被らないかチェック
