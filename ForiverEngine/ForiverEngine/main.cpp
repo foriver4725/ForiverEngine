@@ -11,7 +11,7 @@ int Main(hInstance)
 	using namespace ForiverEngine;
 
 	constexpr Lattice2 WindowSize = Lattice2(1344, 756);
-	const HWND hwnd = WindowHelper::OnInit(hInstance, L"ForiverEngine", L"ForiverEngine", WindowSize);
+	const HWND hwnd = WindowHelper::OnInit(hInstance, WindowSize);
 
 	// テストコード実行
 #ifdef _DEBUG

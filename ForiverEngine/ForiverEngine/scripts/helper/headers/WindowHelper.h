@@ -16,7 +16,9 @@ namespace ForiverEngine
 	public:
 		DELETE_DEFAULT_METHODS(WindowHelper);
 
-	public:
+		// ウィンドウクラス名・ウィンドウタイトル名
+		inline static const std::wstring WindowName = L"ForiverEngine";
+
 		static bool GetIsCursorEnabled() { return isCursorEnabled; }
 
 		static int GetTargetFps() { return targetFps; }
@@ -46,8 +48,7 @@ namespace ForiverEngine
 		/// <summary>
 		/// WinMain() 後、ただちに呼び出すこと
 		/// </summary>
-		static HWND OnInit(
-			HINSTANCE hInstance, const std::wstring& windowClassName, const std::wstring& windowTitle, const Lattice2& windowSize);
+		static HWND OnInit(HINSTANCE hInstance, const Lattice2& windowSize);
 
 		/// <summary>
 		/// <para>フレーム開始時に呼び出すこと</para>

@@ -13,7 +13,7 @@ namespace ForiverEngine
 
 		static constexpr Color Color = Color::White();
 
-		static constexpr std::string FrameTime(double frameTime)
+		static std::string FrameTime(double frameTime)
 		{
 			return std::format(
 				"Frame Time : {:.2f} ms",
@@ -21,7 +21,7 @@ namespace ForiverEngine
 			);
 		}
 
-		static constexpr std::string Position(const PlayerController& playerController)
+		static std::string Position(const PlayerController& playerController)
 		{
 			const Lattice3 blockPosition = playerController.GetFootBlockPosition();
 
@@ -31,7 +31,7 @@ namespace ForiverEngine
 			);
 		}
 
-		static constexpr std::string LookAtPosition(bool isLooking, const Lattice3& lookingBlockPosition)
+		static std::string LookAtPosition(bool isLooking, const Lattice3& lookingBlockPosition)
 		{
 			if (isLooking)
 				return std::format(
@@ -42,7 +42,7 @@ namespace ForiverEngine
 				return "LookAt : None";
 		}
 
-		static constexpr std::string ChunkIndex(const PlayerController& playerController)
+		static std::string ChunkIndex(const PlayerController& playerController)
 		{
 			const Lattice3 blockPosition = playerController.GetFootBlockPosition();
 			const Lattice2 chunkIndex = Chunk::GetIndex(blockPosition);
@@ -56,7 +56,7 @@ namespace ForiverEngine
 				return "Chunk Index : Invalid";
 		}
 
-		static constexpr std::string ChunkLocalPosition(const PlayerController& playerController)
+		static std::string ChunkLocalPosition(const PlayerController& playerController)
 		{
 			const Lattice3 blockPosition = playerController.GetFootBlockPosition();
 			const Lattice2 chunkIndex = Chunk::GetIndex(blockPosition);
@@ -71,7 +71,7 @@ namespace ForiverEngine
 				return "Chunk Local Position : Invalid";
 		}
 
-		static constexpr std::string DrawChunksRange(const ChunksManager& chunksManager)
+		static std::string DrawChunksRange(const ChunksManager& chunksManager)
 		{
 			const auto& drawRangeInfo = chunksManager.GetDrawRangeInfo();
 
@@ -82,7 +82,7 @@ namespace ForiverEngine
 			);
 		}
 
-		static constexpr std::string CollisionRange(const PlayerController& playerController)
+		static std::string CollisionRange(const PlayerController& playerController)
 		{
 			const Vector3 position = playerController.GetFootPosition();
 			const Vector3 minPosition = PlayerControl::GetCollisionMinPosition(position, PlayerController::CollisionSize);
@@ -95,7 +95,7 @@ namespace ForiverEngine
 			);
 		}
 
-		static constexpr std::string FloorCeilHeight(const PlayerController& playerController, const ChunksManager& chunksManager)
+		static std::string FloorCeilHeight(const PlayerController& playerController, const ChunksManager& chunksManager)
 		{
 			const auto& chunks = chunksManager.GetChunks();
 			const int floorHeight = playerController.FindFloorHeight(chunks);

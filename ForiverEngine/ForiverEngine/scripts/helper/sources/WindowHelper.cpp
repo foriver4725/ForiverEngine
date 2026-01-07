@@ -30,13 +30,12 @@ namespace ForiverEngine
 		MessageBox(nullptr, message.c_str(), L"error", MB_OK | MB_ICONERROR);
 	}
 
-	HWND WindowHelper::OnInit(
-		HINSTANCE hInstance, const std::wstring& windowClassName, const std::wstring& windowTitle, const Lattice2& windowSize)
+	HWND WindowHelper::OnInit(HINSTANCE hInstance, const Lattice2& windowSize)
 	{
-		if (!InitializeWindowFromHInstance(hInstance, OnWindowProcedure, windowClassName))
+		if (!InitializeWindowFromHInstance(hInstance, OnWindowProcedure, WindowName))
 			ShowError(L"ウィンドウの初期化に失敗しました");
 
-		const HWND hwnd = ForiverEngine::WindowHelper::CreateTheWindow(windowClassName, windowTitle, windowSize);
+		const HWND hwnd = ForiverEngine::WindowHelper::CreateTheWindow(WindowName, WindowName, windowSize);
 
 		ForiverEngine::InputHelper::InitKeyTable();
 		ForiverEngine::WindowHelper::InitTime();
