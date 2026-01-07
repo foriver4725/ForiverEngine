@@ -286,18 +286,28 @@ int Main(hInstance)
 			{
 				static float mineCooldownTimer = 0.0f;
 
-				if (mineCooldownTimer <= 0.0f && InputHelper::GetKeyInfo(Key::Enter).pressed)
+				if (mineCooldownTimer <= 0.0f)
 				{
-					mineCooldownTimer = PlayerController::MineCooldownSeconds;
+					const bool hasInput =
+						InputHelper::GetKeyInfo(Key::T).pressed ||
+						InputHelper::GetKeyInfo(Key::Y).pressed ||
+						InputHelper::GetKeyInfo(Key::G).pressed ||
+						InputHelper::GetKeyInfo(Key::H).pressed ||
+						InputHelper::GetKeyInfo(Key::LMouse).pressed;
 
-					if (cbvBuffer1VirtualPtr->IsSelectingBlock == 1)
+					if (hasInput)
 					{
-						const Lattice2 chunkIndex = Chunk::GetIndex(cbvBuffer1VirtualPtr->SelectingBlockWorldPosition);
-						const Lattice3 localBlockPosition
-							= Chunk::GetLocalBlockPosition(cbvBuffer1VirtualPtr->SelectingBlockWorldPosition);
+						mineCooldownTimer = PlayerController::MineCooldownSeconds;
 
-						chunksManager.UpdateChunkBlock(chunkIndex, localBlockPosition, Block::Air, device);
-						chunksManager.UpdateDrawChunks(currentExistingChunkIndex, true, device);
+						if (cbvBuffer1VirtualPtr->IsSelectingBlock == 1)
+						{
+							const Lattice2 chunkIndex = Chunk::GetIndex(cbvBuffer1VirtualPtr->SelectingBlockWorldPosition);
+							const Lattice3 localBlockPosition
+								= Chunk::GetLocalBlockPosition(cbvBuffer1VirtualPtr->SelectingBlockWorldPosition);
+
+							chunksManager.UpdateChunkBlock(chunkIndex, localBlockPosition, Block::Air, device);
+							chunksManager.UpdateDrawChunks(currentExistingChunkIndex, true, device);
+						}
 					}
 				}
 
