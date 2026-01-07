@@ -181,14 +181,21 @@ https://github.com/user-attachments/assets/966930bb-87e3-4a83-8b32-b89a23176837
 
 https://github.com/user-attachments/assets/6cca3cdb-92a6-4fc9-ad82-9b307a505bd3
 
-</details>
+---
 
-## 最新の進捗
 - プレイヤーのコリジョン計算を 2x2 のチャンク群で行うようにし、プレイヤーがチャンクを跨いでいる時の判定精度を高めた
 - コリジョン計算などのテストコードを作成
 - 画面に出すデバッグ情報を追加
 
 <img width="50%" alt="image" src="https://github.com/user-attachments/assets/de49d60e-2563-440c-bb1d-a0b2942b7cdd" />
+
+</details>
+
+## 最新の進捗
+ブロック設置を出来るようにした  
+Q で採掘、E で石を設置
+
+https://github.com/user-attachments/assets/22c88a88-05af-4890-b2c8-a31769bd332b
 
 ## 使用ライブラリ
 | 名前 | ライセンス | 主な使用用途 |
