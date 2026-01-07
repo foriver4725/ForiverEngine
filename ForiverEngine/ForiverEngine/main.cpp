@@ -289,14 +289,7 @@ int Main(hInstance)
 
 				if (mineCooldownTimer <= 0.0f)
 				{
-					const bool hasInput =
-						InputHelper::GetKeyInfo(Key::T).pressed ||
-						InputHelper::GetKeyInfo(Key::Y).pressed ||
-						InputHelper::GetKeyInfo(Key::G).pressed ||
-						InputHelper::GetKeyInfo(Key::H).pressed ||
-						InputHelper::GetKeyInfo(Key::LMouse).pressed;
-
-					if (hasInput)
+					if (InputHelper::GetKeyInfo(Key::Q).pressed)
 					{
 						mineCooldownTimer = PlayerController::MineCooldownSeconds;
 
@@ -324,14 +317,7 @@ int Main(hInstance)
 
 				if (placeCooldownTimer <= 0.0f)
 				{
-					const bool hasInput =
-						InputHelper::GetKeyInfo(Key::I).pressed ||
-						InputHelper::GetKeyInfo(Key::O).pressed ||
-						InputHelper::GetKeyInfo(Key::K).pressed ||
-						InputHelper::GetKeyInfo(Key::L).pressed ||
-						InputHelper::GetKeyInfo(Key::RMouse).pressed;
-
-					if (hasInput)
+					if (InputHelper::GetKeyInfo(Key::E).pressed)
 					{
 						placeCooldownTimer = PlayerController::PlaceCooldownSeconds;
 
