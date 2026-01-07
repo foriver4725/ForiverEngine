@@ -152,9 +152,6 @@ namespace ForiverEngine
 
 				// 水平移動と当たり判定
 				{
-					// 移動前の座標を保存しておく
-					const Vector3 positionBeforeMoveH = transform.position;
-
 					const bool canDash = inputs.move.y > 0.5f; // 前進しているときのみダッシュ可能
 					const float speed = (canDash && inputs.dashPressed) ? DashSpeedH : SpeedH;
 
@@ -162,13 +159,29 @@ namespace ForiverEngine
 					moveDirection.y = 0.0f; // 水平成分のみ
 					moveDirection.Norm(); // 最後に正規化する
 
-					transform.position += moveDirection * (speed * deltaSeconds);
-
-					// 当たり判定
-					// めり込んでいるなら、元の位置に戻す
-					if (IsOverlappingWithTerrain(chunks))
+					// X,Z それぞれで、順番に移動する
+					// 移動後に地形にめり込んでいたら、移動前の位置に戻す
+					// こうすることで、ブロックに対して斜めに移動した時も、動ける方向には移動できる
 					{
-						transform.position = positionBeforeMoveH;
+						// X
+						{
+							const Vector3 positionBeforeMoveH = transform.position;
+
+							transform.position += Vector3::Right() * (moveDirection.x * speed * deltaSeconds);
+
+							if (IsOverlappingWithTerrain(chunks))
+								transform.position = positionBeforeMoveH;
+						}
+
+						// Z
+						{
+							const Vector3 positionBeforeMoveH = transform.position;
+
+							transform.position += Vector3::Forward() * (moveDirection.z * speed * deltaSeconds);
+
+							if (IsOverlappingWithTerrain(chunks))
+								transform.position = positionBeforeMoveH;
+						}
 					}
 				}
 
