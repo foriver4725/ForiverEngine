@@ -57,6 +57,14 @@ namespace ForiverEngine
 #pragma endregion
 
 		/// <summary>
+		/// 指定されたチャンク・指定された座標のブロックを取得する
+		/// </summary>
+		Block GetChunkBlock(const Lattice2& chunkIndex, const Lattice3& localBlockPosition) const
+		{
+			return chunks[chunkIndex.x][chunkIndex.y].GetBlock(localBlockPosition);
+		};
+
+		/// <summary>
 		/// <para>指定されたチャンク・指定された座標のブロックを更新する</para>
 		/// <para>その後、そのチャンクのデータを再生成する</para>
 		/// </summary>

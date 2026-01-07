@@ -261,11 +261,12 @@ int Main(hInstance)
 		playerController.OnEveryFrame(chunksManager.GetChunks(), playerInputs, WindowHelper::GetDeltaSeconds());
 		cbvBuffer0VirtualPtr->Matrix_MVP = playerController.CalculateVPMatrix() * terrainTransform.CalculateModelMatrix();
 
+		// 見ているブロック・フェースを取得
+		const auto [lookingBlockPosition, lookingBlockFaceNormal] = playerController.PickLookingBlock(chunksManager.GetChunks());
+
 		// ブロックを選択する
 		{
-			const Lattice3 lookingBlockPosition = playerController.PickLookingBlock(chunksManager.GetChunks());
-
-			if (lookingBlockPosition == Lattice3(-1, -1, -1))
+			if (lookingBlockFaceNormal == Lattice3::Zero())
 			{
 				cbvBuffer1VirtualPtr->IsSelectingBlock = 0;
 				cbvBuffer1VirtualPtr->SelectingBlockWorldPosition = Lattice3::Zero();
@@ -314,6 +315,53 @@ int Main(hInstance)
 				mineCooldownTimer -= WindowHelper::GetDeltaSeconds();
 				if (mineCooldownTimer < 0.0f)
 					mineCooldownTimer = 0.0f;
+			}
+
+			// ブロックを設置する
+			// チャンクデータを更新し、描画データにも反映させる
+			{
+				static float placeCooldownTimer = 0.0f;
+
+				if (placeCooldownTimer <= 0.0f)
+				{
+					const bool hasInput =
+						InputHelper::GetKeyInfo(Key::I).pressed ||
+						InputHelper::GetKeyInfo(Key::O).pressed ||
+						InputHelper::GetKeyInfo(Key::K).pressed ||
+						InputHelper::GetKeyInfo(Key::L).pressed ||
+						InputHelper::GetKeyInfo(Key::RMouse).pressed;
+
+					if (hasInput)
+					{
+						placeCooldownTimer = PlayerController::PlaceCooldownSeconds;
+
+						// ブロックを見ているかチェック
+						if (cbvBuffer1VirtualPtr->IsSelectingBlock == 1)
+						{
+							// この座標にブロックを置こうとしている
+							const Lattice3 placeWorldBlockPosition = lookingBlockPosition + lookingBlockFaceNormal;
+
+							// 一応、既にブロックがあるならダメ
+							const Lattice2 chunkIndex = Chunk::GetIndex(cbvBuffer1VirtualPtr->SelectingBlockWorldPosition);
+							const Lattice3 placeLocalBlockPosition
+								= Chunk::GetLocalBlockPosition(placeWorldBlockPosition);
+							if (chunksManager.GetChunkBlock(chunkIndex, placeLocalBlockPosition) == Block::Air)
+							{
+								// 自分自身の当たり判定が、その場所に被らないかチェック
+								if (!playerController.IsOverlappingWithBlock(chunksManager.GetChunks(), placeWorldBlockPosition))
+								{
+									// ブロックを設置
+									chunksManager.UpdateChunkBlock(chunkIndex, placeLocalBlockPosition, Block::Stone, device);
+									chunksManager.UpdateDrawChunks(currentExistingChunkIndex, true, device);
+								}
+							}
+						}
+					}
+				}
+
+				placeCooldownTimer -= WindowHelper::GetDeltaSeconds();
+				if (placeCooldownTimer < 0.0f)
+					placeCooldownTimer = 0.0f;
 			}
 
 			// プレイヤーの存在チャンクが変化したなら、描画チャンクを更新する

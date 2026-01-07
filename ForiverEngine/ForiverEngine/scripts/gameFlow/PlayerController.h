@@ -28,6 +28,7 @@ namespace ForiverEngine
 		static constexpr float ReachDetectStep = 0.1f; // リーチ判定時のレイステップ幅 (m)
 
 		static constexpr float MineCooldownSeconds = 0.2f; // ブロックを掘る際のクールダウン時間 (秒)
+		static constexpr float PlaceCooldownSeconds = 0.2f; // ブロックを置く際のクールダウン時間 (秒)
 
 		PlayerController(const CameraTransform& initTransform) noexcept
 			: transform(initTransform), velocityV(0.0f)
@@ -57,6 +58,11 @@ namespace ForiverEngine
 		bool IsOverlappingWithTerrain(const Chunk::ChunksArray<Chunk>& chunks) const
 		{
 			return PlayerControl::IsOverlappingWithTerrain(chunks, GetFootPosition(), CollisionSize);
+		}
+
+		bool IsOverlappingWithBlock(const Chunk::ChunksArray<Chunk>& chunks, const Lattice3& blockPosition) const
+		{
+			return PlayerControl::IsOverlappingWithBlock(chunks, GetFootPosition(), CollisionSize, blockPosition);
 		}
 
 		Matrix4x4 CalculateVPMatrix() const noexcept
@@ -175,10 +181,10 @@ namespace ForiverEngine
 		}
 
 		/// <summary>
-		/// <para>現在見ているブロックのブロック座標を取得する</para>
-		/// <para>見ているブロックが無かったら、(-1, -1, -1) を返す</para>
+		/// <para>現在見ているブロックの ブロック座標・フェースの法線 を取得する</para>
+		/// <para>見ているブロックが無かったら、共に (0, 0, 0) を返す</para>
 		/// </summary>
-		Lattice3 PickLookingBlock(const Chunk::ChunksArray<Chunk>& chunks) const
+		std::pair<Lattice3, Lattice3> PickLookingBlock(const Chunk::ChunksArray<Chunk>& chunks) const
 		{
 			const Vector3 rayOrigin = transform.position;
 			const Vector3 rayDirection = transform.GetForward();
@@ -199,10 +205,43 @@ namespace ForiverEngine
 				const Block blockAtRay = targetingChunk.GetBlock(rayLocalPosition);
 
 				if (blockAtRay != Block::Air)
-					return rayBlockPosition;
+				{
+					// フェースの法線を計算する
+					// ブロック中心->レイヒット位置, フェース法線との内積を計算し、最も大きい(ベクトルが一致している)ものを採用する
+					const Vector3 blockToRay = (rayPosition - Vector3(rayBlockPosition)).Normed();
+					constexpr Lattice3 faceNormals[] =
+					{
+						Lattice3::Right(),
+						Lattice3::Left(),
+						Lattice3::Up(),
+						Lattice3::Down(),
+						Lattice3::Forward(),
+						Lattice3::Backward(),
+					};
+
+					Lattice3 faceNormal = Lattice3::Zero();
+					float maxDot = std::numeric_limits<float>::lowest();
+					for (const Lattice3& normal : faceNormals)
+					{
+						const float dot = Vector3::Dot(blockToRay, Vector3(normal));
+						if (dot > maxDot)
+						{
+							maxDot = dot;
+							faceNormal = normal;
+						}
+					}
+
+					if (faceNormal == Lattice3::Zero())
+					{
+						// ありえないはずだが、一応チェック
+						return { Lattice3::Zero(), Lattice3::Zero() };
+					}
+
+					return { rayBlockPosition, faceNormal };
+				}
 			}
 
-			return Lattice3(-1, -1, -1);
+			return { Lattice3::Zero(), Lattice3::Zero() };
 		}
 
 	private:

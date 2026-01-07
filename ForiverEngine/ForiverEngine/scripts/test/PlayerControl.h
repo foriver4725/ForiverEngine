@@ -18,11 +18,12 @@ namespace ForiverEngine
 				Run_GetFootPosition();
 				Run_GetCollisionMinPosition();
 
-				Run_CreateChunksManager3Layerd2x2ForTest();
+				Run_CreateChunksManager3Layered2x2ForTest();
 				Run_CalculateCollisionBoundaryAsBlock();
 				Run_FindFloorHeight();
 				Run_FindCeilHeight();
 				Run_IsOverlappingWithTerrain();
+				Run_IsOverlappingWithBlock();
 			}
 
 			using TargetClass = ForiverEngine::PlayerControl;
@@ -208,7 +209,7 @@ namespace ForiverEngine
 
 			static constexpr Vector3 PlayerCollisionSize = Vector3(0.8f, 1.8f, 0.8f);
 
-			static const ChunksManager& CreateChunksManager3Layerd2x2ForTest()
+			static const ChunksManager& CreateChunksManager3Layered2x2ForTest()
 			{
 				static bool hasCreated = false;
 				static ChunksManager chunksManager;
@@ -225,9 +226,9 @@ namespace ForiverEngine
 				return chunksManager;
 			}
 
-			static void Run_CreateChunksManager3Layerd2x2ForTest()
+			static void Run_CreateChunksManager3Layered2x2ForTest()
 			{
-				const ChunksManager& chunksManager = CreateChunksManager3Layerd2x2ForTest();
+				const ChunksManager& chunksManager = CreateChunksManager3Layered2x2ForTest();
 
 #define test(chunkIndex, blockPosition, expectedBlock) \
 eqen(ExstractChunk(chunksManager, Lattice2##chunkIndex).GetBlock(Lattice3##blockPosition), Block::##expectedBlock); \
@@ -437,7 +438,7 @@ eqobj( \
 #define test(worldPositionMin, expected) \
 eq( \
 	(TargetClass::FindFloorHeight( \
-		CreateChunksManager3Layerd2x2ForTest().GetChunks(), \
+		CreateChunksManager3Layered2x2ForTest().GetChunks(), \
 		Vector3##worldPositionMin, \
 		PlayerCollisionSize \
 	)), \
@@ -447,7 +448,7 @@ eq( \
 #define test_diag(worldPositionMin, expected) \
 eq( \
 	(TargetClass::FindFloorHeight( \
-		CreateChunksManager3Layerd2x2ForTest().GetChunks(), \
+		CreateChunksManager3Layered2x2ForTest().GetChunks(), \
 		Vector3##worldPositionMin + Vector3((Chunk::Count - 2) * Chunk::Size, 0, (Chunk::Count - 2) * Chunk::Size), \
 		PlayerCollisionSize \
 	)), \
@@ -495,7 +496,7 @@ eq( \
 #define test(worldPositionMin, expected) \
 eq( \
 	(TargetClass::FindCeilHeight( \
-		CreateChunksManager3Layerd2x2ForTest().GetChunks(), \
+		CreateChunksManager3Layered2x2ForTest().GetChunks(), \
 		Vector3##worldPositionMin, \
 		PlayerCollisionSize \
 	)), \
@@ -505,7 +506,7 @@ eq( \
 #define test_diag(worldPositionMin, expected) \
 eq( \
 	(TargetClass::FindCeilHeight( \
-		CreateChunksManager3Layerd2x2ForTest().GetChunks(), \
+		CreateChunksManager3Layered2x2ForTest().GetChunks(), \
 		Vector3##worldPositionMin + Vector3((Chunk::Count - 2) * Chunk::Size, 0, (Chunk::Count - 2) * Chunk::Size), \
 		PlayerCollisionSize \
 	)), \
@@ -553,7 +554,7 @@ eq( \
 #define test(worldPositionMin, expected) \
 eq( \
 	(TargetClass::IsOverlappingWithTerrain( \
-		CreateChunksManager3Layerd2x2ForTest().GetChunks(), \
+		CreateChunksManager3Layered2x2ForTest().GetChunks(), \
 		Vector3##worldPositionMin, \
 		PlayerCollisionSize \
 	)), \
@@ -563,7 +564,7 @@ eq( \
 #define test_diag(worldPositionMin, expected) \
 eq( \
 	(TargetClass::IsOverlappingWithTerrain( \
-		CreateChunksManager3Layerd2x2ForTest().GetChunks(), \
+		CreateChunksManager3Layered2x2ForTest().GetChunks(), \
 		Vector3##worldPositionMin + Vector3((Chunk::Count - 2) * Chunk::Size, 0, (Chunk::Count - 2) * Chunk::Size), \
 		PlayerCollisionSize \
 	)), \
@@ -603,6 +604,34 @@ eq( \
 
 #undef test
 #undef test_diag
+			}
+
+			static void Run_IsOverlappingWithBlock()
+			{
+#define test(footWorldPosition, targetWorldBlockPosition, expected) \
+eq( \
+	(TargetClass::IsOverlappingWithBlock( \
+		CreateChunksManager3Layered2x2ForTest().GetChunks(), \
+		Vector3##footWorldPosition, \
+		PlayerCollisionSize, \
+		Lattice3##targetWorldBlockPosition \
+	)), \
+	(expected) \
+); \
+
+				// X
+				test((4.09f, 3.0f, 5.0f), (5, 3, 5), false);
+				test((4.11f, 3.0f, 5.0f), (5, 3, 5), true);
+
+				// Y
+				test((5.0f, 3.51f, 5.0f), (5, 3, 5), false);
+				test((5.0f, 3.49f, 5.0f), (5, 3, 5), true);
+
+				// Z
+				test((5.0f, 3.0f, 5.91f), (5, 3, 5), false);
+				test((5.0f, 3.0f, 5.89f), (5, 3, 5), true);
+
+#undef test
 			}
 
 #pragma endregion

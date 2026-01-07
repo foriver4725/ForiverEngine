@@ -419,5 +419,39 @@ namespace ForiverEngine
 			if (IsOverlappingForThisChunk(infoXZ)) return true;
 			return false;
 		}
+
+		/// <summary>
+		/// 特定のブロック座標との当たり判定
+		/// </summary>
+		static bool IsOverlappingWithBlock(
+			const Chunk::ChunksArray<Chunk>& chunks, const Vector3& footWorldPosition, const Vector3& collisionSize,
+			const Lattice3& targetWorldBlockPosition)
+		{
+			const Vector3 collisionMinPosition = GetCollisionMinPosition(footWorldPosition, collisionSize);
+			const Vector3 collisionMaxPosition = collisionMinPosition + collisionSize;
+
+			// チャンクのインデックスで、大まかにチェック
+			const Lattice2 collisionMinChunkIndex = Chunk::GetIndex(GetBlockPosition(collisionMinPosition));
+			const Lattice2 collisionMaxChunkIndex = Chunk::GetIndex(GetBlockPosition(collisionMaxPosition));
+			const Lattice2 targetChunkIndex = Chunk::GetIndex(targetWorldBlockPosition);
+			if (!MathUtils::IsInRange(targetChunkIndex.x, collisionMinChunkIndex.x, collisionMaxChunkIndex.x + 1) ||
+				!MathUtils::IsInRange(targetChunkIndex.y, collisionMinChunkIndex.y, collisionMaxChunkIndex.y + 1))
+				return false;
+
+			// コリジョン・ターゲットブロックが共に同じチャンクにあるので、あとはシンプルな AABB 判定を行う
+			const bool isOverlappingX =
+				collisionMinPosition.x < (targetWorldBlockPosition.x + 0.5f) &&
+				collisionMaxPosition.x >(targetWorldBlockPosition.x - 0.5f);
+			const bool isOverlappingY =
+				collisionMinPosition.y < (targetWorldBlockPosition.y + 0.5f) &&
+				collisionMaxPosition.y >(targetWorldBlockPosition.y - 0.5f);
+			const bool isOverlappingZ =
+				collisionMinPosition.z < (targetWorldBlockPosition.z + 0.5f) &&
+				collisionMaxPosition.z >(targetWorldBlockPosition.z - 0.5f);
+			if (isOverlappingX && isOverlappingY && isOverlappingZ)
+				return true;
+
+			return false;
+		}
 	};
 }
