@@ -186,12 +186,20 @@ int Main(hInstance)
 		std::uint32_t WindowSize[2];
 		float LimitLuminance; // ピクセルがモデルの端にあると判断する輝度差の閾値 ([0.0, 1.0]. 小さいほどAAが多くかかる)
 		float AAPower; // アンチエイリアスの強さ (大きいほどAAが強くかかる)
+
+		Color PointerColor; // 画面中央のポインタの色
+		std::uint32_t PointerLength; // 画面中央のポインタの長さ (ピクセル数. 奇数前提)
+		std::uint32_t PointerWidth; // 画面中央のポインタの太さ (ピクセル数. 奇数前提)
 	};
 	const CBData0PP cbData0PP =
 	{
 		.WindowSize = { static_cast<std::uint32_t>(WindowSize.x), static_cast<std::uint32_t>(WindowSize.y) },
 		.LimitLuminance = 0.5f,
 		.AAPower = 8.0f,
+
+		.PointerColor = Color::Black(),
+		.PointerLength = 21,
+		.PointerWidth = 3,
 	};
 
 	const OffscreenRenderer offscreenRendererPP = OffscreenRenderer(
