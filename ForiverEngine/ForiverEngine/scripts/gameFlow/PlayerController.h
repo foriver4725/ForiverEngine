@@ -93,8 +93,9 @@ namespace ForiverEngine
 					Quaternion::FromAxisAngle(Vector3::Up(), inputs.look.x * LookSensitivityH * DegToRad * deltaSeconds) *
 					Quaternion::FromAxisAngle(transform.GetRight(), -inputs.look.y * LookSensitivityV * DegToRad * deltaSeconds);
 
+				// TODO: 回転制限の計算を、もっと丁寧にやりたい!
 				const Quaternion newRotation = rotationAmount * transform.rotation;
-				if (std::abs((newRotation * Vector3::Forward()).y) < 0.999f) // 上下回転を制限 (前方向ベクトルのy成分で判定)
+				if (std::abs((newRotation * Vector3::Forward()).y) < 0.998f) // 上下回転を制限 (前方向ベクトルのy成分で判定)
 					transform.rotation = newRotation;
 			}
 
