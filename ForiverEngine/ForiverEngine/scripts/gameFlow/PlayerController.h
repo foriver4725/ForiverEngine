@@ -21,8 +21,11 @@ namespace ForiverEngine
 		static constexpr float MinVelocityV = -100.0f; // 最小鉛直速度 (m/s) - 落下速度の上限
 		static constexpr float JumpHeight = 1.3f; // ジャンプの高さ (m)
 		static constexpr float EyeHeight = 1.6f; // 目線の高さ (m)
-		static constexpr float GroundedCheckOffset = 0.01f; // 接地判定のオフセット (m). 埋まっている判定と区別するため、少しずらす
-		static constexpr float CeilingCheckOffset = 0.01f;  // 天井判定のオフセット (m). 埋まっている判定と区別するため、少しずらす
+
+		// Y方向の計算誤差を減らすためのパラメータ
+		static constexpr float GroundedCheckOffset = 0.01f; // 接地判定のオフセット (m)
+		static constexpr float CeilingCheckOffset = 0.01f;  // 天井判定のオフセット (m)
+		static constexpr float OverlapCheckOffset = 0.001f; // 当たり判定のオフセット (m)
 
 		static constexpr float ReachDistance = 5.0f; // リーチ距離 (m)
 		static constexpr float ReachDetectStep = 0.1f; // リーチ判定時のレイステップ幅 (m)
@@ -57,12 +60,12 @@ namespace ForiverEngine
 
 		bool IsOverlappingWithTerrain(const Chunk::ChunksArray<Chunk>& chunks) const
 		{
-			return PlayerControl::IsOverlappingWithTerrain(chunks, GetFootPosition(), CollisionSize);
+			return PlayerControl::IsOverlappingWithTerrain(chunks, GetFootPosition() + Vector3::Up() * OverlapCheckOffset, CollisionSize);
 		}
 
 		bool IsOverlappingWithBlock(const Chunk::ChunksArray<Chunk>& chunks, const Lattice3& blockPosition) const
 		{
-			return PlayerControl::IsOverlappingWithBlock(chunks, GetFootPosition(), CollisionSize, blockPosition);
+			return PlayerControl::IsOverlappingWithBlock(chunks, GetFootPosition() + Vector3::Up() * OverlapCheckOffset, CollisionSize, blockPosition);
 		}
 
 		Matrix4x4 CalculateVPMatrix() const noexcept
