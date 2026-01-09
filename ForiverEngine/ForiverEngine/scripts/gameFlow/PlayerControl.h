@@ -16,7 +16,7 @@ namespace ForiverEngine
 
 		// ブロックを採掘/設置できるY座標の範囲 (最小値, 最大値+1)
 		// TODO: プレイヤーが Y=1 に立つと地面をすり抜ける!
-		static constexpr Lattice2 CanMinePlaceBlockHeightRange = Lattice2(4, Chunk::Height - 64);
+		static constexpr Lattice2 CanMinePlaceBlockHeightRange = Lattice2(0, Chunk::Height - 64);
 
 		// ブロック座標に変換 (整数座標)
 		static int GetBlockPosition(const float position)

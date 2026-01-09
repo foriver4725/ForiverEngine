@@ -47,12 +47,12 @@ namespace ForiverEngine
 
 		int FindFloorHeight(const Chunk::ChunksArray<Chunk>& chunks) const
 		{
-			return PlayerControl::FindFloorHeight(chunks, GetFootPosition(), CollisionSize);
+			return PlayerControl::FindFloorHeight(chunks, GetFootPosition() + Vector3::Up() * GroundedCheckOffset, CollisionSize);
 		}
 
 		int FindCeilHeight(const Chunk::ChunksArray<Chunk>& chunks) const
 		{
-			return PlayerControl::FindCeilHeight(chunks, GetFootPosition(), CollisionSize);
+			return PlayerControl::FindCeilHeight(chunks, GetFootPosition() + Vector3::Up() * -CeilingCheckOffset, CollisionSize);
 		}
 
 		bool IsOverlappingWithTerrain(const Chunk::ChunksArray<Chunk>& chunks) const
