@@ -127,9 +127,9 @@ namespace ForiverEngine
 					// 接地したら、めり込みを補正して、鉛直速度を0にする
 					if (isGrounded)
 					{
-						const float footY = floorY + 0.5f + EyeHeight;
-						if (transform.position.y < footY)
-							transform.position.y = footY;
+						const float minY = floorY + 0.5f + EyeHeight;
+						if (transform.position.y < minY)
+							transform.position.y = minY;
 
 						if (velocityV < 0)
 							velocityV = 0;
@@ -137,9 +137,9 @@ namespace ForiverEngine
 					// 天井にぶつかったら、めり込みを補正して、鉛直速度を0にする
 					else if (isCeiling)
 					{
-						const float headY = ceilY - 0.5f - CollisionSize.y + EyeHeight;
-						if (transform.position.y > headY)
-							transform.position.y = headY;
+						const float maxY = ceilY - 0.5f - CollisionSize.y + EyeHeight;
+						if (transform.position.y > maxY)
+							transform.position.y = maxY;
 
 						if (velocityV > 0)
 							velocityV = 0;
