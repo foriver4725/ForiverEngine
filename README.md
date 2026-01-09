@@ -192,10 +192,28 @@ https://github.com/user-attachments/assets/6cca3cdb-92a6-4fc9-ad82-9b307a505bd3
 </details>
 
 ## 最新の進捗
+
+<details>
+
+<summary> 内容 </summary>
+
 ブロック設置を出来るようにした  
 Q で採掘、E で石を設置
 
 https://github.com/user-attachments/assets/22c88a88-05af-4890-b2c8-a31769bd332b
+
+</details>
+
+## 操作方法
+
+| キー | 説明 |
+| --- | --- |
+| WSAD | 移動 |
+| 矢印キー | 視点移動 |
+| 左シフト | ダッシュ (押している間) |
+| スペース | ジャンプ (押している間) |
+| Q | ブロック採掘 (押している間) |
+| E | ブロック設置 (押している間) |
 
 ## 使用ライブラリ
 | 名前 | ライセンス | 主な使用用途 |
