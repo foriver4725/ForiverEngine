@@ -39,6 +39,59 @@ int Main(hInstance)
 	const auto [factory, device, commandAllocator, commandList, commandQueue]
 		= D3D12BasicFlow::CreateStandardObjects();
 
+	constexpr Transform terrainTransform = Transform::Identity();
+	PlayerController playerController = PlayerController(CameraTransform::CreatePerspective(
+		Vector3(64, 32, 64), Quaternion::Identity(), 60.0f * DegToRad, 1.0f * WindowSize.x / WindowSize.y));
+
+	SunCamera sunCamera = SunCamera();
+	sunCamera.LookAtPlayer(playerController.GetFootPosition());
+
+	// 地形データ
+	Lattice2 existingChunkIndex = Chunk::GetIndex(playerController.GetFootBlockPosition());
+	ChunksManager chunksManager = ChunksManager(existingChunkIndex);
+	chunksManager.UpdateDrawChunks(existingChunkIndex, false, device); // 初回作成
+
+#pragma region Shadow
+
+	constexpr Lattice2 ShadowRTSize = Lattice2(1024, 1024);
+
+	const Texture shadowTextureMetadata = Texture::CreateManually({}, ShadowRTSize, Format::R_F32);
+	const GraphicsBuffer shadowGraphicsBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, shadowTextureMetadata,
+		GraphicsBufferUsagePermission::AllowRenderTarget, GraphicsBufferState::PixelShaderResource, Color(DepthBufferClearValue, 0, 0, 0));
+
+	const RootParameter rootParameterShadow = RootParameter::CreateBasic(1, 1);
+	const SamplerConfig samplerConfigShadow = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
+	const auto [shaderVSShadow, shaderPSShadow] = D3D12BasicFlow::CompileShader_VS_PS("./shaders/ShadowDepthWrite.hlsl");
+	const auto [rootSignatureShadow, graphicsPipelineStateShadow]
+		= D3D12BasicFlow::CreateRootSignatureAndGraphicsPipelineState(
+			device, rootParameterShadow, samplerConfigShadow, shaderVSShadow, shaderPSShadow, VertexLayoutsQuad, FillMode::Solid, CullMode::Back, true);
+
+	// RTV, DSV
+	const DescriptorHandleAtCPU rtvShadow = D3D12BasicFlow::InitRTV(device, shadowGraphicsBuffer, Format::R_F32);
+	const DescriptorHandleAtCPU dsvShadow = D3D12BasicFlow::InitDSV(device, ShadowRTSize);
+
+	// b0
+	struct alignas(256) CBData0Shadow
+	{
+		Matrix4x4 Matrix_MVP;
+	};
+	CBData0Shadow cbData0Shadow =
+	{
+		.Matrix_MVP = sunCamera.CalculateVPMatrix() * terrainTransform.CalculateModelMatrix(),
+	};
+	CBData0Shadow* cbvBuffer0ShadowVirtualPtr = nullptr;
+	const GraphicsBuffer cbvBufferShadow = D3D12BasicFlow::InitCBVBuffer(device, cbData0Shadow, &cbvBuffer0ShadowVirtualPtr);
+
+	// DescriptorHeap
+	const DescriptorHeap descriptorHeapBasicShadow
+		= D3D12BasicFlow::InitDescriptorHeapBasic(device, { cbvBufferShadow }, { {shadowGraphicsBuffer, shadowTextureMetadata} });
+
+	const ViewportScissorRect viewportScissorRectShadow = ViewportScissorRect::CreateFullSized(ShadowRTSize);
+
+#pragma endregion
+
+#pragma region MainRender
+
 	const RootParameter rootParameter = RootParameter::CreateBasic(2, 2);
 	const SamplerConfig samplerConfig = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
 	const auto [shaderVS, shaderPS] = D3D12BasicFlow::CompileShader_VS_PS("./shaders/Basic.hlsl");
@@ -51,18 +104,6 @@ int Main(hInstance)
 		ShowError(L"SwapChain の作成に失敗しました");
 	const auto [rtGetter, rtvGetter] = D3D12BasicFlow::InitRTV(device, swapChain, Format::RGBA_U8_01);
 	const DescriptorHandleAtCPU dsv = D3D12BasicFlow::InitDSV(device, WindowSize);
-
-	constexpr Transform terrainTransform = Transform::Identity();
-	PlayerController playerController = PlayerController(CameraTransform::CreatePerspective(
-		Vector3(64, 32, 64), Quaternion::Identity(), 60.0f * DegToRad, 1.0f * WindowSize.x / WindowSize.y));
-
-	SunCamera sunCamera = SunCamera();
-	sunCamera.LookAtPlayer(playerController.GetFootPosition());
-
-	// 地形データ
-	Lattice2 existingChunkIndex = Chunk::GetIndex(playerController.GetFootBlockPosition());
-	ChunksManager chunksManager = ChunksManager(existingChunkIndex);
-	chunksManager.UpdateDrawChunks(existingChunkIndex, false, device); // 初回作成
 
 	// b0
 	struct alignas(256) CBData0
@@ -125,60 +166,14 @@ int Main(hInstance)
 	const auto srvBuffer = D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue, commandAllocator, textureArray);
 
 	// DescriptorHeap に登録
-	DescriptorHeap descriptorHeapBasic = DescriptorHeap(); // 後で作成する!!
+	DescriptorHeap descriptorHeapBasic = D3D12BasicFlow::InitDescriptorHeapBasic(
+		device, { cbvBuffer0, cbvBuffer1 }, { {srvBuffer, textureArray}, {shadowGraphicsBuffer, shadowTextureMetadata} });
 
 	const ViewportScissorRect viewportScissorRect = ViewportScissorRect::CreateFullSized(WindowSize);
 
-	//////////////////////////////
-	// 影 デプスマップに出力
+#pragma	endregion
 
-	constexpr Lattice2 ShadowRTSize = Lattice2(1024, 1024);
-
-	const Texture shadowTextureMetadata = Texture::CreateManually({}, ShadowRTSize, Format::R_F32);
-	const GraphicsBuffer shadowGraphicsBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, shadowTextureMetadata,
-		GraphicsBufferUsagePermission::AllowRenderTarget, GraphicsBufferState::PixelShaderResource, Color(DepthBufferClearValue, 0, 0, 0));
-
-	const RootParameter rootParameterShadow = RootParameter::CreateBasic(1, 1);
-	const SamplerConfig samplerConfigShadow = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
-	const auto [shaderVSShadow, shaderPSShadow] = D3D12BasicFlow::CompileShader_VS_PS("./shaders/ShadowDepthWrite.hlsl");
-	const auto [rootSignatureShadow, graphicsPipelineStateShadow]
-		= D3D12BasicFlow::CreateRootSignatureAndGraphicsPipelineState(
-			device, rootParameterShadow, samplerConfigShadow, shaderVSShadow, shaderPSShadow, VertexLayoutsQuad, FillMode::Solid, CullMode::Back, true);
-
-	// RTV, DSV
-	const DescriptorHandleAtCPU rtvShadow = D3D12BasicFlow::InitRTV(device, shadowGraphicsBuffer, Format::R_F32);
-	const DescriptorHandleAtCPU dsvShadow = D3D12BasicFlow::InitDSV(device, ShadowRTSize);
-
-	// CB 0
-	struct alignas(256) CBData0Shadow
-	{
-		Matrix4x4 Matrix_MVP;
-	};
-	CBData0Shadow cbData0Shadow =
-	{
-		.Matrix_MVP = sunCamera.CalculateVPMatrix() * terrainTransform.CalculateModelMatrix(),
-	};
-	CBData0Shadow* cbvBuffer0ShadowVirtualPtr = nullptr;
-	const GraphicsBuffer cbvBufferShadow = D3D12BasicFlow::InitCBVBuffer(device, cbData0Shadow, &cbvBuffer0ShadowVirtualPtr);
-
-	// DescriptorHeap
-	const DescriptorHeap descriptorHeapBasicShadow
-		= D3D12BasicFlow::InitDescriptorHeapBasic(device, { cbvBufferShadow }, { {shadowGraphicsBuffer, shadowTextureMetadata} });
-
-	const ViewportScissorRect viewportScissorRectShadow = ViewportScissorRect::CreateFullSized(ShadowRTSize);
-
-	//////////
-	// メインレンダリングの方に、情報を渡す
-
-	descriptorHeapBasic = D3D12BasicFlow::InitDescriptorHeapBasic(
-		device, { cbvBuffer0, cbvBuffer1 }, { {srvBuffer, textureArray}, {shadowGraphicsBuffer, shadowTextureMetadata} });
-
-	//////////
-
-	//////////////////////////////
-
-	//////////////////////////////
-	// ポストプロセス
+#pragma region PostProcess (Offscreen)
 
 	// b0
 	struct alignas(256) CBData0PP
@@ -210,10 +205,9 @@ int Main(hInstance)
 		{}
 	);
 
-	//////////////////////////////
+#pragma endregion
 
-	//////////////////////////////
-	// テキスト描画 (ポストプロセスの後)
+#pragma region Text (Offscreen)
 
 	// テキストUIデータ
 	TextUIData textUIData = TextUIData::CreateEmpty(WindowSize / TextUIData::FontTextureTextLength);
@@ -247,7 +241,7 @@ int Main(hInstance)
 		{ fontTexture, textUIDataTexture }
 	);
 
-	//////////////////////////////
+#pragma endregion
 
 	while (true)
 	{
@@ -298,10 +292,9 @@ int Main(hInstance)
 				{
 					if (InputHelper::GetKeyInfo(Key::Q).pressed)
 					{
-						mineCooldownTimer = PlayerController::MineCooldownSeconds;
-
 						if (cbvBuffer1VirtualPtr->IsSelectingBlock == 1)
 						{
+							mineCooldownTimer = PlayerController::MineCooldownSeconds;
 							const auto _ = playerController.TryMineBlock(
 								chunksManager, cbvBuffer1VirtualPtr->SelectingBlockWorldPosition, device);
 						}
@@ -321,10 +314,9 @@ int Main(hInstance)
 				{
 					if (InputHelper::GetKeyInfo(Key::E).pressed)
 					{
-						placeCooldownTimer = PlayerController::PlaceCooldownSeconds;
-
 						if (cbvBuffer1VirtualPtr->IsSelectingBlock == 1)
 						{
+							placeCooldownTimer = PlayerController::PlaceCooldownSeconds;
 							const auto _ = playerController.TryPlaceBlock(
 								chunksManager, lookingBlockPosition + lookingBlockFaceNormal, device);
 						}
