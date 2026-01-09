@@ -17,7 +17,7 @@ namespace ForiverEngine
 		static constexpr float SpeedH = 3.0f; // 水平移動速度 (m/s)
 		static constexpr float DashSpeedH = 6.0f; // ダッシュ時の水平移動速度 (m/s)
 		static constexpr float LookSensitivityH = 180.0f; // 視点の水平感度 (度/s)
-		static constexpr float LookSensitivityV = 90.0f; // 視点の垂直感度 (度/s)
+		static constexpr float LookSensitivityV = 180.0f; // 視点の垂直感度 (度/s)
 		static constexpr float MinVelocityV = -100.0f; // 最小鉛直速度 (m/s) - 落下速度の上限
 		static constexpr float JumpHeight = 1.3f; // ジャンプの高さ (m)
 		static constexpr float EyeHeight = 1.6f; // 目線の高さ (m)
