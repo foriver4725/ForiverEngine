@@ -170,7 +170,6 @@
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp" />
     <ClCompile Include="oss\SimplexNoise.cpp" />
     <ClCompile Include="scripts\common\Math\LinearAlgebra\sources\Lattice2.cpp" />
     <ClCompile Include="scripts\common\Math\LinearAlgebra\sources\Lattice3.cpp" />
@@ -185,6 +184,7 @@
     <ClCompile Include="scripts\helper\sources\D3D12Helper.cpp" />
     <ClCompile Include="scripts\helper\sources\InputHelper.cpp" />
     <ClCompile Include="scripts\helper\sources\WindowHelper.cpp" />
+    <ClCompile Include="scripts\main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="oss\SimplexNoise.h" />

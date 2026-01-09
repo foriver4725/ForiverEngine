@@ -1,7 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="main.cpp" />
     <ClCompile Include="oss\SimplexNoise.cpp">
       <Filter>oss</Filter>
     </ClCompile>
@@ -43,6 +42,9 @@
     </ClCompile>
     <ClCompile Include="scripts\common\Math\LinearAlgebra\sources\Vector4.cpp">
       <Filter>scripts\common\Math\LinearAlgebra\sources</Filter>
+    </ClCompile>
+    <ClCompile Include="scripts\main.cpp">
+      <Filter>scripts</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
