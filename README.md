@@ -7,6 +7,8 @@
 - ブロックの採掘・設置が可能 (設置するブロックは 石 で固定)
 - 左上にデバッグ情報を表示
 
+<img width="50%" alt="image" src="https://github.com/user-attachments/assets/e7ef3799-f376-4d51-b858-d90bbecb37c8" />
+
 ### > [Wiki](https://github.com/foriver4725/ForiverEngine/wiki)
 
 ## 操作方法
