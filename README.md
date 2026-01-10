@@ -23,6 +23,11 @@
 | E | ブロック設置 (押している間) |
 | エスケープ | ゲーム終了 |
 
+## ダウンロード
+
+[最新のリリース](https://github.com/foriver4725/ForiverEngine/releases) から ZIP ファイルをダウンロードする  
+中の EXE ファイルを実行してゲーム開始  
+
 ## 過去の進捗
 
 <details>
