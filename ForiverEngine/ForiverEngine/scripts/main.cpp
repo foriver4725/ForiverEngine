@@ -79,12 +79,12 @@ int Main(hInstance)
 	{
 		.Matrix_MVP = sunCamera.CalculateVPMatrix() * terrainTransform.CalculateModelMatrix(),
 	};
-	CBData0Shadow* cbvBuffer0ShadowVirtualPtr = nullptr;
-	const GraphicsBuffer cbvBufferShadow = D3D12BasicFlow::InitCBVBuffer(device, cbData0Shadow, &cbvBuffer0ShadowVirtualPtr);
+	CBData0Shadow* cb0ShadowVirtualPtr = nullptr;
+	const GraphicsBuffer cb0Shadow = D3D12BasicFlow::InitCBVBuffer(device, cbData0Shadow, &cb0ShadowVirtualPtr);
 
 	// DescriptorHeap
 	const DescriptorHeap descriptorHeapBasicShadow
-		= D3D12BasicFlow::InitDescriptorHeapBasic(device, { cbvBufferShadow }, { {shadowGraphicsBuffer, shadowTextureMetadata} });
+		= D3D12BasicFlow::InitDescriptorHeapBasic(device, { cb0Shadow }, { {shadowGraphicsBuffer, shadowTextureMetadata} });
 
 	const ViewportScissorRect viewportScissorRectShadow = ViewportScissorRect::CreateFullSized(ShadowRTSize);
 
@@ -152,10 +152,10 @@ int Main(hInstance)
 	};
 
 	// CBV 用バッファ
-	CBData0* cbvBuffer0VirtualPtr = nullptr;
-	CBData1* cbvBuffer1VirtualPtr = nullptr;
-	const GraphicsBuffer cbvBuffer0 = D3D12BasicFlow::InitCBVBuffer(device, cbData0, &cbvBuffer0VirtualPtr);
-	const GraphicsBuffer cbvBuffer1 = D3D12BasicFlow::InitCBVBuffer(device, cbData1, &cbvBuffer1VirtualPtr);
+	CBData0* cb0VirtualPtr = nullptr;
+	CBData1* cb1VirtualPtr = nullptr;
+	const GraphicsBuffer cb0 = D3D12BasicFlow::InitCBVBuffer(device, cbData0, &cb0VirtualPtr);
+	const GraphicsBuffer cb1 = D3D12BasicFlow::InitCBVBuffer(device, cbData1, &cb1VirtualPtr);
 
 	// SRV 用バッファ
 	const Texture textureArray = D3D12BasicFlow::LoadTexture({
@@ -163,11 +163,11 @@ int Main(hInstance)
 			"assets/textures/grass_stone.png",
 			"assets/textures/dirt_sand.png",
 		});
-	const auto srvBuffer = D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue, commandAllocator, textureArray);
+	const auto sr = D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue, commandAllocator, textureArray);
 
 	// DescriptorHeap に登録
 	DescriptorHeap descriptorHeapBasic = D3D12BasicFlow::InitDescriptorHeapBasic(
-		device, { cbvBuffer0, cbvBuffer1 }, { {srvBuffer, textureArray}, {shadowGraphicsBuffer, shadowTextureMetadata} });
+		device, { cb0, cb1 }, { {sr, textureArray}, {shadowGraphicsBuffer, shadowTextureMetadata} });
 
 	const ViewportScissorRect viewportScissorRect = ViewportScissorRect::CreateFullSized(WindowSize);
 
@@ -261,7 +261,7 @@ int Main(hInstance)
 			.jumpPressed = InputHelper::GetKeyInfo(Key::Space).pressed,
 		};
 		playerController.OnEveryFrame(chunksManager.GetChunks(), playerInputs, WindowHelper::GetDeltaSeconds());
-		cbvBuffer0VirtualPtr->Matrix_MVP = playerController.CalculateVPMatrix() * terrainTransform.CalculateModelMatrix();
+		cb0VirtualPtr->Matrix_MVP = playerController.CalculateVPMatrix() * terrainTransform.CalculateModelMatrix();
 
 		// 見ているブロック・フェースを取得
 		const auto [lookingBlockPosition, lookingBlockFaceNormal] = playerController.PickLookingBlock(chunksManager.GetChunks());
@@ -270,13 +270,13 @@ int Main(hInstance)
 		{
 			if (lookingBlockFaceNormal == Lattice3::Zero())
 			{
-				cbvBuffer1VirtualPtr->IsSelectingBlock = 0;
-				cbvBuffer1VirtualPtr->SelectingBlockWorldPosition = Lattice3::Zero();
+				cb1VirtualPtr->IsSelectingBlock = 0;
+				cb1VirtualPtr->SelectingBlockWorldPosition = Lattice3::Zero();
 			}
 			else
 			{
-				cbvBuffer1VirtualPtr->IsSelectingBlock = 1;
-				cbvBuffer1VirtualPtr->SelectingBlockWorldPosition = lookingBlockPosition;
+				cb1VirtualPtr->IsSelectingBlock = 1;
+				cb1VirtualPtr->SelectingBlockWorldPosition = lookingBlockPosition;
 			}
 		}
 
@@ -292,11 +292,11 @@ int Main(hInstance)
 				{
 					if (InputHelper::GetKeyInfo(Key::Q).pressed)
 					{
-						if (cbvBuffer1VirtualPtr->IsSelectingBlock == 1)
+						if (cb1VirtualPtr->IsSelectingBlock == 1)
 						{
 							mineCooldownTimer = PlayerController::MineCooldownSeconds;
 							const auto _ = playerController.TryMineBlock(
-								chunksManager, cbvBuffer1VirtualPtr->SelectingBlockWorldPosition, device);
+								chunksManager, cb1VirtualPtr->SelectingBlockWorldPosition, device);
 						}
 					}
 				}
@@ -314,7 +314,7 @@ int Main(hInstance)
 				{
 					if (InputHelper::GetKeyInfo(Key::E).pressed)
 					{
-						if (cbvBuffer1VirtualPtr->IsSelectingBlock == 1)
+						if (cb1VirtualPtr->IsSelectingBlock == 1)
 						{
 							placeCooldownTimer = PlayerController::PlaceCooldownSeconds;
 							const auto _ = playerController.TryPlaceBlock(
@@ -376,8 +376,8 @@ int Main(hInstance)
 				textUIDataRows.emplace_back(DebugText::FrameTime(frameTimeMean), DebugText::Color);
 				textUIDataRows.emplace_back(DebugText::Position(playerController), DebugText::Color);
 				textUIDataRows.emplace_back(DebugText::LookAtPosition(
-					cbvBuffer1VirtualPtr->IsSelectingBlock == 1,
-					cbvBuffer1VirtualPtr->SelectingBlockWorldPosition,
+					cb1VirtualPtr->IsSelectingBlock == 1,
+					cb1VirtualPtr->SelectingBlockWorldPosition,
 					lookingBlockFaceNormal), DebugText::Color
 				);
 				textUIDataRows.emplace_back(DebugText::ChunkIndex(playerController), DebugText::Color);
@@ -408,8 +408,8 @@ int Main(hInstance)
 		{
 			sunCamera.LookAtPlayer(playerController.GetFootPosition());
 
-			cbvBuffer0VirtualPtr->DirectionalLight_Matrix_VP = sunCamera.CalculateVPMatrix();
-			cbvBuffer0ShadowVirtualPtr->Matrix_MVP = sunCamera.CalculateVPMatrix() * terrainTransform.CalculateModelMatrix();
+			cb0VirtualPtr->DirectionalLight_Matrix_VP = sunCamera.CalculateVPMatrix();
+			cb0ShadowVirtualPtr->Matrix_MVP = sunCamera.CalculateVPMatrix() * terrainTransform.CalculateModelMatrix();
 		}
 
 		const int currentBackRTIndex = D3D12Helper::GetCurrentBackRTIndex(swapChain);
@@ -423,7 +423,7 @@ int Main(hInstance)
 		const auto& packedDrawMeshIndicesCounts = chunksManager.PackDrawMeshIndicesCounts();
 
 		// 影のデプス書き込み
-		if (cbvBuffer1VirtualPtr->CastShadow == 1)
+		if (cb1VirtualPtr->CastShadow == 1)
 		{
 			D3D12BasicFlow::CommandBasicLoop(
 				commandList, commandQueue, commandAllocator, device,
