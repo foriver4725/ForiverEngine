@@ -16,6 +16,8 @@ namespace ForiverEngine
 		static constexpr float GravityScale = 1.0f; // 重力の倍率
 		static constexpr float SpeedH = 3.0f; // 水平移動速度 (m/s)
 		static constexpr float DashSpeedH = 6.0f; // ダッシュ時の水平移動速度 (m/s)
+		static constexpr float LookInputMultiplier = 0.02f; // 視点移動入力の乗数 (入力値が大きすぎると思うので、いい感じに調整する)
+		static constexpr float LookInputLengthMax = 50.0f; // 視点移動入力の最大値 (ベクトルの長さ. これ以上の長さは切り捨てる)
 		static constexpr float LookSensitivityH = 180.0f; // 視点の水平感度 (度/s)
 		static constexpr float LookSensitivityV = 180.0f; // 視点の垂直感度 (度/s)
 		static constexpr float MinVelocityV = -100.0f; // 最小鉛直速度 (m/s) - 落下速度の上限
@@ -76,7 +78,7 @@ namespace ForiverEngine
 		struct Inputs
 		{
 			Vector2 move;
-			Vector2 look;
+			Vector2 look; // 正規化はされていない! 結構大きな値になることもある
 			bool dashPressed;
 			bool jumpPressed;
 		};
@@ -89,9 +91,17 @@ namespace ForiverEngine
 		{
 			// 回転
 			{
+				// 入力値を処理する
+				Vector2 lookInput = Vector2::Zero();
+				{
+					lookInput = inputs.look * LookInputMultiplier;
+					if (lookInput.LenSq() > (LookInputLengthMax * LookInputLengthMax))
+						lookInput = lookInput.Normed() * LookInputLengthMax;
+				}
+
 				const Quaternion rotationAmount =
-					Quaternion::FromAxisAngle(Vector3::Up(), inputs.look.x * LookSensitivityH * DegToRad * deltaSeconds) *
-					Quaternion::FromAxisAngle(transform.GetRight(), -inputs.look.y * LookSensitivityV * DegToRad * deltaSeconds);
+					Quaternion::FromAxisAngle(Vector3::Up(), lookInput.x * LookSensitivityH * DegToRad * deltaSeconds) *
+					Quaternion::FromAxisAngle(transform.GetRight(), lookInput.y * LookSensitivityV * DegToRad * deltaSeconds);
 
 				// TODO: 回転制限の計算を、もっと丁寧にやりたい!
 				const Quaternion newRotation = rotationAmount * transform.rotation;

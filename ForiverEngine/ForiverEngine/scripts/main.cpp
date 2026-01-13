@@ -256,7 +256,7 @@ int Main(hInstance)
 		const PlayerController::Inputs playerInputs =
 		{
 			.move = InputHelper::GetAsAxis2D(Key::W, Key::S, Key::A, Key::D),
-			.look = InputHelper::GetAsAxis2D(Key::Up, Key::Down, Key::Left, Key::Right),
+			.look = InputHelper::GetMouseDelta(),
 			.dashPressed = InputHelper::GetKeyInfo(Key::LShift).pressed,
 			.jumpPressed = InputHelper::GetKeyInfo(Key::Space).pressed,
 		};
@@ -290,7 +290,7 @@ int Main(hInstance)
 
 				if (mineCooldownTimer <= 0.0f)
 				{
-					if (InputHelper::GetKeyInfo(Key::Q).pressed)
+					if (InputHelper::GetKeyInfo(Key::LMouse).pressed)
 					{
 						if (cb1VirtualPtr->IsSelectingBlock == 1)
 						{
@@ -312,7 +312,7 @@ int Main(hInstance)
 
 				if (placeCooldownTimer <= 0.0f)
 				{
-					if (InputHelper::GetKeyInfo(Key::E).pressed)
+					if (InputHelper::GetKeyInfo(Key::RMouse).pressed)
 					{
 						if (cb1VirtualPtr->IsSelectingBlock == 1)
 						{
@@ -385,7 +385,6 @@ int Main(hInstance)
 				textUIDataRows.emplace_back(DebugText::DrawChunksRange(chunksManager), DebugText::Color);
 				textUIDataRows.emplace_back(DebugText::CollisionRange(playerController), DebugText::Color);
 				textUIDataRows.emplace_back(DebugText::FloorCeilHeight(playerController, chunksManager), DebugText::Color);
-				textUIDataRows.emplace_back(std::format("{}", ToString(InputHelper::GetMouseDelta())), DebugText::Color);
 
 				// 本体のデータを更新
 				textUIData.ClearAll();
