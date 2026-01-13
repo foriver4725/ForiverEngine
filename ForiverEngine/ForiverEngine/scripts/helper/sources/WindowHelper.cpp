@@ -104,7 +104,6 @@ namespace ForiverEngine
 
 			return 0;
 		}
-
 		// キー解放
 		case WM_KEYUP:
 		{
@@ -112,6 +111,43 @@ namespace ForiverEngine
 			if (key != Key::Unknown)
 				InputHelper::OnReleased(key);
 
+			return 0;
+		}
+
+		// キー押下 (マウス左ボタン)
+		case WM_LBUTTONDOWN:
+		{
+			InputHelper::OnPressed(Key::LMouse);
+			return 0;
+		}
+		// キー解放 (マウス左ボタン)
+		case WM_LBUTTONUP:
+		{
+			InputHelper::OnReleased(Key::LMouse);
+			return 0;
+		}
+		// キー押下 (マウス右ボタン)
+		case WM_RBUTTONDOWN:
+		{
+			InputHelper::OnPressed(Key::RMouse);
+			return 0;
+		}
+		// キー解放 (マウス右ボタン)
+		case WM_RBUTTONUP:
+		{
+			InputHelper::OnReleased(Key::RMouse);
+			return 0;
+		}
+		// キー押下 (マウス中ボタン)
+		case WM_MBUTTONDOWN:
+		{
+			InputHelper::OnPressed(Key::MMouse);
+			return 0;
+		}
+		// キー解放 (マウス中ボタン)
+		case WM_MBUTTONUP:
+		{
+			InputHelper::OnReleased(Key::MMouse);
 			return 0;
 		}
 
