@@ -20,6 +20,7 @@ namespace ForiverEngine
 		static constexpr float LookInputLengthMax = 50.0f; // 視点移動入力の最大値 (ベクトルの長さ. これ以上の長さは切り捨てる)
 		static constexpr float LookSensitivityH = 180.0f; // 視点の水平感度 (度/s)
 		static constexpr float LookSensitivityV = 180.0f; // 視点の垂直感度 (度/s)
+		static constexpr float LookPitchMax = 89.9f * DegToRad; // 視点の上下回転の最大値 (ラジアン)
 		static constexpr float MinVelocityV = -100.0f; // 最小鉛直速度 (m/s) - 落下速度の上限
 		static constexpr float JumpHeight = 1.3f; // ジャンプの高さ (m)
 		static constexpr float EyeHeight = 1.6f; // 目線の高さ (m)
@@ -91,7 +92,7 @@ namespace ForiverEngine
 		{
 			// 回転
 			{
-				// 入力値を処理する
+				// 入力値を適切な値に直す
 				Vector2 lookInput = Vector2::Zero();
 				{
 					lookInput = inputs.look * LookInputMultiplier;
@@ -99,14 +100,20 @@ namespace ForiverEngine
 						lookInput = lookInput.Normed() * LookInputLengthMax;
 				}
 
-				const Quaternion rotationAmount =
-					Quaternion::FromAxisAngle(Vector3::Up(), lookInput.x * LookSensitivityH * DegToRad * deltaSeconds) *
-					Quaternion::FromAxisAngle(transform.GetRight(), lookInput.y * LookSensitivityV * DegToRad * deltaSeconds);
+				// Yaw (左右回転), Pitch (上下回転) を計算する
+				// 回転を制限したいので、それぞれの軸で別個に管理する
+				static float yaw = 0.0f; // ラジアン
+				static float pitch = 0.0f; // ラジアン
+				yaw += lookInput.x * LookSensitivityH * DegToRad * deltaSeconds;
+				pitch += lookInput.y * LookSensitivityV * DegToRad * deltaSeconds;
+				pitch = std::clamp(pitch, -LookPitchMax, LookPitchMax); // Pitch のみ、回転を制限する
 
-				// TODO: 回転制限の計算を、もっと丁寧にやりたい!
-				const Quaternion newRotation = rotationAmount * transform.rotation;
-				if (std::abs((newRotation * Vector3::Forward()).y) < 0.998f) // 上下回転を制限 (前方向ベクトルのy成分で判定)
-					transform.rotation = newRotation;
+				// 回転値を計算
+				// Pitch は"ローカル"x軸周りに回転させたいので、回転の順番はこうでなくてはならない!
+				const Quaternion rotation =
+					Quaternion::FromAxisAngle(Vector3::Up(), yaw) *
+					Quaternion::FromAxisAngle(Vector3::Right(), pitch);
+				transform.rotation = rotation;
 			}
 
 			// 移動
