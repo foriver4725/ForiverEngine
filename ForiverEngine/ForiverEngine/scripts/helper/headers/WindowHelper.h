@@ -85,6 +85,12 @@ namespace ForiverEngine
 		static HWND CreateTheWindow(const std::wstring& className, const std::wstring& title, const Lattice2& size);
 
 		/// <summary>
+		/// <para>Raw Input デバイス (マウス用) を登録する</para>
+		/// <para>成功したら true, 失敗したら false を返す</para>
+		/// </summary>
+		static bool RegisterRawInput(HWND hwnd);
+
+		/// <summary>
 		/// <para>ウィンドウプロシージャの内部実装</para>
 		/// </summary>
 		static LRESULT OnWindowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);

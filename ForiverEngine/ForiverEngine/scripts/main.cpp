@@ -385,6 +385,7 @@ int Main(hInstance)
 				textUIDataRows.emplace_back(DebugText::DrawChunksRange(chunksManager), DebugText::Color);
 				textUIDataRows.emplace_back(DebugText::CollisionRange(playerController), DebugText::Color);
 				textUIDataRows.emplace_back(DebugText::FloorCeilHeight(playerController, chunksManager), DebugText::Color);
+				textUIDataRows.emplace_back(std::format("{}", ToString(InputHelper::GetMouseDelta())), DebugText::Color);
 
 				// 本体のデータを更新
 				textUIData.ClearAll();

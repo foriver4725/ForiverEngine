@@ -60,8 +60,7 @@ namespace ForiverEngine
 	// Key 列挙型の値をインデックスにして使う
 	inline std::array<KeyInfo, static_cast<std::size_t>(Key::Count)> KeyTable = {};
 
-	// マウスの移動を記録する変数
-	inline Lattice2 MousePosition = Lattice2::Zero();
+	inline Vector2 MouseDelta = Vector2::Zero();
 
 	class InputHelper final
 	{
@@ -91,9 +90,10 @@ namespace ForiverEngine
 		static void OnReleased(Key key);
 
 		/// <summary>
-		/// <para>ウィンドウプロシージャ内で、WM_MOUSEMOVE メッセージを受け取ったときに呼び出すこと</para>
+		/// <para>ウィンドウプロシージャ内で、WM_INPUT メッセージを受け取ったとき、</para>
+		/// <para>マウスの相対移動量を算出して呼び出すこと</para>
 		/// </summary>
-		static void OnMouseMove(const Lattice2& position);
+		static void OnMouseDelta(const Lattice2& delta);
 
 		/// <summary>
 		/// <para>仮想キーコード (WPARAM) を Key 列挙型に変換して返す</para>
@@ -106,9 +106,9 @@ namespace ForiverEngine
 		static KeyInfo GetKeyInfo(Key key);
 
 		/// <summary>
-		/// <para>マウスの現在位置を取得する</para>
+		/// <para>マウスの移動量を返す</para>
 		/// </summary>
-		static Lattice2 GetMousePosition();
+		static Vector2 GetMouseDelta();
 
 		/// <summary>
 		/// <para>複数のキーを1つの1D入力として扱う</para>

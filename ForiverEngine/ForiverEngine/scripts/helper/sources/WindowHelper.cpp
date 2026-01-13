@@ -37,6 +37,9 @@ namespace ForiverEngine
 
 		const HWND hwnd = ForiverEngine::WindowHelper::CreateTheWindow(WindowName, WindowName, windowSize);
 
+		if (!RegisterRawInput(hwnd))
+			ShowError(L"Raw Input デバイス (マウス用) の登録に失敗しました");
+
 		ForiverEngine::InputHelper::InitKeyTable();
 		ForiverEngine::WindowHelper::InitTime();
 
@@ -89,6 +92,19 @@ namespace ForiverEngine
 
 		return CreateWindowW(className.c_str(), title.c_str(), WS_OVERLAPPEDWINDOW | WS_VISIBLE,
 			x, y, size.x, size.y, nullptr, nullptr, nullptr, nullptr);
+	}
+
+	bool WindowHelper::RegisterRawInput(HWND hwnd)
+	{
+		const RAWINPUTDEVICE device =
+		{
+			.usUsagePage = 0x01, // 普通のデスクトップ
+			.usUsage = 0x02, // マウス
+			.dwFlags = RIDEV_INPUTSINK,
+			.hwndTarget = hwnd
+		};
+
+		return RegisterRawInputDevices(&device, 1, sizeof(device));
 	}
 
 	LRESULT WindowHelper::OnWindowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
@@ -151,15 +167,28 @@ namespace ForiverEngine
 			return 0;
 		}
 
-		// マウス移動
-		case WM_MOUSEMOVE:
+		// マウス移動 (Raw 入力)
+		case WM_INPUT:
 		{
-			const int x = GET_X_LPARAM(lparam);
-			const int y = GET_Y_LPARAM(lparam);
-			const Lattice2 position = Lattice2(x, y);
+			// 入力のデータを取得
 
-			if (position != GetScreenCenter(hwnd))
-				InputHelper::OnMouseMove(position);
+			UINT size = 0;
+			GetRawInputData((HRAWINPUT)lparam, RID_INPUT, nullptr, &size, sizeof(RAWINPUTHEADER));
+
+			std::vector<std::uint8_t> buffer(size);
+			GetRawInputData((HRAWINPUT)lparam, RID_INPUT, buffer.data(), &size, sizeof(RAWINPUTHEADER));
+
+			RAWINPUT* raw = reinterpret_cast<RAWINPUT*>(buffer.data());
+
+			// 入力のデータを取得できた
+
+			if (raw->header.dwType == RIM_TYPEMOUSE)
+			{
+				int dx = static_cast<int>(raw->data.mouse.lLastX);
+				int dy = static_cast<int>(raw->data.mouse.lLastY);
+
+				InputHelper::OnMouseDelta({ dx, dy });
+			}
 
 			return 0;
 		}

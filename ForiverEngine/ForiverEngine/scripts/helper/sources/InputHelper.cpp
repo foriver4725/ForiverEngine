@@ -16,6 +16,8 @@ namespace ForiverEngine
 			keyInfo.pressedNow = false;
 			keyInfo.releasedNow = false;
 		}
+
+		MouseDelta = Vector2::Zero();
 	}
 
 	void InputHelper::OnPressed(Key key)
@@ -40,9 +42,9 @@ namespace ForiverEngine
 		}
 	}
 
-	void InputHelper::OnMouseMove(const Lattice2& position)
+	void InputHelper::OnMouseDelta(const Lattice2& delta)
 	{
-		MousePosition = position;
+		MouseDelta += Vector2(delta);
 	}
 
 	Key InputHelper::ConvertVKToKey(WPARAM wparam, LPARAM lparam)
@@ -173,9 +175,9 @@ namespace ForiverEngine
 		return KeyTable[static_cast<KeyEnumInt>(key)];
 	}
 
-	Lattice2 InputHelper::GetMousePosition()
+	Vector2 InputHelper::GetMouseDelta()
 	{
-		return MousePosition;
+		return MouseDelta;
 	}
 
 	float InputHelper::GetAsAxis1D(Key positiveKey, Key negativeKey)
