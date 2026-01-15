@@ -11,8 +11,6 @@ namespace ForiverEngine
 	public:
 		DELETE_DEFAULT_METHODS(DebugText);
 
-		static constexpr Color Color = Color::White();
-
 		static std::string FrameTime(double frameTime)
 		{
 			return std::format(
@@ -31,13 +29,19 @@ namespace ForiverEngine
 			);
 		}
 
-		static std::string LookAtPosition(bool isLooking, const Lattice3& lookingBlockPosition, const Lattice3& lookingBlockFaceNormal)
+		struct LookAtInfo
 		{
-			if (isLooking)
+			bool isLooking;
+			Lattice3 lookingBlockWorldPosition;
+			Lattice3 lookingBlockFaceNormal;
+		};
+		static std::string LookAtPosition(const LookAtInfo& lookAtInfo)
+		{
+			if (lookAtInfo.isLooking)
 				return std::format(
 					"LookAt : {} (Face={})",
-					ToString(lookingBlockPosition),
-					ToString(lookingBlockFaceNormal)
+					ToString(lookAtInfo.lookingBlockWorldPosition),
+					ToString(lookAtInfo.lookingBlockFaceNormal)
 				);
 			else
 				return "LookAt : None (Face=None)";

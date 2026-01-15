@@ -227,6 +227,7 @@
     <ClInclude Include="scripts\gameFlow\ChunksManager.h" />
     <ClInclude Include="scripts\gameFlow\DebugFrameTimeStats.h" />
     <ClInclude Include="scripts\gameFlow\DebugText.h" />
+    <ClInclude Include="scripts\gameFlow\DebugTextDisplayer.h" />
     <ClInclude Include="scripts\gameFlow\Include.h" />
     <ClInclude Include="scripts\gameFlow\PlayerControl.h" />
     <ClInclude Include="scripts\gameFlow\Chunk.h" />

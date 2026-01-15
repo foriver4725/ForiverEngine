@@ -8,3 +8,4 @@
 #include "./SunCamera.h"
 #include "./DebugFrameTimeStats.h"
 #include "./DebugText.h"
+#include "./DebugTextDisplayer.h"

@@ -283,48 +283,23 @@ int Main(hInstance)
 			}
 		}
 
-		// テキストの更新
+		// デバッグテキスト
 		{
-			static bool hasInitializedData = false;
-			// 画面に出すテキスト. 1行ごとに文字を保存
-			static std::vector<std::pair<std::string, Color>> textUIDataRows = {};
-
-			if (!hasInitializedData)
-			{
-				hasInitializedData = true;
-				textUIDataRows.reserve(32);
-			}
-			textUIDataRows.clear();
-
 			static DebugFrameTimeStats frameTimeStats = DebugFrameTimeStats(16);
 			frameTimeStats.Record(WindowHelper::GetDeltaMilliseconds());
 
-			textUIDataRows.emplace_back(DebugText::FrameTime(frameTimeStats.CalculateMean()), DebugText::Color);
-			textUIDataRows.emplace_back(DebugText::Position(playerController), DebugText::Color);
-			textUIDataRows.emplace_back(DebugText::LookAtPosition(
-				cb1VirtualPtr->IsSelectingBlock == 1,
-				cb1VirtualPtr->SelectingBlockWorldPosition,
-				lookingBlockFaceNormal), DebugText::Color
+			static DebugTextDisplayer debugTextDisplayer{};
+			debugTextDisplayer.UpdateData(
+				textRenderer,
+				device, commandList, commandQueue, commandAllocator,
+				playerController, chunksManager,
+				frameTimeStats,
+				{
+					.isLooking = cb1VirtualPtr->IsSelectingBlock == 1,
+					.lookingBlockWorldPosition = cb1VirtualPtr->SelectingBlockWorldPosition,
+					.lookingBlockFaceNormal = lookingBlockFaceNormal
+				}
 			);
-			textUIDataRows.emplace_back(DebugText::ChunkIndex(playerController), DebugText::Color);
-			textUIDataRows.emplace_back(DebugText::ChunkLocalPosition(playerController), DebugText::Color);
-			textUIDataRows.emplace_back(DebugText::DrawChunksRange(chunksManager), DebugText::Color);
-			textUIDataRows.emplace_back(DebugText::CollisionRange(playerController), DebugText::Color);
-			textUIDataRows.emplace_back(DebugText::FloorCeilHeight(playerController, chunksManager), DebugText::Color);
-
-			// 本体のデータを更新
-			textRenderer.data.ClearAll();
-			for (int i = 0; i < static_cast<int>(textUIDataRows.size()); ++i)
-			{
-				const auto& textUIDataRow = textUIDataRows[i];
-				const std::string& text = textUIDataRow.first;
-				const Color& color = textUIDataRow.second;
-
-				textRenderer.data.SetTexts(Lattice2(1, i + 1), text, color);
-			}
-
-			// GPU にも反映させる
-			textRenderer.UpdateDataAtGPU(device, commandList, commandQueue, commandAllocator);
 		}
 
 		// 太陽カメラの位置を、プレイヤーの頭上らへんにする
@@ -334,6 +309,8 @@ int Main(hInstance)
 			cb0VirtualPtr->DirectionalLight_Matrix_VP = sunCamera.CalculateVPMatrix();
 			cb0ShadowVirtualPtr->Matrix_MVP = sunCamera.CalculateVPMatrix() * terrainTransform.CalculateModelMatrix();
 		}
+
+
 
 		const int currentBackRTIndex = D3D12Helper::GetCurrentBackRTIndex(swapChain);
 		const GraphicsBuffer currentBackRT = rtGetter(currentBackRTIndex);

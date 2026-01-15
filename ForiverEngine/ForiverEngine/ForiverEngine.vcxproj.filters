@@ -281,6 +281,9 @@
     <ClInclude Include="scripts\gameFlow\DebugFrameTimeStats.h">
       <Filter>scripts\gameFlow</Filter>
     </ClInclude>
+    <ClInclude Include="scripts\gameFlow\DebugTextDisplayer.h">
+      <Filter>scripts\gameFlow</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shaders\Basic.hlsl">
