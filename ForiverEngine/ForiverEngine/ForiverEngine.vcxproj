@@ -212,6 +212,7 @@
     <ClInclude Include="scripts\common\Utils\HeapMultiDimAllocator.h" />
     <ClInclude Include="scripts\common\Utils\Include.h" />
     <ClInclude Include="scripts\common\Utils\StringUtils.h" />
+    <ClInclude Include="scripts\component\D3D12Utils.h" />
     <ClInclude Include="scripts\component\Include.h" />
     <ClInclude Include="scripts\component\Mesh\IMesh.h" />
     <ClInclude Include="scripts\component\Mesh\Include.h" />
@@ -224,13 +225,15 @@
     <ClInclude Include="scripts\component\Transform\Include.h" />
     <ClInclude Include="scripts\component\Transform\Transform.h" />
     <ClInclude Include="scripts\gameFlow\ChunksManager.h" />
-    <ClInclude Include="scripts\gameFlow\D3D12BasicFlow.h" />
     <ClInclude Include="scripts\gameFlow\DebugText.h" />
     <ClInclude Include="scripts\gameFlow\Include.h" />
-    <ClInclude Include="scripts\gameFlow\OffscreenRenderer.h" />
     <ClInclude Include="scripts\gameFlow\PlayerControl.h" />
     <ClInclude Include="scripts\gameFlow\Chunk.h" />
     <ClInclude Include="scripts\gameFlow\PlayerController.h" />
+    <ClInclude Include="scripts\gameFlow\Renderer\Include.h" />
+    <ClInclude Include="scripts\gameFlow\Renderer\AOffscreenRenderer.h" />
+    <ClInclude Include="scripts\gameFlow\Renderer\PostProcessRenderer.h" />
+    <ClInclude Include="scripts\gameFlow\Renderer\TextRenderer.h" />
     <ClInclude Include="scripts\gameFlow\SunCamera.h" />
     <ClInclude Include="scripts\helper\headers\D3D12Defines.h" />
     <ClInclude Include="scripts\helper\headers\D3D12Helper.h" />

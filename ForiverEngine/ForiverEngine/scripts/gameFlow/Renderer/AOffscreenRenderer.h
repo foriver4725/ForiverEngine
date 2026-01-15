@@ -3,31 +3,29 @@
 #include <scripts/common/Include.h>
 #include <scripts/helper/Include.h>
 #include <scripts/component/Include.h>
-#include "./D3D12BasicFlow.h"
 
 namespace ForiverEngine
 {
-	class OffscreenRenderer
+	/// <summary>
+	/// <para>オフスクリーンレンダラー (抽象クラス)</para>
+	/// <para>RT を SR としても使うことができる</para>
+	/// </summary>
+	class AOffscreenRenderer
 	{
 	public:
-		/// <summary>
-		/// <para>オフスクリーンレンダラーを作成する</para>
-		/// <para>RT, SR 両方に使えるバッファを一つ作成し、それを t0 にバインドする</para>
-		/// <para>cbData, srTextures はそれぞれ b0, t1~ にバインドされる</para>
-		/// <para>CB は1つのみ設定可能</para>
-		/// </summary>
-		template<typename TCBData>
-			requires (!std::same_as<std::decay_t<TCBData>, OffscreenRenderer>)
-		explicit OffscreenRenderer(
-			const Device& device,
-			const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator,
-			const Lattice2& windowSize,
-			const std::string& shaderFilePath,
-			const TCBData& cbData, const std::vector<Texture>& srTextures
+		virtual ~AOffscreenRenderer() = default;
+
+		// <para>初期化. 描画に必要なオブジェクトを作成する</para>
+		// <para>使い方の例としては、基底クラスのコンストラクタで CB, SR 群などを作成し、そのコンストラクタの最後でこの Init() を呼び出すとか</para>
+		void Init(
+			const Device& device, const Lattice2& windowSize,
+			const std::vector<GraphicsBuffer>& cbs,                     // 順に b0~ にバインドされる
+			const std::vector<std::pair<GraphicsBuffer, Texture>>& srs, // 順に t1~ にバインドされる (t0 は RT/SR 用)
+			const std::string& shaderFilePath
 		)
 		{
-			cbCount = 1;
-			srCount = static_cast<int>(srTextures.size());
+			cbCount = static_cast<int>(cbs.size());
+			srCount = static_cast<int>(srs.size());
 
 			// RT,SR となるバッファを作成
 			const Texture rtMetadata = Texture::CreateManually({}, windowSize, Format::RGBA_U8_01);
@@ -37,36 +35,21 @@ namespace ForiverEngine
 			// RootSignature, PipelineState
 			const RootParameter rootParameter = RootParameter::CreateBasic(cbCount, srCount + 1);
 			const SamplerConfig samplerConfig = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
-			const auto [shaderVS, shaderPS] = D3D12BasicFlow::CompileShader_VS_PS(shaderFilePath);
-			std::tie(rootSignature, pipelineState) = D3D12BasicFlow::CreateRootSignatureAndGraphicsPipelineState(
+			const auto [shaderVS, shaderPS] = D3D12Utils::CompileShader_VS_PS(shaderFilePath);
+			std::tie(rootSignature, pipelineState) = D3D12Utils::CreateRootSignatureAndGraphicsPipelineState(
 				device, rootParameter, samplerConfig, shaderVS, shaderPS, VertexLayoutsQuad, FillMode::Solid, CullMode::Back, false);
 
 			// RTVのみ作成
-			rtv = D3D12BasicFlow::InitRTV(device, rt, Format::RGBA_U8_01);
+			rtv = D3D12Utils::InitRTV(device, rt, Format::RGBA_U8_01);
 			dsv_Dummy = DescriptorHandleAtCPU{ .ptr = NULL };
 
 			// メッシュ
 			mesh = MeshQuad::CreateFullSized();
 			// VBV, IBV
-			meshViews = D3D12BasicFlow::CreateMeshViews(device, mesh);
-
-			// CB
-			const GraphicsBuffer cb = D3D12BasicFlow::InitCBVBuffer(device, cbData);
-			const std::vector<GraphicsBuffer> cbs = { cb };
-
-			// SR
-			std::vector<std::pair<GraphicsBuffer, Texture>> srs = {};
-			srs.reserve(srCount + 1);
-			srs.push_back({ rt, rtMetadata }); // RT,SR 用バッファを t0 に設定
-			for (const Texture& srTexture : srTextures)
-			{
-				const GraphicsBuffer sr = D3D12BasicFlow::InitSRVBuffer(
-					device, commandList, commandQueue, commandAllocator, srTexture);
-				srs.push_back({ sr, srTexture });
-			}
+			std::tie(vbv, ibv) = D3D12Utils::CreateMeshViews(device, mesh);
 
 			// DescriptorHeap
-			descriptorHeapBasic = D3D12BasicFlow::InitDescriptorHeapBasic(device, cbs, srs);
+			descriptorHeapBasic = D3D12Utils::InitDescriptorHeapBasic(device, cbs, srs);
 		}
 
 		const GraphicsBuffer& GetRT() const
@@ -87,7 +70,7 @@ namespace ForiverEngine
 			const Texture& texture, ShaderRegister shaderRegister
 		)
 		{
-			const GraphicsBuffer sr = D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue, commandAllocator, texture);
+			const GraphicsBuffer sr = D3D12Utils::InitSR(device, commandList, commandQueue, commandAllocator, texture);
 			D3D12Helper::CreateSRVAndRegistToDescriptorHeap(device, descriptorHeapBasic, sr,
 				static_cast<int>(shaderRegister) + cbCount, texture);
 		}
@@ -107,10 +90,10 @@ namespace ForiverEngine
 			const ViewportScissorRect& viewportScissorRect
 		) const
 		{
-			D3D12BasicFlow::Draw(
+			D3D12Utils::Draw(
 				commandList, commandQueue, commandAllocator, device,
 				rootSignature, pipelineState, rt,
-				rtv, dsv_Dummy, descriptorHeapBasic, { meshViews.vbv }, { meshViews.ibv },
+				rtv, dsv_Dummy, descriptorHeapBasic, { vbv }, { ibv },
 				GraphicsBufferState::Present, GraphicsBufferState::RenderTarget,
 				viewportScissorRect, PrimitiveTopology::TriangleList, Color::Transparent(), DepthBufferClearValue,
 				{ static_cast<int>(mesh.indices.size()) }
@@ -125,7 +108,8 @@ namespace ForiverEngine
 		DescriptorHandleAtCPU dsv_Dummy;
 		DescriptorHeap descriptorHeapBasic;
 		MeshQuad mesh;
-		MeshViews meshViews;
+		VertexBufferView vbv;
+		IndexBufferView ibv;
 
 		int cbCount;
 		int srCount; // 実際は RT,SR 用のバッファも追加で1つある

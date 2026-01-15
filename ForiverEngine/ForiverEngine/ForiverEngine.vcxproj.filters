@@ -105,6 +105,9 @@
     <Filter Include="scripts\test">
       <UniqueIdentifier>{b394b368-17b2-4a50-8031-7b9a5fb6adea}</UniqueIdentifier>
     </Filter>
+    <Filter Include="scripts\gameFlow\Renderer">
+      <UniqueIdentifier>{d0d1dd32-74c3-43be-803d-7a8766324c8b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="oss\SimplexNoise.h">
@@ -172,9 +175,6 @@
     </ClInclude>
     <ClInclude Include="scripts\component\Mesh\MeshQuad.h">
       <Filter>scripts\component\Mesh</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\gameFlow\D3D12BasicFlow.h">
-      <Filter>scripts\gameFlow</Filter>
     </ClInclude>
     <ClInclude Include="scripts\gameFlow\Include.h">
       <Filter>scripts\gameFlow</Filter>
@@ -257,14 +257,26 @@
     <ClInclude Include="scripts\gameFlow\PlayerController.h">
       <Filter>scripts\gameFlow</Filter>
     </ClInclude>
-    <ClInclude Include="scripts\gameFlow\OffscreenRenderer.h">
-      <Filter>scripts\gameFlow</Filter>
-    </ClInclude>
     <ClInclude Include="scripts\gameFlow\SunCamera.h">
       <Filter>scripts\gameFlow</Filter>
     </ClInclude>
     <ClInclude Include="scripts\gameFlow\DebugText.h">
       <Filter>scripts\gameFlow</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\gameFlow\Renderer\PostProcessRenderer.h">
+      <Filter>scripts\gameFlow\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\gameFlow\Renderer\Include.h">
+      <Filter>scripts\gameFlow\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\gameFlow\Renderer\AOffscreenRenderer.h">
+      <Filter>scripts\gameFlow\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\component\D3D12Utils.h">
+      <Filter>scripts\component</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\gameFlow\Renderer\TextRenderer.h">
+      <Filter>scripts\gameFlow\Renderer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

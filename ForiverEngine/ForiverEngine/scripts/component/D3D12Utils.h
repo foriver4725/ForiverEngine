@@ -2,14 +2,14 @@
 
 #include <scripts/common/Include.h>
 #include <scripts/helper/Include.h>
-#include <scripts/component/Include.h>
+#include "Mesh/IMesh.h"
 
 namespace ForiverEngine
 {
-	class D3D12BasicFlow final
+	class D3D12Utils final
 	{
 	public:
-		DELETE_DEFAULT_METHODS(D3D12BasicFlow);
+		DELETE_DEFAULT_METHODS(D3D12Utils);
 
 		// 途中で処理が失敗しても、エラーを出すだけでそのまま続行する
 
@@ -45,39 +45,6 @@ namespace ForiverEngine
 		}
 
 		/// <summary>
-		/// メッシュから VBV, IBV を作成して返す
-		/// </summary>
-		template<typename TVertexData>
-		static MeshViews CreateMeshViews(const Device& device, const IMesh<TVertexData>& mesh)
-		{
-			const std::vector<TVertexData>& vertices = mesh.GetVertices();           // メッシュのプロパティ
-			const TVertexData* verticesPtr = vertices.data();                        // 先頭ポインタ
-			const int vertexSize = static_cast<int>(sizeof(vertices[0]));            // 要素1つ分のメモリサイズ
-			const int verticesSize = static_cast<int>(vertices.size() * vertexSize); // 全体のメモリサイズ
-
-			const std::vector<std::uint32_t>& indices = mesh.GetIndices();           // メッシュのプロパティ
-			const std::uint32_t* indicesPtr = indices.data();                        // 先頭ポインタ
-			const int indexSize = static_cast<int>(sizeof(indices[0]));              // 要素1つ分のメモリサイズ
-			const int indicesSize = static_cast<int>(indices.size() * indexSize);    // 全体のメモリサイズ
-
-			const GraphicsBuffer vb = D3D12Helper::CreateGraphicsBuffer1D(device, verticesSize, true);
-			if (!vb)
-				ShowError(L"頂点バッファーの作成に失敗しました");
-			if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer1D(vb, static_cast<const void*>(verticesPtr), verticesSize))
-				ShowError(L"頂点バッファーを GPU 側にコピーすることに失敗しました");
-			const VertexBufferView vbv = D3D12Helper::CreateVertexBufferView(vb, verticesSize, vertexSize);
-
-			const GraphicsBuffer ib = D3D12Helper::CreateGraphicsBuffer1D(device, indicesSize, true);
-			if (!ib)
-				ShowError(L"インデックスバッファーの作成に失敗しました");
-			if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer1D(ib, static_cast<const void*>(indicesPtr), indicesSize))
-				ShowError(L"インデックスバッファーを GPU 側にコピーすることに失敗しました");
-			const IndexBufferView ibv = D3D12Helper::CreateIndexBufferView(ib, indicesSize, Format::R_U32);
-
-			return { vbv, ibv };
-		}
-
-		/// <summary>
 		/// シェーダーをロードして、頂点シェーダーとピクセルシェーダーにコンパイルする
 		/// </summary>
 		static std::tuple<Blob, Blob> CompileShader_VS_PS(const std::string& path)
@@ -96,6 +63,65 @@ namespace ForiverEngine
 				ShowError(errorMessage);
 
 			return { vs, ps };
+		}
+
+		/// <summary>
+		/// <para>テクスチャをロードする</para>
+		/// <para>パスが1つなら2Dテクスチャとして、複数あるなら2Dテクスチャ配列としてロードする</para>
+		/// </summary>
+		static Texture LoadTexture(const std::vector<std::string>& paths)
+		{
+			Texture texture = Texture();
+
+			if (paths.empty())
+				ShowError(L"テクスチャ(群)のパスが空です");
+			if (paths.size() <= 1)
+				texture = D3D12Helper::LoadAsTexture(paths[0]);
+			else
+				texture = D3D12Helper::LoadAsTextureArray(paths);
+			if (!texture.IsValid())
+				ShowError(L"テクスチャ(群)のロードに失敗しました");
+
+			return texture;
+		}
+
+		/// <summary>
+		/// <para>テクスチャデータを GPU 側にアップロードする</para>
+		/// <para>内部で中間バッファを作成し、転送する</para>
+		/// </summary>
+		static void UploadTextureToGPU
+		(
+			const CommandList& commandList,
+			const CommandQueue& commandQueue,
+			const CommandAllocator& commandAllocator,
+			const Device& device,
+			const GraphicsBuffer& textureBuffer,
+			const Texture& textureAsMetadata
+		)
+		{
+			const GraphicsBuffer intermediateBuffer = D3D12Helper::CreateGraphicsBuffer1D(
+				device,
+				static_cast<int>(
+					GetAlignmentedSize(textureAsMetadata.rowSize, Texture::RowSizeAlignment)
+					* textureAsMetadata.height
+					* textureAsMetadata.sliceCount
+					),
+				true
+			);
+			if (!intermediateBuffer)
+				ShowError(L"テクスチャ転送用中間バッファの作成に失敗しました");
+
+			if (!D3D12Helper::CommandCopyDataFromCPUToGPUThroughGraphicsBufferTexture2D(
+				commandList, intermediateBuffer, textureBuffer, textureAsMetadata))
+				ShowError(L"テクスチャデータを GPU 側にコピーするコマンドの発行に失敗しました");
+
+			D3D12Helper::CommandInvokeResourceBarrierAsTransition(commandList, textureBuffer,
+				GraphicsBufferState::CopyDestination, GraphicsBufferState::PixelShaderResource, false);
+
+			D3D12Utils::CommandCloseAndWaitForCompletion(commandList, commandQueue, device);
+			// コマンドを実行し終わってから、クリアする
+			if (!D3D12Helper::ClearCommandAllocatorAndList(commandAllocator, commandList))
+				ShowError(L"CommandAllocator, CommandList のクリアに失敗しました");
 		}
 
 		/// <summary>
@@ -128,14 +154,13 @@ namespace ForiverEngine
 		}
 
 		/// <summary>
-		/// <para>GraphicsBuffer を作成して、任意の値を GPU にアップロードする</para>
+		/// <para>GraphicsBuffer (CB) を作成して、任意の値を GPU にアップロードする</para>
 		/// <para>outBufferVirtualPtr にポインタを渡すと、処理終了時にアンマップしない</para>
 		/// <para>従って、outBufferVirtualPtr に対して CPU 側で変更した値が、動的に CB に反映されるようになる</para>
-		/// <para>作成したバッファを返す</para>
-		/// <para>CBV を作る用のバッファ</para>
+		/// <para>作成した CB を返す</para>
 		/// </summary>
 		template<typename TCBData>
-		static GraphicsBuffer InitCBVBuffer(const Device& device, const TCBData& data, TCBData** outBufferVirtualPtr = nullptr)
+		static GraphicsBuffer InitCB(const Device& device, const TCBData& data, TCBData** outBufferVirtualPtr = nullptr)
 		{
 			if (outBufferVirtualPtr)
 				*outBufferVirtualPtr = nullptr;
@@ -153,33 +178,12 @@ namespace ForiverEngine
 		}
 
 		/// <summary>
-		/// <para>テクスチャをロードする</para>
-		/// <para>パスが1つなら2Dテクスチャとして、複数あるなら2Dテクスチャ配列としてロードする</para>
-		/// </summary>
-		static Texture LoadTexture(const std::vector<std::string>& paths)
-		{
-			Texture texture = Texture();
-
-			if (paths.empty())
-				ShowError(L"テクスチャ(群)のパスが空です");
-			if (paths.size() <= 1)
-				texture = D3D12Helper::LoadAsTexture(paths[0]);
-			else
-				texture = D3D12Helper::LoadAsTextureArray(paths);
-			if (!texture.IsValid())
-				ShowError(L"テクスチャ(群)のロードに失敗しました");
-
-			return texture;
-		}
-
-		/// <summary>
-		/// <para>GraphicsBuffer を作成して、テクスチャデータを GPU にアップロードする</para>
+		/// <para>GraphicsBuffer (SR) を作成して、テクスチャデータを GPU にアップロードする</para>
 		/// <para>テクスチャを手動で与える (2Dテクスチャ or 2Dテクスチャ配列)</para>
 		/// <para>テクスチャの種類が 2D でない場合は、失敗させる</para>
-		/// <para>作成したバッファを返す</para>
-		/// <para>SRV を作る用のバッファ</para>
+		/// <para>作成した SR を返す</para>
 		/// </summary>
-		static GraphicsBuffer InitSRVBuffer(
+		static GraphicsBuffer InitSR(
 			const Device& device,
 			const CommandList& commandList,
 			const CommandQueue& commandQueue,
@@ -192,7 +196,7 @@ namespace ForiverEngine
 			if (!textureBuffer)
 				ShowError(L"テクスチャ(配列)バッファの作成に失敗しました");
 
-			D3D12BasicFlow::UploadTextureToGPU(commandList, commandQueue, commandAllocator, device, textureBuffer, texture);
+			D3D12Utils::UploadTextureToGPU(commandList, commandQueue, commandAllocator, device, textureBuffer, texture);
 
 			return textureBuffer;
 		}
@@ -231,6 +235,39 @@ namespace ForiverEngine
 			}
 
 			return descriptorHeapBasic;
+		}
+
+		/// <summary>
+		/// メッシュから VBV, IBV を作成して返す
+		/// </summary>
+		template<typename TVertexData>
+		static std::pair<VertexBufferView, IndexBufferView> CreateMeshViews(const Device& device, const IMesh<TVertexData>& mesh)
+		{
+			const std::vector<TVertexData>& vertices = mesh.GetVertices();           // メッシュのプロパティ
+			const TVertexData* verticesPtr = vertices.data();                        // 先頭ポインタ
+			const int vertexSize = static_cast<int>(sizeof(vertices[0]));            // 要素1つ分のメモリサイズ
+			const int verticesSize = static_cast<int>(vertices.size() * vertexSize); // 全体のメモリサイズ
+
+			const std::vector<std::uint32_t>& indices = mesh.GetIndices();           // メッシュのプロパティ
+			const std::uint32_t* indicesPtr = indices.data();                        // 先頭ポインタ
+			const int indexSize = static_cast<int>(sizeof(indices[0]));              // 要素1つ分のメモリサイズ
+			const int indicesSize = static_cast<int>(indices.size() * indexSize);    // 全体のメモリサイズ
+
+			const GraphicsBuffer vb = D3D12Helper::CreateGraphicsBuffer1D(device, verticesSize, true);
+			if (!vb)
+				ShowError(L"頂点バッファーの作成に失敗しました");
+			if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer1D(vb, static_cast<const void*>(verticesPtr), verticesSize))
+				ShowError(L"頂点バッファーを GPU 側にコピーすることに失敗しました");
+			const VertexBufferView vbv = D3D12Helper::CreateVertexBufferView(vb, verticesSize, vertexSize);
+
+			const GraphicsBuffer ib = D3D12Helper::CreateGraphicsBuffer1D(device, indicesSize, true);
+			if (!ib)
+				ShowError(L"インデックスバッファーの作成に失敗しました");
+			if (!D3D12Helper::CopyDataFromCPUToGPUThroughGraphicsBuffer1D(ib, static_cast<const void*>(indicesPtr), indicesSize))
+				ShowError(L"インデックスバッファーを GPU 側にコピーすることに失敗しました");
+			const IndexBufferView ibv = D3D12Helper::CreateIndexBufferView(ib, indicesSize, Format::R_U32);
+
+			return { vbv, ibv };
 		}
 
 		/// <summary>
@@ -319,45 +356,6 @@ namespace ForiverEngine
 		}
 
 		/// <summary>
-		/// <para>テクスチャデータを GPU 側にアップロードする</para>
-		/// <para>内部で中間バッファを作成し、転送する</para>
-		/// </summary>
-		static void UploadTextureToGPU
-		(
-			const CommandList& commandList,
-			const CommandQueue& commandQueue,
-			const CommandAllocator& commandAllocator,
-			const Device& device,
-			const GraphicsBuffer& textureBuffer,
-			const Texture& textureAsMetadata
-		)
-		{
-			const GraphicsBuffer intermediateBuffer = D3D12Helper::CreateGraphicsBuffer1D(
-				device,
-				static_cast<int>(
-					GetAlignmentedSize(textureAsMetadata.rowSize, Texture::RowSizeAlignment)
-					* textureAsMetadata.height
-					* textureAsMetadata.sliceCount
-					),
-				true
-			);
-			if (!intermediateBuffer)
-				ShowError(L"テクスチャ転送用中間バッファの作成に失敗しました");
-
-			if (!D3D12Helper::CommandCopyDataFromCPUToGPUThroughGraphicsBufferTexture2D(
-				commandList, intermediateBuffer, textureBuffer, textureAsMetadata))
-				ShowError(L"テクスチャデータを GPU 側にコピーするコマンドの発行に失敗しました");
-
-			D3D12Helper::CommandInvokeResourceBarrierAsTransition(commandList, textureBuffer,
-				GraphicsBufferState::CopyDestination, GraphicsBufferState::PixelShaderResource, false);
-
-			D3D12BasicFlow::CommandCloseAndWaitForCompletion(commandList, commandQueue, device);
-			// コマンドを実行し終わってから、クリアする
-			if (!D3D12Helper::ClearCommandAllocatorAndList(commandAllocator, commandList))
-				ShowError(L"CommandAllocator, CommandList のクリアに失敗しました");
-		}
-
-		/// <summary>
 		/// <para>[Command]</para>
 		/// <para>ドローコールを実行する</para>
 		/// <para>ループ内の、基本的なコマンド系処理を実行する</para>
@@ -441,7 +439,7 @@ namespace ForiverEngine
 			}
 			D3D12Helper::CommandInvokeResourceBarrierAsTransition(commandList, rt, rtStateInsideRender, rtStateOutsideRender, false);
 
-			D3D12BasicFlow::CommandCloseAndWaitForCompletion(commandList, commandQueue, device);
+			D3D12Utils::CommandCloseAndWaitForCompletion(commandList, commandQueue, device);
 			// コマンドを実行し終わってから、クリアする
 			if (!D3D12Helper::ClearCommandAllocatorAndList(commandAllocator, commandList))
 				ShowError(L"CommandAllocator, CommandList のクリアに失敗しました");

@@ -37,7 +37,7 @@ int Main(hInstance)
 	constexpr Color RTClearColor = Color::CreateFromUint8(60, 150, 210); // 空色
 
 	const auto [factory, device, commandAllocator, commandList, commandQueue]
-		= D3D12BasicFlow::CreateStandardObjects();
+		= D3D12Utils::CreateStandardObjects();
 
 	constexpr Transform terrainTransform = Transform::Identity();
 	PlayerController playerController = PlayerController(CameraTransform::CreatePerspective(
@@ -61,14 +61,14 @@ int Main(hInstance)
 
 	const RootParameter rootParameterShadow = RootParameter::CreateBasic(1, 1);
 	const SamplerConfig samplerConfigShadow = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
-	const auto [shaderVSShadow, shaderPSShadow] = D3D12BasicFlow::CompileShader_VS_PS("./shaders/ShadowDepthWrite.hlsl");
+	const auto [shaderVSShadow, shaderPSShadow] = D3D12Utils::CompileShader_VS_PS("./shaders/ShadowDepthWrite.hlsl");
 	const auto [rootSignatureShadow, graphicsPipelineStateShadow]
-		= D3D12BasicFlow::CreateRootSignatureAndGraphicsPipelineState(
+		= D3D12Utils::CreateRootSignatureAndGraphicsPipelineState(
 			device, rootParameterShadow, samplerConfigShadow, shaderVSShadow, shaderPSShadow, VertexLayoutsQuad, FillMode::Solid, CullMode::Back, true);
 
 	// RTV, DSV
-	const DescriptorHandleAtCPU rtvShadow = D3D12BasicFlow::InitRTV(device, shadowGraphicsBuffer, Format::R_F32);
-	const DescriptorHandleAtCPU dsvShadow = D3D12BasicFlow::InitDSV(device, ShadowRTSize);
+	const DescriptorHandleAtCPU rtvShadow = D3D12Utils::InitRTV(device, shadowGraphicsBuffer, Format::R_F32);
+	const DescriptorHandleAtCPU dsvShadow = D3D12Utils::InitDSV(device, ShadowRTSize);
 
 	// b0
 	struct alignas(256) CBData0Shadow
@@ -80,11 +80,11 @@ int Main(hInstance)
 		.Matrix_MVP = sunCamera.CalculateVPMatrix() * terrainTransform.CalculateModelMatrix(),
 	};
 	CBData0Shadow* cb0ShadowVirtualPtr = nullptr;
-	const GraphicsBuffer cb0Shadow = D3D12BasicFlow::InitCBVBuffer(device, cbData0Shadow, &cb0ShadowVirtualPtr);
+	const GraphicsBuffer cb0Shadow = D3D12Utils::InitCB(device, cbData0Shadow, &cb0ShadowVirtualPtr);
 
 	// DescriptorHeap
 	const DescriptorHeap descriptorHeapBasicShadow
-		= D3D12BasicFlow::InitDescriptorHeapBasic(device, { cb0Shadow }, { {shadowGraphicsBuffer, shadowTextureMetadata} });
+		= D3D12Utils::InitDescriptorHeapBasic(device, { cb0Shadow }, { {shadowGraphicsBuffer, shadowTextureMetadata} });
 
 	const ViewportScissorRect viewportScissorRectShadow = ViewportScissorRect::CreateFullSized(ShadowRTSize);
 
@@ -94,16 +94,16 @@ int Main(hInstance)
 
 	const RootParameter rootParameter = RootParameter::CreateBasic(2, 2);
 	const SamplerConfig samplerConfig = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
-	const auto [shaderVS, shaderPS] = D3D12BasicFlow::CompileShader_VS_PS("./shaders/Basic.hlsl");
+	const auto [shaderVS, shaderPS] = D3D12Utils::CompileShader_VS_PS("./shaders/Basic.hlsl");
 	const auto [rootSignature, graphicsPipelineState]
-		= D3D12BasicFlow::CreateRootSignatureAndGraphicsPipelineState(
+		= D3D12Utils::CreateRootSignatureAndGraphicsPipelineState(
 			device, rootParameter, samplerConfig, shaderVS, shaderPS, VertexLayouts, FillMode::Solid, CullMode::None, true);
 
 	const SwapChain swapChain = D3D12Helper::CreateSwapChain(factory, commandQueue, hwnd, WindowSize);
 	if (!swapChain)
 		ShowError(L"SwapChain の作成に失敗しました");
-	const auto [rtGetter, rtvGetter] = D3D12BasicFlow::InitRTV(device, swapChain, Format::RGBA_U8_01);
-	const DescriptorHandleAtCPU dsv = D3D12BasicFlow::InitDSV(device, WindowSize);
+	const auto [rtGetter, rtvGetter] = D3D12Utils::InitRTV(device, swapChain, Format::RGBA_U8_01);
+	const DescriptorHandleAtCPU dsv = D3D12Utils::InitDSV(device, WindowSize);
 
 	// b0
 	struct alignas(256) CBData0
@@ -154,94 +154,35 @@ int Main(hInstance)
 	// CBV 用バッファ
 	CBData0* cb0VirtualPtr = nullptr;
 	CBData1* cb1VirtualPtr = nullptr;
-	const GraphicsBuffer cb0 = D3D12BasicFlow::InitCBVBuffer(device, cbData0, &cb0VirtualPtr);
-	const GraphicsBuffer cb1 = D3D12BasicFlow::InitCBVBuffer(device, cbData1, &cb1VirtualPtr);
+	const GraphicsBuffer cb0 = D3D12Utils::InitCB(device, cbData0, &cb0VirtualPtr);
+	const GraphicsBuffer cb1 = D3D12Utils::InitCB(device, cbData1, &cb1VirtualPtr);
 
 	// SRV 用バッファ
-	const Texture textureArray = D3D12BasicFlow::LoadTexture({
+	const Texture textureArray = D3D12Utils::LoadTexture({
 			"assets/textures/air_invalid.png",
 			"assets/textures/grass_stone.png",
 			"assets/textures/dirt_sand.png",
 		});
-	const auto sr = D3D12BasicFlow::InitSRVBuffer(device, commandList, commandQueue, commandAllocator, textureArray);
+	const auto sr = D3D12Utils::InitSR(device, commandList, commandQueue, commandAllocator, textureArray);
 
 	// DescriptorHeap に登録
-	DescriptorHeap descriptorHeapBasic = D3D12BasicFlow::InitDescriptorHeapBasic(
+	DescriptorHeap descriptorHeapBasic = D3D12Utils::InitDescriptorHeapBasic(
 		device, { cb0, cb1 }, { {sr, textureArray}, {shadowGraphicsBuffer, shadowTextureMetadata} });
 
 	const ViewportScissorRect viewportScissorRect = ViewportScissorRect::CreateFullSized(WindowSize);
 
 #pragma	endregion
 
-#pragma region PostProcess (Offscreen)
-
-	// b0
-	struct alignas(256) CBData0PP
-	{
-		std::uint32_t WindowSize[2];
-		float LimitLuminance; // ピクセルがモデルの端にあると判断する輝度差の閾値 ([0.0, 1.0]. 小さいほどAAが多くかかる)
-		float AAPower; // アンチエイリアスの強さ (大きいほどAAが強くかかる)
-
-		Color PointerColor; // 画面中央のポインタの色
-		std::uint32_t PointerLength; // 画面中央のポインタの長さ (ピクセル数. 奇数前提)
-		std::uint32_t PointerWidth; // 画面中央のポインタの太さ (ピクセル数. 奇数前提)
-	};
-	const CBData0PP cbData0PP =
-	{
-		.WindowSize = { static_cast<std::uint32_t>(WindowSize.x), static_cast<std::uint32_t>(WindowSize.y) },
-		.LimitLuminance = 0.5f,
-		.AAPower = 8.0f,
-
-		.PointerColor = Color::Black(),
-		.PointerLength = 21,
-		.PointerWidth = 3,
-	};
-
-	const OffscreenRenderer offscreenRendererPP = OffscreenRenderer(
+	const PostProcessRenderer postProcessRenderer{
 		device, commandList, commandQueue, commandAllocator,
-		WindowSize,
-		"./shaders/PP.hlsl",
-		cbData0PP,
-		{}
-	);
-
-#pragma endregion
-
-#pragma region Text (Offscreen)
-
-	// テキストUIデータ
-	TextUIData textUIData = TextUIData::CreateEmpty(WindowSize / TextUIData::FontTextureTextLength);
-
-	// t1
-	const Texture fontTexture = D3D12BasicFlow::LoadTexture({ "assets/font.png" });
-	// t2
-	Texture textUIDataTexture = textUIData.CreateTexture();
-
-	// b0
-	struct alignas(256) CBData0Text
-	{
-		std::uint32_t FontTextureSize[2];
-		std::uint32_t TextUIDataSize[2];
-		std::uint32_t InvalidFontTextureIndex;
-		std::uint32_t FontTextureTextLength;
-	};
-	const CBData0Text cbData0Text = CBData0Text
-	{
-		.FontTextureSize = { static_cast<std::uint32_t>(fontTexture.width), static_cast<std::uint32_t>(fontTexture.height) },
-		.TextUIDataSize = { static_cast<std::uint32_t>(textUIData.GetDataSize().x), static_cast<std::uint32_t>(textUIData.GetDataSize().y)},
-		.InvalidFontTextureIndex = static_cast<std::uint32_t>(Text::InvalidFontTextureIndex),
-		.FontTextureTextLength = static_cast<std::uint32_t>(TextUIData::FontTextureTextLength),
+		WindowSize
 	};
 
-	OffscreenRenderer offscreenRendererText = OffscreenRenderer(
-		device, commandList, commandQueue, commandAllocator,
-		WindowSize,
-		"./shaders/Text.hlsl",
-		cbData0Text,
-		{ fontTexture, textUIDataTexture }
-	);
-
-#pragma endregion
+	// UIテキストのデータはゲーム内で変更されるため、const には出来ない (このオブジェクトが内部で保持している)
+	TextRenderer textRenderer{
+	   device, commandList, commandQueue, commandAllocator,
+	   WindowSize
+	};
 
 	while (true)
 	{
@@ -338,70 +279,65 @@ int Main(hInstance)
 
 		// テキストの更新
 		{
-			// データを更新
+			static bool hasInitializedData = false;
+			// 画面に出すテキスト. 1行ごとに文字を保存
+			static std::vector<std::pair<std::string, Color>> textUIDataRows = {};
+
+			if (!hasInitializedData)
 			{
-				static bool hasInitializedData = false;
-				// 画面に出すテキスト. 1行ごとに文字を保存
-				static std::vector<std::pair<std::string, Color>> textUIDataRows = {};
+				hasInitializedData = true;
+				textUIDataRows.reserve(32);
+			}
+			textUIDataRows.clear();
 
-				if (!hasInitializedData)
+			// フレームタイム
+			constexpr int FrameTimeTextUpdateIntervalFrames = 16; // テキストの更新間隔 (フレーム数)
+			static std::array<double, FrameTimeTextUpdateIntervalFrames> frameTimes = {};
+			static int frameTimeTextUpdateCounter = 0;
+			static double frameTimeMean = 0.0;
+			{
+				// データを保存
+				frameTimes[frameTimeTextUpdateCounter % FrameTimeTextUpdateIntervalFrames]
+					= WindowHelper::GetDeltaMilliseconds();
+
+				// 一定間隔で、平均値を更新
+				frameTimeTextUpdateCounter = (frameTimeTextUpdateCounter + 1) % FrameTimeTextUpdateIntervalFrames;
+				if (frameTimeTextUpdateCounter == 0)
 				{
-					hasInitializedData = true;
-					textUIDataRows.reserve(32);
-				}
-				textUIDataRows.clear();
+					double frameTimeSum = 0.0;
+					for (const double ft : frameTimes)
+						frameTimeSum += ft;
 
-				// フレームタイム
-				constexpr int FrameTimeTextUpdateIntervalFrames = 16; // テキストの更新間隔 (フレーム数)
-				static std::array<double, FrameTimeTextUpdateIntervalFrames> frameTimes = {};
-				static int frameTimeTextUpdateCounter = 0;
-				static double frameTimeMean = 0.0;
-				{
-					// データを保存
-					frameTimes[frameTimeTextUpdateCounter % FrameTimeTextUpdateIntervalFrames]
-						= WindowHelper::GetDeltaMilliseconds();
-
-					// 一定間隔で、平均値を更新
-					frameTimeTextUpdateCounter = (frameTimeTextUpdateCounter + 1) % FrameTimeTextUpdateIntervalFrames;
-					if (frameTimeTextUpdateCounter == 0)
-					{
-						double frameTimeSum = 0.0;
-						for (const double ft : frameTimes)
-							frameTimeSum += ft;
-
-						frameTimeMean = frameTimeSum / FrameTimeTextUpdateIntervalFrames;
-					}
-				}
-
-				textUIDataRows.emplace_back(DebugText::FrameTime(frameTimeMean), DebugText::Color);
-				textUIDataRows.emplace_back(DebugText::Position(playerController), DebugText::Color);
-				textUIDataRows.emplace_back(DebugText::LookAtPosition(
-					cb1VirtualPtr->IsSelectingBlock == 1,
-					cb1VirtualPtr->SelectingBlockWorldPosition,
-					lookingBlockFaceNormal), DebugText::Color
-				);
-				textUIDataRows.emplace_back(DebugText::ChunkIndex(playerController), DebugText::Color);
-				textUIDataRows.emplace_back(DebugText::ChunkLocalPosition(playerController), DebugText::Color);
-				textUIDataRows.emplace_back(DebugText::DrawChunksRange(chunksManager), DebugText::Color);
-				textUIDataRows.emplace_back(DebugText::CollisionRange(playerController), DebugText::Color);
-				textUIDataRows.emplace_back(DebugText::FloorCeilHeight(playerController, chunksManager), DebugText::Color);
-
-				// 本体のデータを更新
-				textUIData.ClearAll();
-				for (int i = 0; i < static_cast<int>(textUIDataRows.size()); ++i)
-				{
-					const auto& textUIDataRow = textUIDataRows[i];
-					const std::string& text = textUIDataRow.first;
-					const Color& color = textUIDataRow.second;
-
-					textUIData.SetTexts(Lattice2(1, i + 1), text, color);
+					frameTimeMean = frameTimeSum / FrameTimeTextUpdateIntervalFrames;
 				}
 			}
 
-			// バッファを再作成してアップロードし直す
-			textUIDataTexture = textUIData.CreateTexture();
-			offscreenRendererText.ReUploadTexture(device, commandList, commandQueue, commandAllocator,
-				textUIDataTexture, ShaderRegister::t2);
+			textUIDataRows.emplace_back(DebugText::FrameTime(frameTimeMean), DebugText::Color);
+			textUIDataRows.emplace_back(DebugText::Position(playerController), DebugText::Color);
+			textUIDataRows.emplace_back(DebugText::LookAtPosition(
+				cb1VirtualPtr->IsSelectingBlock == 1,
+				cb1VirtualPtr->SelectingBlockWorldPosition,
+				lookingBlockFaceNormal), DebugText::Color
+			);
+			textUIDataRows.emplace_back(DebugText::ChunkIndex(playerController), DebugText::Color);
+			textUIDataRows.emplace_back(DebugText::ChunkLocalPosition(playerController), DebugText::Color);
+			textUIDataRows.emplace_back(DebugText::DrawChunksRange(chunksManager), DebugText::Color);
+			textUIDataRows.emplace_back(DebugText::CollisionRange(playerController), DebugText::Color);
+			textUIDataRows.emplace_back(DebugText::FloorCeilHeight(playerController, chunksManager), DebugText::Color);
+
+			// 本体のデータを更新
+			textRenderer.data.ClearAll();
+			for (int i = 0; i < static_cast<int>(textUIDataRows.size()); ++i)
+			{
+				const auto& textUIDataRow = textUIDataRows[i];
+				const std::string& text = textUIDataRow.first;
+				const Color& color = textUIDataRow.second;
+
+				textRenderer.data.SetTexts(Lattice2(1, i + 1), text, color);
+			}
+
+			// GPU にも反映させる
+			textRenderer.UpdateDataAtGPU(device, commandList, commandQueue, commandAllocator);
 		}
 
 		// 太陽カメラの位置を、プレイヤーの頭上らへんにする
@@ -425,7 +361,7 @@ int Main(hInstance)
 		// 影のデプス書き込み
 		if (cb1VirtualPtr->CastShadow == 1)
 		{
-			D3D12BasicFlow::Draw(
+			D3D12Utils::Draw(
 				commandList, commandQueue, commandAllocator, device,
 				rootSignatureShadow, graphicsPipelineStateShadow, shadowGraphicsBuffer,
 				rtvShadow, dsvShadow, descriptorHeapBasicShadow, packedDrawVBVs, packedDrawIBVs,
@@ -435,25 +371,23 @@ int Main(hInstance)
 			);
 		}
 		// メインレンダリング
-		D3D12BasicFlow::Draw(
+		D3D12Utils::Draw(
 			commandList, commandQueue, commandAllocator, device,
-			rootSignature, graphicsPipelineState, offscreenRendererPP.GetRT(),
-			offscreenRendererPP.GetRTV(), dsv, descriptorHeapBasic, packedDrawVBVs, packedDrawIBVs,
+			rootSignature, graphicsPipelineState, postProcessRenderer.GetRT(),
+			postProcessRenderer.GetRTV(), dsv, descriptorHeapBasic, packedDrawVBVs, packedDrawIBVs,
 			GraphicsBufferState::PixelShaderResource, GraphicsBufferState::RenderTarget,
 			viewportScissorRect, PrimitiveTopology::TriangleList, RTClearColor, DepthBufferClearValue,
 			packedDrawMeshIndicesCounts
 		);
 		// ポストプロセス
-		offscreenRendererPP.Draw(
+		postProcessRenderer.Draw(
 			commandList, commandQueue, commandAllocator, device,
-			offscreenRendererText.GetRT(), offscreenRendererText.GetRTV(),
-			viewportScissorRect
+			textRenderer.GetRT(), textRenderer.GetRTV(), viewportScissorRect
 		);
 		// テキスト描画
-		offscreenRendererText.Draw(
+		textRenderer.Draw(
 			commandList, commandQueue, commandAllocator, device,
-			currentBackRT, currentBackRTV,
-			viewportScissorRect
+			currentBackRT, currentBackRTV, viewportScissorRect
 		);
 		if (!D3D12Helper::Present(swapChain))
 			ShowError(L"画面のフリップに失敗しました");

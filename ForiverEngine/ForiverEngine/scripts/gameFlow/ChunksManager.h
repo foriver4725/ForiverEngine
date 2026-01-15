@@ -73,9 +73,9 @@ namespace ForiverEngine
 			chunks[chunkIndex.x][chunkIndex.y].SetBlock(localBlockPosition, newBlock);
 			meshes[chunkIndex.x][chunkIndex.y] = chunks[chunkIndex.x][chunkIndex.y].CreateMesh(chunkIndex);
 
-			const MeshViews meshViews = D3D12BasicFlow::CreateMeshViews(device, meshes[chunkIndex.x][chunkIndex.y]);
-			vbvs[chunkIndex.x][chunkIndex.y] = meshViews.vbv;
-			ibvs[chunkIndex.x][chunkIndex.y] = meshViews.ibv;
+			const auto [vbv, ibv] = D3D12Utils::CreateMeshViews(device, meshes[chunkIndex.x][chunkIndex.y]);
+			vbvs[chunkIndex.x][chunkIndex.y] = vbv;
+			ibvs[chunkIndex.x][chunkIndex.y] = ibv;
 		};
 
 		/// <summary>
@@ -196,9 +196,9 @@ namespace ForiverEngine
 				!= ChunkGenerationState::FinishedParallel)
 				return;
 
-			const MeshViews meshViews = D3D12BasicFlow::CreateMeshViews(device, meshes[chunkIndex.x][chunkIndex.y]);
-			vbvs[chunkIndex.x][chunkIndex.y] = meshViews.vbv;
-			ibvs[chunkIndex.x][chunkIndex.y] = meshViews.ibv;
+			const auto [vbv, ibv] = D3D12Utils::CreateMeshViews(device, meshes[chunkIndex.x][chunkIndex.y]);
+			vbvs[chunkIndex.x][chunkIndex.y] = vbv;
+			ibvs[chunkIndex.x][chunkIndex.y] = ibv;
 
 			// メインスレッドで1フレーム内で終わらせるので、この状態更新でOK
 			generationStates[chunkIndex.x][chunkIndex.y].store(ChunkGenerationState::FinishedAll, std::memory_order_release);

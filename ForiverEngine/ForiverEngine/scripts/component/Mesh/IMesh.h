@@ -5,12 +5,6 @@
 
 namespace ForiverEngine
 {
-	struct MeshViews
-	{
-		VertexBufferView vbv;
-		IndexBufferView ibv;
-	};
-
 	template<typename TVertexData>
 	struct IMesh
 	{
