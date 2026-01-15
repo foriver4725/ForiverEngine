@@ -296,29 +296,10 @@ int Main(hInstance)
 			}
 			textUIDataRows.clear();
 
-			// フレームタイム
-			constexpr int FrameTimeTextUpdateIntervalFrames = 16; // テキストの更新間隔 (フレーム数)
-			static std::array<double, FrameTimeTextUpdateIntervalFrames> frameTimes = {};
-			static int frameTimeTextUpdateCounter = 0;
-			static double frameTimeMean = 0.0;
-			{
-				// データを保存
-				frameTimes[frameTimeTextUpdateCounter % FrameTimeTextUpdateIntervalFrames]
-					= WindowHelper::GetDeltaMilliseconds();
+			static DebugFrameTimeStats frameTimeStats = DebugFrameTimeStats(16);
+			frameTimeStats.Record(WindowHelper::GetDeltaMilliseconds());
 
-				// 一定間隔で、平均値を更新
-				frameTimeTextUpdateCounter = (frameTimeTextUpdateCounter + 1) % FrameTimeTextUpdateIntervalFrames;
-				if (frameTimeTextUpdateCounter == 0)
-				{
-					double frameTimeSum = 0.0;
-					for (const double ft : frameTimes)
-						frameTimeSum += ft;
-
-					frameTimeMean = frameTimeSum / FrameTimeTextUpdateIntervalFrames;
-				}
-			}
-
-			textUIDataRows.emplace_back(DebugText::FrameTime(frameTimeMean), DebugText::Color);
+			textUIDataRows.emplace_back(DebugText::FrameTime(frameTimeStats.CalculateMean()), DebugText::Color);
 			textUIDataRows.emplace_back(DebugText::Position(playerController), DebugText::Color);
 			textUIDataRows.emplace_back(DebugText::LookAtPosition(
 				cb1VirtualPtr->IsSelectingBlock == 1,
