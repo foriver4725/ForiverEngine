@@ -107,7 +107,7 @@ namespace ForiverEngine
 			const ViewportScissorRect& viewportScissorRect
 		) const
 		{
-			D3D12BasicFlow::CommandBasicLoop(
+			D3D12BasicFlow::Draw(
 				commandList, commandQueue, commandAllocator, device,
 				rootSignature, pipelineState, rt,
 				rtv, dsv_Dummy, descriptorHeapBasic, { meshViews.vbv }, { meshViews.ibv },

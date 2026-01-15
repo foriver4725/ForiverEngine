@@ -425,7 +425,7 @@ int Main(hInstance)
 		// 影のデプス書き込み
 		if (cb1VirtualPtr->CastShadow == 1)
 		{
-			D3D12BasicFlow::CommandBasicLoop(
+			D3D12BasicFlow::Draw(
 				commandList, commandQueue, commandAllocator, device,
 				rootSignatureShadow, graphicsPipelineStateShadow, shadowGraphicsBuffer,
 				rtvShadow, dsvShadow, descriptorHeapBasicShadow, packedDrawVBVs, packedDrawIBVs,
@@ -435,7 +435,7 @@ int Main(hInstance)
 			);
 		}
 		// メインレンダリング
-		D3D12BasicFlow::CommandBasicLoop(
+		D3D12BasicFlow::Draw(
 			commandList, commandQueue, commandAllocator, device,
 			rootSignature, graphicsPipelineState, offscreenRendererPP.GetRT(),
 			offscreenRendererPP.GetRTV(), dsv, descriptorHeapBasic, packedDrawVBVs, packedDrawIBVs,

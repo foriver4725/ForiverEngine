@@ -359,6 +359,7 @@ namespace ForiverEngine
 
 		/// <summary>
 		/// <para>[Command]</para>
+		/// <para>ドローコールを実行する</para>
 		/// <para>ループ内の、基本的なコマンド系処理を実行する</para>
 		/// <para>配列の要素数はドローコール数と同じ!</para>
 		/// </summary>
@@ -381,7 +382,7 @@ namespace ForiverEngine
 		/// <param name="rtvClearColor">RTV のクリアカラー</param>
 		/// <param name="depthClearValue">DSV のクリア深度値 (ステンシルは使わないので、深度値のみ. [0, 1])</param>
 		/// <param name="indexTotalCountArray">ドローコール時のインデックス総数 (サイズはドローコール数と同じ!)</param>
-		static void CommandBasicLoop
+		static void Draw
 		(
 			// 基本オブジェクト
 			const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator,
