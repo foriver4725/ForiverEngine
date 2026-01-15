@@ -48,8 +48,14 @@ namespace ForiverEngine
 			// VBV, IBV
 			std::tie(vbv, ibv) = D3D12Utils::CreateMeshViews(device, mesh);
 
+			// SR 群の最初に RT/SR を登録する (t0)
+			std::vector<std::pair<GraphicsBuffer, Texture>> srsWithRT;
+			srsWithRT.reserve(srCount + 1);
+			srsWithRT.emplace_back(rt, rtMetadata);
+			srsWithRT.insert(srsWithRT.end(), srs.begin(), srs.end());
+
 			// DescriptorHeap
-			descriptorHeapBasic = D3D12Utils::InitDescriptorHeapBasic(device, cbs, srs);
+			descriptorHeapBasic = D3D12Utils::InitDescriptorHeapBasic(device, cbs, srsWithRT);
 		}
 
 		const GraphicsBuffer& GetRT() const
