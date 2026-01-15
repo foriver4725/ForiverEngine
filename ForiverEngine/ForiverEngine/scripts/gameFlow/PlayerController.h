@@ -13,6 +13,7 @@ namespace ForiverEngine
 	{
 	public:
 		static constexpr Vector3 CollisionSize = Vector3(0.5f, 1.8f, 0.5f); // 当たり判定サイズ
+		static constexpr float CameraFovV = 60.0f * DegToRad; // カメラの垂直視野角 (ラジアン)
 		static constexpr float GravityScale = 1.0f; // 重力の倍率
 		static constexpr float SpeedH = 3.0f; // 水平移動速度 (m/s)
 		static constexpr float DashSpeedH = 6.0f; // ダッシュ時の水平移動速度 (m/s)
@@ -25,6 +26,8 @@ namespace ForiverEngine
 		static constexpr float JumpHeight = 1.3f; // ジャンプの高さ (m)
 		static constexpr float EyeHeight = 1.6f; // 目線の高さ (m)
 
+		static constexpr int FindSpawnPointMaxAttempts = 1024; // 初期スポーン地点を探す際の最大試行回数
+
 		// Y方向の計算誤差を減らすためのパラメータ
 		static constexpr float GroundedCheckOffset = 0.01f; // 接地判定のオフセット (m)
 		static constexpr float CeilingCheckOffset = 0.01f;  // 天井判定のオフセット (m)
@@ -36,9 +39,41 @@ namespace ForiverEngine
 		static constexpr float MineCooldownSeconds = 0.2f; // ブロックを掘る際のクールダウン時間 (秒)
 		static constexpr float PlaceCooldownSeconds = 0.2f; // ブロックを置く際のクールダウン時間 (秒)
 
-		PlayerController(const CameraTransform& initTransform) noexcept
-			: transform(initTransform), velocityV(0.0f)
+		PlayerController(const Lattice2& windowSize, const Lattice2& initChunkIndex, const Chunk::ChunksArray<Chunk>& chunks)
 		{
+			// 初期スポーン地点を決定する
+			Lattice3 spawnWorldBlockPosition;
+			{
+				bool found = false;
+
+				for (int i = 0; i < FindSpawnPointMaxAttempts; ++i)
+				{
+					// 正確なワールド中央から、試行ごとに少しだけずらしていく
+					const int x = (initChunkIndex.x * Chunk::Size + Chunk::Size / 2) + (i & 0x0f);
+					const int z = (initChunkIndex.y * Chunk::Size + Chunk::Size / 2) + ((i & 0xf0) >> 4);
+
+					// 地面を探す
+					const int y = PlayerControl::FindFloorHeight(chunks, Vector3(x, Chunk::Height - 1, z), CollisionSize);
+					if (y < 0)
+						continue;
+
+					spawnWorldBlockPosition = Lattice3(x, y + 1, z);
+					found = true;
+					break;
+				}
+
+				if (!found)
+					ShowError(L"プレイヤーの初期スポーン地点の決定に失敗しました");
+			}
+
+			const float aspectRatio = 1.0f * windowSize.x / windowSize.y;
+
+			transform = CameraTransform::CreatePerspective(
+				Vector3(spawnWorldBlockPosition) + Vector3::Up() * EyeHeight,
+				Quaternion::Identity(), CameraFovV, aspectRatio
+			);
+
+			velocityV = 0.0f;
 		}
 
 		Vector3 GetFootPosition() const noexcept

@@ -41,49 +41,16 @@ int Main(hInstance)
 
 
 
+	constexpr Lattice2 playerInitChunkIndex = Lattice2(Chunk::Count / 2, Chunk::Count / 2); // 初期スポーン地点は、ワールドのど真ん中
+	Lattice2 existingChunkIndex = playerInitChunkIndex;
+
 	// 地形データ
-	constexpr Lattice2 playerStartChunkIndex = Lattice2(Chunk::Count / 2, Chunk::Count / 2); // 初期スポーン地点は、ワールドのど真ん中
-	Lattice2 existingChunkIndex = playerStartChunkIndex;
 	ChunksManager chunksManager = ChunksManager(existingChunkIndex);
 	chunksManager.UpdateDrawChunks(existingChunkIndex, false, device); // 初回作成
 
 	constexpr Transform terrainTransform = Transform::Identity();
 
-	// 初期スポーン地点の決定
-	Lattice3 playerStartWorldBlockPosition;
-	{
-		constexpr int MaxAttempts = 1024;
-
-		bool found = false;
-		for (int i = 0; i < MaxAttempts; ++i)
-		{
-			// 正確なワールド中央
-			int x = playerStartChunkIndex.x * Chunk::Size + Chunk::Size / 2;
-			int z = playerStartChunkIndex.y * Chunk::Size + Chunk::Size / 2;
-			// 試行ごとに少しだけずらしていく
-			x += i & 0x0f;
-			z += (i & 0xf0) >> 4;
-
-			// 地面を探す
-			const int y = PlayerControl::FindFloorHeight(chunksManager.GetChunks(),
-				Vector3(x, Chunk::Height - 1, z), PlayerController::CollisionSize);
-			if (y < 0)
-				continue;
-
-			playerStartWorldBlockPosition = Lattice3(x, y + 1, z);
-			found = true;
-			break;
-		}
-
-		if (!found)
-			ShowError(L"プレイヤーの初期スポーン地点の決定に失敗しました");
-	}
-	PlayerController playerController = PlayerController(CameraTransform::CreatePerspective(
-		Vector3(playerStartWorldBlockPosition) + Vector3::Up() * PlayerController::EyeHeight,
-		Quaternion::Identity(),
-		60.0f * DegToRad,
-		1.0f * WindowSize.x / WindowSize.y
-	));
+	PlayerController playerController = PlayerController(WindowSize, existingChunkIndex, chunksManager.GetChunks());
 
 	SunCamera sunCamera = SunCamera();
 	sunCamera.LookAtPlayer(playerController.GetFootPosition());
@@ -220,6 +187,8 @@ int Main(hInstance)
 	   device, commandList, commandQueue, commandAllocator,
 	   WindowSize
 	};
+
+
 
 	while (true)
 	{
