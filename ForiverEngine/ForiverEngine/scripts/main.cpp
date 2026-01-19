@@ -178,12 +178,12 @@ int Main(hInstance)
 
 #pragma	endregion
 
-	const AOffscreenRenderer postProcessRenderer =
-		PostProcessRenderer(device, commandList, commandQueue, commandAllocator, WindowSize);
+	const std::unique_ptr<AOffscreenRenderer> postProcessRenderer =
+		std::make_unique<PostProcessRenderer>(device, commandList, commandQueue, commandAllocator, WindowSize);
 
 	// UIテキストのデータはゲーム内で変更されるため、const には出来ない (このオブジェクトが内部で保持している)
-	AOffscreenRenderer textRenderer =
-		TextRenderer(device, commandList, commandQueue, commandAllocator, WindowSize);
+	std::unique_ptr<AOffscreenRenderer> textRenderer =
+		std::make_unique<TextRenderer>(device, commandList, commandQueue, commandAllocator, WindowSize);
 
 
 
@@ -275,7 +275,7 @@ int Main(hInstance)
 
 			static DebugTextDisplayer debugTextDisplayer{};
 			debugTextDisplayer.UpdateData(
-				dynamic_cast<TextRenderer&>(textRenderer),
+				*dynamic_cast<TextRenderer*>(textRenderer.get()),
 				device, commandList, commandQueue, commandAllocator,
 				playerController, chunksManager,
 				frameTimeStats,
@@ -322,19 +322,19 @@ int Main(hInstance)
 		// メインレンダリング
 		D3D12Utils::Draw(
 			commandList, commandQueue, commandAllocator, device,
-			rootSignature, graphicsPipelineState, postProcessRenderer.GetRT(),
-			postProcessRenderer.GetRTV(), dsv, descriptorHeapBasic, packedDrawVBVs, packedDrawIBVs,
+			rootSignature, graphicsPipelineState, postProcessRenderer->GetRT(),
+			postProcessRenderer->GetRTV(), dsv, descriptorHeapBasic, packedDrawVBVs, packedDrawIBVs,
 			GraphicsBufferState::PixelShaderResource, GraphicsBufferState::RenderTarget,
 			viewportScissorRect, PrimitiveTopology::TriangleList, BackgroundColor, DepthBufferClearValue,
 			packedDrawMeshIndicesCounts
 		);
 		// ポストプロセス
-		postProcessRenderer.Draw(
+		postProcessRenderer->Draw(
 			commandList, commandQueue, commandAllocator, device,
-			textRenderer.GetRT(), textRenderer.GetRTV(), viewportScissorRect
+			textRenderer->GetRT(), textRenderer->GetRTV(), viewportScissorRect
 		);
 		// テキスト描画
-		textRenderer.Draw(
+		textRenderer->Draw(
 			commandList, commandQueue, commandAllocator, device,
 			currentBackRT, currentBackRTV, viewportScissorRect
 		);
