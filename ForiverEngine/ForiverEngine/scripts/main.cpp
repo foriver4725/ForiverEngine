@@ -178,16 +178,12 @@ int Main(hInstance)
 
 #pragma	endregion
 
-	const PostProcessRenderer postProcessRenderer{
-		device, commandList, commandQueue, commandAllocator,
-		WindowSize
-	};
+	const AOffscreenRenderer postProcessRenderer =
+		PostProcessRenderer(device, commandList, commandQueue, commandAllocator, WindowSize);
 
 	// UIテキストのデータはゲーム内で変更されるため、const には出来ない (このオブジェクトが内部で保持している)
-	TextRenderer textRenderer{
-	   device, commandList, commandQueue, commandAllocator,
-	   WindowSize
-	};
+	AOffscreenRenderer textRenderer =
+		TextRenderer(device, commandList, commandQueue, commandAllocator, WindowSize);
 
 
 
@@ -279,7 +275,7 @@ int Main(hInstance)
 
 			static DebugTextDisplayer debugTextDisplayer{};
 			debugTextDisplayer.UpdateData(
-				textRenderer,
+				dynamic_cast<TextRenderer&>(textRenderer),
 				device, commandList, commandQueue, commandAllocator,
 				playerController, chunksManager,
 				frameTimeStats,
