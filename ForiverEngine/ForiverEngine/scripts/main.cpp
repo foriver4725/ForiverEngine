@@ -42,15 +42,15 @@ int Main(hInstance)
 
 
 	constexpr Lattice2 playerInitChunkIndex = Lattice2(Chunk::Count / 2, Chunk::Count / 2); // 初期スポーン地点は、ワールドのど真ん中
-	Lattice2 existingChunkIndex = playerInitChunkIndex;
+	TrackedValue playerExistingChunkIndex = TrackedValue(playerInitChunkIndex);
 
 	// 地形データ
-	ChunksManager chunksManager = ChunksManager(existingChunkIndex);
-	chunksManager.UpdateDrawChunks(existingChunkIndex, false, device); // 初回作成
+	ChunksManager chunksManager = ChunksManager(playerExistingChunkIndex.GetValue());
+	chunksManager.UpdateDrawChunks(playerExistingChunkIndex.GetValue(), false, device); // 初回作成
 
 	constexpr Transform terrainTransform = Transform::Identity();
 
-	PlayerController playerController = PlayerController(WindowSize, existingChunkIndex, chunksManager.GetChunks());
+	PlayerController playerController = PlayerController(WindowSize, playerExistingChunkIndex.GetValue(), chunksManager.GetChunks());
 
 	SunCamera sunCamera = SunCamera();
 	sunCamera.LookAtPlayer(playerController.GetFootPosition());
@@ -228,9 +228,6 @@ int Main(hInstance)
 		}
 
 		{
-			// 現在プレイヤーが存在するチャンクのインデックスを取得しておく
-			const Lattice2 currentExistingChunkIndex = Chunk::GetIndex(playerController.GetFootBlockPosition());
-
 			// ブロックを採掘する
 			{
 				static float mineCooldownTimer = 0.0f;
@@ -276,10 +273,10 @@ int Main(hInstance)
 			}
 
 			// プレイヤーの存在チャンクが変化したなら、描画チャンクを更新する
-			if (currentExistingChunkIndex != existingChunkIndex)
+			playerExistingChunkIndex = Chunk::GetIndex(playerController.GetFootBlockPosition());
+			if (playerExistingChunkIndex.DropDirty())
 			{
-				existingChunkIndex = currentExistingChunkIndex;
-				chunksManager.UpdateDrawChunks(currentExistingChunkIndex, true, device);
+				chunksManager.UpdateDrawChunks(playerExistingChunkIndex.GetValue(), true, device);
 			}
 		}
 
