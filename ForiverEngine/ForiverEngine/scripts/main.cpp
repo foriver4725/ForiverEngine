@@ -34,7 +34,8 @@ int Main(hInstance)
 	constexpr std::uint32_t RandomSeed = 0x12345678;
 	Random::SetSeed(RandomSeed);
 
-	constexpr Color RTClearColor = Color::CreateFromUint8(60, 150, 210); // 空色
+	// 背景色 (空色)
+	constexpr Color BackgroundColor = Color::CreateFromUint8(60, 150, 210);
 
 	const auto [factory, device, commandAllocator, commandList, commandQueue]
 		= D3D12Utils::CreateStandardObjects();
@@ -328,7 +329,7 @@ int Main(hInstance)
 			rootSignature, graphicsPipelineState, postProcessRenderer.GetRT(),
 			postProcessRenderer.GetRTV(), dsv, descriptorHeapBasic, packedDrawVBVs, packedDrawIBVs,
 			GraphicsBufferState::PixelShaderResource, GraphicsBufferState::RenderTarget,
-			viewportScissorRect, PrimitiveTopology::TriangleList, RTClearColor, DepthBufferClearValue,
+			viewportScissorRect, PrimitiveTopology::TriangleList, BackgroundColor, DepthBufferClearValue,
 			packedDrawMeshIndicesCounts
 		);
 		// ポストプロセス
