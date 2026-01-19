@@ -213,21 +213,18 @@ int Main(hInstance)
 		// 見ているブロック・フェースを取得
 		const auto [lookingBlockPosition, lookingBlockFaceNormal] = playerController.PickLookingBlock(chunksManager.GetChunks());
 
-		// ブロックを選択する
+		// ブロックを選択していない
+		if (lookingBlockFaceNormal == Lattice3::Zero())
 		{
-			if (lookingBlockFaceNormal == Lattice3::Zero())
-			{
-				cb1VirtualPtr->IsSelectingBlock = 0;
-				cb1VirtualPtr->SelectingBlockWorldPosition = Lattice3::Zero();
-			}
-			else
-			{
-				cb1VirtualPtr->IsSelectingBlock = 1;
-				cb1VirtualPtr->SelectingBlockWorldPosition = lookingBlockPosition;
-			}
+			cb1VirtualPtr->IsSelectingBlock = 0;
+			cb1VirtualPtr->SelectingBlockWorldPosition = Lattice3::Zero();
 		}
-
+		// ブロックを選択している
+		else
 		{
+			cb1VirtualPtr->IsSelectingBlock = 1;
+			cb1VirtualPtr->SelectingBlockWorldPosition = lookingBlockPosition;
+
 			// ブロックを採掘する
 			{
 				static float mineCooldownTimer = 0.0f;
@@ -236,12 +233,9 @@ int Main(hInstance)
 				{
 					if (InputHelper::GetKeyInfo(Key::LMouse).pressed)
 					{
-						if (cb1VirtualPtr->IsSelectingBlock == 1)
-						{
-							mineCooldownTimer = PlayerController::MineCooldownSeconds;
-							const auto _ = playerController.TryMineBlock(
-								chunksManager, cb1VirtualPtr->SelectingBlockWorldPosition, device);
-						}
+						mineCooldownTimer = PlayerController::MineCooldownSeconds;
+						const auto _ = playerController.TryMineBlock(
+							chunksManager, lookingBlockPosition, device);
 					}
 				}
 
@@ -258,12 +252,9 @@ int Main(hInstance)
 				{
 					if (InputHelper::GetKeyInfo(Key::RMouse).pressed)
 					{
-						if (cb1VirtualPtr->IsSelectingBlock == 1)
-						{
-							placeCooldownTimer = PlayerController::PlaceCooldownSeconds;
-							const auto _ = playerController.TryPlaceBlock(
-								chunksManager, lookingBlockPosition + lookingBlockFaceNormal, device);
-						}
+						placeCooldownTimer = PlayerController::PlaceCooldownSeconds;
+						const auto _ = playerController.TryPlaceBlock(
+							chunksManager, lookingBlockPosition + lookingBlockFaceNormal, device);
 					}
 				}
 
@@ -271,13 +262,13 @@ int Main(hInstance)
 				if (placeCooldownTimer < 0.0f)
 					placeCooldownTimer = 0.0f;
 			}
+		}
 
-			// プレイヤーの存在チャンクが変化したなら、描画チャンクを更新する
-			playerExistingChunkIndex = Chunk::GetIndex(playerController.GetFootBlockPosition());
-			if (playerExistingChunkIndex.DropDirty())
-			{
-				chunksManager.UpdateDrawChunks(playerExistingChunkIndex.GetValue(), true, device);
-			}
+		// プレイヤーの存在チャンクが変化したなら、描画チャンクを更新する
+		playerExistingChunkIndex = Chunk::GetIndex(playerController.GetFootBlockPosition());
+		if (playerExistingChunkIndex.DropDirty())
+		{
+			chunksManager.UpdateDrawChunks(playerExistingChunkIndex.GetValue(), true, device);
 		}
 
 		// デバッグテキスト
