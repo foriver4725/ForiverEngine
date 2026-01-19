@@ -42,17 +42,21 @@ int Main(hInstance)
 
 
 
+	// プレイヤーが存在するチャンクのインデックス
 	constexpr Lattice2 playerInitChunkIndex = Lattice2(Chunk::Count / 2, Chunk::Count / 2); // 初期スポーン地点は、ワールドのど真ん中
-	TrackedValue playerExistingChunkIndex = TrackedValue(playerInitChunkIndex);
+	TrackedValue<Lattice2> playerExistingChunkIndex = TrackedValue(playerInitChunkIndex);
 
 	// 地形データ
 	ChunksManager chunksManager = ChunksManager(playerExistingChunkIndex.GetValue());
 	chunksManager.UpdateDrawChunks(playerExistingChunkIndex.GetValue(), false, device); // 初回作成
 
+	// 地形のTransform (規定値で固定)
 	constexpr Transform terrainTransform = Transform::Identity();
 
+	// プレイヤーコントローラー
 	PlayerController playerController = PlayerController(WindowSize, playerExistingChunkIndex.GetValue(), chunksManager.GetChunks());
 
+	// 太陽カメラ
 	SunCamera sunCamera = SunCamera();
 	sunCamera.LookAtPlayer(playerController.GetFootPosition());
 
