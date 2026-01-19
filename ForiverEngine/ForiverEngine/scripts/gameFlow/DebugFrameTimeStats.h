@@ -8,11 +8,14 @@ namespace ForiverEngine
 {
 	/// <summary>
 	/// <para>フレーム時間の統計情報をデバッグ表示するためのクラス</para>
-	/// <para>一定数分のフレーム時間を記録し、その代表値を取得できる</para>
+	/// <para>一定数分のフレーム時間を記録し、その代表値を算出できる</para>
 	/// </summary>
 	class DebugFrameTimeStats
 	{
 	public:
+		/// <summary>
+		/// recordCount 分のフレーム時間を記録するように初期化する
+		/// </summary>
 		explicit DebugFrameTimeStats(int recordCount)
 			: recordCount(recordCount)
 		{
@@ -29,6 +32,9 @@ namespace ForiverEngine
 			currentIndex = (currentIndex + 1) % recordCount;
 		}
 
+		/// <summary>
+		/// 平均値を算出する
+		/// </summary>
 		double CalculateMean() const noexcept
 		{
 			double sum = 0.0;

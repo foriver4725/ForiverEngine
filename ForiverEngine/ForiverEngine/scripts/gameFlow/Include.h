@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "./TrackedValue.h"
+#include "./Timer.h"
 #include "./Renderer/Include.h"
 #include "./Chunk.h"
 #include "./ChunksManager.h"

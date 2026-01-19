@@ -237,6 +237,7 @@
     <ClInclude Include="scripts\gameFlow\Renderer\PostProcessRenderer.h" />
     <ClInclude Include="scripts\gameFlow\Renderer\TextRenderer.h" />
     <ClInclude Include="scripts\gameFlow\SunCamera.h" />
+    <ClInclude Include="scripts\gameFlow\Timer.h" />
     <ClInclude Include="scripts\gameFlow\TrackedValue.h" />
     <ClInclude Include="scripts\helper\headers\D3D12Defines.h" />
     <ClInclude Include="scripts\helper\headers\D3D12Helper.h" />

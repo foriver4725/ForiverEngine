@@ -222,42 +222,24 @@ int Main(hInstance)
 			cb1VirtualPtr->IsSelectingBlock = 1;
 			cb1VirtualPtr->SelectingBlockWorldPosition = lookingBlockPosition;
 
+			static Timer mineCdTimer = Timer(PlayerController::MineCooldownSeconds);
+			static Timer placeCdTimer = Timer(PlayerController::PlaceCooldownSeconds);
+
+			mineCdTimer.OnEveryFrame(WindowHelper::GetDeltaSeconds());
+			placeCdTimer.OnEveryFrame(WindowHelper::GetDeltaSeconds());
+
 			// ブロックを採掘する
+			if (mineCdTimer.IsFinished() && InputHelper::GetKeyInfo(Key::LMouse).pressed)
 			{
-				static float mineCooldownTimer = 0.0f;
-
-				if (mineCooldownTimer <= 0.0f)
-				{
-					if (InputHelper::GetKeyInfo(Key::LMouse).pressed)
-					{
-						mineCooldownTimer = PlayerController::MineCooldownSeconds;
-						const auto _ = playerController.TryMineBlock(
-							chunksManager, lookingBlockPosition, device);
-					}
-				}
-
-				mineCooldownTimer -= WindowHelper::GetDeltaSeconds();
-				if (mineCooldownTimer < 0.0f)
-					mineCooldownTimer = 0.0f;
+				mineCdTimer.Reset();
+				const bool _ = playerController.TryMineBlock(chunksManager, lookingBlockPosition, device);
 			}
 
 			// ブロックを設置する
+			if (placeCdTimer.IsFinished() && InputHelper::GetKeyInfo(Key::RMouse).pressed)
 			{
-				static float placeCooldownTimer = 0.0f;
-
-				if (placeCooldownTimer <= 0.0f)
-				{
-					if (InputHelper::GetKeyInfo(Key::RMouse).pressed)
-					{
-						placeCooldownTimer = PlayerController::PlaceCooldownSeconds;
-						const auto _ = playerController.TryPlaceBlock(
-							chunksManager, lookingBlockPosition + lookingBlockFaceNormal, device);
-					}
-				}
-
-				placeCooldownTimer -= WindowHelper::GetDeltaSeconds();
-				if (placeCooldownTimer < 0.0f)
-					placeCooldownTimer = 0.0f;
+				placeCdTimer.Reset();
+				const bool _ = playerController.TryPlaceBlock(chunksManager, lookingBlockPosition + lookingBlockFaceNormal, device);
 			}
 		}
 
