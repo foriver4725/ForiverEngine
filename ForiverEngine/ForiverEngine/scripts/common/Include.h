@@ -8,6 +8,7 @@
 #include <tuple>
 #include <unordered_map>
 #include <unordered_set>
+#include <span>
 
 #include <algorithm>
 #include <functional>
@@ -20,6 +21,7 @@
 #include <atomic>
 
 #include <iostream>
+#include <fstream>
 #define NOMINMAX
 #include <Windows.h>
 #include <windowsx.h>

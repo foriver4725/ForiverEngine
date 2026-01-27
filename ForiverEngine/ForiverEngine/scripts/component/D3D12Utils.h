@@ -102,7 +102,7 @@ namespace ForiverEngine
 			const GraphicsBuffer intermediateBuffer = D3D12Helper::CreateGraphicsBuffer1D(
 				device,
 				static_cast<int>(
-					GetAlignmentedSize(textureAsMetadata.rowSize, Texture::RowSizeAlignment)
+					GetAlignmentedSize(textureAsMetadata.GetRowSize(), Texture::RowSizeAlignment)
 					* textureAsMetadata.height
 					* textureAsMetadata.sliceCount
 					),
@@ -179,8 +179,7 @@ namespace ForiverEngine
 
 		/// <summary>
 		/// <para>GraphicsBuffer (SR) を作成して、テクスチャデータを GPU にアップロードする</para>
-		/// <para>テクスチャを手動で与える (2Dテクスチャ or 2Dテクスチャ配列)</para>
-		/// <para>テクスチャの種類が 2D でない場合は、失敗させる</para>
+		/// <para>テクスチャを手動で与える (2Dテクスチャ/2Dテクスチャ配列)</para>
 		/// <para>作成した SR を返す</para>
 		/// </summary>
 		static GraphicsBuffer InitSR(
@@ -323,7 +322,14 @@ namespace ForiverEngine
 		/// </summary>
 		static DescriptorHandleAtCPU InitDSV(const Device& device, const Lattice2& size)
 		{
-			const Texture depthBufferMetadata = Texture::CreateManually({}, size, Format::D_F32);
+			const Texture depthBufferMetadata = Texture
+			{
+				.data = {},
+				.width = size.x,
+				.height = size.y,
+				.sliceCount = 1,
+				.format = Format::D_F32
+			};
 			const GraphicsBuffer depthBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, depthBufferMetadata,
 				GraphicsBufferUsagePermission::AllowDepthStencil, GraphicsBufferState::DepthWrite, Color(DepthBufferClearValue, 0, 0, 0));
 			if (!depthBuffer)

@@ -6,7 +6,7 @@
 namespace ForiverEngine
 {
 	/// <summary>
-	/// <para>テクスチャ</para>
+	/// <para>2Dテクスチャ/2Dテクスチャ配列</para>
 	/// <para>生データとそのメタデータ</para>
 	/// </summary>
 	struct Texture
@@ -14,69 +14,23 @@ namespace ForiverEngine
 		// アラインメントをこれに揃える必要がある
 		static constexpr int RowSizeAlignment = 256;
 
-		std::vector<std::uint8_t> data{}; // 生データ (ビット配列 的な)
+		// 決め打ち. ミップマップなし
+		static constexpr int MipLevels = 1;
 
-		GraphicsBufferType textureType{};
-		Format format{};
-		int width{};
-		int height{};
-		int rowSize{}; // 1行分のデータサイズ
-		int sliceSize{}; // 1スライス分のデータサイズ
-		int sliceCount{}; // スライス数
-		int mipLevels{};
+		std::vector<std::uint8_t> data = {}; // 生データ (ビット配列)
 
-		constexpr bool IsValid() const { return !data.empty() && width > 0 && height > 0; }
+		int width = 0;
+		int height = 0;
+		int sliceCount = 0; // スライス数
 
-		/// <summary>
-		/// <para>手動作成</para>
-		/// <para>2Dテクスチャ (配列ではない) として作成する</para>
-		/// <para>生データはそのまま素通しし、そこから値を計算などはしない</para>
-		/// <para>ミップマップなし</para>
-		/// </summary>
-		static Texture CreateManually(const std::vector<std::uint8_t>& data, const Lattice2& size, Format format)
-		{
-			// 1テクセルのバイト数を計算
+		// 基本的に決め打ち. RGBA 8bit
+		// RT, SR などを作成する時のメタデータとして使いたい場合、違う値に上書きするケースもある
+		Format format = Format::RGBA_U8;
 
-			const std::uint32_t formatTypes = GetFormatTypes(format);
+		constexpr int GetRowSize() const { return GetFormatTotalBytes(format) * width; }
+		constexpr int GetSliceSize() const { return GetRowSize() * height; }
+		constexpr int GetWholeSize() const { return GetSliceSize() * sliceCount; }
 
-			int channelAmount = 0;
-			int biteAmountPerChannel = 0;
-			{
-				if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::Dim1))
-					channelAmount = 1;
-				else if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::Dim2))
-					channelAmount = 2;
-				else if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::Dim3))
-					channelAmount = 3;
-				else if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::Dim4))
-					channelAmount = 4;
-				else
-					channelAmount = 0; // 不明
-
-				if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::Bite1))
-					biteAmountPerChannel = 1;
-				else if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::Bite2))
-					biteAmountPerChannel = 2;
-				else if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::Bite4))
-					biteAmountPerChannel = 4;
-				else
-					biteAmountPerChannel = 0; // 不明
-			}
-
-			const std::size_t biteAmountTotal = static_cast<std::size_t>(channelAmount * biteAmountPerChannel);
-
-			return Texture
-			{
-				.data = data,
-				.textureType = GraphicsBufferType::Texture2D,
-				.format = format,
-				.width = size.x,
-				.height = size.y,
-				.rowSize = static_cast<int>(biteAmountTotal * size.x),
-				.sliceSize = static_cast<int>(biteAmountTotal * size.x * size.y),
-				.sliceCount = 1,
-				.mipLevels = 1,
-			};
-		}
+		constexpr bool IsValid() const { return !data.empty() && width > 0 && height > 0 && sliceCount > 0; }
 	};
 }

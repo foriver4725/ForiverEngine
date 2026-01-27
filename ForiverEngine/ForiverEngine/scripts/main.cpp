@@ -64,7 +64,14 @@ int Main(hInstance)
 
 	constexpr Lattice2 ShadowRTSize = Lattice2(1024, 1024);
 
-	const Texture shadowTextureMetadata = Texture::CreateManually({}, ShadowRTSize, Format::R_F32);
+	const Texture shadowTextureMetadata = Texture
+	{
+		.data = {},
+		.width = ShadowRTSize.x,
+		.height = ShadowRTSize.y,
+		.sliceCount = 1,
+		.format = Format::R_F32,
+	};
 	const GraphicsBuffer shadowGraphicsBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, shadowTextureMetadata,
 		GraphicsBufferUsagePermission::AllowRenderTarget, GraphicsBufferState::PixelShaderResource, Color(DepthBufferClearValue, 0, 0, 0));
 
