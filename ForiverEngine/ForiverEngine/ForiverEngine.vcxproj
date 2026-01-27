@@ -181,6 +181,7 @@
     <ClCompile Include="scripts\common\Math\LinearAlgebra\sources\Vector2.cpp" />
     <ClCompile Include="scripts\common\Math\LinearAlgebra\sources\Vector3.cpp" />
     <ClCompile Include="scripts\common\Math\LinearAlgebra\sources\Vector4.cpp" />
+    <ClCompile Include="scripts\helper\Loader\sources\TextureLoader.cpp" />
     <ClCompile Include="scripts\helper\sources\D3D12Helper.cpp" />
     <ClCompile Include="scripts\helper\sources\InputHelper.cpp" />
     <ClCompile Include="scripts\helper\sources\WindowHelper.cpp" />
@@ -244,6 +245,9 @@
     <ClInclude Include="scripts\helper\headers\InputHelper.h" />
     <ClInclude Include="scripts\helper\headers\WindowHelper.h" />
     <ClInclude Include="scripts\helper\Include.h" />
+    <ClInclude Include="scripts\helper\Loader\headers\TextureLoader.h" />
+    <ClInclude Include="scripts\helper\loader\Include.h" />
+    <ClInclude Include="scripts\helper\loader\Texture.h" />
     <ClInclude Include="scripts\test\Include.h" />
     <ClInclude Include="scripts\test\IncludeInternal.h" />
     <ClInclude Include="scripts\test\PlayerControl.h" />

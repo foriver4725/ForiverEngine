@@ -76,9 +76,9 @@ namespace ForiverEngine
 			if (paths.empty())
 				ShowError(L"テクスチャ(群)のパスが空です");
 			if (paths.size() <= 1)
-				texture = D3D12Helper::LoadAsTexture(paths[0]);
+				texture = TextureLoader::Load(paths[0]);
 			else
-				texture = D3D12Helper::LoadAsTextureArray(paths);
+				texture = TextureLoader::LoadAsArray(paths);
 			if (!texture.IsValid())
 				ShowError(L"テクスチャ(群)のロードに失敗しました");
 

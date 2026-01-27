@@ -46,6 +46,9 @@
     <ClCompile Include="scripts\main.cpp">
       <Filter>scripts</Filter>
     </ClCompile>
+    <ClCompile Include="scripts\helper\Loader\sources\TextureLoader.cpp">
+      <Filter>scripts\helper\Loader\sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="shaders">
@@ -107,6 +110,15 @@
     </Filter>
     <Filter Include="scripts\gameFlow\Renderer">
       <UniqueIdentifier>{d0d1dd32-74c3-43be-803d-7a8766324c8b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scripts\helper\Loader">
+      <UniqueIdentifier>{c10483ba-b831-46e8-b869-37ca0a81ee25}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scripts\helper\Loader\headers">
+      <UniqueIdentifier>{b627376c-96c7-464c-9fa1-1ebb0bc41545}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scripts\helper\Loader\sources">
+      <UniqueIdentifier>{77da7475-1c7f-492c-a2d7-605a22490f7a}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -289,6 +301,15 @@
     </ClInclude>
     <ClInclude Include="scripts\gameFlow\Timer.h">
       <Filter>scripts\gameFlow</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\helper\loader\Texture.h">
+      <Filter>scripts\helper\Loader</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\helper\loader\Include.h">
+      <Filter>scripts\helper\Loader</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\helper\Loader\headers\TextureLoader.h">
+      <Filter>scripts\helper\Loader\headers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
