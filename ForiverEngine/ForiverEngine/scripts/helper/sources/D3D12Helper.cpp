@@ -422,7 +422,7 @@ namespace ForiverEngine
 			.Alignment = 0, // 既定値でOK
 			.Width = static_cast<UINT64>(texture.size.x),
 			.Height = static_cast<UINT>(texture.size.y),
-			.DepthOrArraySize = static_cast<UINT16>(texture.sliceCount), // 配列のサイズ = スライス数
+			.DepthOrArraySize = static_cast<UINT16>(texture.size.z), // 配列のサイズ = スライス数
 			.MipLevels = static_cast<UINT16>(texture.MipLevels), // ミップマップ数
 			.Format = static_cast<DXGI_FORMAT>(texture.format),
 			.SampleDesc = {.Count = 1, .Quality = 0 }, // 通常テクスチャなのでアンチエイリアシングはしない (クオリティは最低)
@@ -597,7 +597,7 @@ namespace ForiverEngine
 		const Device& device, const DescriptorHeap& descriptorHeap, const GraphicsBuffer& graphicsBuffer, int index,
 		const Texture& textureAsMetadata)
 	{
-		const bool isArray = textureAsMetadata.sliceCount > 1;
+		const bool isArray = textureAsMetadata.size.z > 1;
 		const D3D12_SHADER_RESOURCE_VIEW_DESC desc = isArray ?
 			D3D12_SHADER_RESOURCE_VIEW_DESC
 		{
@@ -614,7 +614,7 @@ namespace ForiverEngine
 				.MostDetailedMip = 0, // 規定値
 				.MipLevels = 1, // ミップマップは使わない
 				.FirstArraySlice = 0,
-				.ArraySize = static_cast<UINT>(textureAsMetadata.sliceCount),
+				.ArraySize = static_cast<UINT>(textureAsMetadata.size.z),
 				.PlaneSlice = 0, // 規定値
 				.ResourceMinLODClamp = 0.0f // 規定値
 			}
@@ -718,7 +718,7 @@ namespace ForiverEngine
 			{
 				std::uint8_t* dstBase = static_cast<std::uint8_t*>(bufferVirtualPtr);
 
-				for (int sliceIndex = 0; sliceIndex < texture.sliceCount; ++sliceIndex)
+				for (int sliceIndex = 0; sliceIndex < texture.size.z; ++sliceIndex)
 				{
 					std::uint8_t* src = const_cast<std::uint8_t*>(texture.data.data())
 						+ sliceIndex * texture.GetSliceBytes();
@@ -747,7 +747,7 @@ namespace ForiverEngine
 
 		// 真のテクスチャバッファーにコピー
 		{
-			for (int sliceIndex = 0; sliceIndex < texture.sliceCount; ++sliceIndex)
+			for (int sliceIndex = 0; sliceIndex < texture.size.z; ++sliceIndex)
 			{
 				const D3D12_TEXTURE_COPY_LOCATION srcLocation =
 				{

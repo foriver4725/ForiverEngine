@@ -22,28 +22,20 @@ namespace ForiverEngine
 			scratchImage // 実際のデータはここに入る
 		) != S_OK)
 		{
-			return Texture{};
+			return Texture();
 		}
 
-		//////////
 		// メタデータの値が適切かチェック
-
 		// 列挙型の整数値が同じなので、static_cast で変換できる
-		if (static_cast<GraphicsBufferType>(metadata.dimension) != GraphicsBufferType::Texture2D)
-			return Texture{};
-
-		if (metadata.arraySize != 1)
-			return Texture{};
-
-		if (metadata.mipLevels != 1)
-			return Texture{};
-
-		//////////
+		if (static_cast<GraphicsBufferType>(metadata.dimension) != GraphicsBufferType::Texture2D) return Texture();
+		if (!IsValidFormat(static_cast<Format>(metadata.format))) return Texture();
+		if (metadata.arraySize != 1) return Texture();
+		if (metadata.mipLevels != 1) return Texture();
 
 		const DirectX::Image* image = scratchImage.GetImage(
 			0, // ミップは使わない
 			0, // テクスチャ配列のインデックス (0でOK)
-			0 // 3Dテクスチャのスライスインデックス (0でOK)
+			0  // 3Dテクスチャのスライスインデックス (0でOK)
 		);
 
 		// 生データをコピーして、外部スコープに返せるようにする
@@ -51,54 +43,51 @@ namespace ForiverEngine
 		rawData.resize(image->slicePitch);
 		std::memcpy(rawData.data(), image->pixels, image->slicePitch);
 
-		Texture texture = Texture
-		{
-			.data = std::move(rawData),
-			.format = static_cast<Format>(metadata.format),
-			.size = Lattice2(static_cast<int>(metadata.width), static_cast<int>(metadata.height)),
-			.sliceCount = 1,
-		};
+		Texture texture = Texture(
+			std::move(rawData),
+			Lattice3(static_cast<int>(metadata.width), static_cast<int>(metadata.height), 1),
+			static_cast<Format>(metadata.format)
+		);
 
 		// バイトサイズが合っているかをチェック
-		if (static_cast<int>(image->rowPitch) != texture.GetRowBytes()) return Texture{};
-		if (static_cast<int>(image->slicePitch) != texture.GetSliceBytes()) return Texture{};
+		if (static_cast<int>(image->rowPitch) != texture.GetRowBytes()) return Texture();
+		if (static_cast<int>(image->slicePitch) != texture.GetSliceBytes()) return Texture();
 
 		return texture;
 	}
 
 	Texture TextureLoader::LoadAsArray(const std::vector<std::string>& paths)
 	{
-		if (paths.empty())
-			return Texture{};
-
-		const int sliceCount = static_cast<int>(paths.size());
+		if (paths.empty()) return Texture();
 
 		// 1枚目で基準を決め、2枚目以降はそれと同じかチェックする
 		// 各ロードされたテクスチャは、sliceCount == 1 である必要がある
 		// 生データを結合して格納する
-		Texture texture = { .sliceCount = sliceCount };
+		Texture texture = Texture();
+		texture.size.z = static_cast<int>(paths.size());
 
-		for (int i = 0; i < sliceCount; ++i)
+		for (int i = 0; i < texture.size.z; ++i)
 		{
 			const Texture loadedTexture = Load(paths[i]);
-			if (!loadedTexture.IsValid())
-				return Texture{};
+			if (!loadedTexture.IsValid()) return Texture();
 
 			// 1枚目で基準を決める
 			if (i == 0)
 			{
+				texture.size.x = loadedTexture.size.x;
+				texture.size.y = loadedTexture.size.y;
 				texture.format = loadedTexture.format;
-				texture.size = loadedTexture.size;
 
-				if (loadedTexture.sliceCount != 1) return Texture{};
+				if (loadedTexture.size.z != 1) return Texture();
 			}
 			// 2枚目以降は基準と同じかチェック
 			else
 			{
-				if (loadedTexture.format != texture.format) return Texture{};
-				if (loadedTexture.size != texture.size) return Texture{};
+				if (loadedTexture.size.x != texture.size.x) return Texture();
+				if (loadedTexture.size.y != texture.size.y) return Texture();
+				if (loadedTexture.format != texture.format) return Texture();
 
-				if (loadedTexture.sliceCount != 1) return Texture{};
+				if (loadedTexture.size.z != 1) return Texture();
 			}
 
 			// 生データを結合

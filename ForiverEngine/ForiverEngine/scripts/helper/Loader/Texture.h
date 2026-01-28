@@ -11,47 +11,44 @@ namespace ForiverEngine
 	/// </summary>
 	struct Texture
 	{
-		// アラインメントをこれに揃える必要がある
-		static constexpr int RowSizeAlignment = 256;
-		// ミップマップなし
-		static constexpr int MipLevels = 1;
+		// 定数
+
+		static constexpr int RowSizeAlignment = 256; // アラインメントをこれに揃える必要がある
+		static constexpr int MipLevels = 1;          // ミップマップなし
+
+		// メンバ変数
 
 		std::vector<std::uint8_t> data; // 生データ (ビット配列)
-
+		Lattice3 size; // width, height, sliceCount
 		Format format;
-		Lattice2 size;
-		int sliceCount; // スライス数
+
+		// コンストラクタ
+
+		Texture() : Texture({}, Lattice3::Zero(), Format::Unknown)
+		{
+		}
+		Texture(const std::vector<std::uint8_t>& data, const Lattice3& size, Format format)
+			: data(data), size(size), format(format)
+		{
+		}
+		Texture(std::vector<std::uint8_t>&& data, const Lattice3& size, Format format)
+			: data(std::move(data)), size(size), format(format)
+		{
+		}
+
+		// メソッド
 
 		int GetRowBytes() const { return GetFormatBytePerPixel(format) * size.x; }
 		int GetSliceBytes() const { return GetRowBytes() * size.y; }
-		int GetWholeBytes() const { return GetSliceBytes() * sliceCount; }
+		int GetWholeBytes() const { return GetSliceBytes() * size.z; }
 
 		bool IsValid() const
 		{
 			if (data.empty()) return false;
-			if (size.x <= 0 || size.y <= 0) return false;
-			if (sliceCount <= 0) return false;
+			if (size.x <= 0 || size.y <= 0 || size.z <= 0) return false;
+			if (format == Format::Unknown) return false;
 
 			return true;
-		}
-
-		/// <summary>
-		/// <para>手動作成</para>
-		/// <para>2Dテクスチャ (配列ではない) として作成する</para>
-		/// <para>生データはそのまま素通しし、そこから値を計算などはしない</para>
-		/// <para>ミップマップなし</para>
-		/// </summary>
-		static Texture CreateManually(const std::vector<std::uint8_t>& data, const Lattice2& size, Format format)
-		{
-			const int bytePerPixel = GetFormatBytePerPixel(format);
-
-			return Texture
-			{
-				.data = data,
-				.format = format,
-				.size = size,
-				.sliceCount = 1,
-			};
 		}
 	};
 }

@@ -224,6 +224,13 @@ public: \
 	{
 		return GetFormatDim(format) * GetFormatBytePerDim(format);
 	}
+	// 有効な(=定義済みの)フォーマットであるか?
+	// DirectX12 のもの全ては対応していないので、この関数で判定する
+	// Dim が 1 以上かで判定する
+	inline constexpr bool IsValidFormat(Format format)
+	{
+		return GetFormatDim(format) > 0;
+	}
 
 	// ラスタライザの塗りつぶしモード
 	enum class FillMode : std::uint8_t

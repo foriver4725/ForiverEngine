@@ -104,7 +104,7 @@ namespace ForiverEngine
 				static_cast<int>(
 					GetAlignmentedSize(textureAsMetadata.GetRowBytes(), Texture::RowSizeAlignment)
 					* textureAsMetadata.size.y
-					* textureAsMetadata.sliceCount
+					* textureAsMetadata.size.z
 					),
 				true
 			);
@@ -322,7 +322,7 @@ namespace ForiverEngine
 		/// </summary>
 		static DescriptorHandleAtCPU InitDSV(const Device& device, const Lattice2& size)
 		{
-			const Texture depthBufferMetadata = Texture::CreateManually({}, size, Format::D_F32);
+			const Texture depthBufferMetadata = Texture({}, Lattice3(size, 1), Format::D_F32);
 			const GraphicsBuffer depthBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, depthBufferMetadata,
 				GraphicsBufferUsagePermission::AllowDepthStencil, GraphicsBufferState::DepthWrite, Color(DepthBufferClearValue, 0, 0, 0));
 			if (!depthBuffer)
