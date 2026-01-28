@@ -55,8 +55,7 @@ namespace ForiverEngine
 		{
 			.data = std::move(rawData),
 			.format = static_cast<Format>(metadata.format),
-			.width = static_cast<int>(metadata.width),
-			.height = static_cast<int>(metadata.height),
+			.size = Lattice2(static_cast<int>(metadata.width), static_cast<int>(metadata.height)),
 			.rowSize = static_cast<int>(image->rowPitch),
 			.sliceSize = static_cast<int>(image->slicePitch),
 			.sliceCount = 1,
@@ -149,8 +148,7 @@ namespace ForiverEngine
 		{
 			.data = std::move(combinedData),
 			.format = format,
-			.width = width,
-			.height = height,
+			.size = Lattice2(width, height),
 			.rowSize = rowSize,
 			.sliceSize = sliceSize,
 			.sliceCount = static_cast<int>(paths.size()),

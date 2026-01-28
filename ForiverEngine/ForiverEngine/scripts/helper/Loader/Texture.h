@@ -19,13 +19,12 @@ namespace ForiverEngine
 		std::vector<std::uint8_t> data{}; // 生データ (ビット配列)
 
 		Format format{};
-		int width{};
-		int height{};
+		Lattice2 size{};
 		int rowSize{}; // 1行分のデータサイズ
 		int sliceSize{}; // 1スライス分のデータサイズ
 		int sliceCount{}; // スライス数
 
-		constexpr bool IsValid() const { return !data.empty() && width > 0 && height > 0; }
+		constexpr bool IsValid() const { return !data.empty() && size.x > 0 && size.y > 0 && sliceCount > 0; }
 
 		/// <summary>
 		/// <para>手動作成</para>
@@ -41,8 +40,7 @@ namespace ForiverEngine
 			{
 				.data = data,
 				.format = format,
-				.width = size.x,
-				.height = size.y,
+				.size = size,
 				.rowSize = bytePerPixel * size.x,
 				.sliceSize = bytePerPixel * size.x * size.y,
 				.sliceCount = 1,

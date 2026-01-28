@@ -420,8 +420,8 @@ namespace ForiverEngine
 		{
 			.Dimension = static_cast<D3D12_RESOURCE_DIMENSION>(GraphicsBufferType::Texture2D),
 			.Alignment = 0, // 既定値でOK
-			.Width = static_cast<UINT64>(texture.width),
-			.Height = static_cast<UINT>(texture.height),
+			.Width = static_cast<UINT64>(texture.size.x),
+			.Height = static_cast<UINT>(texture.size.y),
 			.DepthOrArraySize = static_cast<UINT16>(texture.sliceCount), // 配列のサイズ = スライス数
 			.MipLevels = static_cast<UINT16>(texture.MipLevels), // ミップマップ数
 			.Format = static_cast<DXGI_FORMAT>(texture.format),
@@ -723,7 +723,7 @@ namespace ForiverEngine
 					std::uint8_t* src = const_cast<std::uint8_t*>(texture.data.data())
 						+ sliceIndex * texture.sliceSize;
 					std::uint8_t* dst = dstBase
-						+ sliceIndex * alignedRowSize * texture.height;
+						+ sliceIndex * alignedRowSize * texture.size.y;
 
 					if (!src || !dst)
 					{
@@ -732,7 +732,7 @@ namespace ForiverEngine
 					}
 
 					// RowPitch のアラインメントがあって、バッファのサイズが異なるので、1行ごとにコピーするようにする
-					for (int y = 0; y < texture.height; ++y)
+					for (int y = 0; y < texture.size.y; ++y)
 					{
 						std::memcpy(dst, src, texture.rowSize);
 						src += texture.rowSize;
@@ -754,12 +754,12 @@ namespace ForiverEngine
 					.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT, // アップロードバッファーはこっちを指定
 					.PlacedFootprint =
 					{
-						.Offset = static_cast<UINT64>(sliceIndex * alignedRowSize * texture.height),
+						.Offset = static_cast<UINT64>(sliceIndex * alignedRowSize * texture.size.y),
 						.Footprint =
 						{
 							.Format = static_cast<DXGI_FORMAT>(texture.format),
-							.Width = static_cast<UINT>(texture.width),
-							.Height = static_cast<UINT>(texture.height),
+							.Width = static_cast<UINT>(texture.size.x),
+							.Height = static_cast<UINT>(texture.size.y),
 							.Depth = 1, // 2Dテクスチャなので...
 							.RowPitch = static_cast<UINT>(alignedRowSize),
 						}

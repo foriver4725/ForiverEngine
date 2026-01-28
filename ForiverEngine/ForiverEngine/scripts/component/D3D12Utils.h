@@ -103,7 +103,7 @@ namespace ForiverEngine
 				device,
 				static_cast<int>(
 					GetAlignmentedSize(textureAsMetadata.rowSize, Texture::RowSizeAlignment)
-					* textureAsMetadata.height
+					* textureAsMetadata.size.y
 					* textureAsMetadata.sliceCount
 					),
 				true
