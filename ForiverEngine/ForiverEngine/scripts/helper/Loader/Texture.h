@@ -20,16 +20,16 @@ namespace ForiverEngine
 
 		Format format;
 		Lattice2 size;
-		int rowSize; // 1行分のデータサイズ
-		int sliceSize; // 1スライス分のデータサイズ
 		int sliceCount; // スライス数
+
+		int GetRowBytes() const { return GetFormatBytePerPixel(format) * size.x; }
+		int GetSliceBytes() const { return GetRowBytes() * size.y; }
+		int GetWholeBytes() const { return GetSliceBytes() * sliceCount; }
 
 		bool IsValid() const
 		{
 			if (data.empty()) return false;
 			if (size.x <= 0 || size.y <= 0) return false;
-			if (rowSize <= 0) return false;
-			if (sliceSize <= 0) return false;
 			if (sliceCount <= 0) return false;
 
 			return true;
@@ -50,8 +50,6 @@ namespace ForiverEngine
 				.data = data,
 				.format = format,
 				.size = size,
-				.rowSize = bytePerPixel * size.x,
-				.sliceSize = bytePerPixel * size.x * size.y,
 				.sliceCount = 1,
 			};
 		}

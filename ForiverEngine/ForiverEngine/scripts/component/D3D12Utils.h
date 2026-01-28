@@ -102,7 +102,7 @@ namespace ForiverEngine
 			const GraphicsBuffer intermediateBuffer = D3D12Helper::CreateGraphicsBuffer1D(
 				device,
 				static_cast<int>(
-					GetAlignmentedSize(textureAsMetadata.rowSize, Texture::RowSizeAlignment)
+					GetAlignmentedSize(textureAsMetadata.GetRowBytes(), Texture::RowSizeAlignment)
 					* textureAsMetadata.size.y
 					* textureAsMetadata.sliceCount
 					),

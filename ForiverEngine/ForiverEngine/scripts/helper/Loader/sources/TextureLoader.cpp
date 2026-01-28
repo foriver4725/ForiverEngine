@@ -51,15 +51,19 @@ namespace ForiverEngine
 		rawData.resize(image->slicePitch);
 		std::memcpy(rawData.data(), image->pixels, image->slicePitch);
 
-		return Texture
+		Texture texture = Texture
 		{
 			.data = std::move(rawData),
 			.format = static_cast<Format>(metadata.format),
 			.size = Lattice2(static_cast<int>(metadata.width), static_cast<int>(metadata.height)),
-			.rowSize = static_cast<int>(image->rowPitch),
-			.sliceSize = static_cast<int>(image->slicePitch),
 			.sliceCount = 1,
 		};
+
+		// バイトサイズが合っているかをチェック
+		if (static_cast<int>(image->rowPitch) != texture.GetRowBytes()) return Texture{};
+		if (static_cast<int>(image->slicePitch) != texture.GetSliceBytes()) return Texture{};
+
+		return texture;
 	}
 
 	Texture TextureLoader::LoadAsArray(const std::vector<std::string>& paths)
@@ -85,8 +89,6 @@ namespace ForiverEngine
 			{
 				texture.format = loadedTexture.format;
 				texture.size = loadedTexture.size;
-				texture.rowSize = loadedTexture.rowSize;
-				texture.sliceSize = loadedTexture.sliceSize;
 
 				if (loadedTexture.sliceCount != 1) return Texture{};
 			}
@@ -95,8 +97,6 @@ namespace ForiverEngine
 			{
 				if (loadedTexture.format != texture.format) return Texture{};
 				if (loadedTexture.size != texture.size) return Texture{};
-				if (loadedTexture.rowSize != texture.rowSize) return Texture{};
-				if (loadedTexture.sliceSize != texture.sliceSize) return Texture{};
 
 				if (loadedTexture.sliceCount != 1) return Texture{};
 			}

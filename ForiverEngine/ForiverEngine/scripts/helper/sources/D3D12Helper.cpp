@@ -699,7 +699,7 @@ namespace ForiverEngine
 		const CommandList& commandList,
 		const GraphicsBuffer& textureCopyIntermediateBuffer, const GraphicsBuffer& textureBuffer, const Texture& texture)
 	{
-		const int alignedRowSize = GetAlignmentedSize(texture.rowSize, Texture::RowSizeAlignment);
+		const int alignedRowSize = GetAlignmentedSize(texture.GetRowBytes(), Texture::RowSizeAlignment);
 
 		// 中間バッファ(1次元) にマップ
 		{
@@ -721,7 +721,7 @@ namespace ForiverEngine
 				for (int sliceIndex = 0; sliceIndex < texture.sliceCount; ++sliceIndex)
 				{
 					std::uint8_t* src = const_cast<std::uint8_t*>(texture.data.data())
-						+ sliceIndex * texture.sliceSize;
+						+ sliceIndex * texture.GetSliceBytes();
 					std::uint8_t* dst = dstBase
 						+ sliceIndex * alignedRowSize * texture.size.y;
 
@@ -732,10 +732,11 @@ namespace ForiverEngine
 					}
 
 					// RowPitch のアラインメントがあって、バッファのサイズが異なるので、1行ごとにコピーするようにする
+					const int rowBytes = texture.GetRowBytes();
 					for (int y = 0; y < texture.size.y; ++y)
 					{
-						std::memcpy(dst, src, texture.rowSize);
-						src += texture.rowSize;
+						std::memcpy(dst, src, rowBytes);
+						src += rowBytes;
 						dst += alignedRowSize;
 					}
 				}
