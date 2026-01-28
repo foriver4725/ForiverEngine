@@ -14,7 +14,7 @@ namespace ForiverEngine
 	public:
 		static constexpr Vector3 CollisionSize = Vector3(0.5f, 1.8f, 0.5f); // 当たり判定サイズ
 		static constexpr float CameraFovV = 60.0f * DegToRad; // カメラの垂直視野角 (ラジアン)
-		static constexpr float GravityScale = 1.0f; // 重力の倍率
+		static constexpr float GravityScale = 1.2f; // 重力の倍率
 		[[maybe_unused]] static constexpr float Mass = 60.0f; // 質量 (kg). プレイヤーの想定体重
 		static constexpr float SpeedH = 3.0f; // 水平移動速度 (m/s)
 		static constexpr float DashSpeedH = 6.0f; // ダッシュ時の水平移動速度 (m/s)
@@ -24,7 +24,7 @@ namespace ForiverEngine
 		static constexpr float LookSensitivityV = 180.0f; // 視点の垂直感度 (度/s)
 		static constexpr float LookPitchMax = 89.9f * DegToRad; // 視点の上下回転の最大値 (ラジアン)
 		static constexpr float MinVelocityV = -100.0f; // 最小鉛直速度 (m/s) - 落下速度の上限
-		static constexpr float JumpHeight = 1.3f; // ジャンプの高さ (m)
+		static constexpr float JumpHeight = 1.4f; // ジャンプの高さ (m)
 		static constexpr float EyeHeight = 1.6f; // 目線の高さ (m)
 
 		static constexpr int FindSpawnPointMaxAttempts = 1024; // 初期スポーン地点を探す際の最大試行回数
