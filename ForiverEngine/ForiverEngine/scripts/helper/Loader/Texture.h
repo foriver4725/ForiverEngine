@@ -35,35 +35,7 @@ namespace ForiverEngine
 		/// </summary>
 		static Texture CreateManually(const std::vector<std::uint8_t>& data, const Lattice2& size, Format format)
 		{
-			// 1テクセルのバイト数を計算
-
-			const std::uint32_t formatTypes = GetFormatTypes(format);
-
-			int channelAmount = 0;
-			int biteAmountPerChannel = 0;
-			{
-				if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::Dim1))
-					channelAmount = 1;
-				else if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::Dim2))
-					channelAmount = 2;
-				else if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::Dim3))
-					channelAmount = 3;
-				else if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::Dim4))
-					channelAmount = 4;
-				else
-					channelAmount = 0; // 不明
-
-				if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::Bite1))
-					biteAmountPerChannel = 1;
-				else if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::Bite2))
-					biteAmountPerChannel = 2;
-				else if (BitFlag::HasFlag(formatTypes, FormatTypeDigit::Bite4))
-					biteAmountPerChannel = 4;
-				else
-					biteAmountPerChannel = 0; // 不明
-			}
-
-			const std::size_t biteAmountTotal = static_cast<std::size_t>(channelAmount * biteAmountPerChannel);
+			const int bytePerPixel = GetFormatBytePerPixel(format);
 
 			return Texture
 			{
@@ -72,8 +44,8 @@ namespace ForiverEngine
 				.format = format,
 				.width = size.x,
 				.height = size.y,
-				.rowSize = static_cast<int>(biteAmountTotal * size.x),
-				.sliceSize = static_cast<int>(biteAmountTotal * size.x * size.y),
+				.rowSize = bytePerPixel * size.x,
+				.sliceSize = bytePerPixel * size.x * size.y,
 				.sliceCount = 1,
 				.mipLevels = 1,
 			};

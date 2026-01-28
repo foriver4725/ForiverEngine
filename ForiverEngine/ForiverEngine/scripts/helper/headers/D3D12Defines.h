@@ -187,6 +187,42 @@ public: \
 		}
 	}
 
+	// ピクセルフォーマットの数値を取得する
+
+	// 1ピクセルあたりの次元数
+	// RGBA = 4, RGB = 3, RG = 2, R = 1
+	inline constexpr int GetFormatDim(Format format)
+	{
+		const std::uint32_t types = GetFormatTypes(format);
+
+		if (BitFlag::HasFlag(types, FormatTypeDigit::Dim1)) return 1;
+		if (BitFlag::HasFlag(types, FormatTypeDigit::Dim2)) return 2;
+		if (BitFlag::HasFlag(types, FormatTypeDigit::Dim3)) return 3;
+		if (BitFlag::HasFlag(types, FormatTypeDigit::Dim4)) return 4;
+
+		// error
+		return 0;
+	}
+	// 1次元あたりのバイト数
+	// _32 = 4バイト, _16 = 2バイト, _8 = 1バイト
+	inline constexpr int GetFormatBytePerDim(Format format)
+	{
+		const std::uint32_t types = GetFormatTypes(format);
+
+		if (BitFlag::HasFlag(types, FormatTypeDigit::Bite1)) return 1;
+		if (BitFlag::HasFlag(types, FormatTypeDigit::Bite2)) return 2;
+		if (BitFlag::HasFlag(types, FormatTypeDigit::Bite4)) return 4;
+
+		// error
+		return 0;
+	}
+	// 1ピクセルあたりのバイト数
+	// RGBA_F32 = 16バイト, R_U8_01 = 1バイト, など
+	inline constexpr int GetFormatBytePerPixel(Format format)
+	{
+		return GetFormatDim(format) * GetFormatBytePerDim(format);
+	}
+
 	// ラスタライザの塗りつぶしモード
 	enum class FillMode : std::uint8_t
 	{
