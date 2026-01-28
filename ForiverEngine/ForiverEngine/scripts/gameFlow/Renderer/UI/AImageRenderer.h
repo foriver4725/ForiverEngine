@@ -19,7 +19,7 @@ namespace ForiverEngine
 		struct alignas(256) CBData0
 		{
 			std::uint32_t TextureSize[2]; // 画像サイズ
-			Lattice2 Position;
+			Lattice2 Position; // 画像の中心座標
 			Vector2 Scale;
 		};
 
