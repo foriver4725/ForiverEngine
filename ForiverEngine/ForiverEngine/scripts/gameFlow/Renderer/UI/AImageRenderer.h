@@ -29,12 +29,19 @@ namespace ForiverEngine
 			const Device& device,
 			const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator,
 			const Lattice2& windowSize,
-			const std::string& imageFilePath, const Lattice2& position, const Vector2& scale
+			const std::string& imageFilePath, const Lattice2& position, const Lattice2& drawSize // 描画サイズ (ピクセル単位)
 		)
 		{
 			// t1 (画像テクスチャ)
 			const Texture sr1Metadata = D3D12Utils::LoadTexture({ imageFilePath });
 			const GraphicsBuffer sr1 = D3D12Utils::InitSR(device, commandList, commandQueue, commandAllocator, sr1Metadata);
+
+			// 画像の元サイズに対するスケールを計算
+			const Vector2 scale =
+			{
+				1.0f * drawSize.x / sr1Metadata.size.x,
+				1.0f * drawSize.y / sr1Metadata.size.y,
+			};
 
 			// b0
 			const CBData0 cbData0 =

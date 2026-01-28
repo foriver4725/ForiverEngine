@@ -8,25 +8,27 @@
 namespace ForiverEngine
 {
 	/// <summary>
-	/// ポインタ(画面中央にあるクロスヘア)のレンダラー
+	/// アイテムスロット画像1つ分のレンダラー
 	/// </summary>
-	class PointerImageRenderer : public AImageRenderer
+	class ItemSlotImageRenderer : public AImageRenderer
 	{
 	private:
 		using Base = AImageRenderer;
 
 	public:
+		static constexpr int SlotCount = 6; // スロット数
+		static constexpr int SlotSize = 128; // スロット1つ分のサイズ (正方形. NxN)
 
-		explicit PointerImageRenderer(
+		explicit ItemSlotImageRenderer(
 			const Device& device,
 			const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator,
-			const Lattice2& windowSize
+			const Lattice2& windowSize,
+			const Lattice2& position, const Lattice2& drawSize // 描画サイズ (ピクセル単位)
 		)
 		{
 			Base::Init(
 				device, commandList, commandQueue, commandAllocator, windowSize,
-				"assets/textures/pointer.png",
-				windowSize / 2, Lattice2(24, 24)
+				"assets/textures/item_frame.png", position, drawSize
 			);
 		}
 	};

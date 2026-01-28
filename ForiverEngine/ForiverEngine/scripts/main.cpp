@@ -219,6 +219,21 @@ int Main(hInstance)
 	const std::unique_ptr<AOffscreenRenderer> pointerImageRenderer =
 		std::make_unique<PointerImageRenderer>(device, commandList, commandQueue, commandAllocator, WindowSize);
 
+	std::vector<std::unique_ptr<AOffscreenRenderer>> itemSlotImageRenderers;
+	for (int i = 0; i < ItemSlotImageRenderer::SlotCount; ++i)
+	{
+		using Renderer = ItemSlotImageRenderer;
+
+		itemSlotImageRenderers.push_back(std::make_unique<Renderer>(
+			device, commandList, commandQueue, commandAllocator, WindowSize,
+			Lattice2(
+				(WindowSize.x - Renderer::SlotSize * (Renderer::SlotCount - 1)) / 2 + i * Renderer::SlotSize,
+				WindowSize.y - 20 - Renderer::SlotSize / 2
+			),
+			Lattice2(Renderer::SlotSize, Renderer::SlotSize)
+		));
+	}
+
 
 
 	while (true)
@@ -345,15 +360,23 @@ int Main(hInstance)
 			packedDrawMeshIndicesCounts
 		);
 		// オフスクリーンレンダリング
-		AOffscreenRenderer::DrawInOrder(
-			commandList, commandQueue, commandAllocator, device,
-			currentBackRT, currentBackRTV, viewportScissorRect,
-			{
-				postProcessRenderer.get(), // ポストプロセス
-				textRenderer.get(),        // テキスト描画
-				pointerImageRenderer.get() // ポインター画像描画
-			}
-		);
+		{
+			std::vector<const AOffscreenRenderer*> renderers = {};
+
+			renderers.push_back(postProcessRenderer.get());  // ポストプロセス
+			renderers.push_back(textRenderer.get());         // テキスト描画
+			renderers.push_back(pointerImageRenderer.get()); // ポインター画像描画
+
+			// アイテムスロット画像描画
+			for (const auto& itemSlotImageRenderer : itemSlotImageRenderers)
+				renderers.push_back(itemSlotImageRenderer.get());
+
+			AOffscreenRenderer::DrawInOrder(
+				commandList, commandQueue, commandAllocator, device,
+				currentBackRT, currentBackRTV, viewportScissorRect,
+				renderers
+			);
+		}
 
 		if (!D3D12Helper::Present(swapChain))
 			ShowError(L"画面のフリップに失敗しました");

@@ -231,6 +231,7 @@
     <ClInclude Include="scripts\gameFlow\Renderer\PostProcessRenderer.h" />
     <ClInclude Include="scripts\gameFlow\Renderer\UI\AImageRenderer.h" />
     <ClInclude Include="scripts\gameFlow\Renderer\UI\Include.h" />
+    <ClInclude Include="scripts\gameFlow\Renderer\UI\ItemSlotImageRenderer.h" />
     <ClInclude Include="scripts\gameFlow\Renderer\UI\PointerImageRenderer.h" />
     <ClInclude Include="scripts\gameFlow\Renderer\UI\TextRenderer.h" />
     <ClInclude Include="scripts\gameFlow\SunCamera.h" />
