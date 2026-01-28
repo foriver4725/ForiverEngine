@@ -122,6 +122,7 @@ public: \
 
 		RGBA_U8 = 30,         // DXGI_FORMAT_R8G8B8A8_UINT
 		RGBA_U8_01 = 28,      // DXGI_FORMAT_R8G8B8A8_UNORM
+		BGRA_U8_01 = 87,      // DXGI_FORMAT_B8G8R8A8_UNORM (画像の読み込みなど)
 		RG_U8 = 50,           // DXGI_FORMAT_R8G8_UINT
 		RG_U8_01 = 49,        // DXGI_FORMAT_R8G8_UNORM
 		R_U8 = 62,            // DXGI_FORMAT_R8_UINT
@@ -176,6 +177,7 @@ public: \
 
 		case Format::RGBA_U8:    return BitFlag::AddFlags(0, { Digit::Dim4, Digit::TypeInt,   Digit::Byte1, Digit::ForColor });
 		case Format::RGBA_U8_01: return BitFlag::AddFlags(0, { Digit::Dim4, Digit::TypeInt,   Digit::Byte1, Digit::ForColor });
+		case Format::BGRA_U8_01: return BitFlag::AddFlags(0, { Digit::Dim4, Digit::TypeInt,   Digit::Byte1, Digit::ForColor });
 		case Format::RG_U8:      return BitFlag::AddFlags(0, { Digit::Dim2, Digit::TypeInt,   Digit::Byte1, Digit::ForColor });
 		case Format::RG_U8_01:   return BitFlag::AddFlags(0, { Digit::Dim2, Digit::TypeInt,   Digit::Byte1, Digit::ForColor });
 		case Format::R_U8:       return BitFlag::AddFlags(0, { Digit::Dim1, Digit::TypeInt,   Digit::Byte1, Digit::ForColor });
