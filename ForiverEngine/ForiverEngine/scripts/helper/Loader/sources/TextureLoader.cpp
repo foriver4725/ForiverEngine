@@ -67,91 +67,48 @@ namespace ForiverEngine
 		if (paths.empty())
 			return Texture{};
 
-		DirectX::TexMetadata baseMetadata = {};
-		std::vector<std::uint8_t> combinedData;
+		const int sliceCount = static_cast<int>(paths.size());
 
-		Format format = Format::Unknown;
-		int width = 0;
-		int height = 0;
-		int rowSize = 0;
-		int sliceSize = 0;
+		// 1枚目で基準を決め、2枚目以降はそれと同じかチェックする
+		// 各ロードされたテクスチャは、sliceCount == 1 である必要がある
+		// 生データを結合して格納する
+		Texture texture = { .sliceCount = sliceCount };
 
-		for (int i = 0; i < static_cast<int>(paths.size()); ++i)
+		for (int i = 0; i < sliceCount; ++i)
 		{
-			DirectX::ScratchImage scratchImage = {};
-			DirectX::TexMetadata metadata = {};
-
-			if (DirectX::LoadFromWICFile(
-				StringUtils::UTF8ToUTF16(paths[i]).c_str(),
-				DirectX::WIC_FLAGS_NONE,
-				&metadata,
-				scratchImage
-			) != S_OK)
-			{
-				return Texture{};
-			}
-
-			//////////
-			// メタデータの値が適切かチェック
-
-			// 列挙型の整数値が同じなので、static_cast で変換できる
-			// 2Dテクスチャ配列も、2Dテクスチャ扱いでOK
-			if (static_cast<GraphicsBufferType>(metadata.dimension) != GraphicsBufferType::Texture2D)
-				return Texture{};
-
-			if (metadata.mipLevels != 1)
-				return Texture{};
-
-			//////////
-
-			const DirectX::Image* image = scratchImage.GetImage(0, 0, 0);
-			if (!image)
+			const Texture loadedTexture = Load(paths[i]);
+			if (!loadedTexture.IsValid())
 				return Texture{};
 
 			// 1枚目で基準を決める
 			if (i == 0)
 			{
-				baseMetadata = metadata;
+				texture.format = loadedTexture.format;
+				texture.size = loadedTexture.size;
+				texture.rowSize = loadedTexture.rowSize;
+				texture.sliceSize = loadedTexture.sliceSize;
 
-				format = static_cast<Format>(metadata.format);
-				width = static_cast<int>(metadata.width);
-				height = static_cast<int>(metadata.height);
-				rowSize = static_cast<int>(image->rowPitch);
-				sliceSize = static_cast<int>(image->slicePitch);
-
-				combinedData.reserve(sliceSize * paths.size());
+				if (loadedTexture.sliceCount != 1) return Texture{};
 			}
+			// 2枚目以降は基準と同じかチェック
 			else
 			{
-				// サイズチェック
-				if (metadata.width != baseMetadata.width ||
-					metadata.height != baseMetadata.height)
-				{
-					// Texture2DArray にできない
-					return Texture{};
-				}
+				if (loadedTexture.format != texture.format) return Texture{};
+				if (loadedTexture.size != texture.size) return Texture{};
+				if (loadedTexture.rowSize != texture.rowSize) return Texture{};
+				if (loadedTexture.sliceSize != texture.sliceSize) return Texture{};
 
-				// TODO: フォーマットチェックはしない!!
+				if (loadedTexture.sliceCount != 1) return Texture{};
 			}
 
-			// スライス分コピー
-			size_t offset = combinedData.size();
-			combinedData.resize(offset + sliceSize);
-			std::memcpy(
-				combinedData.data() + offset,
-				image->pixels,
-				sliceSize
+			// 生データを結合
+			texture.data.insert(
+				texture.data.end(),
+				loadedTexture.data.begin(),
+				loadedTexture.data.end()
 			);
 		}
 
-		return Texture
-		{
-			.data = std::move(combinedData),
-			.format = format,
-			.size = Lattice2(width, height),
-			.rowSize = rowSize,
-			.sliceSize = sliceSize,
-			.sliceCount = static_cast<int>(paths.size()),
-		};
+		return texture;
 	}
 }
