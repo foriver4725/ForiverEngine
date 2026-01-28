@@ -15,6 +15,7 @@ namespace ForiverEngine
 		static constexpr Vector3 CollisionSize = Vector3(0.5f, 1.8f, 0.5f); // 当たり判定サイズ
 		static constexpr float CameraFovV = 60.0f * DegToRad; // カメラの垂直視野角 (ラジアン)
 		static constexpr float GravityScale = 1.0f; // 重力の倍率
+		[[maybe_unused]] static constexpr float Mass = 60.0f; // 質量 (kg). プレイヤーの想定体重
 		static constexpr float SpeedH = 3.0f; // 水平移動速度 (m/s)
 		static constexpr float DashSpeedH = 6.0f; // ダッシュ時の水平移動速度 (m/s)
 		static constexpr float LookInputMultiplier = 0.02f; // 視点移動入力の乗数 (入力値が大きすぎると思うので、いい感じに調整する)
@@ -74,6 +75,12 @@ namespace ForiverEngine
 			);
 
 			velocityV = 0.0f;
+		}
+
+		// 重力加速度 * 重力倍率
+		constexpr float GetRealGravity() const noexcept
+		{
+			return G * GravityScale;
 		}
 
 		Vector3 GetFootPosition() const noexcept
@@ -164,7 +171,7 @@ namespace ForiverEngine
 					const int ceilY = FindCeilHeight(chunks);
 
 					// 落下分の加速度を加算し、鉛直移動する
-					velocityV -= (G * GravityScale) * deltaSeconds;
+					velocityV -= GetRealGravity() * deltaSeconds;
 					velocityV = std::max(velocityV, MinVelocityV);
 					if (std::abs(velocityV) > 0.01f)
 						transform.position += Vector3::Up() * (velocityV * deltaSeconds);
@@ -203,7 +210,7 @@ namespace ForiverEngine
 
 					// 接地しているなら、ジャンプ入力を受け付ける
 					if (isGrounded && inputs.jumpPressed)
-						velocityV += std::sqrt(2.0f * G * JumpHeight);
+						velocityV += std::sqrt(2.0f * GetRealGravity() * JumpHeight);
 				}
 
 				// 水平移動と当たり判定
