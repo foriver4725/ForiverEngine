@@ -18,9 +18,9 @@ namespace ForiverEngine
 		// b0
 		struct alignas(256) CBData0
 		{
-			Lattice2 PointerTextureSize; // ポインタテクスチャのサイズ (ピクセル単位)
-			Lattice2 PointerPosition;    // 画面上の位置 (ピクセル単位)
-			Vector2 PointerScale;        // 画面上の実寸では、テクスチャサイズの何倍であるか
+			std::uint32_t PointerTextureSize[2]; // ポインタテクスチャのサイズ (ピクセル単位)
+			Lattice2 PointerPosition;            // 画面上の位置 (ピクセル単位)
+			Vector2 PointerScale;                // 画面上の実寸では、テクスチャサイズの何倍であるか
 		};
 
 	public:
@@ -38,7 +38,7 @@ namespace ForiverEngine
 			// b0
 			const CBData0 cbData0 =
 			{
-				.PointerTextureSize = Lattice2(sr1Metadata.size.x, sr1Metadata.size.y),
+				.PointerTextureSize = { static_cast<std::uint32_t>(sr1Metadata.size.x), static_cast<std::uint32_t>(sr1Metadata.size.y) },
 				.PointerPosition = windowSize / 2,
 				.PointerScale = Vector2::One() * 3.0f,
 			};

@@ -1,6 +1,7 @@
 #include "./Defines.hlsl"
 
 // フォントテクスチャからの、文字のサンプリング
+// オフスクリーンレンダリング前提
 
 struct TextSamplingParams
 {
