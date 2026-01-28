@@ -141,9 +141,9 @@ public: \
 		static constexpr int TypeInt = 8;
 		static constexpr int TypeFloat = 9;
 
-		static constexpr int Bite1 = 16;
-		static constexpr int Bite2 = 17;
-		static constexpr int Bite4 = 18;
+		static constexpr int Byte1 = 16;
+		static constexpr int Byte2 = 17;
+		static constexpr int Byte4 = 18;
 
 		static constexpr int ForColor = 24;
 		static constexpr int ForDepth = 25;
@@ -158,30 +158,30 @@ public: \
 		{
 		case Format::Unknown:    return 0;
 
-		case Format::RGBA_F32:   return BitFlag::AddFlags(0, { Digit::Dim4, Digit::TypeFloat, Digit::Bite4, Digit::ForColor });
-		case Format::RGBA_U32:   return BitFlag::AddFlags(0, { Digit::Dim4, Digit::TypeInt,   Digit::Bite4, Digit::ForColor });
-		case Format::RGB_F32:    return BitFlag::AddFlags(0, { Digit::Dim3, Digit::TypeFloat, Digit::Bite4, Digit::ForColor });
-		case Format::RGB_U32:    return BitFlag::AddFlags(0, { Digit::Dim3, Digit::TypeInt,   Digit::Bite4, Digit::ForColor });
-		case Format::RG_F32:     return BitFlag::AddFlags(0, { Digit::Dim2, Digit::TypeFloat, Digit::Bite4, Digit::ForColor });
-		case Format::RG_U32:     return BitFlag::AddFlags(0, { Digit::Dim2, Digit::TypeInt,   Digit::Bite4, Digit::ForColor });
-		case Format::R_F32:      return BitFlag::AddFlags(0, { Digit::Dim1, Digit::TypeFloat, Digit::Bite4, Digit::ForColor });
-		case Format::R_U32:      return BitFlag::AddFlags(0, { Digit::Dim1, Digit::TypeInt,   Digit::Bite4, Digit::ForColor });
+		case Format::RGBA_F32:   return BitFlag::AddFlags(0, { Digit::Dim4, Digit::TypeFloat, Digit::Byte4, Digit::ForColor });
+		case Format::RGBA_U32:   return BitFlag::AddFlags(0, { Digit::Dim4, Digit::TypeInt,   Digit::Byte4, Digit::ForColor });
+		case Format::RGB_F32:    return BitFlag::AddFlags(0, { Digit::Dim3, Digit::TypeFloat, Digit::Byte4, Digit::ForColor });
+		case Format::RGB_U32:    return BitFlag::AddFlags(0, { Digit::Dim3, Digit::TypeInt,   Digit::Byte4, Digit::ForColor });
+		case Format::RG_F32:     return BitFlag::AddFlags(0, { Digit::Dim2, Digit::TypeFloat, Digit::Byte4, Digit::ForColor });
+		case Format::RG_U32:     return BitFlag::AddFlags(0, { Digit::Dim2, Digit::TypeInt,   Digit::Byte4, Digit::ForColor });
+		case Format::R_F32:      return BitFlag::AddFlags(0, { Digit::Dim1, Digit::TypeFloat, Digit::Byte4, Digit::ForColor });
+		case Format::R_U32:      return BitFlag::AddFlags(0, { Digit::Dim1, Digit::TypeInt,   Digit::Byte4, Digit::ForColor });
 
-		case Format::RGBA_F16:   return BitFlag::AddFlags(0, { Digit::Dim4, Digit::TypeFloat, Digit::Bite2, Digit::ForColor });
-		case Format::RGBA_U16:   return BitFlag::AddFlags(0, { Digit::Dim4, Digit::TypeInt,   Digit::Bite2, Digit::ForColor });
-		case Format::RG_F16:     return BitFlag::AddFlags(0, { Digit::Dim2, Digit::TypeFloat, Digit::Bite2, Digit::ForColor });
-		case Format::RG_U16:     return BitFlag::AddFlags(0, { Digit::Dim2, Digit::TypeInt,   Digit::Bite2, Digit::ForColor });
-		case Format::R_F16:      return BitFlag::AddFlags(0, { Digit::Dim1, Digit::TypeFloat, Digit::Bite2, Digit::ForColor });
-		case Format::R_U16:      return BitFlag::AddFlags(0, { Digit::Dim1, Digit::TypeInt,   Digit::Bite2, Digit::ForColor });
+		case Format::RGBA_F16:   return BitFlag::AddFlags(0, { Digit::Dim4, Digit::TypeFloat, Digit::Byte2, Digit::ForColor });
+		case Format::RGBA_U16:   return BitFlag::AddFlags(0, { Digit::Dim4, Digit::TypeInt,   Digit::Byte2, Digit::ForColor });
+		case Format::RG_F16:     return BitFlag::AddFlags(0, { Digit::Dim2, Digit::TypeFloat, Digit::Byte2, Digit::ForColor });
+		case Format::RG_U16:     return BitFlag::AddFlags(0, { Digit::Dim2, Digit::TypeInt,   Digit::Byte2, Digit::ForColor });
+		case Format::R_F16:      return BitFlag::AddFlags(0, { Digit::Dim1, Digit::TypeFloat, Digit::Byte2, Digit::ForColor });
+		case Format::R_U16:      return BitFlag::AddFlags(0, { Digit::Dim1, Digit::TypeInt,   Digit::Byte2, Digit::ForColor });
 
-		case Format::RGBA_U8:    return BitFlag::AddFlags(0, { Digit::Dim4, Digit::TypeInt,   Digit::Bite1, Digit::ForColor });
-		case Format::RGBA_U8_01: return BitFlag::AddFlags(0, { Digit::Dim4, Digit::TypeInt,   Digit::Bite1, Digit::ForColor });
-		case Format::RG_U8:      return BitFlag::AddFlags(0, { Digit::Dim2, Digit::TypeInt,   Digit::Bite1, Digit::ForColor });
-		case Format::RG_U8_01:   return BitFlag::AddFlags(0, { Digit::Dim2, Digit::TypeInt,   Digit::Bite1, Digit::ForColor });
-		case Format::R_U8:       return BitFlag::AddFlags(0, { Digit::Dim1, Digit::TypeInt,   Digit::Bite1, Digit::ForColor });
-		case Format::R_U8_01:    return BitFlag::AddFlags(0, { Digit::Dim1, Digit::TypeInt,   Digit::Bite1, Digit::ForColor });
+		case Format::RGBA_U8:    return BitFlag::AddFlags(0, { Digit::Dim4, Digit::TypeInt,   Digit::Byte1, Digit::ForColor });
+		case Format::RGBA_U8_01: return BitFlag::AddFlags(0, { Digit::Dim4, Digit::TypeInt,   Digit::Byte1, Digit::ForColor });
+		case Format::RG_U8:      return BitFlag::AddFlags(0, { Digit::Dim2, Digit::TypeInt,   Digit::Byte1, Digit::ForColor });
+		case Format::RG_U8_01:   return BitFlag::AddFlags(0, { Digit::Dim2, Digit::TypeInt,   Digit::Byte1, Digit::ForColor });
+		case Format::R_U8:       return BitFlag::AddFlags(0, { Digit::Dim1, Digit::TypeInt,   Digit::Byte1, Digit::ForColor });
+		case Format::R_U8_01:    return BitFlag::AddFlags(0, { Digit::Dim1, Digit::TypeInt,   Digit::Byte1, Digit::ForColor });
 
-		case Format::D_F32:      return BitFlag::AddFlags(0, { Digit::Dim1, Digit::TypeFloat, Digit::Bite4, Digit::ForDepth });
+		case Format::D_F32:      return BitFlag::AddFlags(0, { Digit::Dim1, Digit::TypeFloat, Digit::Byte4, Digit::ForDepth });
 
 		default:                 return 0;
 		}
@@ -209,9 +209,9 @@ public: \
 	{
 		const std::uint32_t types = GetFormatTypes(format);
 
-		if (BitFlag::HasFlag(types, FormatTypeDigit::Bite1)) return 1;
-		if (BitFlag::HasFlag(types, FormatTypeDigit::Bite2)) return 2;
-		if (BitFlag::HasFlag(types, FormatTypeDigit::Bite4)) return 4;
+		if (BitFlag::HasFlag(types, FormatTypeDigit::Byte1)) return 1;
+		if (BitFlag::HasFlag(types, FormatTypeDigit::Byte2)) return 2;
+		if (BitFlag::HasFlag(types, FormatTypeDigit::Byte4)) return 4;
 
 		// error
 		return 0;
