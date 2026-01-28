@@ -73,7 +73,7 @@ namespace ForiverEngine
 
 		/// <summary>
 		/// <para>GPU側のメモリ領域を確保し、その GraphicsBuffer を返す (失敗したら nullptr)</para>
-		/// <para>2Dテクスチャ/2Dテクスチャ配列 用</para>
+		/// <para>2次元テクスチャ/2次元テクスチャ配列 用 (テクスチャのタイプが2Dで無いならば、失敗とみなし nullptr を返す)</para>
 		/// <para>GPU内でのみ用いる想定で、CPUからのマップ不可</para>
 		/// <para>テクスチャ変数のメタデータを基に作成する</para>
 		/// <para>初期状態を initState に設定し、clearColor でクリアする</para>
@@ -173,7 +173,7 @@ namespace ForiverEngine
 		/// <summary>
 		/// <para>[Command]</para>
 		/// <para>CPUのバッファをGPU側にコピーする</para>
-		/// <para>2次元テクスチャ/2次元テクスチャ配列 用</para>
+		/// <para>2次元テクスチャ/2次元テクスチャ配列 用 (テクスチャのタイプが2Dで無いならば、失敗とみなし false を返す)</para>
 		/// <para>バッファのサイズは、GraphicsBuffer 作成時に指定したサイズと同じであること! (一部のバッファのみコピー、などには未対応)</para>
 		/// <para> textureCopyIntermediateBuffer : CPU からデータをアップロードするための中間バッファ</para>
 		/// <para> textureBuffer : 実際にテクスチャとして使われるバッファ</para>

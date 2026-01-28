@@ -238,4 +238,4 @@ https://github.com/user-attachments/assets/22c88a88-05af-4890-b2c8-a31769bd332b
 | 名前 | ライセンス | 主な使用用途 |
 | --- | --- | --- |
 | [SimplexNoise](https://github.com/SRombauts/SimplexNoise) | [MIT](https://github.com/SRombauts/SimplexNoise/blob/master/LICENSE.txt) | ノイズを使った地形生成 |
-| [miniz](https://github.com/richgel999/miniz) | [MIT](https://github.com/richgel999/miniz/blob/master/LICENSE) | PNG 画像を zlib 解凍する |
+| [DirectXTex](https://github.com/microsoft/DirectXTex) | [MIT](https://github.com/microsoft/DirectXTex/blob/main/LICENSE) | 画像をテクスチャとしてロードする |

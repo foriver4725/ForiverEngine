@@ -49,9 +49,6 @@
     <ClCompile Include="scripts\helper\Loader\sources\TextureLoader.cpp">
       <Filter>scripts\helper\Loader\sources</Filter>
     </ClCompile>
-    <ClCompile Include="oss\miniz.c">
-      <Filter>oss</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="shaders">
@@ -313,9 +310,6 @@
     </ClInclude>
     <ClInclude Include="scripts\helper\Loader\headers\TextureLoader.h">
       <Filter>scripts\helper\Loader\headers</Filter>
-    </ClInclude>
-    <ClInclude Include="oss\miniz.h">
-      <Filter>oss</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -376,7 +376,7 @@ namespace ForiverEngine
 
 		const D3D12_RESOURCE_DESC resourceDesc =
 		{
-			.Dimension = static_cast<D3D12_RESOURCE_DIMENSION>(GraphicsBufferType::Buffer),
+			.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER,
 			.Alignment = 0, // 既定値でOK
 			.Width = static_cast<UINT64>(size), // 1Dなので...
 			.Height = 1, // 1Dなので...
@@ -407,6 +407,11 @@ namespace ForiverEngine
 	GraphicsBuffer D3D12Helper::CreateGraphicsBufferTexture2D(const Device& device, const Texture& texture,
 		GraphicsBufferUsagePermission usagePermission, GraphicsBufferState initState, const Color& clearColor)
 	{
+		if (texture.textureType != GraphicsBufferType::Texture2D)
+		{
+			return GraphicsBuffer();
+		}
+
 		const D3D12_HEAP_PROPERTIES heapProperties =
 		{
 			.Type = D3D12_HEAP_TYPE_DEFAULT, // テクスチャ用
@@ -423,7 +428,7 @@ namespace ForiverEngine
 			.Width = static_cast<UINT64>(texture.width),
 			.Height = static_cast<UINT>(texture.height),
 			.DepthOrArraySize = static_cast<UINT16>(texture.sliceCount), // 配列のサイズ = スライス数
-			.MipLevels = static_cast<UINT16>(texture.MipLevels), // ミップマップ数
+			.MipLevels = static_cast<UINT16>(texture.mipLevels), // ミップマップ数
 			.Format = static_cast<DXGI_FORMAT>(texture.format),
 			.SampleDesc = {.Count = 1, .Quality = 0 }, // 通常テクスチャなのでアンチエイリアシングはしない (クオリティは最低)
 			.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN, // 決定しない
@@ -699,7 +704,12 @@ namespace ForiverEngine
 		const CommandList& commandList,
 		const GraphicsBuffer& textureCopyIntermediateBuffer, const GraphicsBuffer& textureBuffer, const Texture& texture)
 	{
-		const int alignedRowSize = GetAlignmentedSize(texture.GetRowSize(), Texture::RowSizeAlignment);
+		if (texture.textureType != GraphicsBufferType::Texture2D)
+		{
+			return false;
+		}
+
+		const int alignedRowSize = GetAlignmentedSize(texture.rowSize, Texture::RowSizeAlignment);
 
 		// 中間バッファ(1次元) にマップ
 		{
@@ -721,7 +731,7 @@ namespace ForiverEngine
 				for (int sliceIndex = 0; sliceIndex < texture.sliceCount; ++sliceIndex)
 				{
 					std::uint8_t* src = const_cast<std::uint8_t*>(texture.data.data())
-						+ sliceIndex * texture.GetSliceSize();
+						+ sliceIndex * texture.sliceSize;
 					std::uint8_t* dst = dstBase
 						+ sliceIndex * alignedRowSize * texture.height;
 
@@ -734,8 +744,8 @@ namespace ForiverEngine
 					// RowPitch のアラインメントがあって、バッファのサイズが異なるので、1行ごとにコピーするようにする
 					for (int y = 0; y < texture.height; ++y)
 					{
-						std::memcpy(dst, src, texture.GetRowSize());
-						src += texture.GetRowSize();
+						std::memcpy(dst, src, texture.rowSize);
+						src += texture.rowSize;
 						dst += alignedRowSize;
 					}
 				}
