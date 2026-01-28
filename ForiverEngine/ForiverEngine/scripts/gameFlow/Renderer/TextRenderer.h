@@ -50,8 +50,8 @@ namespace ForiverEngine
 			// b0
 			const CBData0 cbData0 =
 			{
-				.FontTextureSize = { static_cast<std::uint32_t>(sr1Metadata.width), static_cast<std::uint32_t>(sr1Metadata.height) },
-				.TextUIDataSize = { static_cast<std::uint32_t>(sr2Metadata.width), static_cast<std::uint32_t>(sr2Metadata.height) },
+				.FontTextureSize = { static_cast<std::uint32_t>(sr1Metadata.size.x), static_cast<std::uint32_t>(sr1Metadata.size.y) },
+				.TextUIDataSize = { static_cast<std::uint32_t>(sr2Metadata.size.x), static_cast<std::uint32_t>(sr2Metadata.size.y) },
 				.InvalidFontTextureIndex = static_cast<std::uint32_t>(Text::InvalidFontTextureIndex),
 				.FontTextureTextLength = static_cast<std::uint32_t>(TextUIData::FontTextureTextLength),
 			};

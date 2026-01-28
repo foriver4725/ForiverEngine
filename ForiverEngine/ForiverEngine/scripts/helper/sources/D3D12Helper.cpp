@@ -407,11 +407,6 @@ namespace ForiverEngine
 	GraphicsBuffer D3D12Helper::CreateGraphicsBufferTexture2D(const Device& device, const Texture& texture,
 		GraphicsBufferUsagePermission usagePermission, GraphicsBufferState initState, const Color& clearColor)
 	{
-		if (texture.textureType != GraphicsBufferType::Texture2D)
-		{
-			return GraphicsBuffer();
-		}
-
 		const D3D12_HEAP_PROPERTIES heapProperties =
 		{
 			.Type = D3D12_HEAP_TYPE_DEFAULT, // テクスチャ用
@@ -425,10 +420,10 @@ namespace ForiverEngine
 		{
 			.Dimension = static_cast<D3D12_RESOURCE_DIMENSION>(GraphicsBufferType::Texture2D),
 			.Alignment = 0, // 既定値でOK
-			.Width = static_cast<UINT64>(texture.width),
-			.Height = static_cast<UINT>(texture.height),
-			.DepthOrArraySize = static_cast<UINT16>(texture.sliceCount), // 配列のサイズ = スライス数
-			.MipLevels = static_cast<UINT16>(texture.mipLevels), // ミップマップ数
+			.Width = static_cast<UINT64>(texture.size.x),
+			.Height = static_cast<UINT>(texture.size.y),
+			.DepthOrArraySize = static_cast<UINT16>(texture.size.z), // 配列のサイズ = スライス数
+			.MipLevels = static_cast<UINT16>(texture.MipLevels), // ミップマップ数
 			.Format = static_cast<DXGI_FORMAT>(texture.format),
 			.SampleDesc = {.Count = 1, .Quality = 0 }, // 通常テクスチャなのでアンチエイリアシングはしない (クオリティは最低)
 			.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN, // 決定しない
@@ -602,7 +597,7 @@ namespace ForiverEngine
 		const Device& device, const DescriptorHeap& descriptorHeap, const GraphicsBuffer& graphicsBuffer, int index,
 		const Texture& textureAsMetadata)
 	{
-		const bool isArray = textureAsMetadata.sliceCount > 1;
+		const bool isArray = textureAsMetadata.size.z > 1;
 		const D3D12_SHADER_RESOURCE_VIEW_DESC desc = isArray ?
 			D3D12_SHADER_RESOURCE_VIEW_DESC
 		{
@@ -619,7 +614,7 @@ namespace ForiverEngine
 				.MostDetailedMip = 0, // 規定値
 				.MipLevels = 1, // ミップマップは使わない
 				.FirstArraySlice = 0,
-				.ArraySize = static_cast<UINT>(textureAsMetadata.sliceCount),
+				.ArraySize = static_cast<UINT>(textureAsMetadata.size.z),
 				.PlaneSlice = 0, // 規定値
 				.ResourceMinLODClamp = 0.0f // 規定値
 			}
@@ -704,12 +699,7 @@ namespace ForiverEngine
 		const CommandList& commandList,
 		const GraphicsBuffer& textureCopyIntermediateBuffer, const GraphicsBuffer& textureBuffer, const Texture& texture)
 	{
-		if (texture.textureType != GraphicsBufferType::Texture2D)
-		{
-			return false;
-		}
-
-		const int alignedRowSize = GetAlignmentedSize(texture.rowSize, Texture::RowSizeAlignment);
+		const int alignedRowSize = GetAlignmentedSize(texture.GetRowBytes(), Texture::RowSizeAlignment);
 
 		// 中間バッファ(1次元) にマップ
 		{
@@ -728,12 +718,12 @@ namespace ForiverEngine
 			{
 				std::uint8_t* dstBase = static_cast<std::uint8_t*>(bufferVirtualPtr);
 
-				for (int sliceIndex = 0; sliceIndex < texture.sliceCount; ++sliceIndex)
+				for (int sliceIndex = 0; sliceIndex < texture.size.z; ++sliceIndex)
 				{
 					std::uint8_t* src = const_cast<std::uint8_t*>(texture.data.data())
-						+ sliceIndex * texture.sliceSize;
+						+ sliceIndex * texture.GetSliceBytes();
 					std::uint8_t* dst = dstBase
-						+ sliceIndex * alignedRowSize * texture.height;
+						+ sliceIndex * alignedRowSize * texture.size.y;
 
 					if (!src || !dst)
 					{
@@ -742,10 +732,11 @@ namespace ForiverEngine
 					}
 
 					// RowPitch のアラインメントがあって、バッファのサイズが異なるので、1行ごとにコピーするようにする
-					for (int y = 0; y < texture.height; ++y)
+					const int rowBytes = texture.GetRowBytes();
+					for (int y = 0; y < texture.size.y; ++y)
 					{
-						std::memcpy(dst, src, texture.rowSize);
-						src += texture.rowSize;
+						std::memcpy(dst, src, rowBytes);
+						src += rowBytes;
 						dst += alignedRowSize;
 					}
 				}
@@ -756,7 +747,7 @@ namespace ForiverEngine
 
 		// 真のテクスチャバッファーにコピー
 		{
-			for (int sliceIndex = 0; sliceIndex < texture.sliceCount; ++sliceIndex)
+			for (int sliceIndex = 0; sliceIndex < texture.size.z; ++sliceIndex)
 			{
 				const D3D12_TEXTURE_COPY_LOCATION srcLocation =
 				{
@@ -764,12 +755,12 @@ namespace ForiverEngine
 					.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT, // アップロードバッファーはこっちを指定
 					.PlacedFootprint =
 					{
-						.Offset = static_cast<UINT64>(sliceIndex * alignedRowSize * texture.height),
+						.Offset = static_cast<UINT64>(sliceIndex * alignedRowSize * texture.size.y),
 						.Footprint =
 						{
 							.Format = static_cast<DXGI_FORMAT>(texture.format),
-							.Width = static_cast<UINT>(texture.width),
-							.Height = static_cast<UINT>(texture.height),
+							.Width = static_cast<UINT>(texture.size.x),
+							.Height = static_cast<UINT>(texture.size.y),
 							.Depth = 1, // 2Dテクスチャなので...
 							.RowPitch = static_cast<UINT>(alignedRowSize),
 						}

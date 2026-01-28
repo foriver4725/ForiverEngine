@@ -28,7 +28,7 @@ namespace ForiverEngine
 			srCount = static_cast<int>(srs.size());
 
 			// RT,SR となるバッファを作成
-			const Texture rtMetadata = Texture::CreateManually({}, windowSize, Format::RGBA_U8_01);
+			const Texture rtMetadata = Texture({}, Lattice3(windowSize, 1), Format::RGBA_U8_01);
 			rt = D3D12Helper::CreateGraphicsBufferTexture2D(device, rtMetadata,
 				GraphicsBufferUsagePermission::AllowRenderTarget, GraphicsBufferState::PixelShaderResource, Color::Transparent());
 

@@ -67,13 +67,13 @@ namespace ForiverEngine
 
 		/// <summary>
 		/// <para>GPU側のメモリ領域を確保し、その GraphicsBuffer を返す (失敗したら nullptr)</para>
-		/// 1次元配列用
+		/// 1D配列 用
 		/// </summary>
 		static GraphicsBuffer CreateGraphicsBuffer1D(const Device& device, int size, bool canMapFromCPU);
 
 		/// <summary>
 		/// <para>GPU側のメモリ領域を確保し、その GraphicsBuffer を返す (失敗したら nullptr)</para>
-		/// <para>2次元テクスチャ/2次元テクスチャ配列 用 (テクスチャのタイプが2Dで無いならば、失敗とみなし nullptr を返す)</para>
+		/// <para>2Dテクスチャ/2Dテクスチャ配列 用</para>
 		/// <para>GPU内でのみ用いる想定で、CPUからのマップ不可</para>
 		/// <para>テクスチャ変数のメタデータを基に作成する</para>
 		/// <para>初期状態を initState に設定し、clearColor でクリアする</para>
@@ -160,7 +160,7 @@ namespace ForiverEngine
 
 		/// <summary>
 		/// <para>GraphicsBuffer の Map() を使って、CPUのバッファをGPU側にコピーする</para>
-		/// <para>1次元配列用</para>
+		/// <para>1D配列 用</para>
 		/// <para>バッファのサイズは、GraphicsBuffer 作成時に指定したサイズと同じであること! (一部のバッファのみコピー、などには未対応)</para>
 		/// <para>Unmap() しないように設定した場合、outBufferVirtualPtr を経由してポインタが返される</para>
 		/// <para>そのポインタを通じてデータを書き換えることで、シェーダーから参照しているメモリの内容を書き換えることが出来る</para>
@@ -173,7 +173,7 @@ namespace ForiverEngine
 		/// <summary>
 		/// <para>[Command]</para>
 		/// <para>CPUのバッファをGPU側にコピーする</para>
-		/// <para>2次元テクスチャ/2次元テクスチャ配列 用 (テクスチャのタイプが2Dで無いならば、失敗とみなし false を返す)</para>
+		/// <para>2Dテクスチャ/2Dテクスチャ配列 用</para>
 		/// <para>バッファのサイズは、GraphicsBuffer 作成時に指定したサイズと同じであること! (一部のバッファのみコピー、などには未対応)</para>
 		/// <para> textureCopyIntermediateBuffer : CPU からデータをアップロードするための中間バッファ</para>
 		/// <para> textureBuffer : 実際にテクスチャとして使われるバッファ</para>

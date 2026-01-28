@@ -22,28 +22,20 @@ namespace ForiverEngine
 			scratchImage // 実際のデータはここに入る
 		) != S_OK)
 		{
-			return Texture{};
+			return Texture();
 		}
 
-		//////////
 		// メタデータの値が適切かチェック
-
 		// 列挙型の整数値が同じなので、static_cast で変換できる
-		if (static_cast<GraphicsBufferType>(metadata.dimension) != GraphicsBufferType::Texture2D)
-			return Texture{};
-
-		if (metadata.arraySize != 1)
-			return Texture{};
-
-		if (metadata.mipLevels != 1)
-			return Texture{};
-
-		//////////
+		if (static_cast<GraphicsBufferType>(metadata.dimension) != GraphicsBufferType::Texture2D) return Texture();
+		if (!IsValidFormat(static_cast<Format>(metadata.format))) return Texture();
+		if (metadata.arraySize != 1) return Texture();
+		if (metadata.mipLevels != 1) return Texture();
 
 		const DirectX::Image* image = scratchImage.GetImage(
 			0, // ミップは使わない
 			0, // テクスチャ配列のインデックス (0でOK)
-			0 // 3Dテクスチャのスライスインデックス (0でOK)
+			0  // 3Dテクスチャのスライスインデックス (0でOK)
 		);
 
 		// 生データをコピーして、外部スコープに返せるようにする
@@ -51,113 +43,62 @@ namespace ForiverEngine
 		rawData.resize(image->slicePitch);
 		std::memcpy(rawData.data(), image->pixels, image->slicePitch);
 
-		return Texture
-		{
-			.data = std::move(rawData),
-			.textureType = GraphicsBufferType::Texture2D,
-			.format = static_cast<Format>(metadata.format),
-			.width = static_cast<int>(metadata.width),
-			.height = static_cast<int>(metadata.height),
-			.rowSize = static_cast<int>(image->rowPitch),
-			.sliceSize = static_cast<int>(image->slicePitch),
-			.sliceCount = 1,
-			.mipLevels = 1,
-		};
+		Texture texture = Texture(
+			std::move(rawData),
+			Lattice3(static_cast<int>(metadata.width), static_cast<int>(metadata.height), 1),
+			static_cast<Format>(metadata.format)
+		);
+
+		// バイトサイズが合っているかをチェック
+		if (texture.GetRowBytes() != static_cast<int>(image->rowPitch)) return Texture();
+		if (texture.GetSliceBytes() != static_cast<int>(image->slicePitch)) return Texture();
+		if (texture.GetWholeBytes() != static_cast<int>(texture.data.size())) return Texture();
+
+		return texture;
 	}
 
 	Texture TextureLoader::LoadAsArray(const std::vector<std::string>& paths)
 	{
-		if (paths.empty())
-			return Texture{};
+		if (paths.empty()) return Texture();
 
-		DirectX::TexMetadata baseMetadata = {};
-		std::vector<std::uint8_t> combinedData;
+		// 1枚目で基準を決め、2枚目以降はそれと同じかチェックする
+		// 各ロードされたテクスチャは、sliceCount == 1 である必要がある
+		// 生データを結合して格納する
+		Texture texture = Texture();
+		texture.size.z = static_cast<int>(paths.size());
 
-		Format format = Format::Unknown;
-		int width = 0;
-		int height = 0;
-		int rowSize = 0;
-		int sliceSize = 0;
-
-		for (int i = 0; i < static_cast<int>(paths.size()); ++i)
+		for (int i = 0; i < texture.size.z; ++i)
 		{
-			DirectX::ScratchImage scratchImage = {};
-			DirectX::TexMetadata metadata = {};
-
-			if (DirectX::LoadFromWICFile(
-				StringUtils::UTF8ToUTF16(paths[i]).c_str(),
-				DirectX::WIC_FLAGS_NONE,
-				&metadata,
-				scratchImage
-			) != S_OK)
-			{
-				return Texture{};
-			}
-
-			//////////
-			// メタデータの値が適切かチェック
-
-			// 列挙型の整数値が同じなので、static_cast で変換できる
-			// 2Dテクスチャ配列も、2Dテクスチャ扱いでOK
-			if (static_cast<GraphicsBufferType>(metadata.dimension) != GraphicsBufferType::Texture2D)
-				return Texture{};
-
-			if (metadata.mipLevels != 1)
-				return Texture{};
-
-			//////////
-
-			const DirectX::Image* image = scratchImage.GetImage(0, 0, 0);
-			if (!image)
-				return Texture{};
+			const Texture loadedTexture = Load(paths[i]);
+			if (!loadedTexture.IsValid()) return Texture();
 
 			// 1枚目で基準を決める
 			if (i == 0)
 			{
-				baseMetadata = metadata;
+				texture.size.x = loadedTexture.size.x;
+				texture.size.y = loadedTexture.size.y;
+				texture.format = loadedTexture.format;
 
-				format = static_cast<Format>(metadata.format);
-				width = static_cast<int>(metadata.width);
-				height = static_cast<int>(metadata.height);
-				rowSize = static_cast<int>(image->rowPitch);
-				sliceSize = static_cast<int>(image->slicePitch);
-
-				combinedData.reserve(sliceSize * paths.size());
+				if (loadedTexture.size.z != 1) return Texture();
 			}
+			// 2枚目以降は基準と同じかチェック
 			else
 			{
-				// サイズチェック
-				if (metadata.width != baseMetadata.width ||
-					metadata.height != baseMetadata.height)
-				{
-					// Texture2DArray にできない
-					return Texture{};
-				}
+				if (loadedTexture.size.x != texture.size.x) return Texture();
+				if (loadedTexture.size.y != texture.size.y) return Texture();
+				if (loadedTexture.format != texture.format) return Texture();
 
-				// TODO: フォーマットチェックはしない!!
+				if (loadedTexture.size.z != 1) return Texture();
 			}
 
-			// スライス分コピー
-			size_t offset = combinedData.size();
-			combinedData.resize(offset + sliceSize);
-			std::memcpy(
-				combinedData.data() + offset,
-				image->pixels,
-				sliceSize
+			// 生データを結合
+			texture.data.insert(
+				texture.data.end(),
+				loadedTexture.data.begin(),
+				loadedTexture.data.end()
 			);
 		}
 
-		return Texture
-		{
-			.data = std::move(combinedData),
-			.textureType = GraphicsBufferType::Texture2D,
-			.format = format,
-			.width = width,
-			.height = height,
-			.rowSize = rowSize,
-			.sliceSize = sliceSize,
-			.sliceCount = static_cast<int>(paths.size()),
-			.mipLevels = 1,
-		};
+		return texture;
 	}
 }
