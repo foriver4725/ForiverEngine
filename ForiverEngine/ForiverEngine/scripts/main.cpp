@@ -23,6 +23,32 @@ int Main(hInstance)
 #endif
 #endif
 
+	// シェーダーのコンパイル (開発中のみ)
+#ifdef _DEBUG
+#if 0
+	if (D3D12Helper::IDE_CompileHlslToCso(
+		R"(C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\fxc.exe)", // 開発者ごとに違う可能性がある. 適宜変えてほしい
+		"shaders", ".compiledShaderObjects", "shaders",
+		{
+			"Basic.hlsl",
+			"ShadowDepthWrite.hlsl",
+			"PP.hlsl",
+			"Text.hlsl"
+		}
+	))
+	{
+		ShowError(L"シェーダーのコンパイルに成功しました");
+		return 0;
+
+	}
+	else
+	{
+		ShowError(L"シェーダーのコンパイルに失敗しました");
+		return -1;
+	}
+#endif
+#endif
+
 #ifdef _DEBUG
 	if (!D3D12Helper::EnableDebugLayer())
 		ShowError(L"DebugLayer の有効化に失敗しました");
@@ -70,7 +96,7 @@ int Main(hInstance)
 
 	const RootParameter rootParameterShadow = RootParameter::CreateBasic(1, 1);
 	const SamplerConfig samplerConfigShadow = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
-	const auto [shaderVSShadow, shaderPSShadow] = D3D12Utils::CompileShader_VS_PS("./shaders/ShadowDepthWrite.hlsl");
+	const auto [shaderVSShadow, shaderPSShadow] = D3D12Utils::LoadCso(D3D12Utils::GetShaderFilePath("ShadowDepthWrite"));
 	const auto [rootSignatureShadow, graphicsPipelineStateShadow]
 		= D3D12Utils::CreateRootSignatureAndGraphicsPipelineState(
 			device, rootParameterShadow, samplerConfigShadow, shaderVSShadow, shaderPSShadow, VertexLayoutsQuad, FillMode::Solid, CullMode::Back, true);
@@ -103,7 +129,7 @@ int Main(hInstance)
 
 	const RootParameter rootParameter = RootParameter::CreateBasic(2, 2);
 	const SamplerConfig samplerConfig = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
-	const auto [shaderVS, shaderPS] = D3D12Utils::CompileShader_VS_PS("./shaders/Basic.hlsl");
+	const auto [shaderVS, shaderPS] = D3D12Utils::LoadCso(D3D12Utils::GetShaderFilePath("Basic"));
 	const auto [rootSignature, graphicsPipelineState]
 		= D3D12Utils::CreateRootSignatureAndGraphicsPipelineState(
 			device, rootParameter, samplerConfig, shaderVS, shaderPS, VertexLayouts, FillMode::Solid, CullMode::None, true);

@@ -28,7 +28,7 @@ struct PSOutput
     float4 color : SV_TARGET;
 };
 
-#include <common/TextSampling.hlsl>
+#include "./common/TextSampling.hlsl"
 
 V2P VSMain(VSInput input)
 {

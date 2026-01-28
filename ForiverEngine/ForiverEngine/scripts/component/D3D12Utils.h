@@ -13,9 +13,6 @@ namespace ForiverEngine
 
 		// 途中で処理が失敗しても、エラーを出すだけでそのまま続行する
 
-		inline static const std::string ShaderEntryFuncVS = "VSMain";
-		inline static const std::string ShaderEntryFuncPS = "PSMain";
-
 		/// <summary>
 		/// DirectX12 の基本的なオブジェクト群を一括で作成する
 		/// </summary>
@@ -45,22 +42,33 @@ namespace ForiverEngine
 		}
 
 		/// <summary>
-		/// シェーダーをロードして、頂点シェーダーとピクセルシェーダーにコンパイルする
+		/// <para>拡張子無しのファイル名だけを受け取り、実際にそのシェーダーファイルが保存されているパスを返す</para>
+		/// <para>以前 : "MyShader" -> "./shaders/MyShader.hlsl"</para>
+		/// <para>現在 : "MyShader" -> "./.compiledShaderObjects/MyShader.cso"</para>
 		/// </summary>
-		static std::tuple<Blob, Blob> CompileShader_VS_PS(const std::string& path)
+		static std::string GetShaderFilePath(const std::string& fileStem)
 		{
-			Blob vs = Blob();
-			Blob ps = Blob();
+			return "./.compiledShaderObjects/" + fileStem + ".cso";
+		}
 
-			std::wstring errorMessage = L"";
+		/// <summary>
+		/// CSO をロードして、VS,PS の順に返す
+		/// </summary>
+		static std::tuple<Blob, Blob> LoadCso(const std::string& path)
+		{
+			// TODO: 命名規則の対応が複数スクリプトに直書きされているので、修正しにくい
+			// "[stem].cso" -> "[stem]_vs.cso"
+			// "[stem].cso" -> "[stem]_ps.cso"
 
-			if (!D3D12Helper::CompileShaderFile_VS_PS(
-				StringUtils::UTF8ToUTF16(path),
-				ShaderEntryFuncVS, ShaderEntryFuncPS,
-				vs, ps,
-				errorMessage
-			))
-				ShowError(errorMessage);
+			const std::string pathStem = path.substr(0, path.size() - 4);
+
+			const Blob vs = D3D12Helper::LoadCso(pathStem + "_vs.cso");
+			if (!vs)
+				ShowError(L"CSO から頂点シェーダーをロードすることに失敗しました");
+
+			const Blob ps = D3D12Helper::LoadCso(pathStem + "_ps.cso");
+			if (!ps)
+				ShowError(L"CSO からピクセルシェーダーをロードすることに失敗しました");
 
 			return { vs, ps };
 		}

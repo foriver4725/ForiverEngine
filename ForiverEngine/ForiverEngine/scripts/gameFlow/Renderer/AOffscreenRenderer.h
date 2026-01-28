@@ -35,7 +35,7 @@ namespace ForiverEngine
 			// RootSignature, PipelineState
 			const RootParameter rootParameter = RootParameter::CreateBasic(cbCount, srCount + 1);
 			const SamplerConfig samplerConfig = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
-			const auto [shaderVS, shaderPS] = D3D12Utils::CompileShader_VS_PS(shaderFilePath);
+			const auto [shaderVS, shaderPS] = D3D12Utils::LoadCso(shaderFilePath);
 			std::tie(rootSignature, pipelineState) = D3D12Utils::CreateRootSignatureAndGraphicsPipelineState(
 				device, rootParameter, samplerConfig, shaderVS, shaderPS, VertexLayoutsQuad, FillMode::Solid, CullMode::Back, false);
 

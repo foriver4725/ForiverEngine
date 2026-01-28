@@ -47,7 +47,7 @@ namespace ForiverEngine
 			};
 			const GraphicsBuffer cb0 = D3D12Utils::InitCB(device, cbData0);
 
-			Base::Init(device, windowSize, { cb0 }, {}, "./shaders/PP.hlsl");
+			Base::Init(device, windowSize, { cb0 }, {}, D3D12Utils::GetShaderFilePath("PP"));
 		}
 	};
 }
