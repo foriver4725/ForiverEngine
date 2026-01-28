@@ -423,7 +423,7 @@ namespace ForiverEngine
 			.Width = static_cast<UINT64>(texture.width),
 			.Height = static_cast<UINT>(texture.height),
 			.DepthOrArraySize = static_cast<UINT16>(texture.sliceCount), // 配列のサイズ = スライス数
-			.MipLevels = static_cast<UINT16>(texture.mipLevels), // ミップマップ数
+			.MipLevels = static_cast<UINT16>(texture.MipLevels), // ミップマップ数
 			.Format = static_cast<DXGI_FORMAT>(texture.format),
 			.SampleDesc = {.Count = 1, .Quality = 0 }, // 通常テクスチャなのでアンチエイリアシングはしない (クオリティは最低)
 			.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN, // 決定しない

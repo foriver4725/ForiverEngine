@@ -13,6 +13,8 @@ namespace ForiverEngine
 	{
 		// アラインメントをこれに揃える必要がある
 		static constexpr int RowSizeAlignment = 256;
+		// ミップマップなし
+		static constexpr int MipLevels = 1;
 
 		std::vector<std::uint8_t> data{}; // 生データ (ビット配列)
 
@@ -22,7 +24,6 @@ namespace ForiverEngine
 		int rowSize{}; // 1行分のデータサイズ
 		int sliceSize{}; // 1スライス分のデータサイズ
 		int sliceCount{}; // スライス数
-		int mipLevels{};
 
 		constexpr bool IsValid() const { return !data.empty() && width > 0 && height > 0; }
 
@@ -45,7 +46,6 @@ namespace ForiverEngine
 				.rowSize = bytePerPixel * size.x,
 				.sliceSize = bytePerPixel * size.x * size.y,
 				.sliceCount = 1,
-				.mipLevels = 1,
 			};
 		}
 	};

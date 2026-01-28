@@ -60,7 +60,6 @@ namespace ForiverEngine
 			.rowSize = static_cast<int>(image->rowPitch),
 			.sliceSize = static_cast<int>(image->slicePitch),
 			.sliceCount = 1,
-			.mipLevels = 1,
 		};
 	}
 
@@ -155,7 +154,6 @@ namespace ForiverEngine
 			.rowSize = rowSize,
 			.sliceSize = sliceSize,
 			.sliceCount = static_cast<int>(paths.size()),
-			.mipLevels = 1,
 		};
 	}
 }
