@@ -8,7 +8,9 @@
 namespace ForiverEngine
 {
 	/// <summary>
-	/// 1枚の画像について、位置やスケールを指定して描画するレンダラー
+	/// <para>1枚の画像について、位置やスケールを指定して描画するレンダラー</para>
+	/// <para>b0, t1 を使用するので、派生クラスでさらにアップロードしたい場合は、それぞれ</para>
+	/// <para>b1~, t2~ から使用すること</para>
 	/// </summary>
 	class AImageRenderer : public AOffscreenRenderer
 	{
