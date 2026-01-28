@@ -344,20 +344,15 @@ int Main(hInstance)
 			viewportScissorRect, PrimitiveTopology::TriangleList, BackgroundColor, DepthBufferClearValue,
 			packedDrawMeshIndicesCounts
 		);
-		// ポストプロセス
-		postProcessRenderer->Draw(
+		// オフスクリーンレンダリング
+		AOffscreenRenderer::DrawInOrder(
 			commandList, commandQueue, commandAllocator, device,
-			textRenderer->GetRT(), textRenderer->GetRTV(), viewportScissorRect
-		);
-		// テキスト描画
-		textRenderer->Draw(
-			commandList, commandQueue, commandAllocator, device,
-			pointerImageRenderer->GetRT(), pointerImageRenderer->GetRTV(), viewportScissorRect
-		);
-		// ポインター画像描画
-		pointerImageRenderer->Draw(
-			commandList, commandQueue, commandAllocator, device,
-			currentBackRT, currentBackRTV, viewportScissorRect
+			currentBackRT, currentBackRTV, viewportScissorRect,
+			{
+				postProcessRenderer.get(), // ポストプロセス
+				textRenderer.get(),        // テキスト描画
+				pointerImageRenderer.get() // ポインター画像描画
+			}
 		);
 
 		if (!D3D12Helper::Present(swapChain))

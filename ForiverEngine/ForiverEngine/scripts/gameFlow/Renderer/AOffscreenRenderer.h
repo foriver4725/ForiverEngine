@@ -106,6 +106,40 @@ namespace ForiverEngine
 			);
 		}
 
+		/// <summary>
+		/// <para>ドローコール. 複数のオフスクリーンレンダラーを順に描画する</para>
+		/// <para>直前のドローコールで自身の RT にレンダリングされ、</para>
+		/// <para>それぞれのドローコールでは次のオフスクリーンレンダラーの RT に対してレンダリングし、</para>
+		/// <para>最後のオフスクリーンレンダラーでは現在のバックバッファにレンダリングする</para>
+		/// </summary>
+		static void DrawInOrder(
+			const CommandList& commandList,
+			const CommandQueue& commandQueue,
+			const CommandAllocator& commandAllocator,
+			const Device& device,
+			const GraphicsBuffer& currentBackRT,
+			const DescriptorHandleAtCPU& currentBackRTV,
+			const ViewportScissorRect& viewportScissorRect,
+			const std::vector<const AOffscreenRenderer*>& renderers
+		)
+		{
+			for (int i = 0; i < static_cast<int>(renderers.size() - 1); ++i)
+			{
+				const AOffscreenRenderer* currentRenderer = renderers[i];
+				const AOffscreenRenderer* nextRenderer = renderers[i + 1];
+
+				currentRenderer->Draw(
+					commandList, commandQueue, commandAllocator, device,
+					nextRenderer->GetRT(), nextRenderer->GetRTV(), viewportScissorRect
+				);
+			}
+
+			renderers.back()->Draw(
+				commandList, commandQueue, commandAllocator, device,
+				currentBackRT, currentBackRTV, viewportScissorRect
+			);
+		}
+
 	private:
 		RootSignature rootSignature;
 		PipelineState pipelineState;
