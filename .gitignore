@@ -1,5 +1,5 @@
 .vs/
 .Output/
 .Intermediate/
-ForiverEngine/.compiledShaderObjects/
+.compiledShaderObjects/
 *.vcxproj.user
