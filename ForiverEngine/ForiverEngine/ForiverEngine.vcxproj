@@ -230,6 +230,7 @@
     <ClInclude Include="scripts\gameFlow\Renderer\AOffscreenRenderer.h" />
     <ClInclude Include="scripts\gameFlow\Renderer\PostProcessRenderer.h" />
     <ClInclude Include="scripts\gameFlow\Renderer\UI\Include.h" />
+    <ClInclude Include="scripts\gameFlow\Renderer\UI\PointerImageRenderer.h" />
     <ClInclude Include="scripts\gameFlow\Renderer\UI\TextRenderer.h" />
     <ClInclude Include="scripts\gameFlow\SunCamera.h" />
     <ClInclude Include="scripts\gameFlow\Timer.h" />
@@ -272,6 +273,12 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="shaders\common\TextSampling.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="shaders\Pointer.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>

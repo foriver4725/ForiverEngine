@@ -33,7 +33,8 @@ int Main(hInstance)
 			"Basic.hlsl",
 			"ShadowDepthWrite.hlsl",
 			"PP.hlsl",
-			"Text.hlsl"
+			"Text.hlsl",
+			"Pointer.hlsl"
 		}
 	))
 	{
@@ -215,6 +216,9 @@ int Main(hInstance)
 	std::unique_ptr<AOffscreenRenderer> textRenderer =
 		std::make_unique<TextRenderer>(device, commandList, commandQueue, commandAllocator, WindowSize);
 
+	const std::unique_ptr<AOffscreenRenderer> pointerImageRenderer =
+		std::make_unique<PointerImageRenderer>(device, commandList, commandQueue, commandAllocator, WindowSize);
+
 
 
 	while (true)
@@ -348,8 +352,14 @@ int Main(hInstance)
 		// テキスト描画
 		textRenderer->Draw(
 			commandList, commandQueue, commandAllocator, device,
+			pointerImageRenderer->GetRT(), pointerImageRenderer->GetRTV(), viewportScissorRect
+		);
+		// ポインター画像描画
+		pointerImageRenderer->Draw(
+			commandList, commandQueue, commandAllocator, device,
 			currentBackRT, currentBackRTV, viewportScissorRect
 		);
+
 		if (!D3D12Helper::Present(swapChain))
 			ShowError(L"画面のフリップに失敗しました");
 

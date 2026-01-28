@@ -3,7 +3,7 @@
 #include <scripts/common/Include.h>
 #include <scripts/helper/Include.h>
 #include <scripts/component/Include.h>
-#include "./Renderer/TextRenderer.h"
+#include "./Renderer/UI/TextRenderer.h"
 #include "./PlayerController.h"
 #include "./ChunksManager.h"
 #include "./DebugFrameTimeStats.h"
