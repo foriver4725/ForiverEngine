@@ -1,12 +1,12 @@
 cbuffer _0 : register(b0)
 {
-    float4 _PointerColor;
-    uint2 _WindowSize;
-    uint _PointerLength; // 奇数前提
-    uint _PointerWidth; // 奇数前提
+    int2 _PointerTextureSize;
+    int2 _PointerPosition;
+    float2 _PointerScale;
 }
 
 Texture2D<float4> _Texture : register(t0);
+Texture2D<float4> _PointerTexture : register(t1);
 SamplerState _Sampler : register(s0);
 
 struct VSInput
@@ -26,33 +26,6 @@ struct PSOutput
     float4 color : SV_TARGET;
 };
 
-// そのピクセルが、ポインタを描画するピクセルかどうかを判定する
-// ポインタのピクセルなら 1、そうでなければ 0 を返す
-uint PSIsPointerPixel(uint2 pixelPos)
-{
-    // ウィンドウ中央の座標
-    static const uint2 WindowCenter = _WindowSize / 2;
-    // ポインタの半分の長さ・幅 (中心から端までの距離)
-    static const uint HalfPointerLength = _PointerLength / 2;
-    static const uint HalfPointerWidth = _PointerWidth / 2;
-    
-    const uint diffX = abs(int(pixelPos.x) - int(WindowCenter.x));
-    const uint diffY = abs(int(pixelPos.y) - int(WindowCenter.y));
-    
-    // 十字の横部分
-    if (diffX <= HalfPointerLength && diffY <= HalfPointerWidth)
-    {
-        return 1;
-    }
-    // 十字の縦部分
-    if (diffX <= HalfPointerWidth && diffY <= HalfPointerLength)
-    {
-        return 1;
-    }
-    
-    return 0;
-}
-
 V2P VSMain(VSInput input)
 {
     V2P output;
@@ -67,13 +40,29 @@ PSOutput PSMain(V2P input)
 {
     PSOutput output;
     
-    if (PSIsPointerPixel(uint2(input.pos.xy)) == 1)
-    {
-        output.color = _PointerColor;
-        return output;
-    }
-    
     output.color = _Texture.Sample(_Sampler, input.uv);
+    
+    // 画面上の実寸値で、ポインタ画像が出てくるピクセルの範囲を求める
+    const int2 pointerRealSize = (int2) floor((float2) _PointerTextureSize * _PointerScale);
+    const int xMin = _PointerPosition.x - pointerRealSize.x / 2;
+    const int xMax = xMin + pointerRealSize.x - 1;
+    const int yMin = _PointerPosition.y - pointerRealSize.y / 2;
+    const int yMax = yMin + pointerRealSize.y - 1;
+    
+    if (xMin <= input.pos.x && input.pos.x <= xMax &&
+        yMin <= input.pos.y && input.pos.y <= yMax)
+    {
+        // ポインタ画像のUVを計算
+        const float2 pointerUV = float2(
+            (input.pos.x - xMin) / (float) pointerRealSize.x,
+            (input.pos.y - yMin) / (float) pointerRealSize.y
+        );
+        
+        const float4 pointerColor = _PointerTexture.Sample(_Sampler, pointerUV);
+        
+        // アルファ合成
+        output.color = lerp(output.color, pointerColor, pointerColor.a);
+    }
     
     return output;
 }

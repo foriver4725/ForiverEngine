@@ -40,7 +40,7 @@ namespace ForiverEngine
 			data = TextUIData::CreateEmpty(windowSize / TextUIData::FontTextureTextLength);
 
 			// t1 (フォントテクスチャ)
-			const Texture sr1Metadata = D3D12Utils::LoadTexture({ "assets/font.png" });
+			const Texture sr1Metadata = D3D12Utils::LoadTexture({ "assets/textures/font.png" });
 			const GraphicsBuffer sr1 = D3D12Utils::InitSR(device, commandList, commandQueue, commandAllocator, sr1Metadata);
 
 			// t2 (データをテクスチャとしてアップロードする)
