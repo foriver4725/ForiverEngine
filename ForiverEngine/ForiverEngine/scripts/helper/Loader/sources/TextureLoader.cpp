@@ -50,8 +50,9 @@ namespace ForiverEngine
 		);
 
 		// バイトサイズが合っているかをチェック
-		if (static_cast<int>(image->rowPitch) != texture.GetRowBytes()) return Texture();
-		if (static_cast<int>(image->slicePitch) != texture.GetSliceBytes()) return Texture();
+		if (texture.GetRowBytes() != static_cast<int>(image->rowPitch)) return Texture();
+		if (texture.GetSliceBytes() != static_cast<int>(image->slicePitch)) return Texture();
+		if (texture.GetWholeBytes() != static_cast<int>(texture.data.size())) return Texture();
 
 		return texture;
 	}
