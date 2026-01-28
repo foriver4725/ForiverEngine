@@ -13,9 +13,6 @@ namespace ForiverEngine
 
 		// 途中で処理が失敗しても、エラーを出すだけでそのまま続行する
 
-		inline static const std::string ShaderEntryFuncVS = "VSMain";
-		inline static const std::string ShaderEntryFuncPS = "PSMain";
-
 		/// <summary>
 		/// DirectX12 の基本的なオブジェクト群を一括で作成する
 		/// </summary>

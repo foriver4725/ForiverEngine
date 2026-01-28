@@ -1,4 +1,4 @@
-#include <common/Defines.hlsl>
+#include "./Defines.hlsl"
 
 // フォントテクスチャからの、文字のサンプリング
 

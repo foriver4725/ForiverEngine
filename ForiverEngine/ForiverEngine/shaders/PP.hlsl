@@ -29,7 +29,7 @@ struct PSOutput
     float4 color : SV_TARGET;
 };
 
-#include <common/AA.hlsl>
+#include "./common/AA.hlsl"
 
 // そのピクセルが、ポインタを描画するピクセルかどうかを判定する
 // ポインタのピクセルなら 1、そうでなければ 0 を返す

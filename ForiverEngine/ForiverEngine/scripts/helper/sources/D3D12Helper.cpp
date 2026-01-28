@@ -1124,6 +1124,95 @@ namespace ForiverEngine
 
 		return false;
 	}
+
+	// コマンドを実行する
+	// 戻り値: 成功したら true, 失敗したら false
+	static bool RunCommand(const std::string& command);
+
+	bool D3D12Helper::IDE_CompileHlslToCso(
+		const std::string& fxcExeAbsolutePath,
+		const std::string& inputDirectory, const std::string& outputDirectory, const std::string& includeDirectory,
+		const std::vector<std::string>& shaderPaths
+	)
+	{
+		if (shaderPaths.empty()) return false;
+
+		// 実行系におけるカレントディレクトリの絶対パス
+		const std::filesystem::path currentDirectory = std::filesystem::current_path();
+
+		// 存在チェック、無いなら新規作成したりする
+		if (!std::filesystem::exists(fxcExeAbsolutePath)) return false;
+		if (!std::filesystem::exists(inputDirectory)) return false;
+		if (!std::filesystem::exists(includeDirectory)) return false;
+		if (!std::filesystem::exists(outputDirectory))
+		{
+			// 新規作成
+			if (!std::filesystem::create_directories(outputDirectory))
+				return false;
+		}
+
+		// 各種ルートのパスを絶対パスに変換
+		const std::filesystem::path inputAbsoluteDirectory = currentDirectory / inputDirectory;
+		const std::filesystem::path outputAbsoluteDirectory = currentDirectory / outputDirectory;
+		const std::filesystem::path includeAbsoluteDirectory = currentDirectory / includeDirectory;
+
+		for (const std::string& shaderPath : shaderPaths)
+		{
+			// 入力・出力パスを絶対パスで算出
+			const std::string shaderStem = std::filesystem::path(shaderPath).stem().string(); // 拡張子なしファイル名
+			const std::filesystem::path inputAbsolutePath = inputAbsoluteDirectory / shaderPath;
+			const std::filesystem::path outputAbsolutePathVS = outputAbsoluteDirectory / (shaderStem + "_vs.cso");
+			const std::filesystem::path outputAbsolutePathPS = outputAbsoluteDirectory / (shaderStem + "_ps.cso");
+
+			// コンパイルコマンドを作成
+			const std::string commandVS = std::format("\"{}\" /T {} /E {} /I \"{}\" /Fo \"{}\" \"{}\"",
+				fxcExeAbsolutePath, ShaderTargetVS, ShaderEntryFuncVS,
+				includeAbsoluteDirectory.string(), outputAbsolutePathVS.string(), inputAbsolutePath.string());
+			const std::string commandPS = std::format("\"{}\" /T {} /E {} /I \"{}\" /Fo \"{}\" \"{}\"",
+				fxcExeAbsolutePath, ShaderTargetPS, ShaderEntryFuncPS,
+				includeAbsoluteDirectory.string(), outputAbsolutePathPS.string(), inputAbsolutePath.string());
+
+			// コマンドを実行
+			if (!RunCommand(commandVS)) return false;
+			if (!RunCommand(commandPS)) return false;
+		}
+
+		return true;
+	}
+
+	bool RunCommand(const std::string& command)
+	{
+		STARTUPINFO si{};
+		PROCESS_INFORMATION pi{};
+
+		si.cb = sizeof(si);
+
+		// プロセスを起動する
+		if (CreateProcess(
+			nullptr,
+			const_cast<wchar_t*>(StringUtils::UTF8ToUTF16(command).c_str()),
+			nullptr, nullptr, false, 0, nullptr, nullptr, &si, &pi
+		) == 0)
+			return false; // 起動失敗
+
+		// アプリケーションの終了まで待つ
+		// (待たずに処理を先に進める場合、WaitForSingleObjectとGetExitCodeProcessは不要)
+		WaitForSingleObject(pi.hProcess, INFINITE);
+
+		// アプリケーションの終了コードの取得
+		// (終了コードを使用しない場合は不要)
+		unsigned long exitCode;
+		GetExitCodeProcess(pi.hProcess, &exitCode);
+
+		// 終了コードが負の値になる場合もあるので、signedにキャストする
+		long ec = static_cast<long>(exitCode);
+
+		// ハンドルを閉じる
+		CloseHandle(pi.hProcess);
+		CloseHandle(pi.hThread);
+
+		return true;
+	}
 #endif
 
 	D3D12_DESCRIPTOR_RANGE Construct(const RootParameter::DescriptorRange& descriptorRange)

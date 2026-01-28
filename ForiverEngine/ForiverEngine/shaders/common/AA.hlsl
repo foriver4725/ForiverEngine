@@ -1,4 +1,4 @@
-#include <common/Defines.hlsl>
+#include "./Defines.hlsl"
 
 // ポストプロセスでAAを適用する
 

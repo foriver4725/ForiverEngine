@@ -33,6 +33,10 @@ namespace ForiverEngine
 	inline static const std::string ShaderTargetVS = "vs_5_1";
 	inline static const std::string ShaderTargetPS = "ps_5_1";
 
+	// シェーダーエントリポイント関数名
+	inline static const std::string ShaderEntryFuncVS = "VSMain";
+	inline static const std::string ShaderEntryFuncPS = "PSMain";
+
 	// 深度バッファのクリア値
 	constexpr float DepthBufferClearValue = 1.0f;
 

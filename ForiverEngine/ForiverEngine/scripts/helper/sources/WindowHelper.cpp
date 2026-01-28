@@ -67,8 +67,6 @@ namespace ForiverEngine
 		ResetTimeAtBeginFrame();
 	}
 
-
-
 	bool WindowHelper::InitializeWindowFromHInstance(HINSTANCE hInstance, WNDPROC windowProcedure, const std::wstring& className)
 	{
 		WNDCLASSW w = {};

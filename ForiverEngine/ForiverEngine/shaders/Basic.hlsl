@@ -48,7 +48,7 @@ struct PSOutput
     float4 color : SV_TARGET;
 };
 
-#include <common/Lighting.hlsl>
+#include "./common/Lighting.hlsl"
 
 float PSCheckIsSelectedBlock(float3 centerWorldPosition)
 {

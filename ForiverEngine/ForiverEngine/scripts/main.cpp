@@ -23,6 +23,32 @@ int Main(hInstance)
 #endif
 #endif
 
+	// シェーダーのコンパイル (開発中のみ)
+#ifdef _DEBUG
+#if 1
+	if (D3D12Helper::IDE_CompileHlslToCso(
+		R"(C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\fxc.exe)", // 開発者ごとに違う可能性がある. 適宜変えてほしい
+		"shaders", ".compiledShaderObjects", "shaders",
+		{
+			"Basic.hlsl",
+			"ShadowDepthWrite.hlsl",
+			"PP.hlsl",
+			"Text.hlsl"
+		}
+	))
+	{
+		ShowError(L"シェーダーのコンパイルに成功しました");
+		return 0;
+
+	}
+	else
+	{
+		ShowError(L"シェーダーのコンパイルに失敗しました");
+		return -1;
+	}
+#endif
+#endif
+
 #ifdef _DEBUG
 	if (!D3D12Helper::EnableDebugLayer())
 		ShowError(L"DebugLayer の有効化に失敗しました");

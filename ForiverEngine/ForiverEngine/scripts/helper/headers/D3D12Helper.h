@@ -354,6 +354,23 @@ namespace ForiverEngine
 		/// 成功したら true, 失敗したら false を返す (失敗した瞬間に処理を中断する)
 		/// </summary>
 		static bool EnableDebugLayer();
+
+		/// <summary>
+		/// <para>[IDE専用]</para>
+		/// <para>HLSL シェーダーを fxc.exe でコンパイルし、CSO ファイルを出力する</para>
+		/// <para>VS, PS 両方をコンパイルする</para>
+		/// <para>成功したら true, 失敗したら false を返す</para>
+		/// </summary>
+		/// <param name="fxcExeAbsolutePath">fxc.exe の絶対パス</param>
+		/// <param name="inputDirectory">HLSL シェーダーの入力ディレクトリ (実行系におけるカレントディレクトリからの相対パス)</param>
+		/// <param name="outputDirectory">CSO ファイルの出力ディレクトリ (実行系におけるカレントディレクトリからの相対パス)</param>
+		/// <param name="includeDirectory">コンパイル時の、追加のインクルードディレクトリ (実行系におけるカレントディレクトリからの相対パス)</param>
+		/// <param name="shaderPaths">HLSL シェーダーのパス群 (inputDirectory 配下の相対パスで指定)</param>
+		static bool IDE_CompileHlslToCso(
+			const std::string& fxcExeAbsolutePath,
+			const std::string& inputDirectory, const std::string& outputDirectory, const std::string& includeDirectory,
+			const std::vector<std::string>& shaderPaths
+		);
 #endif
 	};
 }
