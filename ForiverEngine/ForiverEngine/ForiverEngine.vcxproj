@@ -170,7 +170,6 @@
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="oss\miniz.c" />
     <ClCompile Include="oss\SimplexNoise.cpp" />
     <ClCompile Include="scripts\common\Math\LinearAlgebra\sources\Lattice2.cpp" />
     <ClCompile Include="scripts\common\Math\LinearAlgebra\sources\Lattice3.cpp" />
@@ -189,7 +188,6 @@
     <ClCompile Include="scripts\main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="oss\miniz.h" />
     <ClInclude Include="oss\SimplexNoise.h" />
     <ClInclude Include="scripts\common\Include.h" />
     <ClInclude Include="scripts\common\IncludeInternal.h" />
