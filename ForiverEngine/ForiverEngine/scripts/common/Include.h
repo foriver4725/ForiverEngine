@@ -20,6 +20,7 @@
 #include <atomic>
 
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #define NOMINMAX
 #include <Windows.h>

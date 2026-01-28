@@ -57,7 +57,7 @@ namespace ForiverEngine
 			};
 			const GraphicsBuffer cb0 = D3D12Utils::InitCB(device, cbData0);
 
-			Base::Init(device, windowSize, { cb0 }, { { sr1, sr1Metadata }, { sr2, sr2Metadata } }, "./shaders/Text.hlsl");
+			Base::Init(device, windowSize, { cb0 }, { { sr1, sr1Metadata }, { sr2, sr2Metadata } }, D3D12Utils::GetShaderFilePath("Text"));
 		}
 
 		/// <summary>

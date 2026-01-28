@@ -335,18 +335,12 @@ namespace ForiverEngine
 		/// <para>シェーダーファイルをコンパイルして返す (失敗したら nullptr)</para>
 		/// </summary>
 		static Blob CompileShaderFile(
-			const std::wstring& path, const std::string& entryFunc, const std::string& shaderTarget, std::wstring& outErrorMessage);
+			const std::string& path, const std::string& entryFunc, const std::string& shaderTarget, std::wstring& outErrorMessage);
 
 		/// <summary>
-		/// <para>1つのファイルから VS, PS を順にコンパイルして返す (失敗したら nullptr)</para>
-		/// 成功したら true, 失敗したら false を返す (失敗しても処理を最後まで行い、エラーメッセージをまとめて outErrorMessage に格納する)
+		/// <para>CSO ファイルをロードして返す (失敗したら nullptr)</para>
 		/// </summary>
-		static bool CompileShaderFile_VS_PS(
-			const std::wstring& path,
-			const std::string& entryFuncVS, const std::string& entryFuncPS,
-			Blob& outVS, Blob& outPS,
-			std::wstring& outErrorMessage
-		);
+		static Blob LoadCso(const std::string& path);
 
 #ifdef _DEBUG
 		/// <summary>
@@ -359,6 +353,7 @@ namespace ForiverEngine
 		/// <para>[IDE専用]</para>
 		/// <para>HLSL シェーダーを fxc.exe でコンパイルし、CSO ファイルを出力する</para>
 		/// <para>VS, PS 両方をコンパイルする</para>
+		/// <para>出力ファイル名 : [stem]_vs.cso, [stem]_ps.cso</para>
 		/// <para>成功したら true, 失敗したら false を返す</para>
 		/// </summary>
 		/// <param name="fxcExeAbsolutePath">fxc.exe の絶対パス</param>

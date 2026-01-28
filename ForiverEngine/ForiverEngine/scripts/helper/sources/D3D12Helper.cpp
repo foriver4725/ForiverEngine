@@ -1034,7 +1034,7 @@ namespace ForiverEngine
 	}
 
 	Blob D3D12Helper::CompileShaderFile(
-		const std::wstring& path, const std::string& entryFunc, const std::string& shaderTarget, std::wstring& outErrorMessage)
+		const std::string& path, const std::string& entryFunc, const std::string& shaderTarget, std::wstring& outErrorMessage)
 	{
 		ID3DBlob* blob = nullptr;
 		ID3DBlob* errorBlob = nullptr;
@@ -1046,7 +1046,7 @@ namespace ForiverEngine
 #endif
 
 		HRESULT result = D3DCompileFromFile(
-			path.c_str(),
+			StringUtils::UTF8ToUTF16(path).c_str(),
 			nullptr, // #define みたいなのを配列で指定
 			D3D_COMPILE_STANDARD_FILE_INCLUDE, // こうすることで、シェーダー内に #include がある場合、カレントディレクトリから探すようになる
 			entryFunc.c_str(),
@@ -1076,38 +1076,25 @@ namespace ForiverEngine
 		return Blob();
 	}
 
-	bool D3D12Helper::CompileShaderFile_VS_PS(
-		const std::wstring& path,
-		const std::string& entryFuncVS, const std::string& entryFuncPS,
-		Blob& outVS, Blob& outPS,
-		std::wstring& outErrorMessage
-	)
+	Blob D3D12Helper::LoadCso(const std::string& path)
 	{
-		// 一通り処理を試行
+		std::ifstream ifs(path, std::ios::binary | std::ios::ate);
+		if (!ifs) return Blob();
 
-		Blob shaderVS, shaderPS;
-		std::wstring errorMessage, errorMessageTmp;
+		const std::streamsize size = ifs.tellg();
+		ifs.seekg(0, std::ios::beg);
 
-		shaderVS = D3D12Helper::CompileShaderFile(path, entryFuncVS, ShaderTargetVS, errorMessageTmp);
-		if (!shaderVS) errorMessage += errorMessageTmp + L"\n";
+		ID3DBlob* blob = nullptr;
+		if (FAILED(D3DCreateBlob(size, &blob)))
+			return Blob();
 
-		shaderPS = D3D12Helper::CompileShaderFile(path, entryFuncPS, ShaderTargetPS, errorMessageTmp);
-		if (!shaderPS) errorMessage += errorMessageTmp + L"\n";
-
-		if (!shaderVS || !shaderPS)
+		if (!ifs.read((char*)blob->GetBufferPointer(), size))
 		{
-			outVS = Blob();
-			outPS = Blob();
-			outErrorMessage = errorMessage;
-
-			return false;
+			blob->Release();
+			return Blob();
 		}
 
-		outVS = shaderVS;
-		outPS = shaderPS;
-		outErrorMessage = L"";
-
-		return true;
+		return Blob(blob);
 	}
 
 #ifdef _DEBUG
