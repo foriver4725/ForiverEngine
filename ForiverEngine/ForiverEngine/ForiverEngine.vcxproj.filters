@@ -120,6 +120,9 @@
     <Filter Include="scripts\helper\Loader\sources">
       <UniqueIdentifier>{77da7475-1c7f-492c-a2d7-605a22490f7a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="scripts\gameFlow\Renderer\UI">
+      <UniqueIdentifier>{906c41d7-9d9c-4a00-a7cb-63a6d767a57a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="oss\SimplexNoise.h">
@@ -287,9 +290,6 @@
     <ClInclude Include="scripts\component\D3D12Utils.h">
       <Filter>scripts\component</Filter>
     </ClInclude>
-    <ClInclude Include="scripts\gameFlow\Renderer\TextRenderer.h">
-      <Filter>scripts\gameFlow\Renderer</Filter>
-    </ClInclude>
     <ClInclude Include="scripts\gameFlow\DebugFrameTimeStats.h">
       <Filter>scripts\gameFlow</Filter>
     </ClInclude>
@@ -310,6 +310,15 @@
     </ClInclude>
     <ClInclude Include="scripts\helper\Loader\headers\TextureLoader.h">
       <Filter>scripts\helper\Loader\headers</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\gameFlow\Renderer\UI\Include.h">
+      <Filter>scripts\gameFlow\Renderer\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\gameFlow\Renderer\UI\PointerImageRenderer.h">
+      <Filter>scripts\gameFlow\Renderer\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\gameFlow\Renderer\UI\TextRenderer.h">
+      <Filter>scripts\gameFlow\Renderer\UI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -335,6 +344,12 @@
       <Filter>shaders\common</Filter>
     </FxCompile>
     <FxCompile Include="shaders\ShadowDepthWrite.hlsl">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\common\ImageSampling.hlsl">
+      <Filter>shaders\common</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\Pointer.hlsl">
       <Filter>shaders</Filter>
     </FxCompile>
   </ItemGroup>
