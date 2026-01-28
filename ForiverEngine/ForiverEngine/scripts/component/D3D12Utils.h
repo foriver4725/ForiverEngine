@@ -180,7 +180,6 @@ namespace ForiverEngine
 		/// <summary>
 		/// <para>GraphicsBuffer (SR) を作成して、テクスチャデータを GPU にアップロードする</para>
 		/// <para>テクスチャを手動で与える (2Dテクスチャ or 2Dテクスチャ配列)</para>
-		/// <para>テクスチャの種類が 2D でない場合は、失敗させる</para>
 		/// <para>作成した SR を返す</para>
 		/// </summary>
 		static GraphicsBuffer InitSR(

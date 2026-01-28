@@ -6,7 +6,7 @@
 namespace ForiverEngine
 {
 	/// <summary>
-	/// <para>テクスチャ</para>
+	/// <para>2Dテクスチャ/2Dテクスチャ配列</para>
 	/// <para>生データとそのメタデータ</para>
 	/// </summary>
 	struct Texture
@@ -14,9 +14,8 @@ namespace ForiverEngine
 		// アラインメントをこれに揃える必要がある
 		static constexpr int RowSizeAlignment = 256;
 
-		std::vector<std::uint8_t> data{}; // 生データ (ビット配列 的な)
+		std::vector<std::uint8_t> data{}; // 生データ (ビット配列)
 
-		GraphicsBufferType textureType{};
 		Format format{};
 		int width{};
 		int height{};
@@ -40,7 +39,6 @@ namespace ForiverEngine
 			return Texture
 			{
 				.data = data,
-				.textureType = GraphicsBufferType::Texture2D,
 				.format = format,
 				.width = size.x,
 				.height = size.y,

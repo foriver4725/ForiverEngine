@@ -407,11 +407,6 @@ namespace ForiverEngine
 	GraphicsBuffer D3D12Helper::CreateGraphicsBufferTexture2D(const Device& device, const Texture& texture,
 		GraphicsBufferUsagePermission usagePermission, GraphicsBufferState initState, const Color& clearColor)
 	{
-		if (texture.textureType != GraphicsBufferType::Texture2D)
-		{
-			return GraphicsBuffer();
-		}
-
 		const D3D12_HEAP_PROPERTIES heapProperties =
 		{
 			.Type = D3D12_HEAP_TYPE_DEFAULT, // テクスチャ用
@@ -704,11 +699,6 @@ namespace ForiverEngine
 		const CommandList& commandList,
 		const GraphicsBuffer& textureCopyIntermediateBuffer, const GraphicsBuffer& textureBuffer, const Texture& texture)
 	{
-		if (texture.textureType != GraphicsBufferType::Texture2D)
-		{
-			return false;
-		}
-
 		const int alignedRowSize = GetAlignmentedSize(texture.rowSize, Texture::RowSizeAlignment);
 
 		// 中間バッファ(1次元) にマップ

@@ -54,7 +54,6 @@ namespace ForiverEngine
 		return Texture
 		{
 			.data = std::move(rawData),
-			.textureType = GraphicsBufferType::Texture2D,
 			.format = static_cast<Format>(metadata.format),
 			.width = static_cast<int>(metadata.width),
 			.height = static_cast<int>(metadata.height),
@@ -150,7 +149,6 @@ namespace ForiverEngine
 		return Texture
 		{
 			.data = std::move(combinedData),
-			.textureType = GraphicsBufferType::Texture2D,
 			.format = format,
 			.width = width,
 			.height = height,
