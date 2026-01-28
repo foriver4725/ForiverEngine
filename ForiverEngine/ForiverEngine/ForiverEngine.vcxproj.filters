@@ -320,6 +320,9 @@
     <ClInclude Include="scripts\gameFlow\Renderer\UI\TextRenderer.h">
       <Filter>scripts\gameFlow\Renderer\UI</Filter>
     </ClInclude>
+    <ClInclude Include="scripts\gameFlow\Renderer\UI\AImageRenderer.h">
+      <Filter>scripts\gameFlow\Renderer\UI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shaders\Basic.hlsl">
@@ -349,7 +352,7 @@
     <FxCompile Include="shaders\common\ImageSampling.hlsl">
       <Filter>shaders\common</Filter>
     </FxCompile>
-    <FxCompile Include="shaders\Pointer.hlsl">
+    <FxCompile Include="shaders\Image.hlsl">
       <Filter>shaders</Filter>
     </FxCompile>
   </ItemGroup>

@@ -1,12 +1,12 @@
 cbuffer _0 : register(b0)
 {
-    uint2 _PointerTextureSize;
-    int2 _PointerPosition;
-    float2 _PointerScale;
+    uint2 _TextureSize;
+    int2 _Position;
+    float2 _Scale;
 }
 
 Texture2D<float4> _Texture : register(t0);
-Texture2D<float4> _PointerTexture : register(t1);
+Texture2D<float4> _ImageTexture : register(t1);
 SamplerState _Sampler : register(s0);
 
 struct VSInput
@@ -45,11 +45,11 @@ PSOutput PSMain(V2P input)
     const float4 originalColor = _Texture.Sample(_Sampler, input.uv);
     
     ImageSamplingParams imageSamplingParams;
-    imageSamplingParams.ImageTexture = _PointerTexture;
+    imageSamplingParams.ImageTexture = _ImageTexture;
     imageSamplingParams.Sampler = _Sampler;
-    imageSamplingParams.ImageTextureSize = _PointerTextureSize;
-    imageSamplingParams.ImagePosition = _PointerPosition;
-    imageSamplingParams.ImageScale = _PointerScale;
+    imageSamplingParams.ImageTextureSize = _TextureSize;
+    imageSamplingParams.ImagePosition = _Position;
+    imageSamplingParams.ImageScale = _Scale;
     imageSamplingParams.PixelPosition = uint2(input.pos.xy);
     
     const float4 imageColor = PSSampleImage(imageSamplingParams);
