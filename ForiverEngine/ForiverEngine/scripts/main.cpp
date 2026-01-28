@@ -34,7 +34,7 @@ int Main(hInstance)
 			"ShadowDepthWrite.hlsl",
 			"PP.hlsl",
 			"Text.hlsl",
-			"Pointer.hlsl"
+			"Image.hlsl"
 		}
 	))
 	{
