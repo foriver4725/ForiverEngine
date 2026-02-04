@@ -195,9 +195,9 @@ int Main(hInstance)
 
 	// SRV 用バッファ
 	const Texture textureArray = D3D12Utils::LoadTexture({
-			"assets/textures/blocks/air_invalid.png",
-			"assets/textures/blocks/grass_stone.png",
-			"assets/textures/blocks/dirt_sand.png",
+			"assets/textures/block/air_invalid.png",
+			"assets/textures/block/grass_stone.png",
+			"assets/textures/block/dirt_sand.png",
 		});
 	const auto sr = D3D12Utils::InitSR(device, commandList, commandQueue, commandAllocator, textureArray);
 

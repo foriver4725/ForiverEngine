@@ -25,7 +25,7 @@ namespace ForiverEngine
 		{
 			Base::Init(
 				device, commandList, commandQueue, commandAllocator, windowSize,
-				"assets/textures/pointer.png",
+				"assets/textures/ui/pointer.png",
 				windowSize / 2, Vector2::Zero(), Vector2::One(), Lattice2(24, 24)
 			);
 		}

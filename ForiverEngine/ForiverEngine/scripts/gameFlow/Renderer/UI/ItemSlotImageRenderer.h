@@ -19,8 +19,8 @@ namespace ForiverEngine
 		static constexpr int SlotCount = 6; // スロット数
 		static constexpr int SlotSize = 128; // スロット1つ分のサイズ (正方形. NxN)
 
-		inline static const std::string NormalImageFilePath = "assets/textures/item_frame.png";
-		inline static const std::string SelectedImageFilePath = "assets/textures/item_frame_selected.png";
+		inline static const std::string NormalImageFilePath = "assets/textures/ui/item_frame.png";
+		inline static const std::string SelectedImageFilePath = "assets/textures/ui/item_frame_selected.png";
 
 		enum class ImageType : std::uint8_t
 		{
