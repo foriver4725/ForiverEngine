@@ -19,17 +19,53 @@ namespace ForiverEngine
 		static constexpr int SlotCount = 6; // スロット数
 		static constexpr int SlotSize = 128; // スロット1つ分のサイズ (正方形. NxN)
 
+		inline static const std::string NormalImageFilePath = "assets/textures/item_frame.png";
+		inline static const std::string SelectedImageFilePath = "assets/textures/item_frame_selected.png";
+
+		enum class ImageType : std::uint8_t
+		{
+			Normal,
+			Selected,
+		};
+
 		explicit ItemSlotImageRenderer(
 			const Device& device,
 			const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator,
 			const Lattice2& windowSize,
+			ImageType initType,
 			const Lattice2& position, const Lattice2& drawSize // 描画サイズ (ピクセル単位)
 		)
 		{
 			Base::Init(
 				device, commandList, commandQueue, commandAllocator, windowSize,
-				"assets/textures/item_frame.png", position, Vector2::Zero(), Vector2::One(), drawSize
+				GetImageFilePath(initType), position, Vector2::Zero(), Vector2::One(), drawSize
 			);
+		}
+
+		/// <summary>
+		/// <para>画像の種類を変更する (通常 or 選択中)</para>
+		/// <para>内部で GPU に再アップロードする</para>
+		/// </summary>
+		void ChangeImageType(
+			const Device& device,
+			const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator,
+			ImageType newType
+		)
+		{
+			// t1
+			const Texture sr1Texture = D3D12Utils::LoadTexture({ GetImageFilePath(newType) });
+			Base::ReUploadTexture(device, commandList, commandQueue, commandAllocator, sr1Texture, ShaderRegister::t1);
+		}
+
+	private:
+		static const std::string& GetImageFilePath(ImageType type)
+		{
+			switch (type)
+			{
+			case ImageType::Normal:   return NormalImageFilePath;
+			case ImageType::Selected: return SelectedImageFilePath;
+			default:                  return NormalImageFilePath;
+			}
 		}
 	};
 }

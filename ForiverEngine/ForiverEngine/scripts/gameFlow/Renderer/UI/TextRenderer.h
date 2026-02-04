@@ -69,8 +69,9 @@ namespace ForiverEngine
 			const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator
 		)
 		{
+			// t2
 			const Texture sr2Texture = data.CreateTexture();
-			Base::ReUploadTexture(device, commandList, commandQueue, commandAllocator, sr2Texture, ShaderRegister::t2); // t2
+			Base::ReUploadTexture(device, commandList, commandQueue, commandAllocator, sr2Texture, ShaderRegister::t2);
 		}
 	};
 }

@@ -226,6 +226,8 @@ int Main(hInstance)
 
 		itemSlotImageRenderers.push_back(std::make_unique<Renderer>(
 			device, commandList, commandQueue, commandAllocator, WindowSize,
+			// 最初は、一番左のスロットが選択されている状態にする
+			(i == 0) ? Renderer::ImageType::Selected : Renderer::ImageType::Normal,
 			Lattice2(
 				(WindowSize.x - Renderer::SlotSize * (Renderer::SlotCount - 1)) / 2 + i * Renderer::SlotSize,
 				WindowSize.y - 20 - Renderer::SlotSize / 2
