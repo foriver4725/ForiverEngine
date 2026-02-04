@@ -25,12 +25,21 @@
 | スペース | ジャンプ (押している間) |
 | マウス左クリック | ブロック採掘 (押している間) |
 | マウス右クリック | ブロック設置 (押している間) |
+| マウスホイール | 選択アイテムの切り替え |
 | エスケープ | ゲーム終了 |
 
 ## ダウンロード
 
 [最新のリリース](https://github.com/foriver4725/ForiverEngine/releases) から ZIP ファイルをダウンロードする  
 中の EXE ファイルを実行してゲーム開始  
+
+## 使用ライブラリ
+| 名前 | ライセンス | 主な使用用途 |
+| --- | --- | --- |
+| [SimplexNoise](https://github.com/SRombauts/SimplexNoise) | [MIT](https://github.com/SRombauts/SimplexNoise/blob/master/LICENSE.txt) | ノイズを使った地形生成 |
+| [DirectXTex](https://github.com/microsoft/DirectXTex) | [MIT](https://github.com/microsoft/DirectXTex/blob/main/LICENSE) | 画像をテクスチャとしてロードする |
+
+<!---
 
 ## 過去の進捗
 
@@ -234,8 +243,4 @@ https://github.com/user-attachments/assets/22c88a88-05af-4890-b2c8-a31769bd332b
 
 </details>
 
-## 使用ライブラリ
-| 名前 | ライセンス | 主な使用用途 |
-| --- | --- | --- |
-| [SimplexNoise](https://github.com/SRombauts/SimplexNoise) | [MIT](https://github.com/SRombauts/SimplexNoise/blob/master/LICENSE.txt) | ノイズを使った地形生成 |
-| [DirectXTex](https://github.com/microsoft/DirectXTex) | [MIT](https://github.com/microsoft/DirectXTex/blob/main/LICENSE) | 画像をテクスチャとしてロードする |
+--->
