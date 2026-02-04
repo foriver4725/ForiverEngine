@@ -165,6 +165,20 @@ namespace ForiverEngine
 			return 0;
 		}
 
+		// マウスホイール
+		case WM_MOUSEWHEEL:
+		{
+			// ホイール回転量を取得
+			// 通常は WHEEL_DELTA 単位. 高精度マウスの場合、それより小さくなるかも
+			// 上回転が正、下回転が負
+			const short raw = GET_WHEEL_DELTA_WPARAM(wparam);
+			const float d = static_cast<float>(raw) / static_cast<float>(WHEEL_DELTA);
+
+			InputHelper::OnMouseWheelDelta(d);
+
+			return 0;
+		}
+
 		// マウス移動 (Raw 入力)
 		case WM_INPUT:
 		{

@@ -60,6 +60,7 @@ namespace ForiverEngine
 	// Key 列挙型の値をインデックスにして使う
 	inline std::array<KeyInfo, static_cast<std::size_t>(Key::Count)> KeyTable = {};
 
+	inline float MouseWheelDelta = 0.0f;
 	inline Vector2 MouseDelta = Vector2::Zero();
 
 	class InputHelper final
@@ -90,6 +91,13 @@ namespace ForiverEngine
 		static void OnReleased(Key key);
 
 		/// <summary>
+		/// <para>ウィンドウプロシージャ内で、WM_MOUSEWHEEL メッセージを受け取ったとき、</para>
+		/// <para>マウスホイールの相対移動量を算出して呼び出すこと</para>
+		/// </summary>
+		/// <param name="delta">[-1.0f, 1.0f]. 上回転が正、下回転が負</param>
+		static void OnMouseWheelDelta(float delta);
+
+		/// <summary>
 		/// <para>ウィンドウプロシージャ内で、WM_INPUT メッセージを受け取ったとき、</para>
 		/// <para>マウスの相対移動量を算出して呼び出すこと</para>
 		/// </summary>
@@ -104,6 +112,11 @@ namespace ForiverEngine
 		/// <para>外部公開用に、便利なアクセサを提供する</para>
 		/// </summary>
 		static KeyInfo GetKeyInfo(Key key);
+
+		/// <summary>
+		/// <para>マウスホイールの移動量を返す</para>
+		/// </summary>
+		static float GetMouseWheelDelta();
 
 		/// <summary>
 		/// <para>マウスの移動量を返す</para>

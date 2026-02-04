@@ -17,6 +17,7 @@ namespace ForiverEngine
 			keyInfo.releasedNow = false;
 		}
 
+		MouseWheelDelta = 0.0f;
 		MouseDelta = Vector2::Zero();
 	}
 
@@ -40,6 +41,11 @@ namespace ForiverEngine
 			keyInfo.released = true;
 			keyInfo.releasedNow = true;
 		}
+	}
+
+	void InputHelper::OnMouseWheelDelta(float delta)
+	{
+		MouseWheelDelta += delta;
 	}
 
 	void InputHelper::OnMouseDelta(const Lattice2& delta)
@@ -173,6 +179,11 @@ namespace ForiverEngine
 	KeyInfo InputHelper::GetKeyInfo(Key key)
 	{
 		return KeyTable[static_cast<KeyEnumInt>(key)];
+	}
+
+	float InputHelper::GetMouseWheelDelta()
+	{
+		return MouseWheelDelta;
 	}
 
 	Vector2 InputHelper::GetMouseDelta()

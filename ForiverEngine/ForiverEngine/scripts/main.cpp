@@ -219,6 +219,7 @@ int Main(hInstance)
 	const std::unique_ptr<AOffscreenRenderer> pointerImageRenderer =
 		std::make_unique<PointerImageRenderer>(device, commandList, commandQueue, commandAllocator, WindowSize);
 
+	int selectedItemSlotIndex = 0; // [0, SlotCount)
 	std::vector<std::unique_ptr<AOffscreenRenderer>> itemSlotImageRenderers;
 	for (int i = 0; i < ItemSlotImageRenderer::SlotCount; ++i)
 	{
@@ -227,7 +228,7 @@ int Main(hInstance)
 		itemSlotImageRenderers.push_back(std::make_unique<Renderer>(
 			device, commandList, commandQueue, commandAllocator, WindowSize,
 			// 最初は、一番左のスロットが選択されている状態にする
-			(i == 0) ? Renderer::ImageType::Selected : Renderer::ImageType::Normal,
+			(i == selectedItemSlotIndex) ? Renderer::ImageType::Selected : Renderer::ImageType::Normal,
 			Lattice2(
 				(WindowSize.x - Renderer::SlotSize * (Renderer::SlotCount - 1)) / 2 + i * Renderer::SlotSize,
 				WindowSize.y - 20 - Renderer::SlotSize / 2
@@ -257,6 +258,23 @@ int Main(hInstance)
 		};
 		playerController.OnEveryFrame(chunksManager.GetChunks(), playerInputs, WindowHelper::GetDeltaSeconds());
 		cb0VirtualPtr->Matrix_MVP = playerController.CalculateVPMatrix() * terrainTransform.CalculateModelMatrix();
+
+		// アイテムスロットの選択変更
+		{
+			int previouslySelectedItemSlotIndex = selectedItemSlotIndex;
+			int itemSlotSelectDirection = 0; // 0: なし, -1: 左, +1: 右
+			{
+				float mouseWheelDelta = InputHelper::GetMouseWheelDelta();
+				if (mouseWheelDelta < -0.1f) itemSlotSelectDirection = +1;
+				else if (mouseWheelDelta > 0.1f) itemSlotSelectDirection = -1;
+			}
+			selectedItemSlotIndex = (selectedItemSlotIndex + itemSlotSelectDirection + ItemSlotImageRenderer::SlotCount) % ItemSlotImageRenderer::SlotCount;
+
+			dynamic_cast<ItemSlotImageRenderer*>(itemSlotImageRenderers[previouslySelectedItemSlotIndex].get())->ChangeImageType(
+				device, commandList, commandQueue, commandAllocator, ItemSlotImageRenderer::ImageType::Normal);
+			dynamic_cast<ItemSlotImageRenderer*>(itemSlotImageRenderers[selectedItemSlotIndex].get())->ChangeImageType(
+				device, commandList, commandQueue, commandAllocator, ItemSlotImageRenderer::ImageType::Selected);
+		}
 
 		// 見ているブロック・フェースを取得
 		const auto [lookingBlockPosition, lookingBlockFaceNormal] = playerController.PickLookingBlock(chunksManager.GetChunks());
