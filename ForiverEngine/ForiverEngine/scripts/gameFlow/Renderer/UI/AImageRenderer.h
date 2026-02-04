@@ -20,7 +20,10 @@ namespace ForiverEngine
 		// b0
 		struct alignas(256) CBData0
 		{
-			std::uint32_t TextureSize[2]; // 画像サイズ
+			std::uint32_t TextureSize[2]; // 画像テクスチャ全体のサイズ
+			std::uint32_t ClipMin[2]; // 画像テクスチャの中で、どこからどこまでを切り取って使うか (min. テクスチャ自体のピクセル座標)
+			std::uint32_t ClipMax[2]; // 画像テクスチャの中で、どこからどこまでを切り取って使うか (max. テクスチャ自体のピクセル座標)
+
 			Lattice2 Position; // 画像の中心座標
 			Vector2 Scale;
 		};
@@ -31,7 +34,10 @@ namespace ForiverEngine
 			const Device& device,
 			const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator,
 			const Lattice2& windowSize,
-			const std::string& imageFilePath, const Lattice2& position, const Lattice2& drawSize // 描画サイズ (ピクセル単位)
+			const std::string& imageFilePath,
+			const Lattice2& position, // スクリーン上の座標 (ピクセル単位. 画像の中心がこの位置に来る)
+			const Vector2& clipUVMin, const Vector2& clipUVMax, // 画像のどの部分を切り取って使うか (UV座標で指定)
+			const Lattice2& drawSize // 描画サイズ (ピクセル単位. 画像の切り取った部分を、このサイズで描画する)
 		)
 		{
 			// t1 (画像テクスチャ)
@@ -41,14 +47,29 @@ namespace ForiverEngine
 			// 画像の元サイズに対するスケールを計算
 			const Vector2 scale =
 			{
-				1.0f * drawSize.x / sr1Metadata.size.x,
-				1.0f * drawSize.y / sr1Metadata.size.y,
+				static_cast<float>(drawSize.x) / static_cast<float>((clipUVMax.x - clipUVMin.x) * sr1Metadata.size.x),
+				static_cast<float>(drawSize.y) / static_cast<float>((clipUVMax.y - clipUVMin.y) * sr1Metadata.size.y),
 			};
 
 			// b0
 			const CBData0 cbData0 =
 			{
-				.TextureSize = { static_cast<std::uint32_t>(sr1Metadata.size.x), static_cast<std::uint32_t>(sr1Metadata.size.y) },
+				.TextureSize =
+				{
+					static_cast<std::uint32_t>(sr1Metadata.size.x),
+					static_cast<std::uint32_t>(sr1Metadata.size.y)
+				},
+				.ClipMin =
+				{
+					static_cast<std::uint32_t>(clipUVMin.x * sr1Metadata.size.x),
+					static_cast<std::uint32_t>(clipUVMin.y * sr1Metadata.size.y)
+				},
+				.ClipMax =
+				{
+					static_cast<std::uint32_t>(clipUVMax.x * sr1Metadata.size.x) - 1,
+					static_cast<std::uint32_t>(clipUVMax.y * sr1Metadata.size.y) - 1
+				},
+
 				.Position = position,
 				.Scale = scale,
 			};

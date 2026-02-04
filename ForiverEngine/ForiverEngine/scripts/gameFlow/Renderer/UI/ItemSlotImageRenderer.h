@@ -28,7 +28,7 @@ namespace ForiverEngine
 		{
 			Base::Init(
 				device, commandList, commandQueue, commandAllocator, windowSize,
-				"assets/textures/item_frame.png", position, drawSize
+				"assets/textures/item_frame.png", position, Vector2::Zero(), Vector2::One(), drawSize
 			);
 		}
 	};

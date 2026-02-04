@@ -1,6 +1,9 @@
 cbuffer _0 : register(b0)
 {
     uint2 _TextureSize;
+    uint2 _ClipMin;
+    uint2 _ClipMax;
+    
     int2 _Position;
     float2 _Scale;
 }
@@ -47,9 +50,11 @@ PSOutput PSMain(V2P input)
     ImageSamplingParams imageSamplingParams;
     imageSamplingParams.ImageTexture = _ImageTexture;
     imageSamplingParams.Sampler = _Sampler;
-    imageSamplingParams.ImageTextureSize = _TextureSize;
-    imageSamplingParams.ImagePosition = _Position;
-    imageSamplingParams.ImageScale = _Scale;
+    imageSamplingParams.TextureSize = _TextureSize;
+    imageSamplingParams.ClipMin = _ClipMin;
+    imageSamplingParams.ClipMax = _ClipMax;
+    imageSamplingParams.Position = _Position;
+    imageSamplingParams.Scale = _Scale;
     imageSamplingParams.PixelPosition = uint2(input.pos.xy);
     
     const float4 imageColor = PSSampleImage(imageSamplingParams);
