@@ -36,6 +36,12 @@ namespace ForiverEngine
 			const Lattice2& position, const Lattice2& drawSize // 描画サイズ (ピクセル単位)
 		)
 		{
+			typeToTextureMap =
+			{
+				{ ImageType::Normal, D3D12Utils::LoadTexture({ NormalImageFilePath }) },
+				{ ImageType::Selected, D3D12Utils::LoadTexture({ SelectedImageFilePath }) },
+			};
+
 			Base::Init(
 				device, commandList, commandQueue, commandAllocator, windowSize,
 				GetImageFilePath(initType), position, Vector2::Zero(), Vector2::One(), drawSize
@@ -53,11 +59,14 @@ namespace ForiverEngine
 		)
 		{
 			// t1
-			const Texture sr1Texture = D3D12Utils::LoadTexture({ GetImageFilePath(newType) });
-			Base::ReUploadTexture(device, commandList, commandQueue, commandAllocator, sr1Texture, ShaderRegister::t1);
+			Base::ReUploadTexture(device, commandList, commandQueue, commandAllocator,
+				typeToTextureMap[newType], ShaderRegister::t1);
 		}
 
 	private:
+		// 最初にロードして、キャッシュしておく
+		std::unordered_map<ImageType, Texture> typeToTextureMap;
+
 		static const std::string& GetImageFilePath(ImageType type)
 		{
 			switch (type)

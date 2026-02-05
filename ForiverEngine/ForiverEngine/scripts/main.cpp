@@ -261,19 +261,68 @@ int Main(hInstance)
 
 		// アイテムスロットの選択変更
 		{
-			int previouslySelectedItemSlotIndex = selectedItemSlotIndex;
-			int itemSlotSelectDirection = 0; // 0: なし, -1: 左, +1: 右
+			const int selectedItemSlotIndexPrev = selectedItemSlotIndex;
+			// この値を最新値で更新する
+			// Prev の値から変化したならば、実インデックス値や描画を更新する
+			int selectedItemSlotIndexCurrent = selectedItemSlotIndex;
 			{
-				float mouseWheelDelta = InputHelper::GetMouseWheelDelta();
-				if (mouseWheelDelta < -0.1f) itemSlotSelectDirection = +1;
-				else if (mouseWheelDelta > 0.1f) itemSlotSelectDirection = -1;
-			}
-			selectedItemSlotIndex = (selectedItemSlotIndex + itemSlotSelectDirection + ItemSlotImageRenderer::SlotCount) % ItemSlotImageRenderer::SlotCount;
+				// 複数種類の入力を排他制御するためのフラグ
+				// 優先度順に入力をチェックし、最初に検出した時点で true にする
+				// 入力のチェックでこのフラグが true ならスキップする
+				// 即ち、最初に検出された入力のみが有効になる
+				bool hasInput = false;
 
-			dynamic_cast<ItemSlotImageRenderer*>(itemSlotImageRenderers[previouslySelectedItemSlotIndex].get())->ChangeImageType(
-				device, commandList, commandQueue, commandAllocator, ItemSlotImageRenderer::ImageType::Normal);
-			dynamic_cast<ItemSlotImageRenderer*>(itemSlotImageRenderers[selectedItemSlotIndex].get())->ChangeImageType(
-				device, commandList, commandQueue, commandAllocator, ItemSlotImageRenderer::ImageType::Selected);
+				// 最優先 : 数字キー
+				if (!hasInput)
+				{
+					int specifiedItemSlotIndex = -1;
+					{
+						if (InputHelper::GetKeyInfo(Key::N1).pressedNow) specifiedItemSlotIndex = 0;
+						else if (InputHelper::GetKeyInfo(Key::N2).pressedNow) specifiedItemSlotIndex = 1;
+						else if (InputHelper::GetKeyInfo(Key::N3).pressedNow) specifiedItemSlotIndex = 2;
+						else if (InputHelper::GetKeyInfo(Key::N4).pressedNow) specifiedItemSlotIndex = 3;
+						else if (InputHelper::GetKeyInfo(Key::N5).pressedNow) specifiedItemSlotIndex = 4;
+						else if (InputHelper::GetKeyInfo(Key::N6).pressedNow) specifiedItemSlotIndex = 5;
+					}
+
+					if (specifiedItemSlotIndex != -1)
+					{
+						hasInput = true;
+
+						selectedItemSlotIndexCurrent = specifiedItemSlotIndex;
+					}
+				}
+
+				// 次優先 : マウスホイール
+				if (!hasInput)
+				{
+					int itemSlotSelectDirection = 0; // 0: なし, -1: 左, +1: 右
+					{
+						float mouseWheelDelta = InputHelper::GetMouseWheelDelta();
+						if (mouseWheelDelta < -0.1f) itemSlotSelectDirection = +1;
+						else if (mouseWheelDelta > 0.1f) itemSlotSelectDirection = -1;
+					}
+
+					if (itemSlotSelectDirection != 0)
+					{
+						hasInput = true;
+
+						constexpr int SlotCount = ItemSlotImageRenderer::SlotCount;
+						selectedItemSlotIndexCurrent =
+							(selectedItemSlotIndexCurrent + itemSlotSelectDirection + SlotCount) % SlotCount;
+					}
+				}
+			}
+
+			if (selectedItemSlotIndexCurrent != selectedItemSlotIndexPrev)
+			{
+				selectedItemSlotIndex = selectedItemSlotIndexCurrent;
+
+				dynamic_cast<ItemSlotImageRenderer*>(itemSlotImageRenderers[selectedItemSlotIndexPrev].get())->ChangeImageType(
+					device, commandList, commandQueue, commandAllocator, ItemSlotImageRenderer::ImageType::Normal);
+				dynamic_cast<ItemSlotImageRenderer*>(itemSlotImageRenderers[selectedItemSlotIndexCurrent].get())->ChangeImageType(
+					device, commandList, commandQueue, commandAllocator, ItemSlotImageRenderer::ImageType::Selected);
+			}
 		}
 
 		// 見ているブロック・フェースを取得
