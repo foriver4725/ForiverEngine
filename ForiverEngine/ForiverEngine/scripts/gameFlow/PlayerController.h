@@ -378,7 +378,7 @@ namespace ForiverEngine
 		/// <para>置いた際にチャンクデータを更新し、描画データにも反映させる</para>
 		/// <para>(この処理に device を用いる)</para>
 		/// </summary>
-		bool TryPlaceBlock(ChunksManager& chunksManager, const Lattice3& worldBlockPosition, const Device& device)
+		bool TryPlaceBlock(ChunksManager& chunksManager, const Lattice3& worldBlockPosition, Block block, const Device& device)
 		{
 			// ワールドの範囲内か?
 			if (!PlayerControl::IsInsideWorldBounds(worldBlockPosition))
@@ -402,7 +402,7 @@ namespace ForiverEngine
 
 			const Lattice2 playerExistingChunkIndex = Chunk::GetIndex(GetFootBlockPosition());
 
-			chunksManager.UpdateChunkBlock(chunkIndex, localBlockPosition, Block::Stone, device);
+			chunksManager.UpdateChunkBlock(chunkIndex, localBlockPosition, block, device);
 			chunksManager.UpdateDrawChunks(playerExistingChunkIndex, true, device);
 
 			return true;

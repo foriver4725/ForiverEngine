@@ -220,6 +220,17 @@ int Main(hInstance)
 		std::make_unique<PointerImageRenderer>(device, commandList, commandQueue, commandAllocator, WindowSize);
 
 	int selectedItemSlotIndex = 0; // [0, SlotCount)
+	constexpr Block ItemSlotBlocks[ItemSlotImageRenderer::SlotCount] =
+	{
+		Block::Grass,
+		Block::Stone,
+		Block::Dirt,
+		Block::Sand,
+
+		// ブロックが無いことを表す
+		Block::Invalid,
+		Block::Invalid,
+	};
 	std::vector<std::unique_ptr<AOffscreenRenderer>> itemSlotImageRenderers;
 	for (int i = 0; i < ItemSlotImageRenderer::SlotCount; ++i)
 	{
@@ -350,14 +361,19 @@ int Main(hInstance)
 			if (mineCdTimer.IsFinished() && InputHelper::GetKeyInfo(Key::LMouse).pressed)
 			{
 				mineCdTimer.Reset();
-				const bool _ = playerController.TryMineBlock(chunksManager, lookingBlockPosition, device);
+				const bool _ = playerController.TryMineBlock(
+					chunksManager, lookingBlockPosition, device);
 			}
 
 			// ブロックを設置する
 			if (placeCdTimer.IsFinished() && InputHelper::GetKeyInfo(Key::RMouse).pressed)
 			{
 				placeCdTimer.Reset();
-				const bool _ = playerController.TryPlaceBlock(chunksManager, lookingBlockPosition + lookingBlockFaceNormal, device);
+
+				const Block placeBlock = ItemSlotBlocks[selectedItemSlotIndex];
+				if (placeBlock != Block::Invalid)
+					const bool _ = playerController.TryPlaceBlock(
+						chunksManager, lookingBlockPosition + lookingBlockFaceNormal, placeBlock, device);
 			}
 		}
 
