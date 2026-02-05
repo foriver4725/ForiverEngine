@@ -307,6 +307,7 @@ namespace ForiverEngine
 								// Vertices
 								const Vector3 worldPosition = Vector3(worldBlockPosition);
 								const Vector3 faceNormalAsVector = Vector3(faceNormal);
+								// 列挙型の値をそのままテクスチャインデックスに使う
 								const std::uint32_t textureIndex = static_cast<std::uint32_t>(block);
 								if (faceNormal == Lattice3::Up())
 								{

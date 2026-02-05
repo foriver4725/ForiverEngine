@@ -30,7 +30,7 @@ struct VSInput
     float2 uv : TEXCOORD0;
     float3 normal : NORMAL;
     float3 centerWorldPosition : CENTERPOS;
-    uint texIndex : TEXINDEX;
+    uint texIndex : TEXINDEX; // 何番目のテクスチャを使うか
 };
 
 struct V2P

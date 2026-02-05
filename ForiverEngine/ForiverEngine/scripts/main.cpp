@@ -194,6 +194,7 @@ int Main(hInstance)
 	const GraphicsBuffer cb1 = D3D12Utils::InitCB(device, cbData1, &cb1VirtualPtr);
 
 	// SRV 用バッファ
+	// 列挙型の順番と同じにすること!
 	const Texture textureArray = D3D12Utils::LoadTexture({
 			"assets/textures/block/air_invalid.png",
 			"assets/textures/block/grass_stone.png",
