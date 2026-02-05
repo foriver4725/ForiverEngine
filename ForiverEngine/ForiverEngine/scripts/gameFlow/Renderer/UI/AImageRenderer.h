@@ -26,10 +26,11 @@ namespace ForiverEngine
 
 			Lattice2 Position; // 画像の中心座標
 			Vector2 Scale;
+
+			std::uint32_t IsDrawEnabled; // 描画するかどうか (0: しない, 1: する)
 		};
 
 	public:
-
 		void Init(
 			const Device& device,
 			const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator,
@@ -37,7 +38,8 @@ namespace ForiverEngine
 			const std::string& imageFilePath,
 			const Lattice2& position, // スクリーン上の座標 (ピクセル単位. 画像の中心がこの位置に来る)
 			const Vector2& clipUVMin, const Vector2& clipUVMax, // 画像のどの部分を切り取って使うか (UV座標で指定)
-			const Lattice2& drawSize // 描画サイズ (ピクセル単位. 画像の切り取った部分を、このサイズで描画する)
+			const Lattice2& drawSize, // 描画サイズ (ピクセル単位. 画像の切り取った部分を、このサイズで描画する)
+			bool initDrawEnabled // 初期状態で描画するかどうか
 		)
 		{
 			// t1 (画像テクスチャ)
@@ -72,10 +74,26 @@ namespace ForiverEngine
 
 				.Position = position,
 				.Scale = scale,
+
+				.IsDrawEnabled = (initDrawEnabled ? 1u : 0u),
 			};
-			const GraphicsBuffer cb0 = D3D12Utils::InitCB(device, cbData0);
+			const GraphicsBuffer cb0 = D3D12Utils::InitCB(device, cbData0, &cb0VirtualPtr);
 
 			Base::Init(device, windowSize, { cb0 }, { { sr1, sr1Metadata } }, D3D12Utils::GetShaderFilePath("Image"));
 		}
+
+		// Init 後に使うこと!
+		bool GetDrawEnabled() const
+		{
+			return (cb0VirtualPtr->IsDrawEnabled == 0u) ? false : true;
+		}
+		// Init 後に使うこと!
+		void SetDrawEnabled(bool enabled)
+		{
+			cb0VirtualPtr->IsDrawEnabled = (enabled ? 1u : 0u);
+		}
+
+	private:
+		CBData0* cb0VirtualPtr = nullptr;
 	};
 }

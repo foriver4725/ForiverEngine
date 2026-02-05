@@ -16,16 +16,16 @@ namespace ForiverEngine
 		using Base = AImageRenderer;
 
 	public:
-		static constexpr int SlotCount = 6; // スロット数
-		static constexpr int SlotSize = 128; // スロット1つ分のサイズ (正方形. NxN)
-
-		inline static const std::string NormalImageFilePath = "assets/textures/ui/item_frame.png";
-		inline static const std::string SelectedImageFilePath = "assets/textures/ui/item_frame_selected.png";
-
 		enum class ImageType : std::uint8_t
 		{
 			Normal,
 			Selected,
+		};
+
+		inline static const std::unordered_map<ImageType, std::string> ImageTypeToFilePath =
+		{
+			{ ImageType::Normal,   "assets/textures/ui/item_frame.png"          },
+			{ ImageType::Selected, "assets/textures/ui/item_frame_selected.png" },
 		};
 
 		explicit ItemSlotImageRenderer(
@@ -34,17 +34,17 @@ namespace ForiverEngine
 			const Lattice2& windowSize,
 			ImageType initType,
 			const Lattice2& position, const Lattice2& drawSize // 描画サイズ (ピクセル単位)
-		)
+		) :
+			imageTypeToTexture
 		{
-			typeToTextureMap =
-			{
-				{ ImageType::Normal, D3D12Utils::LoadTexture({ NormalImageFilePath }) },
-				{ ImageType::Selected, D3D12Utils::LoadTexture({ SelectedImageFilePath }) },
-			};
-
+			{ ImageType::Normal,   D3D12Utils::LoadTexture({ ImageTypeToFilePath.at(ImageType::Normal)   }) },
+			{ ImageType::Selected, D3D12Utils::LoadTexture({ ImageTypeToFilePath.at(ImageType::Selected) }) },
+		}
+		{
 			Base::Init(
 				device, commandList, commandQueue, commandAllocator, windowSize,
-				GetImageFilePath(initType), position, Vector2::Zero(), Vector2::One(), drawSize
+				ImageTypeToFilePath.at(initType), position, Vector2::Zero(), Vector2::One(), drawSize,
+				true
 			);
 		}
 
@@ -60,21 +60,11 @@ namespace ForiverEngine
 		{
 			// t1
 			Base::ReUploadTexture(device, commandList, commandQueue, commandAllocator,
-				typeToTextureMap[newType], ShaderRegister::t1);
+				imageTypeToTexture.at(newType), ShaderRegister::t1);
 		}
 
 	private:
 		// 最初にロードして、キャッシュしておく
-		std::unordered_map<ImageType, Texture> typeToTextureMap;
-
-		static const std::string& GetImageFilePath(ImageType type)
-		{
-			switch (type)
-			{
-			case ImageType::Normal:   return NormalImageFilePath;
-			case ImageType::Selected: return SelectedImageFilePath;
-			default:                  return NormalImageFilePath;
-			}
-		}
+		const std::unordered_map<ImageType, Texture> imageTypeToTexture;
 	};
 }

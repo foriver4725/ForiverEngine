@@ -6,6 +6,9 @@ cbuffer _0 : register(b0)
     
     int2 _Position;
     float2 _Scale;
+    
+    // 0 = disabled, 1 = enabled
+    uint _IsDrawEnabled;
 }
 
 Texture2D<float4> _Texture : register(t0);
@@ -46,6 +49,12 @@ PSOutput PSMain(V2P input)
     PSOutput output;
     
     const float4 originalColor = _Texture.Sample(_Sampler, input.uv);
+    
+    if (_IsDrawEnabled == 0)
+    {
+        output.color = originalColor;
+        return output;
+    }
     
     ImageSamplingParams imageSamplingParams;
     imageSamplingParams.ImageTexture = _ImageTexture;

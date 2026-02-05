@@ -220,8 +220,21 @@ int Main(hInstance)
 	const std::unique_ptr<AOffscreenRenderer> pointerImageRenderer =
 		std::make_unique<PointerImageRenderer>(device, commandList, commandQueue, commandAllocator, WindowSize);
 
+	constexpr int ItemSlotCount = 6; // スロット数
+	constexpr int ItemSlotSize = 128; // スロット1つ分のサイズ (正方形. NxN)
+	constexpr int ItemImageSize = 96; // アイテム画像1つ分のサイズ (正方形. NxN)
+	std::array<Lattice2, ItemSlotCount> ItemSlotPositions;
+	for (int i = 0; i < ItemSlotCount; ++i)
+	{
+		ItemSlotPositions[i] = Lattice2(
+			(WindowSize.x - ItemSlotSize * (ItemSlotCount - 1)) / 2 + i * ItemSlotSize,
+			WindowSize.y - 20 - ItemSlotSize / 2
+		);
+	}
 	int selectedItemSlotIndex = 0; // [0, SlotCount)
-	constexpr Block ItemSlotBlocks[ItemSlotImageRenderer::SlotCount] =
+	// どのアイテムスロットに、どのブロックが入っているか
+	// 現在は画像の種類が変化することはないので、固定配列で良い
+	constexpr Block ItemSlotBlocks[ItemSlotCount] =
 	{
 		Block::Grass,
 		Block::Stone,
@@ -233,19 +246,23 @@ int Main(hInstance)
 		Block::Invalid,
 	};
 	std::vector<std::unique_ptr<AOffscreenRenderer>> itemSlotImageRenderers;
-	for (int i = 0; i < ItemSlotImageRenderer::SlotCount; ++i)
+	for (int i = 0; i < ItemSlotCount; ++i)
 	{
-		using Renderer = ItemSlotImageRenderer;
-
-		itemSlotImageRenderers.push_back(std::make_unique<Renderer>(
+		itemSlotImageRenderers.push_back(std::make_unique<ItemSlotImageRenderer>(
 			device, commandList, commandQueue, commandAllocator, WindowSize,
 			// 最初は、一番左のスロットが選択されている状態にする
-			(i == selectedItemSlotIndex) ? Renderer::ImageType::Selected : Renderer::ImageType::Normal,
-			Lattice2(
-				(WindowSize.x - Renderer::SlotSize * (Renderer::SlotCount - 1)) / 2 + i * Renderer::SlotSize,
-				WindowSize.y - 20 - Renderer::SlotSize / 2
-			),
-			Lattice2(Renderer::SlotSize, Renderer::SlotSize)
+			(i == selectedItemSlotIndex) ? ItemSlotImageRenderer::ImageType::Selected : ItemSlotImageRenderer::ImageType::Normal,
+			ItemSlotPositions[i], Lattice2(ItemSlotSize, ItemSlotSize)
+		));
+	}
+	std::vector<std::unique_ptr<AOffscreenRenderer>> itemImageRenderers;
+	for (int i = 0; i < ItemSlotCount; ++i)
+	{
+		itemImageRenderers.push_back(std::make_unique<ItemImageRenderer>(
+			device, commandList, commandQueue, commandAllocator, WindowSize,
+			// 現在は画像の種類が変化することはないので、ここで指定したものがずっと使われる
+			ItemSlotBlocks[i],
+			ItemSlotPositions[i], Lattice2(ItemImageSize, ItemImageSize)
 		));
 	}
 
@@ -319,7 +336,7 @@ int Main(hInstance)
 					{
 						hasInput = true;
 
-						constexpr int SlotCount = ItemSlotImageRenderer::SlotCount;
+						constexpr int SlotCount = ItemSlotCount;
 						selectedItemSlotIndexCurrent =
 							(selectedItemSlotIndexCurrent + itemSlotSelectDirection + SlotCount) % SlotCount;
 					}
@@ -454,8 +471,11 @@ int Main(hInstance)
 			renderers.push_back(pointerImageRenderer.get()); // ポインター画像描画
 
 			// アイテムスロット画像描画
-			for (const auto& itemSlotImageRenderer : itemSlotImageRenderers)
-				renderers.push_back(itemSlotImageRenderer.get());
+			for (const auto& renderer : itemSlotImageRenderers)
+				renderers.push_back(renderer.get());
+			// アイテム画像描画
+			for (const auto& renderer : itemImageRenderers)
+				renderers.push_back(renderer.get());
 
 			AOffscreenRenderer::DrawInOrder(
 				commandList, commandQueue, commandAllocator, device,
