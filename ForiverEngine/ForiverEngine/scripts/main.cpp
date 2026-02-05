@@ -177,7 +177,7 @@ int Main(hInstance)
 	{
 		.SelectingBlockWorldPosition = Lattice3::Zero(),
 		.IsSelectingBlock = 0,
-		.SelectColor = Color::CreateFromUint8(255, 255, 0, 100),
+		.SelectColor = Color::CreateFromUint8(255, 255, 0, 48),
 
 		.DirectionalLightDirection = SunCamera::Direction,
 		.DirectionalLightColor = Color::White() * 1.2f,
