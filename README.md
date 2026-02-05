@@ -1,13 +1,15 @@
 # ForiverEngine
 
+<img width="100%" alt="image" src="https://github.com/user-attachments/assets/adeee8c9-107d-4c8b-aa81-16f8d144844a" />
+
+---
+
 ### マイクラライクのゲーム
 - 最大 1024x1024 のチャンクを管理
 - 描画範囲は半径 8 チャンク、新規描画する際にチャンクが未生成ならば、非同期で生成する
 - 基本的な3Dアクションが可能 (移動, 視点移動, ダッシュ, ジャンプ)
-- ブロックの採掘・設置が可能 (設置するブロックは 石 で固定)
+- ブロックの採掘・設置が可能 (設置するブロックも切り替えられる)
 - 左上にデバッグ情報を表示
-
-<img width="50%" alt="image" src="https://github.com/user-attachments/assets/e7ef3799-f376-4d51-b858-d90bbecb37c8" />
 
 ### > [Wiki](https://github.com/foriver4725/ForiverEngine/wiki)
 
