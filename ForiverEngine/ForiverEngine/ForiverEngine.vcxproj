@@ -223,6 +223,7 @@
     <ClInclude Include="scripts\gameFlow\DebugText.h" />
     <ClInclude Include="scripts\gameFlow\DebugTextDisplayer.h" />
     <ClInclude Include="scripts\gameFlow\Include.h" />
+    <ClInclude Include="scripts\gameFlow\ItemSlotManager.h" />
     <ClInclude Include="scripts\gameFlow\PlayerControl.h" />
     <ClInclude Include="scripts\gameFlow\Chunk.h" />
     <ClInclude Include="scripts\gameFlow\PlayerController.h" />

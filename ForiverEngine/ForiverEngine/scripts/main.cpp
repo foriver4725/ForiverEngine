@@ -220,51 +220,7 @@ int Main(hInstance)
 	const std::unique_ptr<AOffscreenRenderer> pointerImageRenderer =
 		std::make_unique<PointerImageRenderer>(device, commandList, commandQueue, commandAllocator, WindowSize);
 
-	constexpr int ItemSlotCount = 6; // スロット数
-	constexpr int ItemSlotSize = 128; // スロット1つ分のサイズ (正方形. NxN)
-	constexpr int ItemImageSize = 96; // アイテム画像1つ分のサイズ (正方形. NxN)
-	std::array<Lattice2, ItemSlotCount> ItemSlotPositions;
-	for (int i = 0; i < ItemSlotCount; ++i)
-	{
-		ItemSlotPositions[i] = Lattice2(
-			(WindowSize.x - ItemSlotSize * (ItemSlotCount - 1)) / 2 + i * ItemSlotSize,
-			WindowSize.y - 20 - ItemSlotSize / 2
-		);
-	}
-	int selectedItemSlotIndex = 0; // [0, SlotCount)
-	// どのアイテムスロットに、どのブロックが入っているか
-	// 現在は画像の種類が変化することはないので、固定配列で良い
-	constexpr Block ItemSlotBlocks[ItemSlotCount] =
-	{
-		Block::Grass,
-		Block::Stone,
-		Block::Dirt,
-		Block::Sand,
-
-		// ブロックが無いことを表す
-		Block::Invalid,
-		Block::Invalid,
-	};
-	std::vector<std::unique_ptr<AOffscreenRenderer>> itemSlotImageRenderers;
-	for (int i = 0; i < ItemSlotCount; ++i)
-	{
-		itemSlotImageRenderers.push_back(std::make_unique<ItemSlotImageRenderer>(
-			device, commandList, commandQueue, commandAllocator, WindowSize,
-			// 最初は、一番左のスロットが選択されている状態にする
-			(i == selectedItemSlotIndex) ? ItemSlotImageRenderer::ImageType::Selected : ItemSlotImageRenderer::ImageType::Normal,
-			ItemSlotPositions[i], Lattice2(ItemSlotSize, ItemSlotSize)
-		));
-	}
-	std::vector<std::unique_ptr<AOffscreenRenderer>> itemImageRenderers;
-	for (int i = 0; i < ItemSlotCount; ++i)
-	{
-		itemImageRenderers.push_back(std::make_unique<ItemImageRenderer>(
-			device, commandList, commandQueue, commandAllocator, WindowSize,
-			// 現在は画像の種類が変化することはないので、ここで指定したものがずっと使われる
-			ItemSlotBlocks[i],
-			ItemSlotPositions[i], Lattice2(ItemImageSize, ItemImageSize)
-		));
-	}
+	ItemSlotManager itemSlotManager = ItemSlotManager(device, commandList, commandQueue, commandAllocator, WindowSize);
 
 
 
@@ -289,70 +245,19 @@ int Main(hInstance)
 		cb0VirtualPtr->Matrix_MVP = playerController.CalculateVPMatrix() * terrainTransform.CalculateModelMatrix();
 
 		// アイテムスロットの選択変更
+		const ItemSlotManager::SelectInputs itemSlotSelectInputs =
 		{
-			const int selectedItemSlotIndexPrev = selectedItemSlotIndex;
-			// この値を最新値で更新する
-			// Prev の値から変化したならば、実インデックス値や描画を更新する
-			int selectedItemSlotIndexCurrent = selectedItemSlotIndex;
-			{
-				// 複数種類の入力を排他制御するためのフラグ
-				// 優先度順に入力をチェックし、最初に検出した時点で true にする
-				// 入力のチェックでこのフラグが true ならスキップする
-				// 即ち、最初に検出された入力のみが有効になる
-				bool hasInput = false;
+			.select1 = InputHelper::GetKeyInfo(Key::N1).pressedNow,
+			.select2 = InputHelper::GetKeyInfo(Key::N2).pressedNow,
+			.select3 = InputHelper::GetKeyInfo(Key::N3).pressedNow,
+			.select4 = InputHelper::GetKeyInfo(Key::N4).pressedNow,
+			.select5 = InputHelper::GetKeyInfo(Key::N5).pressedNow,
+			.select6 = InputHelper::GetKeyInfo(Key::N6).pressedNow,
 
-				// 最優先 : 数字キー
-				if (!hasInput)
-				{
-					int specifiedItemSlotIndex = -1;
-					{
-						if (InputHelper::GetKeyInfo(Key::N1).pressedNow) specifiedItemSlotIndex = 0;
-						else if (InputHelper::GetKeyInfo(Key::N2).pressedNow) specifiedItemSlotIndex = 1;
-						else if (InputHelper::GetKeyInfo(Key::N3).pressedNow) specifiedItemSlotIndex = 2;
-						else if (InputHelper::GetKeyInfo(Key::N4).pressedNow) specifiedItemSlotIndex = 3;
-						else if (InputHelper::GetKeyInfo(Key::N5).pressedNow) specifiedItemSlotIndex = 4;
-						else if (InputHelper::GetKeyInfo(Key::N6).pressedNow) specifiedItemSlotIndex = 5;
-					}
-
-					if (specifiedItemSlotIndex != -1)
-					{
-						hasInput = true;
-
-						selectedItemSlotIndexCurrent = specifiedItemSlotIndex;
-					}
-				}
-
-				// 次優先 : マウスホイール
-				if (!hasInput)
-				{
-					int itemSlotSelectDirection = 0; // 0: なし, -1: 左, +1: 右
-					{
-						float mouseWheelDelta = InputHelper::GetMouseWheelDelta();
-						if (mouseWheelDelta < -0.1f) itemSlotSelectDirection = +1;
-						else if (mouseWheelDelta > 0.1f) itemSlotSelectDirection = -1;
-					}
-
-					if (itemSlotSelectDirection != 0)
-					{
-						hasInput = true;
-
-						constexpr int SlotCount = ItemSlotCount;
-						selectedItemSlotIndexCurrent =
-							(selectedItemSlotIndexCurrent + itemSlotSelectDirection + SlotCount) % SlotCount;
-					}
-				}
-			}
-
-			if (selectedItemSlotIndexCurrent != selectedItemSlotIndexPrev)
-			{
-				selectedItemSlotIndex = selectedItemSlotIndexCurrent;
-
-				dynamic_cast<ItemSlotImageRenderer*>(itemSlotImageRenderers[selectedItemSlotIndexPrev].get())->ChangeImageType(
-					device, commandList, commandQueue, commandAllocator, ItemSlotImageRenderer::ImageType::Normal);
-				dynamic_cast<ItemSlotImageRenderer*>(itemSlotImageRenderers[selectedItemSlotIndexCurrent].get())->ChangeImageType(
-					device, commandList, commandQueue, commandAllocator, ItemSlotImageRenderer::ImageType::Selected);
-			}
-		}
+			.selectLeft = InputHelper::GetMouseWheelDelta() > 0.1f,   // マウスホイールが上に回った瞬間だけ true
+			.selectRight = InputHelper::GetMouseWheelDelta() < -0.1f, // マウスホイールが下に回った瞬間だけ true
+		};
+		itemSlotManager.UpdateSelectingSlotByInput(itemSlotSelectInputs, device, commandList, commandQueue, commandAllocator);
 
 		// 見ているブロック・フェースを取得
 		const auto [lookingBlockPosition, lookingBlockFaceNormal] = playerController.PickLookingBlock(chunksManager.GetChunks());
@@ -388,7 +293,7 @@ int Main(hInstance)
 			{
 				placeCdTimer.Reset();
 
-				const Block placeBlock = ItemSlotBlocks[selectedItemSlotIndex];
+				const Block placeBlock = ItemSlotManager::SlotItems[itemSlotManager.GetSelectingIndex()];
 				if (placeBlock != Block::Invalid)
 					const bool _ = playerController.TryPlaceBlock(
 						chunksManager, lookingBlockPosition + lookingBlockFaceNormal, placeBlock, device);
@@ -471,11 +376,8 @@ int Main(hInstance)
 			renderers.push_back(pointerImageRenderer.get()); // ポインター画像描画
 
 			// アイテムスロット画像描画
-			for (const auto& renderer : itemSlotImageRenderers)
-				renderers.push_back(renderer.get());
-			// アイテム画像描画
-			for (const auto& renderer : itemImageRenderers)
-				renderers.push_back(renderer.get());
+			const auto itemSlotRenderers = itemSlotManager.PackRenderers();
+			renderers.insert(renderers.end(), itemSlotRenderers.begin(), itemSlotRenderers.end());
 
 			AOffscreenRenderer::DrawInOrder(
 				commandList, commandQueue, commandAllocator, device,
