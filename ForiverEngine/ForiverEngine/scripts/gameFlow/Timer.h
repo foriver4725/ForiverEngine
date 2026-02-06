@@ -48,6 +48,14 @@ namespace ForiverEngine
 			elapsedSeconds = 0.0f;
 		}
 
+		/// <summary>
+		/// 設定された時間まで即座にカウントする (直ちに終了となる)
+		/// </summary>
+		void CountToFinishImmediately() noexcept
+		{
+			elapsedSeconds = durationSeconds;
+		}
+
 	private:
 		const float durationSeconds;
 		float elapsedSeconds = 0.0f;

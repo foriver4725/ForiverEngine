@@ -240,6 +240,12 @@ int Main(hInstance)
 					const bool _ = playerController.TryPlaceBlock(
 						chunksManager, lookingBlockPosition + lookingBlockFaceNormal, placeBlock, device);
 			}
+
+			// マウスボタンが離されたら、クールタイムを即リセットする
+			if (InputHelper::GetKeyInfo(Key::LMouse).releasedNow)
+				mineCdTimer.CountToFinishImmediately();
+			if (InputHelper::GetKeyInfo(Key::RMouse).releasedNow)
+				placeCdTimer.CountToFinishImmediately();
 		}
 
 		// プレイヤーの存在チャンクが変化したなら、描画チャンクを更新する
