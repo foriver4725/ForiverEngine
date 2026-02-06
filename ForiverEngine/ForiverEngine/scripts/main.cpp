@@ -293,15 +293,16 @@ int Main(hInstance)
 					.postFrame = frameTimeStatsPostFrame,
 				};
 
+				const DebugText::LookingBlockInfo lookingBlockInfo =
+				{
+					.isLooking = terrainRenderer.GetCB1VirtualPtr()->IsSelectingBlock == 1,
+					.lookingBlockWorldPosition = terrainRenderer.GetCB1VirtualPtr()->SelectingBlockWorldPosition,
+					.lookingBlockFaceNormal = lookingBlockFaceNormal,
+				};
+
 				debugTextDisplayer.UpdateDataAsUnfold(
 					textRendererRef, device, commandList, commandQueue, commandAllocator,
-					playerController, chunksManager,
-					frameTimeStatsBreakdown,
-					{
-						.isLooking = terrainRenderer.GetCB1VirtualPtr()->IsSelectingBlock == 1,
-						.lookingBlockWorldPosition = terrainRenderer.GetCB1VirtualPtr()->SelectingBlockWorldPosition,
-						.lookingBlockFaceNormal = lookingBlockFaceNormal
-					}
+					playerController, chunksManager, frameTimeStatsBreakdown, lookingBlockInfo
 				);
 			}
 		}

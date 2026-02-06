@@ -58,8 +58,7 @@ namespace ForiverEngine
 			// 多くの処理で共通して使う
 			const PlayerController& playerController, const ChunksManager& chunksManager,
 			// 以下は個別の処理で使う
-			const DebugFrameTimeStatsBreakdown& frameTimeStatsBreakdown,
-			const DebugText::LookAtInfo& lookAtInfo
+			const DebugFrameTimeStatsBreakdown& frameTimeStatsBreakdown, const DebugText::LookingBlockInfo& lookingBlockInfo
 		)
 		{
 			const double frameTimePreFrame = frameTimeStatsBreakdown.preFrame.CalculateMean();
@@ -79,7 +78,7 @@ namespace ForiverEngine
 			rowDatas.clear();
 			rowDatas.emplace_back(DebugText::FrameTime(frameTimeBreakdown), TextColor);                    // 0
 			rowDatas.emplace_back(DebugText::Position(playerController), TextColor);                       // 1
-			rowDatas.emplace_back(DebugText::LookAtPosition(lookAtInfo), TextColor);                       // 2
+			rowDatas.emplace_back(DebugText::LookingBlock(lookingBlockInfo, chunksManager), TextColor);    // 2
 			rowDatas.emplace_back(DebugText::ChunkIndex(playerController), TextColor);                     // 3
 			rowDatas.emplace_back(DebugText::ChunkLocalPosition(playerController), TextColor);             // 4
 			rowDatas.emplace_back(DebugText::DrawChunksRange(chunksManager), TextColor);                   // 5

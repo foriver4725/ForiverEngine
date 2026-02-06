@@ -3,6 +3,9 @@
 #include <scripts/common/Include.h>
 #include <scripts/helper/Include.h>
 #include <scripts/component/Include.h>
+#include "./PlayerController.h"
+#include "./ChunksManager.h"
+#include "./Chunk.h"
 
 namespace ForiverEngine
 {
@@ -41,22 +44,23 @@ namespace ForiverEngine
 			);
 		}
 
-		struct LookAtInfo
+		struct LookingBlockInfo
 		{
 			bool isLooking;
 			Lattice3 lookingBlockWorldPosition;
 			Lattice3 lookingBlockFaceNormal;
 		};
-		static std::string LookAtPosition(const LookAtInfo& lookAtInfo)
+		static std::string LookingBlock(const LookingBlockInfo& info, const ChunksManager& chunksManager)
 		{
-			if (lookAtInfo.isLooking)
+			if (info.isLooking)
 				return std::format(
-					"LookAt : {} (Face={})",
-					ToString(lookAtInfo.lookingBlockWorldPosition),
-					ToString(lookAtInfo.lookingBlockFaceNormal)
+					"Looking Block : {}(At={},Face={})",
+					GetBlockName(chunksManager.GetBlock(info.lookingBlockWorldPosition)),
+					ToString(info.lookingBlockWorldPosition),
+					ToString(info.lookingBlockFaceNormal)
 				);
 			else
-				return "LookAt : None (Face=None)";
+				return "Looking Block : None";
 		}
 
 		static std::string ChunkIndex(const PlayerController& playerController)

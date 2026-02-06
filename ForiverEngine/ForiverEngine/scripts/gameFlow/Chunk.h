@@ -17,6 +17,22 @@ namespace ForiverEngine
 	};
 
 	/// <summary>
+	/// ブロックの名前を取得
+	/// </summary>
+	inline std::string GetBlockName(Block block)
+	{
+		switch (block)
+		{
+		case Block::Air:   return "Air";
+		case Block::Grass: return "Grass";
+		case Block::Stone: return "Stone";
+		case Block::Dirt:  return "Dirt";
+		case Block::Sand:  return "Sand";
+		default:           return "Invalid";
+		}
+	}
+
+	/// <summary>
 	/// 1チャンクの地形データ
 	/// </summary>
 	class Chunk
