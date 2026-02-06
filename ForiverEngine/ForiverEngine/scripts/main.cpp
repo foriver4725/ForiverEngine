@@ -222,12 +222,18 @@ int Main(hInstance)
 
 	ItemSlotManager itemSlotManager = ItemSlotManager(device, commandList, commandQueue, commandAllocator, WindowSize);
 
+	// [ms] 単位でのフレーム時間統計
+	DebugFrameTimeStats frameTimeStatsCPU = DebugFrameTimeStats(16);
+	DebugFrameTimeStats frameTimeStatsGPU = DebugFrameTimeStats(16);
+
 
 
 	while (true)
 	{
 		if (!WindowHelper::OnBeginFrame(hwnd))
 			break;
+
+		const double timeBeforeFrame = WindowHelper::GetTime();
 
 		// Escape でゲーム終了
 		if (InputHelper::GetKeyInfo(Key::Escape).pressedNow)
@@ -309,15 +315,12 @@ int Main(hInstance)
 
 		// デバッグテキスト
 		{
-			static DebugFrameTimeStats frameTimeStats = DebugFrameTimeStats(16);
-			frameTimeStats.Record(WindowHelper::GetDeltaMilliseconds());
-
 			static DebugTextDisplayer debugTextDisplayer{};
 			debugTextDisplayer.UpdateData(
 				*dynamic_cast<TextRenderer*>(textRenderer.get()),
 				device, commandList, commandQueue, commandAllocator,
 				playerController, chunksManager,
-				frameTimeStats,
+				frameTimeStatsCPU, frameTimeStatsGPU,
 				{
 					.isLooking = cb1VirtualPtr->IsSelectingBlock == 1,
 					.lookingBlockWorldPosition = cb1VirtualPtr->SelectingBlockWorldPosition,
@@ -333,6 +336,9 @@ int Main(hInstance)
 			cb0VirtualPtr->DirectionalLight_Matrix_VP = sunCamera.CalculateVPMatrix();
 			cb0ShadowVirtualPtr->Matrix_MVP = sunCamera.CalculateVPMatrix() * terrainTransform.CalculateModelMatrix();
 		}
+
+		const double timeAfterCPU = WindowHelper::GetTime();
+		frameTimeStatsCPU.Record(timeAfterCPU - timeBeforeFrame);
 
 
 
@@ -388,6 +394,9 @@ int Main(hInstance)
 
 		if (!D3D12Helper::Present(swapChain))
 			ShowError(L"画面のフリップに失敗しました");
+
+		const double timeAfterGPU = WindowHelper::GetTime();
+		frameTimeStatsGPU.Record(timeAfterGPU - timeAfterCPU);
 
 		WindowHelper::OnEndFrame();
 	}

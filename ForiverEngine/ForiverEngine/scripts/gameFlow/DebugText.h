@@ -11,11 +11,12 @@ namespace ForiverEngine
 	public:
 		DELETE_DEFAULT_METHODS(DebugText);
 
-		static std::string FrameTime(double frameTime)
+		// [ms]
+		static std::string FrameTime(double frameTimeTotal, double frameTimeCPU, double frameTimeGPU)
 		{
 			return std::format(
-				"Frame Time : {:.2f} ms",
-				frameTime
+				"Frame Time : Total={:.2f}ms,CPU={:.2f}ms,GPU={:.2f}ms",
+				frameTimeTotal, frameTimeCPU, frameTimeGPU
 			);
 		}
 

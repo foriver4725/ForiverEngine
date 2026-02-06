@@ -30,6 +30,11 @@ namespace ForiverEngine
 		static TReturnValue GetDeltaSeconds() { return static_cast<TReturnValue>(deltaTime * 1.0e-3); }
 
 		/// <summary>
+		/// 現在の時間を[ms]で返す
+		/// </summary>
+		static double GetTime();
+
+		/// <summary>
 		/// <para>カーソルの表示・非表示を切り替える</para>
 		/// <para>重複実行でもOK</para>
 		/// </summary>
@@ -115,11 +120,6 @@ namespace ForiverEngine
 		/// 時間計測の初期化
 		/// </summary>
 		static void InitTime();
-
-		/// <summary>
-		/// 現在の時間を[ms]で返す
-		/// </summary>
-		static double GetTime();
 
 		/// <summary>
 		/// フレーム開始時の時間を記録する

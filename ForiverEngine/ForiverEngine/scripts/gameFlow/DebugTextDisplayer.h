@@ -35,19 +35,23 @@ namespace ForiverEngine
 			// 多くの処理で共通して使う
 			const PlayerController& playerController, const ChunksManager& chunksManager,
 			// 以下は個別の処理で使う
-			const DebugFrameTimeStats& frameTimeStats,
+			const DebugFrameTimeStats& frameTimeStatsCPU, const DebugFrameTimeStats& frameTimeStatsGPU,
 			const DebugText::LookAtInfo& lookAtInfo
 		)
 		{
+			const double frameTimeMeanCPU = frameTimeStatsCPU.CalculateMean();
+			const double frameTimeMeanGPU = frameTimeStatsGPU.CalculateMean();
+			const double frameTimeMeanTotal = frameTimeMeanCPU + frameTimeMeanGPU;
+
 			rowDatas.clear();
-			rowDatas.emplace_back(DebugText::FrameTime(frameTimeStats.CalculateMean()), TextColor);        // 0
-			rowDatas.emplace_back(DebugText::Position(playerController), TextColor);                       // 1
-			rowDatas.emplace_back(DebugText::LookAtPosition(lookAtInfo), TextColor);                       // 2
-			rowDatas.emplace_back(DebugText::ChunkIndex(playerController), TextColor);                     // 3
-			rowDatas.emplace_back(DebugText::ChunkLocalPosition(playerController), TextColor);             // 4
-			rowDatas.emplace_back(DebugText::DrawChunksRange(chunksManager), TextColor);                   // 5
-			rowDatas.emplace_back(DebugText::CollisionRange(playerController), TextColor);                 // 6
-			rowDatas.emplace_back(DebugText::FloorCeilHeight(playerController, chunksManager), TextColor); // 7
+			rowDatas.emplace_back(DebugText::FrameTime(frameTimeMeanTotal, frameTimeMeanCPU, frameTimeMeanGPU), TextColor); // 0
+			rowDatas.emplace_back(DebugText::Position(playerController), TextColor);                                        // 1
+			rowDatas.emplace_back(DebugText::LookAtPosition(lookAtInfo), TextColor);                                        // 2
+			rowDatas.emplace_back(DebugText::ChunkIndex(playerController), TextColor);                                      // 3
+			rowDatas.emplace_back(DebugText::ChunkLocalPosition(playerController), TextColor);                              // 4
+			rowDatas.emplace_back(DebugText::DrawChunksRange(chunksManager), TextColor);                                    // 5
+			rowDatas.emplace_back(DebugText::CollisionRange(playerController), TextColor);                                  // 6
+			rowDatas.emplace_back(DebugText::FloorCeilHeight(playerController, chunksManager), TextColor);                  // 7
 
 			textRenderer.data.ClearAll();
 			for (int i = 0; i < static_cast<int>(rowDatas.size()); ++i)

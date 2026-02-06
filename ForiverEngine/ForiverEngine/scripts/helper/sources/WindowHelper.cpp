@@ -3,6 +3,13 @@
 
 namespace ForiverEngine
 {
+	double WindowHelper::GetTime()
+	{
+		LARGE_INTEGER now;
+		QueryPerformanceCounter(&now);
+		return 1000.0 * static_cast<double>(now.QuadPart) / static_cast<double>(WindowHelper::timeFrequency.QuadPart);
+	}
+
 	void WindowHelper::SetCursorEnabled(bool enabled)
 	{
 		if (enabled && !isCursorEnabled)
@@ -274,13 +281,6 @@ namespace ForiverEngine
 	void WindowHelper::InitTime()
 	{
 		QueryPerformanceFrequency(&WindowHelper::timeFrequency);
-	}
-
-	double WindowHelper::GetTime()
-	{
-		LARGE_INTEGER now;
-		QueryPerformanceCounter(&now);
-		return 1000.0 * static_cast<double>(now.QuadPart) / static_cast<double>(WindowHelper::timeFrequency.QuadPart);
 	}
 
 	void WindowHelper::RecordTimeAtBeginFrame()
