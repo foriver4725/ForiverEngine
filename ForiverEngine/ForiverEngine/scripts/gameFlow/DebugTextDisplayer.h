@@ -34,7 +34,22 @@ namespace ForiverEngine
 			const DebugFrameTimeStats& postFrame;
 		};
 
-		void UpdateData(
+		void UpdateDataAsFold(
+			// Renderer. データを更新し、GPU にも反映させる
+			TextRenderer& textRenderer,
+			// Renderer に対する処理で必要な、描画オブジェクト
+			const Device& device,
+			const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator
+		)
+		{
+			rowDatas.clear();
+			rowDatas.emplace_back("Place F1 to unfold debug info.", TextColor);
+
+			ApplyDataToRenderer(rowDatas, textRenderer);
+			textRenderer.UpdateDataAtGPU(device, commandList, commandQueue, commandAllocator);
+		}
+
+		void UpdateDataAsUnfold(
 			// Renderer. データを更新し、GPU にも反映させる
 			TextRenderer& textRenderer,
 			// Renderer に対する処理で必要な、描画オブジェクト
@@ -71,15 +86,7 @@ namespace ForiverEngine
 			rowDatas.emplace_back(DebugText::CollisionRange(playerController), TextColor);                 // 6
 			rowDatas.emplace_back(DebugText::FloorCeilHeight(playerController, chunksManager), TextColor); // 7
 
-			textRenderer.data.ClearAll();
-			for (int i = 0; i < static_cast<int>(rowDatas.size()); ++i)
-			{
-				// 左上に配置
-				// 余白を少し取るために、オフセットする
-				constexpr Lattice2 IndexOffset = Lattice2(1, 1);
-				const auto& rowData = rowDatas[i];
-				textRenderer.data.SetTexts(Lattice2(0, i) + IndexOffset, rowData.text, rowData.color);
-			}
+			ApplyDataToRenderer(rowDatas, textRenderer);
 			textRenderer.UpdateDataAtGPU(device, commandList, commandQueue, commandAllocator);
 		}
 
@@ -92,5 +99,21 @@ namespace ForiverEngine
 
 		// 1行ごとに文字のデータを保持する
 		std::vector<RowData> rowDatas;
+
+		/// <summary>
+		/// Renderer にデータを反映させる
+		/// </summary>
+		static void ApplyDataToRenderer(const std::vector<RowData>& rowDatas, TextRenderer& textRenderer)
+		{
+			textRenderer.data.ClearAll();
+			for (int i = 0; i < static_cast<int>(rowDatas.size()); ++i)
+			{
+				// 左上に配置
+				// 余白を少し取るために、オフセットする
+				constexpr Lattice2 IndexOffset = Lattice2(1, 1);
+				const auto& rowData = rowDatas[i];
+				textRenderer.data.SetTexts(Lattice2(0, i) + IndexOffset, rowData.text, rowData.color);
+			}
+		}
 	};
 }

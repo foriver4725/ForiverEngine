@@ -270,29 +270,40 @@ int Main(hInstance)
 			chunksManager.UpdateDrawChunks(playerExistingChunkIndex.GetValue(), true, device);
 		}
 
-		// デバッグテキスト
+		// デバッグテキスト (F1 押下で表示切替)
 		{
 			static DebugTextDisplayer debugTextDisplayer{};
+			static bool fold = true; // true = 折りたたみ表示, false = 展開表示
 
-			const DebugTextDisplayer::DebugFrameTimeStatsBreakdown frameTimeStatsBreakdown =
+			if (InputHelper::GetKeyInfo(Key::F1).pressedNow)
+				fold = !fold;
+
+			TextRenderer& textRendererRef = *dynamic_cast<TextRenderer*>(textRenderer.get());
+			if (fold)
 			{
-				.preFrame = frameTimeStatsPreFrame,
-				.cpu = frameTimeStatsCPU,
-				.gpu = frameTimeStatsGPU,
-				.postFrame = frameTimeStatsPostFrame,
-			};
-
-			debugTextDisplayer.UpdateData(
-				*dynamic_cast<TextRenderer*>(textRenderer.get()),
-				device, commandList, commandQueue, commandAllocator,
-				playerController, chunksManager,
-				frameTimeStatsBreakdown,
+				debugTextDisplayer.UpdateDataAsFold(textRendererRef, device, commandList, commandQueue, commandAllocator);
+			}
+			else
+			{
+				const DebugTextDisplayer::DebugFrameTimeStatsBreakdown frameTimeStatsBreakdown =
 				{
-					.isLooking = terrainRenderer.GetCB1VirtualPtr()->IsSelectingBlock == 1,
-					.lookingBlockWorldPosition = terrainRenderer.GetCB1VirtualPtr()->SelectingBlockWorldPosition,
-					.lookingBlockFaceNormal = lookingBlockFaceNormal
-				}
-			);
+					.preFrame = frameTimeStatsPreFrame,
+					.cpu = frameTimeStatsCPU,
+					.gpu = frameTimeStatsGPU,
+					.postFrame = frameTimeStatsPostFrame,
+				};
+
+				debugTextDisplayer.UpdateDataAsUnfold(
+					textRendererRef, device, commandList, commandQueue, commandAllocator,
+					playerController, chunksManager,
+					frameTimeStatsBreakdown,
+					{
+						.isLooking = terrainRenderer.GetCB1VirtualPtr()->IsSelectingBlock == 1,
+						.lookingBlockWorldPosition = terrainRenderer.GetCB1VirtualPtr()->SelectingBlockWorldPosition,
+						.lookingBlockFaceNormal = lookingBlockFaceNormal
+					}
+				);
+			}
 		}
 
 		// 太陽カメラの位置を、プレイヤーの頭上らへんにする
