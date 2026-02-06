@@ -216,6 +216,21 @@ int Main(hInstance)
 				cb1VirtualPtr->SelectingBlockWorldPosition = lookingBlockPosition;
 			}
 
+			// マウスホイールが押されたら、アイテムスロット内に見ているブロックがあるか調べる
+			// もしあったら、そのスロットを直ちに選択する
+			if (InputHelper::GetKeyInfo(Key::MMouse).pressedNow)
+			{
+				const Block lookingBlock = chunksManager.GetBlock(lookingBlockPosition);
+				for (int i = 0; i < ItemSlotManager::SlotCount; ++i)
+				{
+					if (ItemSlotManager::SlotItems[i] == lookingBlock)
+					{
+						itemSlotManager.UpdateSelectingSlot(i, device, commandList, commandQueue, commandAllocator);
+						break;
+					}
+				}
+			}
+
 			static Timer mineCdTimer = Timer(PlayerController::MineCooldownSeconds);
 			static Timer placeCdTimer = Timer(PlayerController::PlaceCooldownSeconds);
 

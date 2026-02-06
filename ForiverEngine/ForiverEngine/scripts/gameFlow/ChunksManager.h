@@ -57,18 +57,39 @@ namespace ForiverEngine
 #pragma endregion
 
 		/// <summary>
-		/// 指定されたチャンク・指定された座標のブロックを取得する
+		/// 指定されたワールド座標のブロックを取得する
 		/// </summary>
-		Block GetChunkBlock(const Lattice2& chunkIndex, const Lattice3& localBlockPosition) const
+		Block GetBlock(const Lattice3& worldBlockPosition) const
+		{
+			const Lattice2 chunkIndex = Chunk::GetIndex(worldBlockPosition);
+			const Lattice3 localBlockPosition = Chunk::GetLocalBlockPosition(worldBlockPosition);
+			return GetBlock(chunkIndex, localBlockPosition);
+		};
+
+		/// <summary>
+		/// 指定されたチャンク・ローカル座標のブロックを取得する
+		/// </summary>
+		Block GetBlock(const Lattice2& chunkIndex, const Lattice3& localBlockPosition) const
 		{
 			return chunks[chunkIndex.x][chunkIndex.y].GetBlock(localBlockPosition);
 		};
 
 		/// <summary>
-		/// <para>指定されたチャンク・指定された座標のブロックを更新する</para>
+		/// <para>指定されたワールド座標のブロックを更新する</para>
 		/// <para>その後、そのチャンクのデータを再生成する</para>
 		/// </summary>
-		void UpdateChunkBlock(const Lattice2& chunkIndex, const Lattice3& localBlockPosition, const Block& newBlock, const Device& device)
+		void UpdateBlock(const Lattice3& worldBlockPosition, Block newBlock, const Device& device)
+		{
+			const Lattice2 chunkIndex = Chunk::GetIndex(worldBlockPosition);
+			const Lattice3 localBlockPosition = Chunk::GetLocalBlockPosition(worldBlockPosition);
+			UpdateBlock(chunkIndex, localBlockPosition, newBlock, device);
+		};
+
+		/// <summary>
+		/// <para>指定されたチャンク・ローカル座標のブロックを更新する</para>
+		/// <para>その後、そのチャンクのデータを再生成する</para>
+		/// </summary>
+		void UpdateBlock(const Lattice2& chunkIndex, const Lattice3& localBlockPosition, Block newBlock, const Device& device)
 		{
 			chunks[chunkIndex.x][chunkIndex.y].SetBlock(localBlockPosition, newBlock);
 			meshes[chunkIndex.x][chunkIndex.y] = chunks[chunkIndex.x][chunkIndex.y].CreateMesh(chunkIndex);

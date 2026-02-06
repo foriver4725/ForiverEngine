@@ -361,12 +361,12 @@ namespace ForiverEngine
 			const Lattice3 localBlockPosition = Chunk::GetLocalBlockPosition(worldBlockPosition);
 
 			// ブロックが無いならダメ (一応)
-			if (chunksManager.GetChunkBlock(chunkIndex, localBlockPosition) == Block::Air)
+			if (chunksManager.GetBlock(chunkIndex, localBlockPosition) == Block::Air)
 				return false;
 
 			const Lattice2 playerExistingChunkIndex = Chunk::GetIndex(GetFootBlockPosition());
 
-			chunksManager.UpdateChunkBlock(chunkIndex, localBlockPosition, Block::Air, device);
+			chunksManager.UpdateBlock(chunkIndex, localBlockPosition, Block::Air, device);
 			chunksManager.UpdateDrawChunks(playerExistingChunkIndex, true, device);
 
 			return true;
@@ -393,7 +393,7 @@ namespace ForiverEngine
 			const Lattice3 localBlockPosition = Chunk::GetLocalBlockPosition(worldBlockPosition);
 
 			// 既にブロックがあるならダメ (一応)
-			if (chunksManager.GetChunkBlock(chunkIndex, localBlockPosition) != Block::Air)
+			if (chunksManager.GetBlock(chunkIndex, localBlockPosition) != Block::Air)
 				return false;
 
 			// 自身の当たり判定が被っているならダメ
@@ -402,7 +402,7 @@ namespace ForiverEngine
 
 			const Lattice2 playerExistingChunkIndex = Chunk::GetIndex(GetFootBlockPosition());
 
-			chunksManager.UpdateChunkBlock(chunkIndex, localBlockPosition, block, device);
+			chunksManager.UpdateBlock(chunkIndex, localBlockPosition, block, device);
 			chunksManager.UpdateDrawChunks(playerExistingChunkIndex, true, device);
 
 			return true;

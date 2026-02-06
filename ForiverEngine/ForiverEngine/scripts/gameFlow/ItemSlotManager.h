@@ -70,28 +70,45 @@ namespace ForiverEngine
 			const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator
 		)
 		{
-			const int prevIndex = selectingIndex;
+			int newIndex = selectingIndex;
 
-			/**/ if (inputs.select1)     selectingIndex = 0;
-			else if (inputs.select2)     selectingIndex = 1;
-			else if (inputs.select3)     selectingIndex = 2;
-			else if (inputs.select4)     selectingIndex = 3;
-			else if (inputs.select5)     selectingIndex = 4;
-			else if (inputs.select6)     selectingIndex = 5;
+			/**/ if (inputs.select1)     newIndex = 0;
+			else if (inputs.select2)     newIndex = 1;
+			else if (inputs.select3)     newIndex = 2;
+			else if (inputs.select4)     newIndex = 3;
+			else if (inputs.select5)     newIndex = 4;
+			else if (inputs.select6)     newIndex = 5;
 
-			else if (inputs.selectLeft)  selectingIndex = (selectingIndex - 1 + SlotCount) % SlotCount;
-			else if (inputs.selectRight) selectingIndex = (selectingIndex + 1) % SlotCount;
+			else if (inputs.selectLeft)  newIndex = (selectingIndex - 1 + SlotCount) % SlotCount;
+			else if (inputs.selectRight) newIndex = (selectingIndex + 1) % SlotCount;
 
 			// 入力が無いので何もせず、以降の処理もスキップして良い
 			else return;
 
-			// もしかしたら、入力があってもスロットが変化していないかもしれないので、一応チェックする
-			if (selectingIndex != prevIndex)
-			{
-				// スロット画像を更新する (選択しているスロットだけ強調表示する)
-				ChangeSlotImage(prevIndex, SlotImageType::Normal, device, commandList, commandQueue, commandAllocator);
-				ChangeSlotImage(selectingIndex, SlotImageType::Selected, device, commandList, commandQueue, commandAllocator);
-			}
+			UpdateSelectingSlot(newIndex, device, commandList, commandQueue, commandAllocator);
+		}
+
+		/// <summary>
+		/// <para>選択中スロットを、指定したインデックスに更新する</para>
+		/// <para>選択中スロットが変化した場合は、スロット画像の見た目も更新する (強調表示など)</para>
+		/// <para>選択中スロットが変化しなければ、何もしない</para>
+		/// </summary>
+		void UpdateSelectingSlot(
+			int newIndex,
+			const Device& device,
+			const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator
+		)
+		{
+			// 選択が変化しないので、何もしない
+			if (selectingIndex == newIndex)
+				return;
+
+			const int prevIndex = selectingIndex;
+			selectingIndex = newIndex;
+
+			// スロット画像を更新する (選択しているスロットだけ強調表示する)
+			ChangeSlotImage(prevIndex, SlotImageType::Normal, device, commandList, commandQueue, commandAllocator);
+			ChangeSlotImage(selectingIndex, SlotImageType::Selected, device, commandList, commandQueue, commandAllocator);
 		}
 
 		/// <summary>
