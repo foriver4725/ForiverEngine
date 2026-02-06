@@ -332,6 +332,9 @@
     <ClInclude Include="scripts\gameFlow\ItemSlotManager.h">
       <Filter>scripts\gameFlow</Filter>
     </ClInclude>
+    <ClInclude Include="scripts\gameFlow\Renderer\TerrainRenderer.h">
+      <Filter>scripts\gameFlow\Renderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shaders\Basic.hlsl">

@@ -26,6 +26,14 @@ namespace ForiverEngine
 			rowDatas.reserve(64);
 		}
 
+		struct DebugFrameTimeStatsBreakdown
+		{
+			const DebugFrameTimeStats& preFrame;
+			const DebugFrameTimeStats& cpu;
+			const DebugFrameTimeStats& gpu;
+			const DebugFrameTimeStats& postFrame;
+		};
+
 		void UpdateData(
 			// Renderer. データを更新し、GPU にも反映させる
 			TextRenderer& textRenderer,
@@ -35,23 +43,33 @@ namespace ForiverEngine
 			// 多くの処理で共通して使う
 			const PlayerController& playerController, const ChunksManager& chunksManager,
 			// 以下は個別の処理で使う
-			const DebugFrameTimeStats& frameTimeStatsCPU, const DebugFrameTimeStats& frameTimeStatsGPU,
+			const DebugFrameTimeStatsBreakdown& frameTimeStatsBreakdown,
 			const DebugText::LookAtInfo& lookAtInfo
 		)
 		{
-			const double frameTimeMeanCPU = frameTimeStatsCPU.CalculateMean();
-			const double frameTimeMeanGPU = frameTimeStatsGPU.CalculateMean();
-			const double frameTimeMeanTotal = frameTimeMeanCPU + frameTimeMeanGPU;
+			const double frameTimePreFrame = frameTimeStatsBreakdown.preFrame.CalculateMean();
+			const double frameTimeCPU = frameTimeStatsBreakdown.cpu.CalculateMean();
+			const double frameTimeGPU = frameTimeStatsBreakdown.gpu.CalculateMean();
+			const double frameTimePostFrame = frameTimeStatsBreakdown.postFrame.CalculateMean();
+			const double frameTimeTotal = frameTimePreFrame + frameTimeCPU + frameTimeGPU + frameTimePostFrame;
+			const DebugText::FrameTimeBreakdown frameTimeBreakdown =
+			{
+				.preFrame = frameTimePreFrame,
+				.cpu = frameTimeCPU,
+				.gpu = frameTimeGPU,
+				.postFrame = frameTimePostFrame,
+				.total = frameTimeTotal,
+			};
 
 			rowDatas.clear();
-			rowDatas.emplace_back(DebugText::FrameTime(frameTimeMeanTotal, frameTimeMeanCPU, frameTimeMeanGPU), TextColor); // 0
-			rowDatas.emplace_back(DebugText::Position(playerController), TextColor);                                        // 1
-			rowDatas.emplace_back(DebugText::LookAtPosition(lookAtInfo), TextColor);                                        // 2
-			rowDatas.emplace_back(DebugText::ChunkIndex(playerController), TextColor);                                      // 3
-			rowDatas.emplace_back(DebugText::ChunkLocalPosition(playerController), TextColor);                              // 4
-			rowDatas.emplace_back(DebugText::DrawChunksRange(chunksManager), TextColor);                                    // 5
-			rowDatas.emplace_back(DebugText::CollisionRange(playerController), TextColor);                                  // 6
-			rowDatas.emplace_back(DebugText::FloorCeilHeight(playerController, chunksManager), TextColor);                  // 7
+			rowDatas.emplace_back(DebugText::FrameTime(frameTimeBreakdown), TextColor);                    // 0
+			rowDatas.emplace_back(DebugText::Position(playerController), TextColor);                       // 1
+			rowDatas.emplace_back(DebugText::LookAtPosition(lookAtInfo), TextColor);                       // 2
+			rowDatas.emplace_back(DebugText::ChunkIndex(playerController), TextColor);                     // 3
+			rowDatas.emplace_back(DebugText::ChunkLocalPosition(playerController), TextColor);             // 4
+			rowDatas.emplace_back(DebugText::DrawChunksRange(chunksManager), TextColor);                   // 5
+			rowDatas.emplace_back(DebugText::CollisionRange(playerController), TextColor);                 // 6
+			rowDatas.emplace_back(DebugText::FloorCeilHeight(playerController, chunksManager), TextColor); // 7
 
 			textRenderer.data.ClearAll();
 			for (int i = 0; i < static_cast<int>(rowDatas.size()); ++i)

@@ -61,9 +61,6 @@ int Main(hInstance)
 	constexpr std::uint32_t RandomSeed = 0x12345678;
 	Random::SetSeed(RandomSeed);
 
-	// 背景色 (空色)
-	constexpr Color BackgroundColor = Color::CreateFromUint8(60, 150, 210);
-
 	const auto [factory, device, commandAllocator, commandList, commandQueue]
 		= D3D12Utils::CreateStandardObjects();
 
@@ -77,15 +74,19 @@ int Main(hInstance)
 	ChunksManager chunksManager = ChunksManager(playerExistingChunkIndex.GetValue());
 	chunksManager.UpdateDrawChunks(playerExistingChunkIndex.GetValue(), false, device); // 初回作成
 
-	// 地形のTransform (規定値で固定)
-	constexpr Transform terrainTransform = Transform::Identity();
-
 	// プレイヤーコントローラー
 	PlayerController playerController = PlayerController(WindowSize, playerExistingChunkIndex.GetValue(), chunksManager.GetChunks());
 
 	// 太陽カメラ
 	SunCamera sunCamera = SunCamera();
 	sunCamera.LookAtPlayer(playerController.GetFootPosition());
+
+	const SwapChain swapChain = D3D12Helper::CreateSwapChain(factory, commandQueue, hwnd, WindowSize);
+	if (!swapChain)
+		ShowError(L"SwapChain の作成に失敗しました");
+	const auto [rtGetter, rtvGetter] = D3D12Utils::InitRTV(device, swapChain, Format::RGBA_U8_01);
+
+	const ViewportScissorRect viewportScissorRect = ViewportScissorRect::CreateFullSized(WindowSize);
 
 #pragma region Shadow
 
@@ -113,7 +114,7 @@ int Main(hInstance)
 	};
 	CBData0Shadow cbData0Shadow =
 	{
-		.Matrix_MVP = sunCamera.CalculateVPMatrix() * terrainTransform.CalculateModelMatrix(),
+		.Matrix_MVP = sunCamera.CalculateVPMatrix() * TerrainRenderer::Transform.CalculateModelMatrix(),
 	};
 	CBData0Shadow* cb0ShadowVirtualPtr = nullptr;
 	const GraphicsBuffer cb0Shadow = D3D12Utils::InitCB(device, cbData0Shadow, &cb0ShadowVirtualPtr);
@@ -126,89 +127,13 @@ int Main(hInstance)
 
 #pragma endregion
 
-#pragma region MainRender
-
-	const RootParameter rootParameter = RootParameter::CreateBasic(2, 2);
-	const SamplerConfig samplerConfig = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
-	const auto [shaderVS, shaderPS] = D3D12Utils::LoadCso(D3D12Utils::GetShaderFilePath("Basic"));
-	const auto [rootSignature, graphicsPipelineState]
-		= D3D12Utils::CreateRootSignatureAndGraphicsPipelineState(
-			device, rootParameter, samplerConfig, shaderVS, shaderPS, VertexLayouts, FillMode::Solid, CullMode::None, true);
-
-	const SwapChain swapChain = D3D12Helper::CreateSwapChain(factory, commandQueue, hwnd, WindowSize);
-	if (!swapChain)
-		ShowError(L"SwapChain の作成に失敗しました");
-	const auto [rtGetter, rtvGetter] = D3D12Utils::InitRTV(device, swapChain, Format::RGBA_U8_01);
-	const DescriptorHandleAtCPU dsv = D3D12Utils::InitDSV(device, WindowSize);
-
-	// b0
-	struct alignas(256) CBData0
-	{
-		Matrix4x4 Matrix_M; // M
-		Matrix4x4 Matrix_M_IT; // M の逆→転置行列
-		Matrix4x4 Matrix_MVP; // MVP
-		Matrix4x4 DirectionalLight_Matrix_VP; // 太陽カメラの VP
-	};
-	// b1
-	struct alignas(256) CBData1
-	{
-		Lattice3 SelectingBlockWorldPosition; // 選択中のブロック位置
-		int IsSelectingBlock; // ブロックを選択中かどうか (bool 型として扱う)
-		Color SelectColor; // 選択中のブロックの乗算色 (a でブレンド率を指定)
-
-		Vector3 DirectionalLightDirection; // 太陽光の向き (正規化済み)
-		float Pad0;
-		Color DirectionalLightColor; // 太陽光の色 (a は使わない)
-		Color AmbientLightColor; // 環境光の色 (a は使わない)
-
-		int CastShadow; // 影を落とすかどうか (bool 型として扱う)
-		float Pad1[3];
-		Color ShadowColor; // 影の色 (色係数. a は使わない)
-	};
-
-	CBData0 cbData0 =
-	{
-		.Matrix_M = terrainTransform.CalculateModelMatrix(),
-		.Matrix_M_IT = terrainTransform.CalculateModelMatrixInversed().Transposed(),
-		.Matrix_MVP = playerController.CalculateVPMatrix() * terrainTransform.CalculateModelMatrix(),
-		.DirectionalLight_Matrix_VP = sunCamera.CalculateVPMatrix(),
-	};
-	CBData1 cbData1 =
-	{
-		.SelectingBlockWorldPosition = Lattice3::Zero(),
-		.IsSelectingBlock = 0,
-		.SelectColor = Color::CreateFromUint8(255, 255, 0, 48),
-
-		.DirectionalLightDirection = SunCamera::Direction,
-		.DirectionalLightColor = Color::White() * 1.2f,
-		.AmbientLightColor = Color::White() * 0.5f,
-
-		.CastShadow = 0, // TODO: 影の計算がおかしいので、今は影を無くしておく!
-		.ShadowColor = SunCamera::ShadowColor,
-	};
-
-	// CBV 用バッファ
-	CBData0* cb0VirtualPtr = nullptr;
-	CBData1* cb1VirtualPtr = nullptr;
-	const GraphicsBuffer cb0 = D3D12Utils::InitCB(device, cbData0, &cb0VirtualPtr);
-	const GraphicsBuffer cb1 = D3D12Utils::InitCB(device, cbData1, &cb1VirtualPtr);
-
-	// SRV 用バッファ
-	// 列挙型の順番と同じにすること!
-	const Texture textureArray = D3D12Utils::LoadTexture({
-			"assets/textures/block/air_invalid.png",
-			"assets/textures/block/grass_stone.png",
-			"assets/textures/block/dirt_sand.png",
-		});
-	const auto sr = D3D12Utils::InitSR(device, commandList, commandQueue, commandAllocator, textureArray);
-
-	// DescriptorHeap に登録
-	DescriptorHeap descriptorHeapBasic = D3D12Utils::InitDescriptorHeapBasic(
-		device, { cb0, cb1 }, { {sr, textureArray}, {shadowGraphicsBuffer, shadowTextureMetadata} });
-
-	const ViewportScissorRect viewportScissorRect = ViewportScissorRect::CreateFullSized(WindowSize);
-
-#pragma	endregion
+	TerrainRenderer terrainRenderer = TerrainRenderer(
+		device, commandList, commandQueue, commandAllocator, WindowSize,
+		{ shadowGraphicsBuffer, shadowTextureMetadata }
+	);
+	terrainRenderer.OnPlayerCameraMatrixChanged(playerController.CalculateVPMatrix());
+	terrainRenderer.OnSunCameraMatrixChanged(sunCamera.CalculateVPMatrix());
+	terrainRenderer.OnSunCameraParameterChanged(SunCamera::Direction, SunCamera::ShadowColor);
 
 	const std::unique_ptr<AOffscreenRenderer> postProcessRenderer =
 		std::make_unique<PostProcessRenderer>(device, commandList, commandQueue, commandAllocator, WindowSize);
@@ -223,6 +148,8 @@ int Main(hInstance)
 	ItemSlotManager itemSlotManager = ItemSlotManager(device, commandList, commandQueue, commandAllocator, WindowSize);
 
 	// [ms] 単位でのフレーム時間統計
+	DebugFrameTimeStats frameTimeStatsPreFrame = DebugFrameTimeStats(16);
+	DebugFrameTimeStats frameTimeStatsPostFrame = DebugFrameTimeStats(16);
 	DebugFrameTimeStats frameTimeStatsCPU = DebugFrameTimeStats(16);
 	DebugFrameTimeStats frameTimeStatsGPU = DebugFrameTimeStats(16);
 
@@ -230,10 +157,13 @@ int Main(hInstance)
 
 	while (true)
 	{
+		const double timeBeforeFrame = WindowHelper::GetTime();
+
 		if (!WindowHelper::OnBeginFrame(hwnd))
 			break;
 
-		const double timeBeforeFrame = WindowHelper::GetTime();
+		const double timeBeforeCPU = WindowHelper::GetTime();
+		frameTimeStatsPreFrame.Record(timeBeforeCPU - timeBeforeFrame);
 
 		// Escape でゲーム終了
 		if (InputHelper::GetKeyInfo(Key::Escape).pressedNow)
@@ -248,7 +178,7 @@ int Main(hInstance)
 			.jumpPressed = InputHelper::GetKeyInfo(Key::Space).pressed,
 		};
 		playerController.OnEveryFrame(chunksManager.GetChunks(), playerInputs, WindowHelper::GetDeltaSeconds());
-		cb0VirtualPtr->Matrix_MVP = playerController.CalculateVPMatrix() * terrainTransform.CalculateModelMatrix();
+		terrainRenderer.OnPlayerCameraMatrixChanged(playerController.CalculateVPMatrix());
 
 		// アイテムスロットの選択変更
 		const ItemSlotManager::SelectInputs itemSlotSelectInputs =
@@ -271,14 +201,20 @@ int Main(hInstance)
 		// ブロックを選択していない
 		if (lookingBlockFaceNormal == Lattice3::Zero())
 		{
-			cb1VirtualPtr->IsSelectingBlock = 0;
-			cb1VirtualPtr->SelectingBlockWorldPosition = Lattice3::Zero();
+			if (auto* cb1VirtualPtr = terrainRenderer.GetCB1VirtualPtr())
+			{
+				cb1VirtualPtr->IsSelectingBlock = 0;
+				cb1VirtualPtr->SelectingBlockWorldPosition = Lattice3::Zero();
+			}
 		}
 		// ブロックを選択している
 		else
 		{
-			cb1VirtualPtr->IsSelectingBlock = 1;
-			cb1VirtualPtr->SelectingBlockWorldPosition = lookingBlockPosition;
+			if (auto* cb1VirtualPtr = terrainRenderer.GetCB1VirtualPtr())
+			{
+				cb1VirtualPtr->IsSelectingBlock = 1;
+				cb1VirtualPtr->SelectingBlockWorldPosition = lookingBlockPosition;
+			}
 
 			static Timer mineCdTimer = Timer(PlayerController::MineCooldownSeconds);
 			static Timer placeCdTimer = Timer(PlayerController::PlaceCooldownSeconds);
@@ -316,14 +252,23 @@ int Main(hInstance)
 		// デバッグテキスト
 		{
 			static DebugTextDisplayer debugTextDisplayer{};
+
+			const DebugTextDisplayer::DebugFrameTimeStatsBreakdown frameTimeStatsBreakdown =
+			{
+				.preFrame = frameTimeStatsPreFrame,
+				.cpu = frameTimeStatsCPU,
+				.gpu = frameTimeStatsGPU,
+				.postFrame = frameTimeStatsPostFrame,
+			};
+
 			debugTextDisplayer.UpdateData(
 				*dynamic_cast<TextRenderer*>(textRenderer.get()),
 				device, commandList, commandQueue, commandAllocator,
 				playerController, chunksManager,
-				frameTimeStatsCPU, frameTimeStatsGPU,
+				frameTimeStatsBreakdown,
 				{
-					.isLooking = cb1VirtualPtr->IsSelectingBlock == 1,
-					.lookingBlockWorldPosition = cb1VirtualPtr->SelectingBlockWorldPosition,
+					.isLooking = terrainRenderer.GetCB1VirtualPtr()->IsSelectingBlock == 1,
+					.lookingBlockWorldPosition = terrainRenderer.GetCB1VirtualPtr()->SelectingBlockWorldPosition,
 					.lookingBlockFaceNormal = lookingBlockFaceNormal
 				}
 			);
@@ -333,12 +278,12 @@ int Main(hInstance)
 		{
 			sunCamera.LookAtPlayer(playerController.GetFootPosition());
 
-			cb0VirtualPtr->DirectionalLight_Matrix_VP = sunCamera.CalculateVPMatrix();
-			cb0ShadowVirtualPtr->Matrix_MVP = sunCamera.CalculateVPMatrix() * terrainTransform.CalculateModelMatrix();
+			terrainRenderer.OnSunCameraMatrixChanged(sunCamera.CalculateVPMatrix());
+			cb0ShadowVirtualPtr->Matrix_MVP = sunCamera.CalculateVPMatrix() * TerrainRenderer::Transform.CalculateModelMatrix();
 		}
 
 		const double timeAfterCPU = WindowHelper::GetTime();
-		frameTimeStatsCPU.Record(timeAfterCPU - timeBeforeFrame);
+		frameTimeStatsCPU.Record(timeAfterCPU - timeBeforeCPU);
 
 
 
@@ -353,7 +298,7 @@ int Main(hInstance)
 		const auto& packedDrawMeshIndicesCounts = chunksManager.PackDrawMeshIndicesCounts();
 
 		// 影のデプス書き込み
-		if (cb1VirtualPtr->CastShadow == 1)
+		if (terrainRenderer.GetCB1VirtualPtr()->CastShadow == 1)
 		{
 			D3D12Utils::Draw(
 				commandList, commandQueue, commandAllocator, device,
@@ -365,13 +310,10 @@ int Main(hInstance)
 			);
 		}
 		// メインレンダリング
-		D3D12Utils::Draw(
+		terrainRenderer.Draw(
 			commandList, commandQueue, commandAllocator, device,
-			rootSignature, graphicsPipelineState, postProcessRenderer->GetRT(),
-			postProcessRenderer->GetRTV(), dsv, descriptorHeapBasic, packedDrawVBVs, packedDrawIBVs,
-			GraphicsBufferState::PixelShaderResource, GraphicsBufferState::RenderTarget,
-			viewportScissorRect, PrimitiveTopology::TriangleList, BackgroundColor, DepthBufferClearValue,
-			packedDrawMeshIndicesCounts
+			postProcessRenderer->GetRT(), postProcessRenderer->GetRTV(), viewportScissorRect,
+			packedDrawVBVs, packedDrawIBVs, packedDrawMeshIndicesCounts
 		);
 		// オフスクリーンレンダリング
 		{
@@ -399,6 +341,9 @@ int Main(hInstance)
 		frameTimeStatsGPU.Record(timeAfterGPU - timeAfterCPU);
 
 		WindowHelper::OnEndFrame();
+
+		const double timeAfterFrame = WindowHelper::GetTime();
+		frameTimeStatsPostFrame.Record(timeAfterFrame - timeAfterGPU);
 	}
 
 	return 0;

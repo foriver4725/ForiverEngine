@@ -230,6 +230,7 @@
     <ClInclude Include="scripts\gameFlow\Renderer\Include.h" />
     <ClInclude Include="scripts\gameFlow\Renderer\AOffscreenRenderer.h" />
     <ClInclude Include="scripts\gameFlow\Renderer\PostProcessRenderer.h" />
+    <ClInclude Include="scripts\gameFlow\Renderer\TerrainRenderer.h" />
     <ClInclude Include="scripts\gameFlow\Renderer\UI\AImageRenderer.h" />
     <ClInclude Include="scripts\gameFlow\Renderer\UI\Include.h" />
     <ClInclude Include="scripts\gameFlow\Renderer\UI\ItemImageRenderer.h" />

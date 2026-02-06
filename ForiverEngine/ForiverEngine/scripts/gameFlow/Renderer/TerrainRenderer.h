@@ -1,0 +1,184 @@
+﻿#pragma once
+
+#include <scripts/common/Include.h>
+#include <scripts/helper/Include.h>
+#include <scripts/component/Include.h>
+
+namespace ForiverEngine
+{
+	/// <summary>
+	/// 地形レンダラー
+	/// </summary>
+	class TerrainRenderer
+	{
+	public:
+		static constexpr Color SkyColor = Color::CreateFromUint8(60, 150, 210); // 背景色 (空色)
+		// 地形のメッシュデータはワールド座標に変換済みなので、Transform は単位行列で良い
+		static constexpr Transform Transform = Transform::Identity();
+
+		// ブロックのテクスチャ画像ファイルパス
+		// ブロック種類の列挙型と同じ順番にすること!!
+		inline static const std::vector<std::string> BlockTextureFilePaths =
+		{
+			"assets/textures/block/air_invalid.png",
+			"assets/textures/block/grass_stone.png",
+			"assets/textures/block/dirt_sand.png",
+		};
+
+	private:
+		// b0
+		struct alignas(256) CBData0
+		{
+			Matrix4x4 Matrix_M;                   // M
+			Matrix4x4 Matrix_M_IT;                // M の逆→転置行列 (法線用だけど、ぶっちゃけ今の設計的に、より計算コストがかかっている)
+			Matrix4x4 Matrix_MVP;                 // MVP
+			Matrix4x4 DirectionalLight_Matrix_VP; // 太陽カメラの VP
+		};
+	public:
+		// b1
+		struct alignas(256) CBData1
+		{
+			Lattice3 SelectingBlockWorldPosition; // 選択中のブロック位置
+			int IsSelectingBlock;                 // ブロックを選択中かどうか (bool 型として扱う)
+			Color SelectColor;                    // 選択中のブロックの乗算色 (a でブレンド率を指定)
+
+			Vector3 DirectionalLightDirection;    // 太陽光の向き (正規化済み)
+			float Pad0;
+			Color DirectionalLightColor;          // 太陽光の色 (a は使わない)
+			Color AmbientLightColor;              // 環境光の色 (a は使わない)
+
+			int CastShadow;                       // 影を落とすかどうか (bool 型として扱う)
+			float Pad1[3];
+			Color ShadowColor;                    // 影の色 (色係数. a は使わない)
+		};
+
+	public:
+		virtual ~TerrainRenderer() = default;
+
+		/// <summary>
+		/// <para>コンストラクタ. 描画オブジェクトを初期化する</para>
+		/// <para>b0,b1 を使用. b0 は行列オブジェクトで、なるべく隠蔽する. b1 はその他のデータで、直接外部公開する</para>
+		/// <para>t0,t1 を使用, t0 はブロックのテクスチャ配列. t1 は影描画で使う深度テクスチャ(RT と併用されるので、ここで一回アップロードするだけでOK)</para>
+		/// <para>RTV は作らない (多分 SwapChain に関連するので、面倒くさい)</para>
+		/// <para>仮値を設定している所がある. 必ず直後に初期値を設定すること!</para>
+		/// </summary>
+		explicit TerrainRenderer(
+			const Device& device,
+			const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator,
+			const Lattice2& windowSize,
+			const std::pair<GraphicsBuffer, Texture>& srShadow // t1
+		) :
+			Matrix_M_Cached(Transform.CalculateModelMatrix())
+		{
+			// RootSignature, PipelineState
+			const RootParameter rootParameter = RootParameter::CreateBasic(2, 2);
+			const SamplerConfig samplerConfig = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
+			const auto [shaderVS, shaderPS] = D3D12Utils::LoadCso(D3D12Utils::GetShaderFilePath("Basic"));
+			std::tie(rootSignature, pipelineState) = D3D12Utils::CreateRootSignatureAndGraphicsPipelineState(
+				device, rootParameter, samplerConfig, shaderVS, shaderPS, VertexLayouts, FillMode::Solid, CullMode::None, true);
+
+			// RTV は作らない!
+			dsv = D3D12Utils::InitDSV(device, windowSize);
+
+			// b0, b1
+			CBData0 cbData0 =
+			{
+				.Matrix_M = Matrix_M_Cached,
+				.Matrix_M_IT = Transform.CalculateModelMatrixInversed().Transposed(),
+				.Matrix_MVP = Matrix4x4::Identity(),                 // 仮値. 直後に初期値を設定してもらう前提
+				.DirectionalLight_Matrix_VP = Matrix4x4::Identity(), // 仮値. 直後に初期値を設定してもらう前提
+			};
+			CBData1 cbData1 =
+			{
+				.SelectingBlockWorldPosition = Lattice3::Zero(),
+				.IsSelectingBlock = 0,
+				.SelectColor = Color::CreateFromUint8(255, 255, 0, 48),
+
+				.DirectionalLightDirection = Vector3::Down(),        // 仮値. 直後に初期値を設定してもらう前提
+				.DirectionalLightColor = Color::White() * 1.2f,
+				.AmbientLightColor = Color::White() * 0.5f,
+
+				.CastShadow = 0,                                     // TODO: 影の計算がおかしいので、今は影を無くしておく!
+				.ShadowColor = Color::White(),                       // 仮値. 直後に初期値を設定してもらう前提
+			};
+			const GraphicsBuffer cb0 = D3D12Utils::InitCB(device, cbData0, &cb0VirtualPtr);
+			const GraphicsBuffer cb1 = D3D12Utils::InitCB(device, cbData1, &cb1VirtualPtr);
+
+			// t0
+			const Texture textureArray = D3D12Utils::LoadTexture(BlockTextureFilePaths);
+			const auto sr = D3D12Utils::InitSR(device, commandList, commandQueue, commandAllocator, textureArray);
+
+			// DescriptorHeap
+			descriptorHeapBasic = D3D12Utils::InitDescriptorHeapBasic(device, { cb0, cb1 }, { { sr, textureArray }, srShadow });
+		}
+
+		/// <summary>
+		/// <para>外部依存の処理. 忘れずに呼んでね</para>
+		/// </summary>
+		void OnPlayerCameraMatrixChanged(const Matrix4x4& playerCameraVPMatrix)
+		{
+			cb0VirtualPtr->Matrix_MVP = playerCameraVPMatrix * Matrix_M_Cached;
+		}
+		/// <summary>
+		/// <para>外部依存の処理. 忘れずに呼んでね</para>
+		/// </summary>
+		void OnSunCameraMatrixChanged(const Matrix4x4& sunCameraVPMatrix)
+		{
+			cb0VirtualPtr->DirectionalLight_Matrix_VP = sunCameraVPMatrix;
+		}
+		/// <summary>
+		/// <para>外部依存の処理. 忘れずに呼んでね</para>
+		/// </summary>
+		void OnSunCameraParameterChanged(const Vector3& sunDirection, const Color& shadowColor)
+		{
+			cb1VirtualPtr->DirectionalLightDirection = sunDirection.Normed();
+			cb1VirtualPtr->ShadowColor = shadowColor;
+		}
+
+		CBData1* GetCB1VirtualPtr()
+		{
+			return cb1VirtualPtr;
+		}
+
+		/// <summary>
+		/// <para>ドローコール</para>
+		/// <para>指定された RT に対してレンダリングする</para>
+		/// <para>直前のレンダリングがどうであるかは気にしない (多分 SwapChain に関連するので、面倒くさい)</para>
+		/// <para>チャンクデータから VBV,IBV,頂点数 を算出して渡すこと</para>
+		/// </summary>
+		void Draw(
+			const CommandList& commandList,
+			const CommandQueue& commandQueue,
+			const CommandAllocator& commandAllocator,
+			const Device& device,
+			const GraphicsBuffer& rt,
+			const DescriptorHandleAtCPU& rtv,
+			const ViewportScissorRect& viewportScissorRect,
+			const std::vector<VertexBufferView>& vbvs,
+			const std::vector<IndexBufferView>& ibvs,
+			const std::vector<int>& meshIndicesCounts
+		) const
+		{
+			D3D12Utils::Draw(
+				commandList, commandQueue, commandAllocator, device,
+				rootSignature, pipelineState, rt,
+				rtv, dsv, descriptorHeapBasic, vbvs, ibvs,
+				GraphicsBufferState::PixelShaderResource, GraphicsBufferState::RenderTarget,
+				viewportScissorRect, PrimitiveTopology::TriangleList, SkyColor, DepthBufferClearValue,
+				meshIndicesCounts
+			);
+		}
+
+	private:
+		RootSignature rootSignature;
+		PipelineState pipelineState;
+		DescriptorHandleAtCPU dsv;
+		DescriptorHeap descriptorHeapBasic;
+
+		// 何か所かで使うので、キャッシュしておく (自身の Transform が変化しないので、一度だけ計算すれば良い)
+		Matrix4x4 Matrix_M_Cached;
+
+		CBData0* cb0VirtualPtr = nullptr;
+		CBData1* cb1VirtualPtr = nullptr;
+	};
+}

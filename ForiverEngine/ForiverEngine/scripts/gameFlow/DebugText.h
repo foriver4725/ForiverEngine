@@ -12,11 +12,22 @@ namespace ForiverEngine
 		DELETE_DEFAULT_METHODS(DebugText);
 
 		// [ms]
-		static std::string FrameTime(double frameTimeTotal, double frameTimeCPU, double frameTimeGPU)
+		struct FrameTimeBreakdown
+		{
+			double preFrame;
+			double cpu;
+			double gpu;
+			double postFrame;
+			double total;
+		};
+
+		// [ms]
+		static std::string FrameTime(const FrameTimeBreakdown& frameTimeBreakdown)
 		{
 			return std::format(
-				"Frame Time : Total={:.2f}ms,CPU={:.2f}ms,GPU={:.2f}ms",
-				frameTimeTotal, frameTimeCPU, frameTimeGPU
+				"Frame Time[ms] : Total={:.2f}(PreFrame={:.2f},CPU={:.2f},GPU={:.2f},PostFrame={:.2f})",
+				frameTimeBreakdown.total,
+				frameTimeBreakdown.preFrame, frameTimeBreakdown.cpu, frameTimeBreakdown.gpu, frameTimeBreakdown.postFrame
 			);
 		}
 
