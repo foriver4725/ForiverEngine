@@ -39,6 +39,24 @@ namespace ForiverEngine
 			return { factory, device, commandAllocator, commandList, commandQueue };
 		}
 
+#if _DEBUG
+		/// <summary>
+		/// <para>[IDE専用]</para>
+		/// <para>シェーダーを VS,PS それぞれでコンパイルする</para>
+		/// </summary>
+		static bool IDE_CompileShader(const std::vector<std::string>& shaderPaths)
+		{
+			// 開発者ごとに違う可能性がある. 適宜変えてほしい
+			static const std::string FxcExeAbsolutePath = R"(C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\fxc.exe)";
+			static const std::string InputDirectory = "shaders";
+			static const std::string OutputDirectory = ".compiledShaderObjects";
+			static const std::string IncludeDirectory = "shaders";
+
+			return D3D12Helper::IDE_CompileHlslToCso(
+				FxcExeAbsolutePath, InputDirectory, OutputDirectory, IncludeDirectory, shaderPaths);
+		}
+#endif
+
 		/// <summary>
 		/// <para>拡張子無しのファイル名だけを受け取り、実際にそのシェーダーファイルが保存されているパスを返す</para>
 		/// <para>以前 : "MyShader" -> "./shaders/MyShader.hlsl"</para>

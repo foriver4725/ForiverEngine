@@ -24,26 +24,16 @@ int Main(hInstance)
 
 	// シェーダーのコンパイル (開発中のみ)
 #if 0
-	if (D3D12Helper::IDE_CompileHlslToCso(
-		R"(C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\fxc.exe)", // 開発者ごとに違う可能性がある. 適宜変えてほしい
-		"shaders", ".compiledShaderObjects", "shaders",
+	const bool success = D3D12Utils::IDE_CompileShader(
 		{
 			//"Basic.hlsl",
 			//"PP.hlsl",
 			//"Text.hlsl",
-			//"Image.hlsl"
-		}
-		))
-	{
-		ShowError(L"シェーダーのコンパイルに成功しました");
-		return 0;
+			//"Image.hlsl",
+		});
 
-	}
-	else
-	{
-		ShowError(L"シェーダーのコンパイルに失敗しました");
-		return -1;
-	}
+	ShowError(success ? L"シェーダーのコンパイルに成功しました" : L"シェーダーのコンパイルに失敗しました");
+	return 0;
 #endif
 
 	if (!D3D12Helper::EnableDebugLayer())
