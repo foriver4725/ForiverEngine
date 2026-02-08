@@ -3,7 +3,8 @@
 #include <scripts/common/Include.h>
 #include <scripts/helper/Include.h>
 #include <scripts/component/Include.h>
-#include "./AOffscreenRenderer.h"
+#include "scripts/gameFlow/Renderer/Context/Include.h"
+#include "scripts/gameFlow/Renderer/Offscreen/AOffscreenRenderer.h"
 
 namespace ForiverEngine
 {
@@ -24,11 +25,7 @@ namespace ForiverEngine
 		};
 
 	public:
-		explicit PostProcessRenderer(
-			const Device& device,
-			const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator,
-			const Lattice2& windowSize
-		)
+		explicit PostProcessRenderer(const RenderContext& renderContext, const Lattice2& windowSize)
 		{
 			// b0
 			const CBData0 cbData0 =
@@ -37,9 +34,11 @@ namespace ForiverEngine
 				.LimitLuminance = 0.5f,
 				.AAPower = 8.0f,
 			};
-			const GraphicsBuffer cb0 = D3D12Utils::InitCB(device, cbData0);
+			const GraphicsBuffer cb0 = D3D12Utils::InitCB(renderContext.device, cbData0);
 
-			Base::Init(device, windowSize, { cb0 }, {}, D3D12Utils::GetShaderFilePath("PP"));
+			Base::Init(
+				renderContext, windowSize,
+				{ cb0 }, {}, D3D12Utils::GetShaderFilePath("PP"));
 		}
 	};
 }

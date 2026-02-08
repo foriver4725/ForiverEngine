@@ -3,6 +3,7 @@
 #include <scripts/common/Include.h>
 #include <scripts/helper/Include.h>
 #include <scripts/component/Include.h>
+#include "scripts/gameFlow/Renderer/Context/Include.h"
 #include "./AImageRenderer.h"
 
 namespace ForiverEngine
@@ -17,14 +18,10 @@ namespace ForiverEngine
 
 	public:
 
-		explicit PointerImageRenderer(
-			const Device& device,
-			const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator,
-			const Lattice2& windowSize
-		)
+		explicit PointerImageRenderer(const RenderContext& renderContext, const Lattice2& windowSize)
 		{
 			Base::Init(
-				device, commandList, commandQueue, commandAllocator, windowSize,
+				renderContext, windowSize,
 				"assets/textures/ui/pointer.png",
 				windowSize / 2, Vector2::Zero(), Vector2::One(), Lattice2(24, 24),
 				true

@@ -3,10 +3,10 @@
 #include <scripts/common/Include.h>
 #include <scripts/helper/Include.h>
 #include <scripts/component/Include.h>
-#include "./Renderer/UI/TextRenderer.h"
 #include "./PlayerController.h"
 #include "./ChunksManager.h"
 #include "./DebugFrameTimeStats.h"
+#include "./Renderer/Include.h"
 
 namespace ForiverEngine
 {
@@ -34,27 +34,19 @@ namespace ForiverEngine
 			const DebugFrameTimeStats& postFrame;
 		};
 
-		void UpdateDataAsFold(
-			// Renderer. データを更新し、GPU にも反映させる
-			TextRenderer& textRenderer,
-			// Renderer に対する処理で必要な、描画オブジェクト
-			const Device& device,
-			const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator
-		)
+		// データを更新し、GPU にも反映させる
+		void UpdateDataAsFold(const RenderContext& renderContext, TextRenderer& textRenderer)
 		{
 			rowDatas.clear();
 			rowDatas.emplace_back("Place F1 to unfold debug info.", TextColor);
 
 			ApplyDataToRenderer(rowDatas, textRenderer);
-			textRenderer.UpdateDataAtGPU(device, commandList, commandQueue, commandAllocator);
+			textRenderer.UpdateDataAtGPU(renderContext);
 		}
 
+		// データを更新し、GPU にも反映させる
 		void UpdateDataAsUnfold(
-			// Renderer. データを更新し、GPU にも反映させる
-			TextRenderer& textRenderer,
-			// Renderer に対する処理で必要な、描画オブジェクト
-			const Device& device,
-			const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator,
+			const RenderContext& renderContext, TextRenderer& textRenderer,
 			// 多くの処理で共通して使う
 			const PlayerController& playerController, const ChunksManager& chunksManager,
 			// 以下は個別の処理で使う
@@ -86,7 +78,7 @@ namespace ForiverEngine
 			rowDatas.emplace_back(DebugText::FloorCeilHeight(playerController, chunksManager), TextColor); // 7
 
 			ApplyDataToRenderer(rowDatas, textRenderer);
-			textRenderer.UpdateDataAtGPU(device, commandList, commandQueue, commandAllocator);
+			textRenderer.UpdateDataAtGPU(renderContext);
 		}
 
 	private:

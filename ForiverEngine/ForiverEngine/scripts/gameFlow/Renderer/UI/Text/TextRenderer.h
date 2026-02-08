@@ -3,7 +3,8 @@
 #include <scripts/common/Include.h>
 #include <scripts/helper/Include.h>
 #include <scripts/component/Include.h>
-#include "../AOffscreenRenderer.h"
+#include "scripts/gameFlow/Renderer/Context/Include.h"
+#include "scripts/gameFlow/Renderer/Offscreen/AOffscreenRenderer.h"
 
 namespace ForiverEngine
 {
@@ -31,21 +32,19 @@ namespace ForiverEngine
 		/// </summary>
 		TextUIData data;
 
-		explicit TextRenderer(
-			const Device& device,
-			const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator,
-			const Lattice2& windowSize
-		)
+		explicit TextRenderer(const RenderContext& renderContext, const Lattice2& windowSize)
 		{
 			data = TextUIData::CreateEmpty(windowSize / TextUIData::FontTextureTextLength);
 
 			// t1 (フォントテクスチャ)
 			const Texture sr1Metadata = D3D12Utils::LoadTexture({ "assets/textures/font.png" });
-			const GraphicsBuffer sr1 = D3D12Utils::InitSR(device, commandList, commandQueue, commandAllocator, sr1Metadata);
+			const GraphicsBuffer sr1 = D3D12Utils::InitSR(
+				renderContext.device, renderContext.commandList, renderContext.commandQueue, renderContext.commandAllocator, sr1Metadata);
 
 			// t2 (データをテクスチャとしてアップロードする)
 			const Texture sr2Metadata = data.CreateTexture();
-			const GraphicsBuffer sr2 = D3D12Utils::InitSR(device, commandList, commandQueue, commandAllocator, sr2Metadata);
+			const GraphicsBuffer sr2 = D3D12Utils::InitSR(
+				renderContext.device, renderContext.commandList, renderContext.commandQueue, renderContext.commandAllocator, sr2Metadata);
 
 			// b0
 			const CBData0 cbData0 =
@@ -55,23 +54,22 @@ namespace ForiverEngine
 				.InvalidFontTextureIndex = static_cast<std::uint32_t>(Text::InvalidFontTextureIndex),
 				.FontTextureTextLength = static_cast<std::uint32_t>(TextUIData::FontTextureTextLength),
 			};
-			const GraphicsBuffer cb0 = D3D12Utils::InitCB(device, cbData0);
+			const GraphicsBuffer cb0 = D3D12Utils::InitCB(renderContext.device, cbData0);
 
-			Base::Init(device, windowSize, { cb0 }, { { sr1, sr1Metadata }, { sr2, sr2Metadata } }, D3D12Utils::GetShaderFilePath("Text"));
+			Base::Init(
+				renderContext, windowSize,
+				{ cb0 }, { { sr1, sr1Metadata }, { sr2, sr2Metadata } }, D3D12Utils::GetShaderFilePath("Text"));
 		}
 
 		/// <summary>
 		/// <para>データのテクスチャを再作成し、アップロードし直す</para>
 		/// <para>このメソッドを実行しないと、data の変更を GPU 側に反映できない</para>
 		/// </summary>
-		void UpdateDataAtGPU(
-			const Device& device,
-			const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator
-		)
+		void UpdateDataAtGPU(const RenderContext& renderContext)
 		{
 			// t2
 			const Texture sr2Texture = data.CreateTexture();
-			Base::ReUploadTexture(device, commandList, commandQueue, commandAllocator, sr2Texture, ShaderRegister::t2);
+			Base::ReUploadTexture(renderContext, sr2Texture, ShaderRegister::t2);
 		}
 	};
 }

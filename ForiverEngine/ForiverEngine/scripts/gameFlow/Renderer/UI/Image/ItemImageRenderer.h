@@ -3,6 +3,7 @@
 #include <scripts/common/Include.h>
 #include <scripts/helper/Include.h>
 #include <scripts/component/Include.h>
+#include "scripts/gameFlow/Renderer/Context/Include.h"
 #include "./AImageRenderer.h"
 #include "scripts/gameFlow/Chunk.h"
 
@@ -28,11 +29,9 @@ namespace ForiverEngine
 		};
 
 		explicit ItemImageRenderer(
-			const Device& device,
-			const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator,
-			const Lattice2& windowSize,
-			Block initType,
-			const Lattice2& position, const Lattice2& drawSize // 描画サイズ (ピクセル単位)
+			const RenderContext& renderContext, const Lattice2& windowSize,
+			const Lattice2& position, const Lattice2& drawSize, // 描画サイズ (ピクセル単位)
+			Block initType
 		) :
 			blockToTexture
 		{
@@ -45,7 +44,7 @@ namespace ForiverEngine
 		}
 		{
 			Base::Init(
-				device, commandList, commandQueue, commandAllocator, windowSize,
+				renderContext, windowSize,
 				BlockToFilePath.at(initType), position, Vector2::Zero(), Vector2::One(), drawSize,
 				IsDrawableBlock(initType)
 			);
@@ -55,15 +54,10 @@ namespace ForiverEngine
 		/// <para>画像の種類を変更する</para>
 		/// <para>内部で GPU に再アップロードする</para>
 		/// </summary>
-		void ChangeImageType(
-			const Device& device,
-			const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator,
-			Block newType
-		)
+		void ChangeImageType(const RenderContext& renderContext, Block newType)
 		{
 			// t1
-			Base::ReUploadTexture(device, commandList, commandQueue, commandAllocator,
-				blockToTexture.at(newType), ShaderRegister::t1);
+			Base::ReUploadTexture(renderContext, blockToTexture.at(newType), ShaderRegister::t1);
 
 			Base::SetDrawEnabled(IsDrawableBlock(newType));
 		}

@@ -123,6 +123,18 @@
     <Filter Include="scripts\gameFlow\Renderer\UI">
       <UniqueIdentifier>{906c41d7-9d9c-4a00-a7cb-63a6d767a57a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="scripts\gameFlow\Renderer\Context">
+      <UniqueIdentifier>{8e3cd8ca-eab5-4a74-b072-5aafc509ce59}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scripts\gameFlow\Renderer\Offscreen">
+      <UniqueIdentifier>{6ba025de-338a-4295-88e3-377ef0fe1dab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scripts\gameFlow\Renderer\UI\Image">
+      <UniqueIdentifier>{3490e423-88ef-42c9-9afe-1eb3195b98e4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scripts\gameFlow\Renderer\UI\Text">
+      <UniqueIdentifier>{4bc878dd-6325-48c5-a614-72e4a6e39ff2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="oss\SimplexNoise.h">
@@ -275,13 +287,7 @@
     <ClInclude Include="scripts\gameFlow\DebugText.h">
       <Filter>scripts\gameFlow</Filter>
     </ClInclude>
-    <ClInclude Include="scripts\gameFlow\Renderer\PostProcessRenderer.h">
-      <Filter>scripts\gameFlow\Renderer</Filter>
-    </ClInclude>
     <ClInclude Include="scripts\gameFlow\Renderer\Include.h">
-      <Filter>scripts\gameFlow\Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\gameFlow\Renderer\AOffscreenRenderer.h">
       <Filter>scripts\gameFlow\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="scripts\component\D3D12Utils.h">
@@ -308,29 +314,56 @@
     <ClInclude Include="scripts\helper\Loader\headers\TextureLoader.h">
       <Filter>scripts\helper\Loader\headers</Filter>
     </ClInclude>
-    <ClInclude Include="scripts\gameFlow\Renderer\UI\Include.h">
-      <Filter>scripts\gameFlow\Renderer\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\gameFlow\Renderer\UI\PointerImageRenderer.h">
-      <Filter>scripts\gameFlow\Renderer\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\gameFlow\Renderer\UI\TextRenderer.h">
-      <Filter>scripts\gameFlow\Renderer\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\gameFlow\Renderer\UI\AImageRenderer.h">
-      <Filter>scripts\gameFlow\Renderer\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\gameFlow\Renderer\UI\ItemSlotImageRenderer.h">
-      <Filter>scripts\gameFlow\Renderer\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\gameFlow\Renderer\UI\ItemImageRenderer.h">
-      <Filter>scripts\gameFlow\Renderer\UI</Filter>
-    </ClInclude>
     <ClInclude Include="scripts\gameFlow\ItemSlotManager.h">
       <Filter>scripts\gameFlow</Filter>
     </ClInclude>
     <ClInclude Include="scripts\gameFlow\Renderer\TerrainRenderer.h">
       <Filter>scripts\gameFlow\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\gameFlow\Renderer\Context\Include.h">
+      <Filter>scripts\gameFlow\Renderer\Context</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\gameFlow\Renderer\Offscreen\AOffscreenRenderer.h">
+      <Filter>scripts\gameFlow\Renderer\Offscreen</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\gameFlow\Renderer\Offscreen\Include.h">
+      <Filter>scripts\gameFlow\Renderer\Offscreen</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\gameFlow\Renderer\Offscreen\PostProcessRenderer.h">
+      <Filter>scripts\gameFlow\Renderer\Offscreen</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\gameFlow\Renderer\UI\Text\Include.h">
+      <Filter>scripts\gameFlow\Renderer\UI\Text</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\gameFlow\Renderer\UI\Text\TextRenderer.h">
+      <Filter>scripts\gameFlow\Renderer\UI\Text</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\gameFlow\Renderer\UI\Image\AImageRenderer.h">
+      <Filter>scripts\gameFlow\Renderer\UI\Image</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\gameFlow\Renderer\UI\Image\Include.h">
+      <Filter>scripts\gameFlow\Renderer\UI\Image</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\gameFlow\Renderer\UI\Image\ItemImageRenderer.h">
+      <Filter>scripts\gameFlow\Renderer\UI\Image</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\gameFlow\Renderer\UI\Image\ItemSlotImageRenderer.h">
+      <Filter>scripts\gameFlow\Renderer\UI\Image</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\gameFlow\Renderer\UI\Image\PointerImageRenderer.h">
+      <Filter>scripts\gameFlow\Renderer\UI\Image</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\gameFlow\Renderer\UI\Include.h">
+      <Filter>scripts\gameFlow\Renderer\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\gameFlow\Renderer\Context\RenderContext.h">
+      <Filter>scripts\gameFlow\Renderer\Context</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\gameFlow\Renderer\Context\RenderMeshContext.h">
+      <Filter>scripts\gameFlow\Renderer\Context</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\gameFlow\Renderer\Context\RenderTargetContext.h">
+      <Filter>scripts\gameFlow\Renderer\Context</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

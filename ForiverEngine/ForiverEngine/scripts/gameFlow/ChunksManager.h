@@ -4,6 +4,7 @@
 #include <scripts/helper/Include.h>
 #include <scripts/component/Include.h>
 #include "./Chunk.h"
+#include "./Renderer/Include.h"
 
 namespace ForiverEngine
 {
@@ -24,9 +25,10 @@ namespace ForiverEngine
 			drawIBVs = Chunk::CreateDrawChunksArray<IndexBufferView>();
 			drawMeshIndicesCounts = Chunk::CreateDrawChunksArray<int>();
 
-			packedDrawVBVs.reserve(Chunk::DrawCountMax * Chunk::DrawCountMax);
-			packedDrawIBVs.reserve(Chunk::DrawCountMax * Chunk::DrawCountMax);
-			packedDrawMeshIndicesCounts.reserve(Chunk::DrawCountMax * Chunk::DrawCountMax);
+			renderMeshContext = {};
+			renderMeshContext.vbvList.reserve(Chunk::DrawCountMax * Chunk::DrawCountMax);
+			renderMeshContext.ibvList.reserve(Chunk::DrawCountMax * Chunk::DrawCountMax);
+			renderMeshContext.indexCountList.reserve(Chunk::DrawCountMax * Chunk::DrawCountMax);
 
 			drawRangeInfo = Chunk::CreateDrawChunksIndexRangeInfo(playerFirstExistingChunkIndex);
 		}
@@ -116,28 +118,16 @@ namespace ForiverEngine
 		}
 
 		/// <summary>
-		/// 実際に描画するものを抽出して返す
+		/// <para>実際に描画するものだけ抽出し、RenderMeshContext を更新する</para>
+		/// <para>そして、その RenderMeshContext への参照を返す</para>
 		/// </summary>
-		const std::vector<VertexBufferView>& PackDrawVBVs()
+		const RenderMeshContext& PackToRenderMeshContext()
 		{
-			PackDrawData(drawVBVs, packedDrawVBVs);
-			return packedDrawVBVs;
-		}
-		/// <summary>
-		/// 実際に描画するものを抽出して返す
-		/// </summary>
-		const std::vector<IndexBufferView>& PackDrawIBVs()
-		{
-			PackDrawData(drawIBVs, packedDrawIBVs);
-			return packedDrawIBVs;
-		}
-		/// <summary>
-		/// 実際に描画するものを抽出して返す
-		/// </summary>
-		const std::vector<int>& PackDrawMeshIndicesCounts()
-		{
-			PackDrawData(drawMeshIndicesCounts, packedDrawMeshIndicesCounts);
-			return packedDrawMeshIndicesCounts;
+			PackDrawData(drawVBVs, renderMeshContext.vbvList);
+			PackDrawData(drawIBVs, renderMeshContext.ibvList);
+			PackDrawData(drawMeshIndicesCounts, renderMeshContext.indexCountList);
+
+			return renderMeshContext;
 		}
 
 	private:
@@ -162,10 +152,10 @@ namespace ForiverEngine
 		Chunk::DrawChunksArray<IndexBufferView> drawIBVs;
 		Chunk::DrawChunksArray<int> drawMeshIndicesCounts;
 
-		// 描画するチャンクのみのデータ (パック後. 配列を作成してキャッシュする)
-		std::vector<VertexBufferView> packedDrawVBVs;
-		std::vector<IndexBufferView> packedDrawIBVs;
-		std::vector<int> packedDrawMeshIndicesCounts;
+		// 描画するチャンクのみのデータ
+		// パックされたもので、実際の描画ではこれを用いる
+		// 配列を作成してキャッシュする
+		RenderMeshContext renderMeshContext;
 
 		// 描画するチャンクの範囲を表すデータ
 		Chunk::DrawChunksIndexRangeInfo drawRangeInfo;

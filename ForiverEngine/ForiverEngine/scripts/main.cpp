@@ -48,6 +48,7 @@ int Main(hInstance)
 
 	const auto [factory, device, commandAllocator, commandList, commandQueue]
 		= D3D12Utils::CreateStandardObjects();
+	const RenderContext renderContext = { device, commandList, commandQueue, commandAllocator };
 
 	const SwapChain swapChain = D3D12Helper::CreateSwapChain(factory, commandQueue, hwnd, WindowSize);
 	if (!swapChain)
@@ -69,20 +70,20 @@ int Main(hInstance)
 	// プレイヤーコントローラー
 	PlayerController playerController = PlayerController(WindowSize, playerExistingChunkIndex.GetValue(), chunksManager.GetChunks());
 
-	TerrainRenderer terrainRenderer = TerrainRenderer(device, commandList, commandQueue, commandAllocator, WindowSize);
+	TerrainRenderer terrainRenderer = TerrainRenderer(renderContext, WindowSize);
 	terrainRenderer.OnPlayerCameraMatrixChanged(playerController.CalculateVPMatrix());
 
 	const std::unique_ptr<AOffscreenRenderer> postProcessRenderer =
-		std::make_unique<PostProcessRenderer>(device, commandList, commandQueue, commandAllocator, WindowSize);
+		std::make_unique<PostProcessRenderer>(renderContext, WindowSize);
 
 	// UIテキストのデータはゲーム内で変更されるため、const には出来ない (このオブジェクトが内部で保持している)
 	std::unique_ptr<AOffscreenRenderer> textRenderer =
-		std::make_unique<TextRenderer>(device, commandList, commandQueue, commandAllocator, WindowSize);
+		std::make_unique<TextRenderer>(renderContext, WindowSize);
 
 	const std::unique_ptr<AOffscreenRenderer> pointerImageRenderer =
-		std::make_unique<PointerImageRenderer>(device, commandList, commandQueue, commandAllocator, WindowSize);
+		std::make_unique<PointerImageRenderer>(renderContext, WindowSize);
 
-	ItemSlotManager itemSlotManager = ItemSlotManager(device, commandList, commandQueue, commandAllocator, WindowSize);
+	ItemSlotManager itemSlotManager = ItemSlotManager(renderContext, WindowSize);
 
 	// [ms] 単位でのフレーム時間統計
 	DebugFrameTimeStats frameTimeStatsPreFrame = DebugFrameTimeStats(16);
@@ -130,7 +131,7 @@ int Main(hInstance)
 			.selectLeft = InputHelper::GetMouseWheelDelta() > 0.1f,   // マウスホイールが上に回った瞬間だけ true
 			.selectRight = InputHelper::GetMouseWheelDelta() < -0.1f, // マウスホイールが下に回った瞬間だけ true
 		};
-		itemSlotManager.UpdateSelectingSlotByInput(itemSlotSelectInputs, device, commandList, commandQueue, commandAllocator);
+		itemSlotManager.UpdateSelectingSlotByInput(renderContext, itemSlotSelectInputs);
 
 		// 見ているブロック・フェースを取得
 		const auto [lookingBlockPosition, lookingBlockFaceNormal] = playerController.PickLookingBlock(chunksManager.GetChunks());
@@ -162,7 +163,7 @@ int Main(hInstance)
 				{
 					if (ItemSlotManager::SlotItems[i] == lookingBlock)
 					{
-						itemSlotManager.UpdateSelectingSlot(i, device, commandList, commandQueue, commandAllocator);
+						itemSlotManager.UpdateSelectingSlot(renderContext, i);
 						break;
 					}
 				}
@@ -218,7 +219,7 @@ int Main(hInstance)
 			TextRenderer& textRendererRef = *dynamic_cast<TextRenderer*>(textRenderer.get());
 			if (fold)
 			{
-				debugTextDisplayer.UpdateDataAsFold(textRendererRef, device, commandList, commandQueue, commandAllocator);
+				debugTextDisplayer.UpdateDataAsFold(renderContext, textRendererRef);
 			}
 			else
 			{
@@ -238,7 +239,7 @@ int Main(hInstance)
 				};
 
 				debugTextDisplayer.UpdateDataAsUnfold(
-					textRendererRef, device, commandList, commandQueue, commandAllocator,
+					renderContext, textRendererRef,
 					playerController, chunksManager, frameTimeStatsBreakdown, lookingBlockInfo
 				);
 			}
@@ -255,16 +256,15 @@ int Main(hInstance)
 		if (!currentBackRT)
 			ShowError(L"現在のバックレンダーターゲットの取得に失敗しました");
 
-		const auto& packedDrawVBVs = chunksManager.PackDrawVBVs();
-		const auto& packedDrawIBVs = chunksManager.PackDrawIBVs();
-		const auto& packedDrawMeshIndicesCounts = chunksManager.PackDrawMeshIndicesCounts();
+		// TODO: 作成コストが高い! ただギリ許容範囲?
+		const RenderTargetContext currentBackRenderTargetContext = { currentBackRT, currentBackRTV, viewportScissorRect };
+		// TODO: 作成コストが高い! ただギリ許容範囲?
+		const RenderTargetContext postProcessRenderTargetContext =
+		{ postProcessRenderer->GetRT(), postProcessRenderer->GetRTV(), viewportScissorRect };
+		const auto& terrainRenderMeshContext = chunksManager.PackToRenderMeshContext();
 
 		// メインレンダリング
-		terrainRenderer.Draw(
-			commandList, commandQueue, commandAllocator, device,
-			postProcessRenderer->GetRT(), postProcessRenderer->GetRTV(), viewportScissorRect,
-			packedDrawVBVs, packedDrawIBVs, packedDrawMeshIndicesCounts
-		);
+		terrainRenderer.Draw(renderContext, postProcessRenderTargetContext, terrainRenderMeshContext);
 		// オフスクリーンレンダリング
 		{
 			std::vector<const AOffscreenRenderer*> renderers = {};
@@ -277,11 +277,7 @@ int Main(hInstance)
 			const auto itemSlotRenderers = itemSlotManager.PackRenderers();
 			renderers.insert(renderers.end(), itemSlotRenderers.begin(), itemSlotRenderers.end());
 
-			AOffscreenRenderer::DrawInOrder(
-				commandList, commandQueue, commandAllocator, device,
-				currentBackRT, currentBackRTV, viewportScissorRect,
-				renderers
-			);
+			AOffscreenRenderer::DrawInOrder(renderContext, currentBackRenderTargetContext, renderers);
 		}
 
 		if (!D3D12Helper::Present(swapChain))

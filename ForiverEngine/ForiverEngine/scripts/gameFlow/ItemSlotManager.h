@@ -4,11 +4,11 @@
 #include <scripts/helper/Include.h>
 #include <scripts/component/Include.h>
 #include "./Chunk.h"
-#include "./Renderer/UI/ItemSlotImageRenderer.h"
-#include "./Renderer/UI/ItemImageRenderer.h"
+#include "./Renderer/Include.h"
 
 namespace ForiverEngine
 {
+	// TODO: 依存関係が汚い! Renderer の参照は持ちたくない
 	class ItemSlotManager
 	{
 	private:
@@ -47,28 +47,19 @@ namespace ForiverEngine
 			bool selectRight; // スロットを右に移動 (押された瞬間だけ true)
 		};
 
-		ItemSlotManager(
-			const Device& device,
-			const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator,
-			const Lattice2& windowSize,
-			int initSelectingIndex = 0
-		) :
-			slotImageRenderers(CreateSlotImageRenderers(device, commandList, commandQueue, commandAllocator, windowSize)),
-			itemImageRenderers(CreateItemImageRenderers(device, commandList, commandQueue, commandAllocator, windowSize))
+		ItemSlotManager(const RenderContext& renderContext, const Lattice2& windowSize, int initSelectingIndex = 0) :
+			slotImageRenderers(CreateSlotImageRenderers(renderContext, windowSize)),
+			itemImageRenderers(CreateItemImageRenderers(renderContext, windowSize))
 		{
 			selectingIndex = initSelectingIndex;
-			ChangeSlotImage(initSelectingIndex, SlotImageType::Selected, device, commandList, commandQueue, commandAllocator);
+			ChangeSlotImage(renderContext, initSelectingIndex, SlotImageType::Selected);
 		}
 
 		/// <summary>
 		/// <para>入力情報に基づいて、選択中スロットを更新する (入力が無ければ何もしない)</para>
 		/// <para>選択中スロットが変化した場合は、スロット画像の見た目も更新する (強調表示など)</para>
 		/// </summary>
-		void UpdateSelectingSlotByInput(
-			const SelectInputs& inputs,
-			const Device& device,
-			const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator
-		)
+		void UpdateSelectingSlotByInput(const RenderContext& renderContext, const SelectInputs& inputs)
 		{
 			int newIndex = selectingIndex;
 
@@ -85,7 +76,7 @@ namespace ForiverEngine
 			// 入力が無いので何もせず、以降の処理もスキップして良い
 			else return;
 
-			UpdateSelectingSlot(newIndex, device, commandList, commandQueue, commandAllocator);
+			UpdateSelectingSlot(renderContext, newIndex);
 		}
 
 		/// <summary>
@@ -93,11 +84,7 @@ namespace ForiverEngine
 		/// <para>選択中スロットが変化した場合は、スロット画像の見た目も更新する (強調表示など)</para>
 		/// <para>選択中スロットが変化しなければ、何もしない</para>
 		/// </summary>
-		void UpdateSelectingSlot(
-			int newIndex,
-			const Device& device,
-			const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator
-		)
+		void UpdateSelectingSlot(const RenderContext& renderContext, int newIndex)
 		{
 			// 選択が変化しないので、何もしない
 			if (selectingIndex == newIndex)
@@ -107,8 +94,8 @@ namespace ForiverEngine
 			selectingIndex = newIndex;
 
 			// スロット画像を更新する (選択しているスロットだけ強調表示する)
-			ChangeSlotImage(prevIndex, SlotImageType::Normal, device, commandList, commandQueue, commandAllocator);
-			ChangeSlotImage(selectingIndex, SlotImageType::Selected, device, commandList, commandQueue, commandAllocator);
+			ChangeSlotImage(renderContext, prevIndex, SlotImageType::Normal);
+			ChangeSlotImage(renderContext, selectingIndex, SlotImageType::Selected);
 		}
 
 		/// <summary>
@@ -153,11 +140,8 @@ namespace ForiverEngine
 		}
 
 		// slotPositions を参照してしまっているが、const だから大丈夫だと思う
-		static std::vector<std::unique_ptr<AOffscreenRenderer>> CreateSlotImageRenderers(
-			const Device& device,
-			const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator,
-			const Lattice2& windowSize
-		)
+		static std::vector<std::unique_ptr<AOffscreenRenderer>>
+			CreateSlotImageRenderers(const RenderContext& renderContext, const Lattice2& windowSize)
 		{
 			std::vector<std::unique_ptr<AOffscreenRenderer>> renderers;
 			renderers.reserve(SlotCount);
@@ -165,9 +149,9 @@ namespace ForiverEngine
 			for (int i = 0; i < SlotCount; ++i)
 			{
 				renderers.push_back(std::make_unique<ItemSlotImageRenderer>(
-					device, commandList, commandQueue, commandAllocator, windowSize,
-					SlotImageType::Normal,
-					GetSlotPosition(windowSize, i), Lattice2(SlotSize, SlotSize)
+					renderContext, windowSize,
+					GetSlotPosition(windowSize, i), Lattice2(SlotSize, SlotSize),
+					SlotImageType::Normal
 				));
 			}
 
@@ -175,11 +159,8 @@ namespace ForiverEngine
 		}
 
 		// slotPositions を参照してしまっているが、const だから大丈夫だと思う
-		static std::vector<std::unique_ptr<AOffscreenRenderer>> CreateItemImageRenderers(
-			const Device& device,
-			const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator,
-			const Lattice2& windowSize
-		)
+		static std::vector<std::unique_ptr<AOffscreenRenderer>>
+			CreateItemImageRenderers(const RenderContext& renderContext, const Lattice2& windowSize)
 		{
 			std::vector<std::unique_ptr<AOffscreenRenderer>> renderers;
 			renderers.reserve(SlotCount);
@@ -187,23 +168,19 @@ namespace ForiverEngine
 			for (int i = 0; i < SlotCount; ++i)
 			{
 				renderers.push_back(std::make_unique<ItemImageRenderer>(
-					device, commandList, commandQueue, commandAllocator, windowSize,
-					SlotItems[i],
-					GetSlotPosition(windowSize, i), Lattice2(ItemSize, ItemSize)
+					renderContext, windowSize,
+					GetSlotPosition(windowSize, i), Lattice2(ItemSize, ItemSize),
+					SlotItems[i]
 				));
 			}
 
 			return renderers;
 		}
 
-		void ChangeSlotImage(
-			int index, SlotImageType newType,
-			const Device& device,
-			const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator
-		)
+		void ChangeSlotImage(const RenderContext& renderContext, int index, SlotImageType newType)
 		{
 			ItemSlotImageRenderer* slotImageRenderer = dynamic_cast<ItemSlotImageRenderer*>(slotImageRenderers[index].get());
-			slotImageRenderer->ChangeImageType(device, commandList, commandQueue, commandAllocator, newType);
+			slotImageRenderer->ChangeImageType(renderContext, newType);
 		}
 	};
 }

@@ -3,7 +3,8 @@
 #include <scripts/common/Include.h>
 #include <scripts/helper/Include.h>
 #include <scripts/component/Include.h>
-#include "../AOffscreenRenderer.h"
+#include "scripts/gameFlow/Renderer/Context/Include.h"
+#include "scripts/gameFlow/Renderer/Offscreen/AOffscreenRenderer.h"
 
 namespace ForiverEngine
 {
@@ -32,9 +33,7 @@ namespace ForiverEngine
 
 	public:
 		void Init(
-			const Device& device,
-			const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator,
-			const Lattice2& windowSize,
+			const RenderContext& renderContext, const Lattice2& windowSize,
 			const std::string& imageFilePath,
 			const Lattice2& position, // スクリーン上の座標 (ピクセル単位. 画像の中心がこの位置に来る)
 			const Vector2& clipUVMin, const Vector2& clipUVMax, // 画像のどの部分を切り取って使うか (UV座標で指定)
@@ -44,7 +43,8 @@ namespace ForiverEngine
 		{
 			// t1 (画像テクスチャ)
 			const Texture sr1Metadata = D3D12Utils::LoadTexture({ imageFilePath });
-			const GraphicsBuffer sr1 = D3D12Utils::InitSR(device, commandList, commandQueue, commandAllocator, sr1Metadata);
+			const GraphicsBuffer sr1 = D3D12Utils::InitSR(
+				renderContext.device, renderContext.commandList, renderContext.commandQueue, renderContext.commandAllocator, sr1Metadata);
 
 			// 画像の元サイズに対するスケールを計算
 			const Vector2 scale =
@@ -77,9 +77,11 @@ namespace ForiverEngine
 
 				.IsDrawEnabled = (initDrawEnabled ? 1u : 0u),
 			};
-			const GraphicsBuffer cb0 = D3D12Utils::InitCB(device, cbData0, &cb0VirtualPtr);
+			const GraphicsBuffer cb0 = D3D12Utils::InitCB(renderContext.device, cbData0, &cb0VirtualPtr);
 
-			Base::Init(device, windowSize, { cb0 }, { { sr1, sr1Metadata } }, D3D12Utils::GetShaderFilePath("Image"));
+			Base::Init(
+				renderContext, windowSize,
+				{ cb0 }, { { sr1, sr1Metadata } }, D3D12Utils::GetShaderFilePath("Image"));
 		}
 
 		// Init 後に使うこと!

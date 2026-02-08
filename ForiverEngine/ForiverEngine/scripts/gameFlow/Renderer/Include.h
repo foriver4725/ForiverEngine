@@ -1,6 +1,6 @@
 ﻿#pragma once
 
+#include "./Context/Include.h"
 #include "./TerrainRenderer.h"
-#include "./AOffscreenRenderer.h"
-#include "./PostProcessRenderer.h"
+#include "./Offscreen/Include.h"
 #include "./UI/Include.h"

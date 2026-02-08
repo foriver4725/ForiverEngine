@@ -3,6 +3,7 @@
 #include <scripts/common/Include.h>
 #include <scripts/helper/Include.h>
 #include <scripts/component/Include.h>
+#include "scripts/gameFlow/Renderer/Context/Include.h"
 
 namespace ForiverEngine
 {
@@ -56,22 +57,19 @@ namespace ForiverEngine
 		/// <para>RTV は作らない (多分 SwapChain に関連するので、面倒くさい)</para>
 		/// <para>仮値を設定している所がある. 必ず直後に初期値を設定すること!</para>
 		/// </summary>
-		explicit TerrainRenderer(
-			const Device& device,
-			const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator,
-			const Lattice2& windowSize
-		) :
-			Matrix_M_Cached(Transform.CalculateModelMatrix())
+		explicit TerrainRenderer(const RenderContext& renderContext, const Lattice2& windowSize)
+			: Matrix_M_Cached(Transform.CalculateModelMatrix())
 		{
 			// RootSignature, PipelineState
 			const RootParameter rootParameter = RootParameter::CreateBasic(2, 1);
 			const SamplerConfig samplerConfig = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
 			const auto [shaderVS, shaderPS] = D3D12Utils::LoadCso(D3D12Utils::GetShaderFilePath("Basic"));
 			std::tie(rootSignature, pipelineState) = D3D12Utils::CreateRootSignatureAndGraphicsPipelineState(
-				device, rootParameter, samplerConfig, shaderVS, shaderPS, VertexLayouts, FillMode::Solid, CullMode::None, true);
+				renderContext.device,
+				rootParameter, samplerConfig, shaderVS, shaderPS, VertexLayouts, FillMode::Solid, CullMode::None, true);
 
 			// RTV は作らない!
-			dsv = D3D12Utils::InitDSV(device, windowSize);
+			dsv = D3D12Utils::InitDSV(renderContext.device, windowSize);
 
 			// b0, b1
 			CBData0 cbData0 =
@@ -89,15 +87,16 @@ namespace ForiverEngine
 				.DirectionalLightColor = Color::White() * 1.2f,
 				.AmbientLightColor = Color::White() * 0.5f,
 			};
-			const GraphicsBuffer cb0 = D3D12Utils::InitCB(device, cbData0, &cb0VirtualPtr);
-			const GraphicsBuffer cb1 = D3D12Utils::InitCB(device, cbData1, &cb1VirtualPtr);
+			const GraphicsBuffer cb0 = D3D12Utils::InitCB(renderContext.device, cbData0, &cb0VirtualPtr);
+			const GraphicsBuffer cb1 = D3D12Utils::InitCB(renderContext.device, cbData1, &cb1VirtualPtr);
 
 			// t0
 			const Texture textureArray = D3D12Utils::LoadTexture(BlockTextureFilePaths);
-			const auto sr = D3D12Utils::InitSR(device, commandList, commandQueue, commandAllocator, textureArray);
+			const auto sr = D3D12Utils::InitSR(
+				renderContext.device, renderContext.commandList, renderContext.commandQueue, renderContext.commandAllocator, textureArray);
 
 			// DescriptorHeap
-			descriptorHeapBasic = D3D12Utils::InitDescriptorHeapBasic(device, { cb0, cb1 }, { { sr, textureArray } });
+			descriptorHeapBasic = D3D12Utils::InitDescriptorHeapBasic(renderContext.device, { cb0, cb1 }, { { sr, textureArray } });
 		}
 
 		/// <summary>
@@ -120,25 +119,18 @@ namespace ForiverEngine
 		/// <para>チャンクデータから VBV,IBV,頂点数 を算出して渡すこと</para>
 		/// </summary>
 		void Draw(
-			const CommandList& commandList,
-			const CommandQueue& commandQueue,
-			const CommandAllocator& commandAllocator,
-			const Device& device,
-			const GraphicsBuffer& rt,
-			const DescriptorHandleAtCPU& rtv,
-			const ViewportScissorRect& viewportScissorRect,
-			const std::vector<VertexBufferView>& vbvs,
-			const std::vector<IndexBufferView>& ibvs,
-			const std::vector<int>& meshIndicesCounts
+			const RenderContext& renderContext,
+			const RenderTargetContext& renderTargetContext,
+			const RenderMeshContext& renderMeshContext
 		) const
 		{
 			D3D12Utils::Draw(
-				commandList, commandQueue, commandAllocator, device,
-				rootSignature, pipelineState, rt,
-				rtv, dsv, descriptorHeapBasic, vbvs, ibvs,
+				renderContext.commandList, renderContext.commandQueue, renderContext.commandAllocator, renderContext.device,
+				rootSignature, pipelineState, renderTargetContext.rt,
+				renderTargetContext.rtv, dsv, descriptorHeapBasic, renderMeshContext.vbvList, renderMeshContext.ibvList,
 				GraphicsBufferState::PixelShaderResource, GraphicsBufferState::RenderTarget,
-				viewportScissorRect, PrimitiveTopology::TriangleList, SkyColor, DepthBufferClearValue,
-				meshIndicesCounts
+				renderTargetContext.viewportScissorRect, PrimitiveTopology::TriangleList, SkyColor, DepthBufferClearValue,
+				renderMeshContext.indexCountList
 			);
 		}
 

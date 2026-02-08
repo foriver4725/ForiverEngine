@@ -1,7 +1,4 @@
 ﻿#pragma once
 
-#include "./AImageRenderer.h"
-#include "./TextRenderer.h"
-#include "./PointerImageRenderer.h"
-#include "./ItemSlotImageRenderer.h"
-#include "./ItemImageRenderer.h"
+#include "./Text/Include.h"
+#include "./Image/Include.h"
