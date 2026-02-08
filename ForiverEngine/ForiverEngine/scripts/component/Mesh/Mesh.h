@@ -2,11 +2,11 @@
 
 #include <scripts/common/Include.h>
 #include <scripts/helper/Include.h>
-#include "./IMesh.h"
+#include "./AMesh.h"
 
 namespace ForiverEngine
 {
-	struct Mesh : public IMesh<VertexData>
+	struct Mesh : public AMesh<VertexData>
 	{
 		// 時計回りに結線する!!
 		std::vector<VertexData> vertices{};

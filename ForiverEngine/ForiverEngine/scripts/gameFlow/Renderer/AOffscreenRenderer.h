@@ -46,7 +46,7 @@ namespace ForiverEngine
 			// メッシュ
 			mesh = MeshQuad::CreateFullSized();
 			// VBV, IBV
-			std::tie(vbv, ibv) = D3D12Utils::CreateMeshViews(device, mesh);
+			std::tie(vbv, ibv) = mesh.CreateRenderViews(device);
 
 			// SR 群の最初に RT/SR を登録する (t0)
 			std::vector<std::pair<GraphicsBuffer, Texture>> srsWithRT;

@@ -208,7 +208,7 @@
     <ClInclude Include="scripts\common\Utils\StringUtils.h" />
     <ClInclude Include="scripts\component\D3D12Utils.h" />
     <ClInclude Include="scripts\component\Include.h" />
-    <ClInclude Include="scripts\component\Mesh\IMesh.h" />
+    <ClInclude Include="scripts\component\Mesh\AMesh.h" />
     <ClInclude Include="scripts\component\Mesh\Include.h" />
     <ClInclude Include="scripts\component\Mesh\Mesh.h" />
     <ClInclude Include="scripts\component\Mesh\MeshQuad.h" />

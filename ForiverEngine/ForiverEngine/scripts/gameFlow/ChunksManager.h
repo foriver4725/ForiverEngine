@@ -94,7 +94,7 @@ namespace ForiverEngine
 			chunks[chunkIndex.x][chunkIndex.y].SetBlock(localBlockPosition, newBlock);
 			meshes[chunkIndex.x][chunkIndex.y] = chunks[chunkIndex.x][chunkIndex.y].CreateMesh(chunkIndex);
 
-			const auto [vbv, ibv] = D3D12Utils::CreateMeshViews(device, meshes[chunkIndex.x][chunkIndex.y]);
+			const auto [vbv, ibv] = meshes[chunkIndex.x][chunkIndex.y].CreateRenderViews(device);
 			vbvs[chunkIndex.x][chunkIndex.y] = vbv;
 			ibvs[chunkIndex.x][chunkIndex.y] = ibv;
 		};
@@ -217,7 +217,7 @@ namespace ForiverEngine
 				!= ChunkGenerationState::FinishedParallel)
 				return;
 
-			const auto [vbv, ibv] = D3D12Utils::CreateMeshViews(device, meshes[chunkIndex.x][chunkIndex.y]);
+			const auto [vbv, ibv] = meshes[chunkIndex.x][chunkIndex.y].CreateRenderViews(device);
 			vbvs[chunkIndex.x][chunkIndex.y] = vbv;
 			ibvs[chunkIndex.x][chunkIndex.y] = ibv;
 

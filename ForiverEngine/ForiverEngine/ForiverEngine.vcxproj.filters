@@ -266,7 +266,7 @@
     <ClInclude Include="scripts\common\Math\MathUtils.h">
       <Filter>scripts\common\Math</Filter>
     </ClInclude>
-    <ClInclude Include="scripts\component\Mesh\IMesh.h">
+    <ClInclude Include="scripts\component\Mesh\AMesh.h">
       <Filter>scripts\component\Mesh</Filter>
     </ClInclude>
     <ClInclude Include="scripts\gameFlow\PlayerController.h">

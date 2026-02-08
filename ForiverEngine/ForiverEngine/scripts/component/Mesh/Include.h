@@ -1,5 +1,5 @@
 ﻿#pragma once
 
-#include "./IMesh.h"
+#include "./AMesh.h"
 #include "./Mesh.h"
 #include "./MeshQuad.h"
