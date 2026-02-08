@@ -1,27 +1,21 @@
 cbuffer _0 : register(b0)
 {
-    float4x4 _Matrix_M;
-    float4x4 _Matrix_M_IT;
     float4x4 _Matrix_MVP;
-    float4x4 _DirectionalLight_Matrix_VP;
+    float4x4 _Matrix_M_IT;
 }
 
 cbuffer _1 : register(b1)
 {
     int3 _SelectingBlockWorldPosition;
-    int _IsSelectingBlock;
+    uint _IsSelectingBlock;
     float4 _SelectColor;
     
     float3 _DirectionalLightDirection;
     float4 _DirectionalLightColor;
     float4 _AmbientLightColor;
-    
-    int _CastShadow;
-    float4 _ShadowColor;
 }
 
 Texture2DArray<float4> _Texture : register(t0);
-Texture2D<float> _ShadowDepthTexture : register(t1);
 SamplerState _Sampler : register(s0);
 
 struct VSInput
@@ -38,7 +32,6 @@ struct V2P
     float4 pos : SV_POSITION;
     float2 uv : TEXCOORD0;
     float3 normal : NORMAL;
-    float3 worldPos : TEXCOORD1;
     nointerpolation float3 centerWorldPosition : CENTERPOS;
     nointerpolation uint texIndex : TEXINDEX;
 };
@@ -71,7 +64,6 @@ V2P VSMain(VSInput input)
     
     output.pos = mul(_Matrix_MVP, input.pos);
     output.normal = mul((float3x3) _Matrix_M_IT, input.normal);
-    output.worldPos = mul(_Matrix_M, input.pos).xyz;
     
     output.uv = input.uv;
     output.centerWorldPosition = input.centerWorldPosition;
@@ -101,17 +93,7 @@ PSOutput PSMain(V2P input)
     lightingParams.AmbientColor = _AmbientLightColor.rgb;
     const float3 lightColor = PSCalcLighting(lightingParams);
     
-    // シャドウの計算
-    ShadowParams shadowParams;
-    shadowParams.CastShadow = _CastShadow;
-    shadowParams.SunDepthTexture = _ShadowDepthTexture;
-    shadowParams.Sampler = _Sampler;
-    shadowParams.WorldPosition = input.worldPos;
-    shadowParams.SunMatrixVP = _DirectionalLight_Matrix_VP;
-    const float castShadow = PSCheckCastShadow(shadowParams);
-    const float3 shadowColor = castShadow > 0.5 ? _ShadowColor.rgb : float3(1.0, 1.0, 1.0);
-    
-    color.rgb *= lightColor * shadowColor;
+    color.rgb *= lightColor;
     output.color = color;
     
     return output;

@@ -13,30 +13,27 @@ int Main(hInstance)
 	constexpr Lattice2 WindowSize = Lattice2(1344, 756);
 	const HWND hwnd = WindowHelper::OnInit(hInstance, WindowSize);
 
-	// テストコード実行
 #ifdef _DEBUG
+	// テストコード実行
 #if 0
 	Test::PlayerControl::RunAll();
 
 	ShowError(L"全てのテストに成功しました");
 	return 0;
 #endif
-#endif
 
 	// シェーダーのコンパイル (開発中のみ)
-#ifdef _DEBUG
 #if 0
 	if (D3D12Helper::IDE_CompileHlslToCso(
 		R"(C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\fxc.exe)", // 開発者ごとに違う可能性がある. 適宜変えてほしい
 		"shaders", ".compiledShaderObjects", "shaders",
 		{
-			"Basic.hlsl",
-			"ShadowDepthWrite.hlsl",
-			"PP.hlsl",
-			"Text.hlsl",
-			"Image.hlsl"
+			//"Basic.hlsl",
+			//"PP.hlsl",
+			//"Text.hlsl",
+			//"Image.hlsl"
 		}
-	))
+		))
 	{
 		ShowError(L"シェーダーのコンパイルに成功しました");
 		return 0;
@@ -48,9 +45,7 @@ int Main(hInstance)
 		return -1;
 	}
 #endif
-#endif
 
-#ifdef _DEBUG
 	if (!D3D12Helper::EnableDebugLayer())
 		ShowError(L"DebugLayer の有効化に失敗しました");
 #endif
@@ -63,6 +58,13 @@ int Main(hInstance)
 
 	const auto [factory, device, commandAllocator, commandList, commandQueue]
 		= D3D12Utils::CreateStandardObjects();
+
+	const SwapChain swapChain = D3D12Helper::CreateSwapChain(factory, commandQueue, hwnd, WindowSize);
+	if (!swapChain)
+		ShowError(L"SwapChain の作成に失敗しました");
+	const auto [rtGetter, rtvGetter] = D3D12Utils::InitRTV(device, swapChain, Format::RGBA_U8_01);
+
+	const ViewportScissorRect viewportScissorRect = ViewportScissorRect::CreateFullSized(WindowSize);
 
 
 
@@ -77,63 +79,8 @@ int Main(hInstance)
 	// プレイヤーコントローラー
 	PlayerController playerController = PlayerController(WindowSize, playerExistingChunkIndex.GetValue(), chunksManager.GetChunks());
 
-	// 太陽カメラ
-	SunCamera sunCamera = SunCamera();
-	sunCamera.LookAtPlayer(playerController.GetFootPosition());
-
-	const SwapChain swapChain = D3D12Helper::CreateSwapChain(factory, commandQueue, hwnd, WindowSize);
-	if (!swapChain)
-		ShowError(L"SwapChain の作成に失敗しました");
-	const auto [rtGetter, rtvGetter] = D3D12Utils::InitRTV(device, swapChain, Format::RGBA_U8_01);
-
-	const ViewportScissorRect viewportScissorRect = ViewportScissorRect::CreateFullSized(WindowSize);
-
-#pragma region Shadow
-
-	constexpr Lattice2 ShadowRTSize = Lattice2(1024, 1024);
-
-	const Texture shadowTextureMetadata = Texture({}, Lattice3(ShadowRTSize, 1), Format::R_F32);
-	const GraphicsBuffer shadowGraphicsBuffer = D3D12Helper::CreateGraphicsBufferTexture2D(device, shadowTextureMetadata,
-		GraphicsBufferUsagePermission::AllowRenderTarget, GraphicsBufferState::PixelShaderResource, Color(DepthBufferClearValue, 0, 0, 0));
-
-	const RootParameter rootParameterShadow = RootParameter::CreateBasic(1, 1);
-	const SamplerConfig samplerConfigShadow = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
-	const auto [shaderVSShadow, shaderPSShadow] = D3D12Utils::LoadCso(D3D12Utils::GetShaderFilePath("ShadowDepthWrite"));
-	const auto [rootSignatureShadow, graphicsPipelineStateShadow]
-		= D3D12Utils::CreateRootSignatureAndGraphicsPipelineState(
-			device, rootParameterShadow, samplerConfigShadow, shaderVSShadow, shaderPSShadow, VertexLayoutsQuad, FillMode::Solid, CullMode::Back, true);
-
-	// RTV, DSV
-	const DescriptorHandleAtCPU rtvShadow = D3D12Utils::InitRTV(device, shadowGraphicsBuffer, Format::R_F32);
-	const DescriptorHandleAtCPU dsvShadow = D3D12Utils::InitDSV(device, ShadowRTSize);
-
-	// b0
-	struct alignas(256) CBData0Shadow
-	{
-		Matrix4x4 Matrix_MVP;
-	};
-	CBData0Shadow cbData0Shadow =
-	{
-		.Matrix_MVP = sunCamera.CalculateVPMatrix() * TerrainRenderer::Transform.CalculateModelMatrix(),
-	};
-	CBData0Shadow* cb0ShadowVirtualPtr = nullptr;
-	const GraphicsBuffer cb0Shadow = D3D12Utils::InitCB(device, cbData0Shadow, &cb0ShadowVirtualPtr);
-
-	// DescriptorHeap
-	const DescriptorHeap descriptorHeapBasicShadow
-		= D3D12Utils::InitDescriptorHeapBasic(device, { cb0Shadow }, { {shadowGraphicsBuffer, shadowTextureMetadata} });
-
-	const ViewportScissorRect viewportScissorRectShadow = ViewportScissorRect::CreateFullSized(ShadowRTSize);
-
-#pragma endregion
-
-	TerrainRenderer terrainRenderer = TerrainRenderer(
-		device, commandList, commandQueue, commandAllocator, WindowSize,
-		{ shadowGraphicsBuffer, shadowTextureMetadata }
-	);
+	TerrainRenderer terrainRenderer = TerrainRenderer(device, commandList, commandQueue, commandAllocator, WindowSize);
 	terrainRenderer.OnPlayerCameraMatrixChanged(playerController.CalculateVPMatrix());
-	terrainRenderer.OnSunCameraMatrixChanged(sunCamera.CalculateVPMatrix());
-	terrainRenderer.OnSunCameraParameterChanged(SunCamera::Direction, SunCamera::ShadowColor);
 
 	const std::unique_ptr<AOffscreenRenderer> postProcessRenderer =
 		std::make_unique<PostProcessRenderer>(device, commandList, commandQueue, commandAllocator, WindowSize);
@@ -307,14 +254,6 @@ int Main(hInstance)
 			}
 		}
 
-		// 太陽カメラの位置を、プレイヤーの頭上らへんにする
-		{
-			sunCamera.LookAtPlayer(playerController.GetFootPosition());
-
-			terrainRenderer.OnSunCameraMatrixChanged(sunCamera.CalculateVPMatrix());
-			cb0ShadowVirtualPtr->Matrix_MVP = sunCamera.CalculateVPMatrix() * TerrainRenderer::Transform.CalculateModelMatrix();
-		}
-
 		const double timeAfterCPU = WindowHelper::GetTime();
 		frameTimeStatsCPU.Record(timeAfterCPU - timeBeforeCPU);
 
@@ -330,18 +269,6 @@ int Main(hInstance)
 		const auto& packedDrawIBVs = chunksManager.PackDrawIBVs();
 		const auto& packedDrawMeshIndicesCounts = chunksManager.PackDrawMeshIndicesCounts();
 
-		// 影のデプス書き込み
-		if (terrainRenderer.GetCB1VirtualPtr()->CastShadow == 1)
-		{
-			D3D12Utils::Draw(
-				commandList, commandQueue, commandAllocator, device,
-				rootSignatureShadow, graphicsPipelineStateShadow, shadowGraphicsBuffer,
-				rtvShadow, dsvShadow, descriptorHeapBasicShadow, packedDrawVBVs, packedDrawIBVs,
-				GraphicsBufferState::PixelShaderResource, GraphicsBufferState::RenderTarget,
-				viewportScissorRectShadow, PrimitiveTopology::TriangleList, Color(DepthBufferClearValue, 0, 0, 0), DepthBufferClearValue,
-				packedDrawMeshIndicesCounts
-			);
-		}
 		// メインレンダリング
 		terrainRenderer.Draw(
 			commandList, commandQueue, commandAllocator, device,

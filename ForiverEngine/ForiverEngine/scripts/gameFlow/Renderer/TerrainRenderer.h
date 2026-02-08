@@ -29,27 +29,21 @@ namespace ForiverEngine
 		// b0
 		struct alignas(256) CBData0
 		{
-			Matrix4x4 Matrix_M;                   // M
-			Matrix4x4 Matrix_M_IT;                // M の逆→転置行列 (法線用だけど、ぶっちゃけ今の設計的に、より計算コストがかかっている)
 			Matrix4x4 Matrix_MVP;                 // MVP
-			Matrix4x4 DirectionalLight_Matrix_VP; // 太陽カメラの VP
+			Matrix4x4 Matrix_M_IT;                // M の逆→転置行列 (法線用だけど、ぶっちゃけ今の設計的に、より計算コストがかかっている)
 		};
 	public:
 		// b1
 		struct alignas(256) CBData1
 		{
 			Lattice3 SelectingBlockWorldPosition; // 選択中のブロック位置
-			int IsSelectingBlock;                 // ブロックを選択中かどうか (bool 型として扱う)
+			std::uint32_t IsSelectingBlock;       // ブロックを選択中かどうか (bool 型として扱う)
 			Color SelectColor;                    // 選択中のブロックの乗算色 (a でブレンド率を指定)
 
 			Vector3 DirectionalLightDirection;    // 太陽光の向き (正規化済み)
 			float Pad0;
 			Color DirectionalLightColor;          // 太陽光の色 (a は使わない)
 			Color AmbientLightColor;              // 環境光の色 (a は使わない)
-
-			int CastShadow;                       // 影を落とすかどうか (bool 型として扱う)
-			float Pad1[3];
-			Color ShadowColor;                    // 影の色 (色係数. a は使わない)
 		};
 
 	public:
@@ -58,20 +52,19 @@ namespace ForiverEngine
 		/// <summary>
 		/// <para>コンストラクタ. 描画オブジェクトを初期化する</para>
 		/// <para>b0,b1 を使用. b0 は行列オブジェクトで、なるべく隠蔽する. b1 はその他のデータで、直接外部公開する</para>
-		/// <para>t0,t1 を使用, t0 はブロックのテクスチャ配列. t1 は影描画で使う深度テクスチャ(RT と併用されるので、ここで一回アップロードするだけでOK)</para>
+		/// <para>t0 を使用. t0 はブロックのテクスチャ配列</para>
 		/// <para>RTV は作らない (多分 SwapChain に関連するので、面倒くさい)</para>
 		/// <para>仮値を設定している所がある. 必ず直後に初期値を設定すること!</para>
 		/// </summary>
 		explicit TerrainRenderer(
 			const Device& device,
 			const CommandList& commandList, const CommandQueue& commandQueue, const CommandAllocator& commandAllocator,
-			const Lattice2& windowSize,
-			const std::pair<GraphicsBuffer, Texture>& srShadow // t1
+			const Lattice2& windowSize
 		) :
 			Matrix_M_Cached(Transform.CalculateModelMatrix())
 		{
 			// RootSignature, PipelineState
-			const RootParameter rootParameter = RootParameter::CreateBasic(2, 2);
+			const RootParameter rootParameter = RootParameter::CreateBasic(2, 1);
 			const SamplerConfig samplerConfig = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
 			const auto [shaderVS, shaderPS] = D3D12Utils::LoadCso(D3D12Utils::GetShaderFilePath("Basic"));
 			std::tie(rootSignature, pipelineState) = D3D12Utils::CreateRootSignatureAndGraphicsPipelineState(
@@ -83,10 +76,8 @@ namespace ForiverEngine
 			// b0, b1
 			CBData0 cbData0 =
 			{
-				.Matrix_M = Matrix_M_Cached,
+				.Matrix_MVP = Matrix4x4::Identity(), // 仮値. 直後に初期値を設定してもらう前提
 				.Matrix_M_IT = Transform.CalculateModelMatrixInversed().Transposed(),
-				.Matrix_MVP = Matrix4x4::Identity(),                 // 仮値. 直後に初期値を設定してもらう前提
-				.DirectionalLight_Matrix_VP = Matrix4x4::Identity(), // 仮値. 直後に初期値を設定してもらう前提
 			};
 			CBData1 cbData1 =
 			{
@@ -94,12 +85,9 @@ namespace ForiverEngine
 				.IsSelectingBlock = 0,
 				.SelectColor = Color::CreateFromUint8(255, 255, 0, 48),
 
-				.DirectionalLightDirection = Vector3::Down(),        // 仮値. 直後に初期値を設定してもらう前提
+				.DirectionalLightDirection = Vector3(1.0f, -1.0f, 1.0f).Normed(),
 				.DirectionalLightColor = Color::White() * 1.2f,
 				.AmbientLightColor = Color::White() * 0.5f,
-
-				.CastShadow = 0,                                     // TODO: 影の計算がおかしいので、今は影を無くしておく!
-				.ShadowColor = Color::White(),                       // 仮値. 直後に初期値を設定してもらう前提
 			};
 			const GraphicsBuffer cb0 = D3D12Utils::InitCB(device, cbData0, &cb0VirtualPtr);
 			const GraphicsBuffer cb1 = D3D12Utils::InitCB(device, cbData1, &cb1VirtualPtr);
@@ -109,7 +97,7 @@ namespace ForiverEngine
 			const auto sr = D3D12Utils::InitSR(device, commandList, commandQueue, commandAllocator, textureArray);
 
 			// DescriptorHeap
-			descriptorHeapBasic = D3D12Utils::InitDescriptorHeapBasic(device, { cb0, cb1 }, { { sr, textureArray }, srShadow });
+			descriptorHeapBasic = D3D12Utils::InitDescriptorHeapBasic(device, { cb0, cb1 }, { { sr, textureArray } });
 		}
 
 		/// <summary>
@@ -118,21 +106,6 @@ namespace ForiverEngine
 		void OnPlayerCameraMatrixChanged(const Matrix4x4& playerCameraVPMatrix)
 		{
 			cb0VirtualPtr->Matrix_MVP = playerCameraVPMatrix * Matrix_M_Cached;
-		}
-		/// <summary>
-		/// <para>外部依存の処理. 忘れずに呼んでね</para>
-		/// </summary>
-		void OnSunCameraMatrixChanged(const Matrix4x4& sunCameraVPMatrix)
-		{
-			cb0VirtualPtr->DirectionalLight_Matrix_VP = sunCameraVPMatrix;
-		}
-		/// <summary>
-		/// <para>外部依存の処理. 忘れずに呼んでね</para>
-		/// </summary>
-		void OnSunCameraParameterChanged(const Vector3& sunDirection, const Color& shadowColor)
-		{
-			cb1VirtualPtr->DirectionalLightDirection = sunDirection.Normed();
-			cb1VirtualPtr->ShadowColor = shadowColor;
 		}
 
 		CBData1* GetCB1VirtualPtr()

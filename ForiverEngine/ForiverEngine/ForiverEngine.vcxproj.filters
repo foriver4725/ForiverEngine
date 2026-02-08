@@ -272,9 +272,6 @@
     <ClInclude Include="scripts\gameFlow\PlayerController.h">
       <Filter>scripts\gameFlow</Filter>
     </ClInclude>
-    <ClInclude Include="scripts\gameFlow\SunCamera.h">
-      <Filter>scripts\gameFlow</Filter>
-    </ClInclude>
     <ClInclude Include="scripts\gameFlow\DebugText.h">
       <Filter>scripts\gameFlow</Filter>
     </ClInclude>
@@ -357,9 +354,6 @@
     </FxCompile>
     <FxCompile Include="shaders\common\TextSampling.hlsl">
       <Filter>shaders\common</Filter>
-    </FxCompile>
-    <FxCompile Include="shaders\ShadowDepthWrite.hlsl">
-      <Filter>shaders</Filter>
     </FxCompile>
     <FxCompile Include="shaders\common\ImageSampling.hlsl">
       <Filter>shaders\common</Filter>

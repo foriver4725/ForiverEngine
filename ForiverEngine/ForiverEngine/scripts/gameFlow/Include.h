@@ -8,7 +8,6 @@
 #include "./PlayerControl.h"
 #include "./PlayerController.h"
 #include "./ItemSlotManager.h"
-#include "./SunCamera.h"
 #include "./DebugFrameTimeStats.h"
 #include "./DebugText.h"
 #include "./DebugTextDisplayer.h"
