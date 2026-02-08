@@ -334,6 +334,7 @@ namespace ForiverEngine
 		/// <summary>
 		/// <para>シェーダーファイルをコンパイルして返す (失敗したら nullptr)</para>
 		/// </summary>
+		[[maybe_unused]]
 		static Blob CompileShaderFile(
 			const std::string& path, const std::string& entryFunc, const std::string& shaderTarget, std::wstring& outErrorMessage);
 
