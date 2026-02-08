@@ -174,6 +174,8 @@
     <ClCompile Include="scripts\common\Math\LinearAlgebra\sources\Vector2.cpp" />
     <ClCompile Include="scripts\common\Math\LinearAlgebra\sources\Vector3.cpp" />
     <ClCompile Include="scripts\common\Math\LinearAlgebra\sources\Vector4.cpp" />
+    <ClCompile Include="scripts\common\Math\sources\Color.cpp" />
+    <ClCompile Include="scripts\common\Math\sources\Noise.cpp" />
     <ClCompile Include="scripts\helper\Loader\sources\TextureLoader.cpp" />
     <ClCompile Include="scripts\helper\sources\D3D12Helper.cpp" />
     <ClCompile Include="scripts\helper\sources\InputHelper.cpp" />
@@ -185,8 +187,9 @@
     <ClInclude Include="scripts\common\Include.h" />
     <ClInclude Include="scripts\common\IncludeInternal.h" />
     <ClInclude Include="scripts\common\Math\BitFlag.h" />
-    <ClInclude Include="scripts\common\Math\Color.h" />
     <ClInclude Include="scripts\common\Math\Defines.h" />
+    <ClInclude Include="scripts\common\Math\headers\Color.h" />
+    <ClInclude Include="scripts\common\Math\headers\Noise.h" />
     <ClInclude Include="scripts\common\Math\Include.h" />
     <ClInclude Include="scripts\common\Math\LinearAlgebra\headers\Lattice2.h" />
     <ClInclude Include="scripts\common\Math\LinearAlgebra\headers\Lattice3.h" />
@@ -201,7 +204,6 @@
     <ClInclude Include="scripts\common\Math\LinearAlgebra\Include.h" />
     <ClInclude Include="scripts\common\Math\LinearAlgebra\ToString.h" />
     <ClInclude Include="scripts\common\Math\MathUtils.h" />
-    <ClInclude Include="scripts\common\Math\Noise.h" />
     <ClInclude Include="scripts\common\Math\Random.h" />
     <ClInclude Include="scripts\common\Utils\HeapMultiDimAllocator.h" />
     <ClInclude Include="scripts\common\Utils\Include.h" />

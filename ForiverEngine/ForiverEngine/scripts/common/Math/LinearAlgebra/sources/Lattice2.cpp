@@ -1,8 +1,5 @@
 ﻿#include "../headers/Lattice2.h"
 
-#include <scripts/common/Math/Defines.h>
-#include <cmath>
-#include <algorithm>
 #include "../headers/Vector2.h"
 
 namespace ForiverEngine

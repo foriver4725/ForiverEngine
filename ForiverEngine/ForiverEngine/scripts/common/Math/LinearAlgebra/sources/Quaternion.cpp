@@ -1,8 +1,8 @@
 ﻿#include "../headers/Quaternion.h"
 
-#include <scripts/common/Math/Defines.h>
 #include <cmath>
 #include <algorithm>
+#include "scripts/common/Math/Defines.h"
 #include "../headers/Vector3.h"
 
 namespace ForiverEngine

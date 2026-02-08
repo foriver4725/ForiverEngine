@@ -1,8 +1,8 @@
 ﻿#include "../headers/Vector2.h"
 
-#include <scripts/common/Math/Defines.h>
 #include <cmath>
 #include <algorithm>
+#include "scripts/common/Math/Defines.h"
 #include "../headers/Lattice2.h"
 
 namespace ForiverEngine

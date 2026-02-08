@@ -1,9 +1,6 @@
 ﻿#pragma once
 
-#include <scripts/common/IncludeInternal.h>
-#include <scripts/common/Math/Defines.h>
-
-#include <oss/SimplexNoise.h>
+#include "scripts/common/IncludeInternal.h"
 
 namespace ForiverEngine
 {
@@ -17,10 +14,7 @@ namespace ForiverEngine
 		/// </summary>
 		/// <param name="x">X座標</param>
 		/// <returns><para>[-1, 1]</para>格子点では常に 0</returns>
-		static float Simplex1D(float x)
-		{
-			return SimplexNoise::noise(x);
-		}
+		static float Simplex1D(float x);
 
 		/// <summary>
 		/// シンプレックスノイズ 2D
@@ -28,10 +22,7 @@ namespace ForiverEngine
 		/// <param name="x">X座標</param>
 		/// <param name="y">Y座標</param>
 		/// <returns><para>[-1, 1]</para>格子点では常に 0</returns>
-		static float Simplex2D(float x, float y)
-		{
-			return SimplexNoise::noise(x, y);
-		}
+		static float Simplex2D(float x, float y);
 
 		/// <summary>
 		/// シンプレックスノイズ 3D
@@ -40,9 +31,6 @@ namespace ForiverEngine
 		/// <param name="y">Y座標</param>
 		/// <param name="z">Z座標</param>
 		/// <returns><para>[-1, 1]</para>格子点では常に 0</returns>
-		static float Simplex3D(float x, float y, float z)
-		{
-			return SimplexNoise::noise(x, y, z);
-		}
+		static float Simplex3D(float x, float y, float z);
 	};
 }

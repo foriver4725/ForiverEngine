@@ -49,6 +49,12 @@
     <ClCompile Include="scripts\helper\Loader\sources\TextureLoader.cpp">
       <Filter>scripts\helper\Loader\sources</Filter>
     </ClCompile>
+    <ClCompile Include="scripts\common\Math\sources\Color.cpp">
+      <Filter>scripts\common\Math\sources</Filter>
+    </ClCompile>
+    <ClCompile Include="scripts\common\Math\sources\Noise.cpp">
+      <Filter>scripts\common\Math\sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="shaders">
@@ -135,6 +141,12 @@
     <Filter Include="scripts\gameFlow\Renderer\UI\Text">
       <UniqueIdentifier>{4bc878dd-6325-48c5-a614-72e4a6e39ff2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="scripts\common\Math\headers">
+      <UniqueIdentifier>{2ab50dce-1401-4dbe-9407-b3fe836222f2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scripts\common\Math\sources">
+      <UniqueIdentifier>{6d022862-209a-4d87-a9e8-fc422115da67}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="oss\SimplexNoise.h">
@@ -149,13 +161,7 @@
     <ClInclude Include="scripts\common\Math\LinearAlgebra\Include.h">
       <Filter>scripts\common\Math\LinearAlgebra</Filter>
     </ClInclude>
-    <ClInclude Include="scripts\common\Math\Color.h">
-      <Filter>scripts\common\Math</Filter>
-    </ClInclude>
     <ClInclude Include="scripts\common\Math\Defines.h">
-      <Filter>scripts\common\Math</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\common\Math\Noise.h">
       <Filter>scripts\common\Math</Filter>
     </ClInclude>
     <ClInclude Include="scripts\common\Utils\StringUtils.h">
@@ -364,6 +370,12 @@
     </ClInclude>
     <ClInclude Include="scripts\gameFlow\Renderer\Context\RenderTargetContext.h">
       <Filter>scripts\gameFlow\Renderer\Context</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\common\Math\headers\Color.h">
+      <Filter>scripts\common\Math\headers</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\common\Math\headers\Noise.h">
+      <Filter>scripts\common\Math\headers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

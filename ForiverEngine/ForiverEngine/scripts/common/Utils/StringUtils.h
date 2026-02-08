@@ -1,10 +1,10 @@
 ﻿#pragma once
 
-#include <scripts/common/IncludeInternal.h>
-
 #include <string>
 #define NOMINMAX
 #include <Windows.h>
+
+#include "scripts/common/IncludeInternal.h"
 
 namespace ForiverEngine
 {

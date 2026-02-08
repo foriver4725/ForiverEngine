@@ -1,8 +1,8 @@
 ﻿#pragma once
 
-#include <scripts/common/IncludeInternal.h>
-
 #include <memory>
+
+#include "scripts/common/IncludeInternal.h"
 
 namespace ForiverEngine
 {

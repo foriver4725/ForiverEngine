@@ -1,8 +1,5 @@
 ﻿#include "../headers/Lattice3.h"
 
-#include <scripts/common/Math/Defines.h>
-#include <cmath>
-#include <algorithm>
 #include "../headers/Lattice2.h"
 #include "../headers/Vector3.h"
 

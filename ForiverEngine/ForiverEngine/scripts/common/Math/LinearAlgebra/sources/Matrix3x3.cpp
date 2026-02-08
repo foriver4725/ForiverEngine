@@ -1,8 +1,7 @@
 ﻿#include "../headers/Matrix3x3.h"
 
-#include <scripts/common/Math/Defines.h>
 #include <cmath>
-#include <algorithm>
+#include "scripts/common/Math/Defines.h"
 #include "../headers/Vector3.h"
 #include "../headers/Matrix2x2.h"
 #include "../headers/Quaternion.h"

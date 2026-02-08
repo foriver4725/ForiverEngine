@@ -1,8 +1,8 @@
 ﻿#include "../headers/Vector3.h"
 
-#include <scripts/common/Math/Defines.h>
 #include <cmath>
 #include <algorithm>
+#include "scripts/common/Math/Defines.h"
 #include "../headers/Lattice3.h"
 #include "../headers/Vector2.h"
 

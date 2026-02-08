@@ -1,10 +1,9 @@
 ﻿#pragma once
 
-#include <scripts/common/IncludeInternal.h>
-#include <scripts/common/Math/Defines.h>
-
 #include <vector>
 #include <concepts>
+
+#include "scripts/common/IncludeInternal.h"
 
 namespace ForiverEngine
 {
