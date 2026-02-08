@@ -38,7 +38,7 @@ namespace ForiverEngine
 		void UpdateDataAsFold(const RenderContext& renderContext, TextRenderer& textRenderer)
 		{
 			rowDatas.clear();
-			rowDatas.emplace_back("Place F1 to unfold debug info.", TextColor);
+			rowDatas.emplace_back("Press F1 to unfold debug info.", TextColor);
 
 			ApplyDataToRenderer(rowDatas, textRenderer);
 			textRenderer.UpdateDataAtGPU(renderContext);
