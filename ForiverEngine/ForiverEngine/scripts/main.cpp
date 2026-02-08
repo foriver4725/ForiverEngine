@@ -46,8 +46,7 @@ int Main(hInstance)
 	constexpr std::uint32_t RandomSeed = 0x12345678;
 	Random::SetSeed(RandomSeed);
 
-	const auto [factory, device, commandAllocator, commandList, commandQueue]
-		= D3D12Utils::CreateStandardObjects();
+	const auto [factory, device, commandAllocator, commandList, commandQueue] = D3D12Utils::CreateStandardObjects();
 	const RenderContext renderContext = { device, commandList, commandQueue, commandAllocator };
 
 	const SwapChain swapChain = D3D12Helper::CreateSwapChain(factory, commandQueue, hwnd, WindowSize);
@@ -261,7 +260,7 @@ int Main(hInstance)
 		// TODO: 作成コストが高い! ただギリ許容範囲?
 		const RenderTargetContext postProcessRenderTargetContext =
 		{ postProcessRenderer->GetRT(), postProcessRenderer->GetRTV(), viewportScissorRect };
-		const auto& terrainRenderMeshContext = chunksManager.PackToRenderMeshContext();
+		const RenderMeshContext& terrainRenderMeshContext = chunksManager.PackToRenderMeshContext();
 
 		// メインレンダリング
 		terrainRenderer.Draw(renderContext, postProcessRenderTargetContext, terrainRenderMeshContext);
