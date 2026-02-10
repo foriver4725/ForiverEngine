@@ -43,8 +43,7 @@ int Main(hInstance)
 	WindowHelper::SetTargetFps(60);
 	WindowHelper::SetCursorEnabled(false);
 
-	constexpr std::uint32_t RandomSeed = 0x12345678;
-	Random::SetSeed(RandomSeed);
+	Random::SetSeed(0x12345678);
 
 	const auto [factory, device, commandAllocator, commandList, commandQueue] = D3D12Utils::CreateStandardObjects();
 	const RenderContext renderContext = { device, commandList, commandQueue, commandAllocator };
@@ -54,7 +53,7 @@ int Main(hInstance)
 		ShowError(L"SwapChain の作成に失敗しました");
 	const auto [rtGetter, rtvGetter] = D3D12Utils::InitRTV(device, swapChain, Format::RGBA_U8_01);
 
-	const ViewportScissorRect viewportScissorRect = ViewportScissorRect::CreateFullSized(WindowSize);
+	constexpr ViewportScissorRect viewportScissorRect = ViewportScissorRect::CreateFullSized(WindowSize);
 
 
 
