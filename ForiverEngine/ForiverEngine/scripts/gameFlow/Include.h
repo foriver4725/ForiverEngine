@@ -1,8 +1,9 @@
 ﻿#pragma once
 
+#include "./Renderer/Include.h"
+
 #include "./TrackedValue.h"
 #include "./Timer.h"
-#include "./Renderer/Include.h"
 #include "./Chunk.h"
 #include "./ChunksManager.h"
 #include "./PlayerControl.h"

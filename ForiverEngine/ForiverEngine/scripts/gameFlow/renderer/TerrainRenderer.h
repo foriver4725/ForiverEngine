@@ -1,9 +1,6 @@
 ﻿#pragma once
 
-#include <scripts/common/Include.h>
-#include <scripts/helper/Include.h>
-#include <scripts/component/Include.h>
-#include "scripts/gameFlow/Renderer/Context/Include.h"
+#include "scripts/gameFlow/IncludeInternal.h"
 
 namespace ForiverEngine
 {

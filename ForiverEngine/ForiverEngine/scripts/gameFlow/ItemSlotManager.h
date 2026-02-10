@@ -1,10 +1,7 @@
 ﻿#pragma once
 
-#include <scripts/common/Include.h>
-#include <scripts/helper/Include.h>
-#include <scripts/component/Include.h>
+#include "scripts/gameFlow/IncludeInternal.h"
 #include "./Chunk.h"
-#include "./Renderer/Include.h"
 
 namespace ForiverEngine
 {

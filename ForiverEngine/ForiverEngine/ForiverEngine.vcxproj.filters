@@ -114,9 +114,6 @@
     <Filter Include="scripts\test">
       <UniqueIdentifier>{b394b368-17b2-4a50-8031-7b9a5fb6adea}</UniqueIdentifier>
     </Filter>
-    <Filter Include="scripts\gameFlow\Renderer">
-      <UniqueIdentifier>{d0d1dd32-74c3-43be-803d-7a8766324c8b}</UniqueIdentifier>
-    </Filter>
     <Filter Include="scripts\helper\Loader">
       <UniqueIdentifier>{c10483ba-b831-46e8-b869-37ca0a81ee25}</UniqueIdentifier>
     </Filter>
@@ -126,26 +123,26 @@
     <Filter Include="scripts\helper\Loader\sources">
       <UniqueIdentifier>{77da7475-1c7f-492c-a2d7-605a22490f7a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="scripts\gameFlow\Renderer\UI">
-      <UniqueIdentifier>{906c41d7-9d9c-4a00-a7cb-63a6d767a57a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="scripts\gameFlow\Renderer\Context">
-      <UniqueIdentifier>{8e3cd8ca-eab5-4a74-b072-5aafc509ce59}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="scripts\gameFlow\Renderer\Offscreen">
-      <UniqueIdentifier>{6ba025de-338a-4295-88e3-377ef0fe1dab}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="scripts\gameFlow\Renderer\UI\Image">
-      <UniqueIdentifier>{3490e423-88ef-42c9-9afe-1eb3195b98e4}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="scripts\gameFlow\Renderer\UI\Text">
-      <UniqueIdentifier>{4bc878dd-6325-48c5-a614-72e4a6e39ff2}</UniqueIdentifier>
-    </Filter>
     <Filter Include="scripts\common\Math\headers">
       <UniqueIdentifier>{2ab50dce-1401-4dbe-9407-b3fe836222f2}</UniqueIdentifier>
     </Filter>
     <Filter Include="scripts\common\Math\sources">
       <UniqueIdentifier>{6d022862-209a-4d87-a9e8-fc422115da67}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scripts\renderer">
+      <UniqueIdentifier>{86df7df9-f706-49e7-876e-79e277eefebe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scripts\renderer\Context">
+      <UniqueIdentifier>{c9a3ce91-4fdd-4b44-a2ea-fa9cb2e7eff0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scripts\renderer\Abstract">
+      <UniqueIdentifier>{e24498ae-081a-4fba-afaa-e8d9151cba32}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scripts\gameFlow\Renderer">
+      <UniqueIdentifier>{37804dfa-f9e9-4a0e-b438-c8dae72bd6f5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scripts\gameFlow\Renderer\UI">
+      <UniqueIdentifier>{3e77ee5d-71c8-4813-9583-93a45b796ed0}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -293,9 +290,6 @@
     <ClInclude Include="scripts\gameFlow\DebugText.h">
       <Filter>scripts\gameFlow</Filter>
     </ClInclude>
-    <ClInclude Include="scripts\gameFlow\Renderer\Include.h">
-      <Filter>scripts\gameFlow\Renderer</Filter>
-    </ClInclude>
     <ClInclude Include="scripts\component\D3D12Utils.h">
       <Filter>scripts\component</Filter>
     </ClInclude>
@@ -323,59 +317,65 @@
     <ClInclude Include="scripts\gameFlow\ItemSlotManager.h">
       <Filter>scripts\gameFlow</Filter>
     </ClInclude>
-    <ClInclude Include="scripts\gameFlow\Renderer\TerrainRenderer.h">
-      <Filter>scripts\gameFlow\Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\gameFlow\Renderer\Context\Include.h">
-      <Filter>scripts\gameFlow\Renderer\Context</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\gameFlow\Renderer\Offscreen\AOffscreenRenderer.h">
-      <Filter>scripts\gameFlow\Renderer\Offscreen</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\gameFlow\Renderer\Offscreen\Include.h">
-      <Filter>scripts\gameFlow\Renderer\Offscreen</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\gameFlow\Renderer\Offscreen\PostProcessRenderer.h">
-      <Filter>scripts\gameFlow\Renderer\Offscreen</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\gameFlow\Renderer\UI\Text\Include.h">
-      <Filter>scripts\gameFlow\Renderer\UI\Text</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\gameFlow\Renderer\UI\Text\TextRenderer.h">
-      <Filter>scripts\gameFlow\Renderer\UI\Text</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\gameFlow\Renderer\UI\Image\AImageRenderer.h">
-      <Filter>scripts\gameFlow\Renderer\UI\Image</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\gameFlow\Renderer\UI\Image\Include.h">
-      <Filter>scripts\gameFlow\Renderer\UI\Image</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\gameFlow\Renderer\UI\Image\ItemImageRenderer.h">
-      <Filter>scripts\gameFlow\Renderer\UI\Image</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\gameFlow\Renderer\UI\Image\ItemSlotImageRenderer.h">
-      <Filter>scripts\gameFlow\Renderer\UI\Image</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\gameFlow\Renderer\UI\Image\PointerImageRenderer.h">
-      <Filter>scripts\gameFlow\Renderer\UI\Image</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\gameFlow\Renderer\UI\Include.h">
-      <Filter>scripts\gameFlow\Renderer\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\gameFlow\Renderer\Context\RenderContext.h">
-      <Filter>scripts\gameFlow\Renderer\Context</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\gameFlow\Renderer\Context\RenderMeshContext.h">
-      <Filter>scripts\gameFlow\Renderer\Context</Filter>
-    </ClInclude>
-    <ClInclude Include="scripts\gameFlow\Renderer\Context\RenderTargetContext.h">
-      <Filter>scripts\gameFlow\Renderer\Context</Filter>
-    </ClInclude>
     <ClInclude Include="scripts\common\Math\headers\Color.h">
       <Filter>scripts\common\Math\headers</Filter>
     </ClInclude>
     <ClInclude Include="scripts\common\Math\headers\Noise.h">
       <Filter>scripts\common\Math\headers</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\renderer\Include.h">
+      <Filter>scripts\renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\renderer\Context\Include.h">
+      <Filter>scripts\renderer\Context</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\renderer\Context\RenderContext.h">
+      <Filter>scripts\renderer\Context</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\renderer\Context\RenderMeshContext.h">
+      <Filter>scripts\renderer\Context</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\renderer\Context\RenderTargetContext.h">
+      <Filter>scripts\renderer\Context</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\renderer\Abstract\AImageRenderer.h">
+      <Filter>scripts\renderer\Abstract</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\renderer\Abstract\AOffscreenRenderer.h">
+      <Filter>scripts\renderer\Abstract</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\renderer\Abstract\Include.h">
+      <Filter>scripts\renderer\Abstract</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\gameFlow\Renderer\Include.h">
+      <Filter>scripts\gameFlow\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\gameFlow\Renderer\PostProcessRenderer.h">
+      <Filter>scripts\gameFlow\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\gameFlow\Renderer\TerrainRenderer.h">
+      <Filter>scripts\gameFlow\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\gameFlow\Renderer\UI\ItemImageRenderer.h">
+      <Filter>scripts\gameFlow\Renderer\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\gameFlow\Renderer\UI\ItemSlotImageRenderer.h">
+      <Filter>scripts\gameFlow\Renderer\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\gameFlow\Renderer\UI\PointerImageRenderer.h">
+      <Filter>scripts\gameFlow\Renderer\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\gameFlow\Renderer\UI\TextRenderer.h">
+      <Filter>scripts\gameFlow\Renderer\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\renderer\IncludeInternal.h">
+      <Filter>scripts\renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\gameFlow\IncludeInternal.h">
+      <Filter>scripts\gameFlow</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\gameFlow\Renderer\UI\Include.h">
+      <Filter>scripts\gameFlow\Renderer\UI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
