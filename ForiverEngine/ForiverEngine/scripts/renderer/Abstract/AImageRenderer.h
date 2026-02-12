@@ -2,84 +2,88 @@
 
 #include "scripts/renderer/IncludeInternal.h"
 #include "scripts/renderer/Context/Include.h"
-#include "./AOffscreenRenderer.h"
 
 namespace ForiverEngine
 {
 	/// <summary>
-	/// <para>1枚の画像について、位置やスケールを指定して描画するレンダラー</para>
-	/// <para>b0, t1 を使用するので、派生クラスでさらにアップロードしたい場合は、それぞれ</para>
-	/// <para>b1~, t2~ から使用すること</para>
+	/// <para>画像のレンダラー</para>
+	/// <para>Quadメッシュを作成し、画像テクスチャを貼り付ける</para>
+	/// <para>動的に位置やサイズを変更、などは未対応</para>
 	/// </summary>
-	class AImageRenderer : public AOffscreenRenderer
+	class AImageRenderer
 	{
 	private:
-		using Base = AOffscreenRenderer;
-
 		// b0
 		struct alignas(256) CBData0
 		{
-			std::uint32_t TextureSize[2]; // 画像テクスチャ全体のサイズ
-			std::uint32_t ClipMin[2]; // 画像テクスチャの中で、どこからどこまでを切り取って使うか (min. テクスチャ自体のピクセル座標)
-			std::uint32_t ClipMax[2]; // 画像テクスチャの中で、どこからどこまでを切り取って使うか (max. テクスチャ自体のピクセル座標)
-
-			Lattice2 Position; // 画像の中心座標
-			Vector2 Scale;
+			// メッシュの座標は、スクリーン座標系 (NDC) で与えられることを想定
 
 			std::uint32_t IsDrawEnabled; // 描画するかどうか (0: しない, 1: する)
 		};
 
 	public:
+		virtual ~AImageRenderer() = default;
+
+		/// <summary>
+		/// <para>初期化. 描画に必要なオブジェクトを作成する</para>
+		/// <para>使い方の例としては、基底クラスのコンストラクタの最後でこの Init() を呼び出すとか</para>
+		/// </summary>
 		void Init(
-			const RenderContext& renderContext, const Lattice2& windowSize,
-			const std::string& imageFilePath,
-			const Lattice2& position, // スクリーン上の座標 (ピクセル単位. 画像の中心がこの位置に来る)
-			const Vector2& clipUVMin, const Vector2& clipUVMax, // 画像のどの部分を切り取って使うか (UV座標で指定)
-			const Lattice2& drawSize, // 描画サイズ (ピクセル単位. 画像の切り取った部分を、このサイズで描画する)
-			bool initDrawEnabled // 初期状態で描画するかどうか
+			const RenderContext& renderContext, const Lattice2& windowSize, const std::string& imageFilePath,
+			Lattice2 position, Lattice2 size
 		)
 		{
-			// t1 (画像テクスチャ)
-			const Texture sr1Metadata = D3D12Utils::LoadTexture({ imageFilePath });
-			const GraphicsBuffer sr1 = D3D12Utils::InitSR(
-				renderContext.device, renderContext.commandList, renderContext.commandQueue, renderContext.commandAllocator, sr1Metadata);
+			// RootSignature, PipelineState
+			const RootParameter rootParameter = RootParameter::CreateBasic(1, 1);
+			const SamplerConfig samplerConfig = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
+			const auto [shaderVS, shaderPS] = D3D12Utils::LoadCso(D3D12Utils::GetShaderFilePath("QuadImage"));
+			std::tie(rootSignature, pipelineState) = D3D12Utils::CreateRootSignatureAndGraphicsPipelineState(
+				renderContext.device,
+				rootParameter, samplerConfig, shaderVS, shaderPS, VertexLayoutsQuad, FillMode::Solid, CullMode::Back, true);
 
-			// 画像の元サイズに対するスケールを計算
-			const Vector2 scale =
+			dsv = D3D12Utils::InitDSV(renderContext.device, windowSize);
+
+			// メッシュ
+			MeshQuad mesh = MeshQuad::CreateFullSized();
+			for (auto& vertex : mesh.vertices)
 			{
-				static_cast<float>(drawSize.x) / static_cast<float>((clipUVMax.x - clipUVMin.x) * sr1Metadata.size.x),
-				static_cast<float>(drawSize.y) / static_cast<float>((clipUVMax.y - clipUVMin.y) * sr1Metadata.size.y),
+				// 指定されたサイズに設定
+				// スクリーン全体サイズだと座標は -1 ~ 1 になることに注意
+				vertex.pos.x *= 1.0f * size.x / windowSize.x;
+				vertex.pos.y *= 1.0f * size.y / windowSize.y;
+
+				// 指定された位置に設定
+				// windowSize -> [0.0f,1.0f] -> [-1.0f,1.0f]
+				// Y 軸は上下逆転に注意
+				vertex.pos.x += 2.0f * position.x / windowSize.x - 1.0f;
+				vertex.pos.y += -2.0f * position.y / windowSize.y + 1.0f;
+			}
+			// VBV, IBV
+			auto [vbv, ibv] = mesh.CreateRenderViews(renderContext.device);
+			// 頂点数
+			const int indexCount = static_cast<int>(mesh.indices.size());
+			renderMeshContext = RenderMeshContext
+			{
+				.vbvList = { std::move(vbv) },
+				.ibvList = { std::move(ibv) },
+				.indexCountList = { indexCount },
 			};
 
 			// b0
-			const CBData0 cbData0 =
+			CBData0 cbData0 =
 			{
-				.TextureSize =
-				{
-					static_cast<std::uint32_t>(sr1Metadata.size.x),
-					static_cast<std::uint32_t>(sr1Metadata.size.y)
-				},
-				.ClipMin =
-				{
-					static_cast<std::uint32_t>(clipUVMin.x * sr1Metadata.size.x),
-					static_cast<std::uint32_t>(clipUVMin.y * sr1Metadata.size.y)
-				},
-				.ClipMax =
-				{
-					static_cast<std::uint32_t>(clipUVMax.x * sr1Metadata.size.x) - 1,
-					static_cast<std::uint32_t>(clipUVMax.y * sr1Metadata.size.y) - 1
-				},
-
-				.Position = position,
-				.Scale = scale,
-
-				.IsDrawEnabled = (initDrawEnabled ? 1u : 0u),
+				.IsDrawEnabled = 1u,
 			};
 			const GraphicsBuffer cb0 = D3D12Utils::InitCB(renderContext.device, cbData0, &cb0VirtualPtr);
 
-			Base::Init(
-				renderContext, windowSize,
-				{ cb0 }, { { sr1, sr1Metadata } }, D3D12Utils::GetShaderFilePath("Image"));
+			// s0
+			const Texture sr0Metadata = D3D12Utils::LoadTexture({ imageFilePath });
+			const GraphicsBuffer sr0 = D3D12Utils::InitSR(
+				renderContext.device, renderContext.commandList, renderContext.commandQueue, renderContext.commandAllocator, sr0Metadata
+			);
+
+			// DescriptorHeap
+			descriptorHeapBasic = D3D12Utils::InitDescriptorHeapBasic(renderContext.device, { cb0 }, { { sr0, sr0Metadata } });
 		}
 
 		// Init 後に使うこと!
@@ -93,7 +97,31 @@ namespace ForiverEngine
 			cb0VirtualPtr->IsDrawEnabled = (enabled ? 1u : 0u);
 		}
 
+		/// <summary>
+		/// <para>ドローコール</para>
+		/// </summary>
+		void Draw(
+			const RenderContext& renderContext,
+			const RenderTargetContext& renderTargetContext
+		) const
+		{
+			D3D12Utils::Draw(
+				renderContext.commandList, renderContext.commandQueue, renderContext.commandAllocator, renderContext.device,
+				rootSignature, pipelineState, renderTargetContext.rt,
+				renderTargetContext.rtv, dsv, descriptorHeapBasic, renderMeshContext.vbvList, renderMeshContext.ibvList,
+				GraphicsBufferState::Present, GraphicsBufferState::RenderTarget,
+				renderTargetContext.viewportScissorRect, PrimitiveTopology::TriangleList, Color::Transparent(), DepthBufferClearValue,
+				renderMeshContext.indexCountList
+			);
+		}
+
 	private:
+		RootSignature rootSignature;
+		PipelineState pipelineState;
+		DescriptorHandleAtCPU dsv;
+		DescriptorHeap descriptorHeapBasic;
+		RenderMeshContext renderMeshContext;
+
 		CBData0* cb0VirtualPtr = nullptr;
 	};
 }
