@@ -123,8 +123,9 @@ namespace ForiverEngine
 				renderContext.commandList, renderContext.commandQueue, renderContext.commandAllocator, renderContext.device,
 				rootSignature, pipelineState, renderTargetContext.rt,
 				renderTargetContext.rtv, dsv_Dummy, descriptorHeapBasic, renderMeshContext.vbvList, renderMeshContext.ibvList,
-				GraphicsBufferState::PixelShaderResource, GraphicsBufferState::RenderTarget,
-				renderTargetContext.viewportScissorRect, PrimitiveTopology::TriangleList, Color::Transparent(), DepthBufferClearValue,
+				GraphicsBufferState::Present, GraphicsBufferState::RenderTarget,
+				renderTargetContext.viewportScissorRect, PrimitiveTopology::TriangleList,
+				false, Color(), 0, // RT をクリアしないので、ダミー値を渡す
 				renderMeshContext.indexCountList
 			);
 		}

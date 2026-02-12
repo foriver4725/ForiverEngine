@@ -126,7 +126,8 @@ namespace ForiverEngine
 				rootSignature, pipelineState, renderTargetContext.rt,
 				renderTargetContext.rtv, dsv, descriptorHeapBasic, renderMeshContext.vbvList, renderMeshContext.ibvList,
 				GraphicsBufferState::PixelShaderResource, GraphicsBufferState::RenderTarget,
-				renderTargetContext.viewportScissorRect, PrimitiveTopology::TriangleList, SkyColor, DepthBufferClearValue,
+				renderTargetContext.viewportScissorRect, PrimitiveTopology::TriangleList,
+				true, SkyColor, DepthBufferClearValue,
 				renderMeshContext.indexCountList
 			);
 		}

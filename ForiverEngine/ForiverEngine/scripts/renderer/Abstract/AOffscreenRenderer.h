@@ -104,7 +104,8 @@ namespace ForiverEngine
 				rootSignature, pipelineState, renderTargetContext.rt,
 				renderTargetContext.rtv, dsv_Dummy, descriptorHeapBasic, renderMeshContext.vbvList, renderMeshContext.ibvList,
 				GraphicsBufferState::Present, GraphicsBufferState::RenderTarget,
-				renderTargetContext.viewportScissorRect, PrimitiveTopology::TriangleList, Color::Transparent(), DepthBufferClearValue,
+				renderTargetContext.viewportScissorRect, PrimitiveTopology::TriangleList,
+				true, Color::Transparent(), DepthBufferClearValue,
 				renderMeshContext.indexCountList
 			);
 		}

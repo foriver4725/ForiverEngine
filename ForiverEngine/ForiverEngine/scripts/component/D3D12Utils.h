@@ -314,8 +314,9 @@ namespace ForiverEngine
 		/// <param name="rtStateInsideRender">レンダー内の RT の状態</param>
 		/// <param name="viewportScissorRect">ビューポートとシザー矩形</param>
 		/// <param name="primitiveTopology">プリミティブのトポロジー</param>
-		/// <param name="rtvClearColor">RTV のクリアカラー</param>
-		/// <param name="depthClearValue">DSV のクリア深度値 (ステンシルは使わないので、深度値のみ. [0, 1])</param>
+		/// <param name="doesClearRT">RT をクリアするかどうか</param>
+		/// <param name="rtClearValue">RTV のクリアカラー (クリアしないなら無視される)</param>
+		/// <param name="depthClearValue">DSV のクリア深度値 (ステンシルは使わないので、深度値のみ. [0, 1]. クリアしないなら無視される)</param>
 		/// <param name="indexTotalCountArray">ドローコール時のインデックス総数 (サイズはドローコール数と同じ!)</param>
 		static void Draw
 		(
@@ -332,7 +333,7 @@ namespace ForiverEngine
 			// 数値情報
 			GraphicsBufferState rtStateOutsideRender, GraphicsBufferState rtStateInsideRender,
 			const ViewportScissorRect& viewportScissorRect, PrimitiveTopology primitiveTopology,
-			Color rtvClearColor, float depthClearValue,
+			bool doesClearRT, Color rtClearValue, float depthClearValue,
 			// ドローコール関連
 			const std::vector<int>& indexTotalCountArray
 		)
@@ -348,7 +349,8 @@ namespace ForiverEngine
 			D3D12Helper::CommandInvokeResourceBarrierAsTransition(commandList, rt, rtStateOutsideRender, rtStateInsideRender, false);
 			{
 				D3D12Helper::CommandSetRT(commandList, rtv, dsv);
-				D3D12Helper::CommandClearRT(commandList, rtv, dsv, rtvClearColor, depthClearValue);
+				if (doesClearRT)
+					D3D12Helper::CommandClearRT(commandList, rtv, dsv, rtClearValue, depthClearValue);
 
 				D3D12Helper::CommandSetRootSignature(commandList, rootSignature);
 				D3D12Helper::CommandSetGraphicsPipelineState(commandList, graphicsPipelineState);
