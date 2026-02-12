@@ -13,7 +13,6 @@ namespace ForiverEngine
 		using Base = AImageRenderer;
 
 	public:
-
 		explicit PointerImageRenderer(const RenderContext& renderContext, const Lattice2& windowSize)
 		{
 			Base::Init(
