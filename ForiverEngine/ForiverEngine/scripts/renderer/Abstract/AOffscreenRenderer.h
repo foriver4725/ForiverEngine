@@ -14,8 +14,10 @@ namespace ForiverEngine
 	public:
 		virtual ~AOffscreenRenderer() = default;
 
-		// <para>初期化. 描画に必要なオブジェクトを作成する</para>
-		// <para>使い方の例としては、基底クラスのコンストラクタで CB, SR 群などを作成し、そのコンストラクタの最後でこの Init() を呼び出すとか</para>
+		/// <summary>
+		/// <para>初期化. 描画に必要なオブジェクトを作成する</para>
+		/// <para>使い方の例としては、基底クラスのコンストラクタで CB, SR 群などを作成し、そのコンストラクタの最後でこの Init() を呼び出すとか</para>
+		/// </summary>
 		void Init(
 			const RenderContext& renderContext, const Lattice2& windowSize,
 			const std::vector<GraphicsBuffer>& cbs,                     // 順に b0~ にバインドされる
