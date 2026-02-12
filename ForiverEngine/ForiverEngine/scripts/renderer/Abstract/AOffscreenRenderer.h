@@ -68,13 +68,17 @@ namespace ForiverEngine
 			descriptorHeapBasic = D3D12Utils::InitDescriptorHeapBasic(renderContext.device, cbs, srsWithRT);
 		}
 
-		const GraphicsBuffer& GetRT() const
+		/// <summary>
+		/// RenderTargetContext を作成して返す
+		/// </summary>
+		RenderTargetContext CreateRenderTargetContext(const ViewportScissorRect& viewportScissorRect) const
 		{
-			return rt;
-		}
-		const DescriptorHandleAtCPU& GetRTV() const
-		{
-			return rtv;
+			return RenderTargetContext
+			{
+				.rt = rt,
+				.rtv = rtv,
+				.viewportScissorRect = viewportScissorRect,
+			};
 		}
 
 		/// <summary>

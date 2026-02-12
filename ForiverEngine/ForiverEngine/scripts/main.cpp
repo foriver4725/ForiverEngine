@@ -256,10 +256,8 @@ int Main(hInstance)
 			ShowError(L"現在のバックレンダーターゲットの取得に失敗しました");
 
 		const RenderTargetContext currentBackRenderTargetContext = { currentBackRT, currentBackRTV, viewportScissorRect };
-		const RenderTargetContext postProcessRenderTargetContext =
-		{ postProcessRenderer->GetRT(), postProcessRenderer->GetRTV(), viewportScissorRect };
-		const RenderTargetContext textRenderTargetContext =
-		{ textRenderer->GetRT(), textRenderer->GetRTV(), viewportScissorRect };
+		const RenderTargetContext postProcessRenderTargetContext = postProcessRenderer->CreateRenderTargetContext(viewportScissorRect);
+		const RenderTargetContext textRenderTargetContext = textRenderer->CreateRenderTargetContext(viewportScissorRect);
 
 		const RenderMeshContext& terrainRenderMeshContext = chunksManager.PackToRenderMeshContext();
 
