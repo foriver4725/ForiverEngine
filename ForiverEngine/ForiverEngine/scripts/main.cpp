@@ -79,7 +79,7 @@ int Main(hInstance)
 	std::unique_ptr<AOffscreenRenderer> textRenderer =
 		std::make_unique<TextRenderer>(renderContext, WindowSize);
 
-	const std::unique_ptr<AOffscreenRenderer> pointerImageRenderer =
+	const std::unique_ptr<AImageRenderer> pointerImageRenderer =
 		std::make_unique<PointerImageRenderer>(renderContext, WindowSize);
 
 	ItemSlotManager itemSlotManager = ItemSlotManager(renderContext, WindowSize);
@@ -265,19 +265,11 @@ int Main(hInstance)
 		// メインレンダリング
 		terrainRenderer.Draw(renderContext, postProcessRenderTargetContext, terrainRenderMeshContext);
 		// オフスクリーンレンダリング
-		{
-			std::vector<const AOffscreenRenderer*> renderers = {};
-
-			renderers.push_back(postProcessRenderer.get());  // ポストプロセス
-			renderers.push_back(textRenderer.get());         // テキスト描画
-			renderers.push_back(pointerImageRenderer.get()); // ポインター画像描画
-
-			// アイテムスロット画像描画
-			const auto itemSlotRenderers = itemSlotManager.PackRenderers();
-			renderers.insert(renderers.end(), itemSlotRenderers.begin(), itemSlotRenderers.end());
-
-			AOffscreenRenderer::DrawInOrder(renderContext, currentBackRenderTargetContext, renderers);
-		}
+		postProcessRenderer->Draw(renderContext, currentBackRenderTargetContext);  // ポストプロセス
+		textRenderer->Draw(renderContext, currentBackRenderTargetContext);         // テキスト描画
+		// 画像レンダリング
+		pointerImageRenderer->Draw(renderContext, currentBackRenderTargetContext); // ポインター画像描画
+		itemSlotManager.Draw(renderContext, currentBackRenderTargetContext);       // アイテムスロット画像描画
 
 		if (!D3D12Helper::Present(swapChain))
 			ShowError(L"画面のフリップに失敗しました");

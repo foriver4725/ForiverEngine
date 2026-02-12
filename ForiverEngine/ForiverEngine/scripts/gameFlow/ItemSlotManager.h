@@ -95,21 +95,13 @@ namespace ForiverEngine
 			ChangeSlotImage(renderContext, selectingIndex, SlotImageType::Selected);
 		}
 
-		/// <summary>
-		/// <para>描画に必要なレンダラー群を、1つの配列にまとめて返す</para>
-		/// <para>返された配列の順番で描画すれば良い</para>
-		/// </summary>
-		std::vector<const AOffscreenRenderer*> PackRenderers() const
+		void Draw(const RenderContext& renderContext, const RenderTargetContext& renderTargetContext) const
 		{
-			std::vector<const AOffscreenRenderer*> renderers;
-			renderers.reserve(SlotCount * 2);
-
-			for (const auto& slot : slotImageRenderers)
-				renderers.push_back(slot.get());
-			for (const auto& item : itemImageRenderers)
-				renderers.push_back(item.get());
-
-			return renderers;
+			for (int i = 0; i < SlotCount; ++i)
+			{
+				slotImageRenderers[i]->Draw(renderContext, renderTargetContext);
+				itemImageRenderers[i]->Draw(renderContext, renderTargetContext);
+			}
 		}
 
 		int GetSelectingIndex() const
@@ -119,8 +111,8 @@ namespace ForiverEngine
 
 	private:
 		// 描画に必要な Renderer 群
-		const std::vector<std::unique_ptr<AOffscreenRenderer>> slotImageRenderers;
-		const std::vector<std::unique_ptr<AOffscreenRenderer>> itemImageRenderers;
+		const std::vector<std::unique_ptr<AImageRenderer>> slotImageRenderers;
+		const std::vector<std::unique_ptr<AImageRenderer>> itemImageRenderers;
 
 		int selectingIndex = 0; // 現在選択中のスロットのインデックス [0, SlotCount)
 
@@ -137,10 +129,10 @@ namespace ForiverEngine
 		}
 
 		// slotPositions を参照してしまっているが、const だから大丈夫だと思う
-		static std::vector<std::unique_ptr<AOffscreenRenderer>>
+		static std::vector<std::unique_ptr<AImageRenderer>>
 			CreateSlotImageRenderers(const RenderContext& renderContext, const Lattice2& windowSize)
 		{
-			std::vector<std::unique_ptr<AOffscreenRenderer>> renderers;
+			std::vector<std::unique_ptr<AImageRenderer>> renderers;
 			renderers.reserve(SlotCount);
 
 			for (int i = 0; i < SlotCount; ++i)
@@ -156,10 +148,10 @@ namespace ForiverEngine
 		}
 
 		// slotPositions を参照してしまっているが、const だから大丈夫だと思う
-		static std::vector<std::unique_ptr<AOffscreenRenderer>>
+		static std::vector<std::unique_ptr<AImageRenderer>>
 			CreateItemImageRenderers(const RenderContext& renderContext, const Lattice2& windowSize)
 		{
-			std::vector<std::unique_ptr<AOffscreenRenderer>> renderers;
+			std::vector<std::unique_ptr<AImageRenderer>> renderers;
 			renderers.reserve(SlotCount);
 
 			for (int i = 0; i < SlotCount; ++i)
