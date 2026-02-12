@@ -28,11 +28,12 @@ namespace ForiverEngine
 		/// <para>初期化. 描画に必要なオブジェクトを作成する</para>
 		/// <para>使い方の例としては、基底クラスのコンストラクタの最後でこの Init() を呼び出すとか</para>
 		/// <para>位置・サイズは、スクリーンのピクセル単位で指定する</para>
+		/// <para>zOrder は仮想的な値で、メッシュのz座標が [0,65535] -> [0.0f,1.0f] にマッピングされる (小さいほど手前に、大きいほど奥に描画される)</para>
 		/// </summary>
 		void Init(
 			const RenderContext& renderContext, const Lattice2& windowSize,
 			const std::string& imageFilePath,
-			const Lattice2& position, const Lattice2& size, bool initDrawEnabled = true
+			const Lattice2& position, const Lattice2& size, std::uint16_t zOrder = 0, bool initDrawEnabled = true
 		)
 		{
 			// RootSignature, PipelineState
@@ -59,6 +60,9 @@ namespace ForiverEngine
 				// Y 軸は上下逆転に注意
 				vertex.pos.x += 2.0f * position.x / windowSize.x - 1.0f;
 				vertex.pos.y += -2.0f * position.y / windowSize.y + 1.0f;
+
+				// zOrder に基づいて Z 座標を設定
+				vertex.pos.z = 1.0f * zOrder / std::numeric_limits<std::uint16_t>::max();
 			}
 			// VBV, IBV
 			auto [vbv, ibv] = mesh.CreateRenderViews(renderContext.device);

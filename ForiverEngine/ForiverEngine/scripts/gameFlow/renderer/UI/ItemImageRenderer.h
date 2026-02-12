@@ -14,6 +14,8 @@ namespace ForiverEngine
 		using Base = AImageRenderer;
 
 	public:
+		static constexpr std::uint16_t ZOrder = 0;
+
 		inline static const std::unordered_map<Block, std::string> BlockToFilePath =
 		{
 			{ Block::Air,     "assets/textures/ui/block/air.png"     },
@@ -41,7 +43,7 @@ namespace ForiverEngine
 			Base::Init(
 				renderContext, windowSize,
 				BlockToFilePath.at(initType),
-				position, size, IsDrawableBlock(initType)
+				position, size, ZOrder, IsDrawableBlock(initType)
 			);
 		}
 

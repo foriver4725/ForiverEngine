@@ -13,6 +13,8 @@ namespace ForiverEngine
 		using Base = AImageRenderer;
 
 	public:
+		static constexpr std::uint16_t ZOrder = 1;
+
 		enum class ImageType : std::uint8_t
 		{
 			Normal,
@@ -38,7 +40,7 @@ namespace ForiverEngine
 			Base::Init(
 				renderContext, windowSize,
 				ImageTypeToFilePath.at(initType),
-				position, size
+				position, size, ZOrder
 			);
 		}
 
