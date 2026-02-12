@@ -255,12 +255,9 @@ int Main(hInstance)
 		if (!currentBackRT)
 			ShowError(L"現在のバックレンダーターゲットの取得に失敗しました");
 
-		// TODO: 作成コストが高い! ただギリ許容範囲?
 		const RenderTargetContext currentBackRenderTargetContext = { currentBackRT, currentBackRTV, viewportScissorRect };
-		// TODO: 作成コストが高い! ただギリ許容範囲?
 		const RenderTargetContext postProcessRenderTargetContext =
 		{ postProcessRenderer->GetRT(), postProcessRenderer->GetRTV(), viewportScissorRect };
-		// TODO: 作成コストが高い! ただギリ許容範囲?
 		const RenderTargetContext textRenderTargetContext =
 		{ textRenderer->GetRT(), textRenderer->GetRTV(), viewportScissorRect };
 
