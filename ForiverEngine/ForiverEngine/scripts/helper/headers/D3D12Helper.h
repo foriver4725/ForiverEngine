@@ -33,7 +33,7 @@ namespace ForiverEngine
 		/// </summary>
 		static PipelineState CreateGraphicsPipelineState(
 			const Device& device, const RootSignature& rootSignature, const Blob& vs, const Blob& ps,
-			const std::vector<VertexLayout>& vertexLayouts, FillMode fillMode, CullMode cullMode, bool useDSV);
+			const std::vector<VertexLayout>& vertexLayouts, FillMode fillMode, CullMode cullMode, bool useAlphaBlend, bool useDSV);
 
 		/// <summary>
 		/// CommandAllocator を作成して返す (失敗したら nullptr)

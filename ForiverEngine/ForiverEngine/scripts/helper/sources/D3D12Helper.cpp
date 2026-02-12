@@ -157,7 +157,7 @@ namespace ForiverEngine
 
 	PipelineState D3D12Helper::CreateGraphicsPipelineState(
 		const Device& device, const RootSignature& rootSignature, const Blob& vs, const Blob& ps,
-		const std::vector<VertexLayout>& vertexLayouts, FillMode fillMode, CullMode cullMode, bool useDSV)
+		const std::vector<VertexLayout>& vertexLayouts, FillMode fillMode, CullMode cullMode, bool useAlphaBlend, bool useDSV)
 	{
 		std::vector<D3D12_INPUT_ELEMENT_DESC> vertexLayoutsReal = std::vector<D3D12_INPUT_ELEMENT_DESC>(vertexLayouts.size(), {});
 		for (int i = 0; i < static_cast<int>(vertexLayouts.size()); ++i)
@@ -174,14 +174,31 @@ namespace ForiverEngine
 			.StreamOutput = {}, // ストリーミング出力バッファー設定 (不要)
 			.BlendState =
 			{
-				.AlphaToCoverageEnable = false, // aテスト無効
+				.AlphaToCoverageEnable = useAlphaBlend,
 				.IndependentBlendEnable = false, // MRT ではないので... (RenderTarget[0] の設定が全てに適用される)
 				.RenderTarget =
 				{ // このコメントを消すと、コードの自動成形が変になる...
 					// [0]
+					useAlphaBlend ?
+					D3D12_RENDER_TARGET_BLEND_DESC
 					{
-						.BlendEnable = false, // 今回はブレンドしない
-						.LogicOpEnable = false, // 今回はブレンドしない
+						.BlendEnable = true,
+						.LogicOpEnable = false,
+						// RGB : a * src + (1-a) * dest
+						.SrcBlend = D3D12_BLEND_SRC_ALPHA,
+						.DestBlend = D3D12_BLEND_INV_SRC_ALPHA,
+						.BlendOp = D3D12_BLEND_OP_ADD,
+						// Alpha : 1 * src + 0 * dest
+						.SrcBlendAlpha = D3D12_BLEND_ONE,
+						.DestBlendAlpha = D3D12_BLEND_ZERO,
+						.BlendOpAlpha = D3D12_BLEND_OP_ADD,
+						.LogicOp = D3D12_LOGIC_OP_NOOP, // ダミー値
+						.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL, // RGBA 全てブレンドする
+					} :
+					D3D12_RENDER_TARGET_BLEND_DESC
+					{
+						.BlendEnable = false,
+						.LogicOpEnable = false,
 						.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL, // RGBA 全てブレンドする
 					},
 
