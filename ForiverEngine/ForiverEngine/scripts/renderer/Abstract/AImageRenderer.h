@@ -27,10 +27,11 @@ namespace ForiverEngine
 		/// <summary>
 		/// <para>初期化. 描画に必要なオブジェクトを作成する</para>
 		/// <para>使い方の例としては、基底クラスのコンストラクタの最後でこの Init() を呼び出すとか</para>
+		/// <para>位置・サイズは、スクリーンのピクセル単位で指定する</para>
 		/// </summary>
 		void Init(
 			const RenderContext& renderContext, const Lattice2& windowSize, const std::string& imageFilePath,
-			Lattice2 position, Lattice2 size
+			const Lattice2& position, const Lattice2& size
 		)
 		{
 			// RootSignature, PipelineState
