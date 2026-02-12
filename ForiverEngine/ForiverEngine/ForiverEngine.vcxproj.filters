@@ -400,12 +400,6 @@
     <FxCompile Include="shaders\common\TextSampling.hlsl">
       <Filter>shaders\common</Filter>
     </FxCompile>
-    <FxCompile Include="shaders\common\ImageSampling.hlsl">
-      <Filter>shaders\common</Filter>
-    </FxCompile>
-    <FxCompile Include="shaders\Image.hlsl">
-      <Filter>shaders</Filter>
-    </FxCompile>
     <FxCompile Include="shaders\QuadImage.hlsl">
       <Filter>shaders</Filter>
     </FxCompile>
