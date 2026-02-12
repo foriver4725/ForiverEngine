@@ -268,12 +268,12 @@ int Main(hInstance)
 
 		// メインレンダリング
 		terrainRenderer.Draw(renderContext, postProcessRenderTargetContext, terrainRenderMeshContext);
+		// 画像レンダリング
+		pointerImageRenderer->Draw(renderContext, postProcessRenderTargetContext); // ポインター画像描画
+		itemSlotManager.Draw(renderContext, postProcessRenderTargetContext);       // アイテムスロット画像描画
 		// オフスクリーンレンダリング
 		postProcessRenderer->Draw(renderContext, textRenderTargetContext);         // ポストプロセス
 		textRenderer->Draw(renderContext, currentBackRenderTargetContext);         // テキスト描画
-		// 画像レンダリング
-		pointerImageRenderer->Draw(renderContext, currentBackRenderTargetContext); // ポインター画像描画
-		itemSlotManager.Draw(renderContext, currentBackRenderTargetContext);       // アイテムスロット画像描画
 
 		if (!D3D12Helper::Present(swapChain))
 			ShowError(L"画面のフリップに失敗しました");

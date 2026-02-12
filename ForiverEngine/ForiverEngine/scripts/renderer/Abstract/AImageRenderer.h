@@ -41,9 +41,9 @@ namespace ForiverEngine
 			const auto [shaderVS, shaderPS] = D3D12Utils::LoadCso(D3D12Utils::GetShaderFilePath("QuadImage"));
 			std::tie(rootSignature, pipelineState) = D3D12Utils::CreateRootSignatureAndGraphicsPipelineState(
 				renderContext.device,
-				rootParameter, samplerConfig, shaderVS, shaderPS, VertexLayoutsQuad, FillMode::Solid, CullMode::Back, true);
+				rootParameter, samplerConfig, shaderVS, shaderPS, VertexLayoutsQuad, FillMode::Solid, CullMode::Back, false);
 
-			dsv = D3D12Utils::InitDSV(renderContext.device, windowSize);
+			dsv_Dummy = DescriptorHandleAtCPU{ .ptr = NULL };
 
 			// メッシュ
 			MeshQuad mesh = MeshQuad::CreateFullSized();
@@ -122,8 +122,8 @@ namespace ForiverEngine
 			D3D12Utils::Draw(
 				renderContext.commandList, renderContext.commandQueue, renderContext.commandAllocator, renderContext.device,
 				rootSignature, pipelineState, renderTargetContext.rt,
-				renderTargetContext.rtv, dsv, descriptorHeapBasic, renderMeshContext.vbvList, renderMeshContext.ibvList,
-				GraphicsBufferState::Present, GraphicsBufferState::RenderTarget,
+				renderTargetContext.rtv, dsv_Dummy, descriptorHeapBasic, renderMeshContext.vbvList, renderMeshContext.ibvList,
+				GraphicsBufferState::PixelShaderResource, GraphicsBufferState::RenderTarget,
 				renderTargetContext.viewportScissorRect, PrimitiveTopology::TriangleList, Color::Transparent(), DepthBufferClearValue,
 				renderMeshContext.indexCountList
 			);
@@ -132,7 +132,7 @@ namespace ForiverEngine
 	private:
 		RootSignature rootSignature;
 		PipelineState pipelineState;
-		DescriptorHandleAtCPU dsv;
+		DescriptorHandleAtCPU dsv_Dummy;
 		DescriptorHeap descriptorHeapBasic;
 		RenderMeshContext renderMeshContext;
 
