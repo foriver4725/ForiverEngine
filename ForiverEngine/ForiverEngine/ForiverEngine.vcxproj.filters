@@ -377,6 +377,9 @@
     <ClInclude Include="scripts\gameFlow\Renderer\UI\Include.h">
       <Filter>scripts\gameFlow\Renderer\UI</Filter>
     </ClInclude>
+    <ClInclude Include="scripts\gameFlow\SwapChainManager.h">
+      <Filter>scripts\gameFlow</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shaders\Basic.hlsl">

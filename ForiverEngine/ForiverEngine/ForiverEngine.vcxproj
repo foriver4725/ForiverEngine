@@ -238,6 +238,7 @@
     <ClInclude Include="scripts\gameFlow\Renderer\UI\ItemSlotImageRenderer.h" />
     <ClInclude Include="scripts\gameFlow\Renderer\UI\PointerImageRenderer.h" />
     <ClInclude Include="scripts\gameFlow\Renderer\UI\TextRenderer.h" />
+    <ClInclude Include="scripts\gameFlow\SwapChainManager.h" />
     <ClInclude Include="scripts\gameFlow\Timer.h" />
     <ClInclude Include="scripts\gameFlow\TrackedValue.h" />
     <ClInclude Include="scripts\helper\headers\D3D12Defines.h" />

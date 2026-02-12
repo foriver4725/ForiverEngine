@@ -4,6 +4,7 @@
 
 #include "./TrackedValue.h"
 #include "./Timer.h"
+#include "./SwapChainManager.h"
 #include "./Chunk.h"
 #include "./ChunksManager.h"
 #include "./PlayerControl.h"

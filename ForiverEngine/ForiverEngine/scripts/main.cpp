@@ -49,11 +49,7 @@ int Main(hInstance)
 	const auto [factory, device, commandAllocator, commandList, commandQueue] = D3D12Utils::CreateStandardObjects();
 	const RenderContext renderContext = { device, commandList, commandQueue, commandAllocator };
 
-	const SwapChain swapChain = D3D12Helper::CreateSwapChain(factory, commandQueue, hwnd, WindowSize);
-	if (!swapChain)
-		ShowError(L"SwapChain の作成に失敗しました");
-	const auto [rtGetter, rtvGetter] = D3D12Utils::InitRTV(device, swapChain, Format::RGBA_U8_01);
-
+	const SwapChainManager swapChainManager = SwapChainManager(factory, device, commandQueue, hwnd, WindowSize);
 	constexpr ViewportScissorRect viewportScissorRect = ViewportScissorRect::CreateFullSized(WindowSize);
 
 
@@ -249,13 +245,7 @@ int Main(hInstance)
 
 
 
-		const int currentBackRTIndex = D3D12Helper::GetCurrentBackRTIndex(swapChain);
-		const GraphicsBuffer currentBackRT = rtGetter(currentBackRTIndex);
-		const DescriptorHandleAtCPU currentBackRTV = rtvGetter(currentBackRTIndex);
-		if (!currentBackRT)
-			ShowError(L"現在のバックレンダーターゲットの取得に失敗しました");
-
-		const RenderTargetContext currentBackRenderTargetContext = { currentBackRT, currentBackRTV, viewportScissorRect };
+		const RenderTargetContext currentRenderTargetContext = swapChainManager.GetCurrentRenderTargetContext(viewportScissorRect);
 		const RenderTargetContext postProcessRenderTargetContext = postProcessRenderer->CreateRenderTargetContext(viewportScissorRect);
 		const RenderTargetContext textRenderTargetContext = textRenderer->CreateRenderTargetContext(viewportScissorRect);
 
@@ -264,14 +254,13 @@ int Main(hInstance)
 		// メインレンダリング
 		terrainRenderer.Draw(renderContext, postProcessRenderTargetContext, terrainRenderMeshContext);
 		// オフスクリーンレンダリング
-		postProcessRenderer->Draw(renderContext, textRenderTargetContext);         // ポストプロセス
-		textRenderer->Draw(renderContext, currentBackRenderTargetContext);         // テキスト描画
+		postProcessRenderer->Draw(renderContext, textRenderTargetContext);     // ポストプロセス
+		textRenderer->Draw(renderContext, currentRenderTargetContext);         // テキスト描画
 		// 画像レンダリング
-		pointerImageRenderer->Draw(renderContext, currentBackRenderTargetContext); // ポインター画像描画
-		itemSlotManager.Draw(renderContext, currentBackRenderTargetContext);       // アイテムスロット画像描画
+		pointerImageRenderer->Draw(renderContext, currentRenderTargetContext); // ポインター画像描画
+		itemSlotManager.Draw(renderContext, currentRenderTargetContext);       // アイテムスロット画像描画
 
-		if (!D3D12Helper::Present(swapChain))
-			ShowError(L"画面のフリップに失敗しました");
+		swapChainManager.Present();
 
 		const double timeAfterGPU = WindowHelper::GetTime();
 		frameTimeStatsGPU.Record(timeAfterGPU - timeAfterCPU);
