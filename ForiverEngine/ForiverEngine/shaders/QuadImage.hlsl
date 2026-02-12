@@ -1,3 +1,5 @@
+// メッシュの座標は、スクリーン座標系 (NDC) で与えられることを想定
+
 cbuffer _0 : register(b0)
 {
     // 0 = disabled, 1 = enabled
