@@ -30,7 +30,7 @@ int Main(hInstance)
 			//"Basic.hlsl",
 			//"PP.hlsl",
 			//"Text.hlsl",
-			//"Image.hlsl",
+			//"QuadImage.hlsl",
 		});
 
 	ShowError(success ? L"シェーダーのコンパイルに成功しました" : L"シェーダーのコンパイルに失敗しました");
