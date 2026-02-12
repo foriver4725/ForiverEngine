@@ -47,17 +47,6 @@ namespace ForiverEngine
 			);
 		}
 
-		/// <summary>
-		/// <para>画像の種類を変更する</para>
-		/// <para>内部で GPU に再アップロードする</para>
-		/// </summary>
-		void ChangeImageType(const RenderContext& renderContext, Block newType)
-		{
-			Base::ReUploadTexture(renderContext, blockToTexture.at(newType));
-
-			Base::SetDrawEnabled(IsDrawableBlock(newType));
-		}
-
 	private:
 		// 最初にロードして、キャッシュしておく
 		const std::unordered_map<Block, Texture> blockToTexture;
