@@ -260,12 +260,16 @@ int Main(hInstance)
 		// TODO: 作成コストが高い! ただギリ許容範囲?
 		const RenderTargetContext postProcessRenderTargetContext =
 		{ postProcessRenderer->GetRT(), postProcessRenderer->GetRTV(), viewportScissorRect };
+		// TODO: 作成コストが高い! ただギリ許容範囲?
+		const RenderTargetContext textRenderTargetContext =
+		{ textRenderer->GetRT(), textRenderer->GetRTV(), viewportScissorRect };
+
 		const RenderMeshContext& terrainRenderMeshContext = chunksManager.PackToRenderMeshContext();
 
 		// メインレンダリング
 		terrainRenderer.Draw(renderContext, postProcessRenderTargetContext, terrainRenderMeshContext);
 		// オフスクリーンレンダリング
-		postProcessRenderer->Draw(renderContext, currentBackRenderTargetContext);  // ポストプロセス
+		postProcessRenderer->Draw(renderContext, textRenderTargetContext);         // ポストプロセス
 		textRenderer->Draw(renderContext, currentBackRenderTargetContext);         // テキスト描画
 		// 画像レンダリング
 		pointerImageRenderer->Draw(renderContext, currentBackRenderTargetContext); // ポインター画像描画
