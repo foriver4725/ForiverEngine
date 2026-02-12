@@ -245,7 +245,7 @@ int Main(hInstance)
 
 
 
-		const RenderTargetContext currentRenderTargetContext = swapChainManager.GetCurrentRenderTargetContext(viewportScissorRect);
+		const RenderTargetContext currentRenderTargetContext = swapChainManager.CreateCurrentRenderTargetContext(viewportScissorRect);
 		const RenderTargetContext postProcessRenderTargetContext = postProcessRenderer->CreateRenderTargetContext(viewportScissorRect);
 		const RenderTargetContext textRenderTargetContext = textRenderer->CreateRenderTargetContext(viewportScissorRect);
 

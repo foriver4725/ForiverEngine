@@ -20,9 +20,9 @@ namespace ForiverEngine
 		}
 
 		/// <summary>
-		/// 現在バックにある RT を RenderTargetContext として返す
+		/// 現在バックにある RT から RenderTargetContext を作成して返す
 		/// </summary>
-		RenderTargetContext GetCurrentRenderTargetContext(const ViewportScissorRect& viewportScissorRect) const
+		RenderTargetContext CreateCurrentRenderTargetContext(const ViewportScissorRect& viewportScissorRect) const
 		{
 			const int currentBackRTIndex = D3D12Helper::GetCurrentBackRTIndex(swapChain);
 
