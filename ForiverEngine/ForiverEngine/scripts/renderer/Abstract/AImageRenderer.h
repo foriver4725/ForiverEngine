@@ -30,8 +30,9 @@ namespace ForiverEngine
 		/// <para>位置・サイズは、スクリーンのピクセル単位で指定する</para>
 		/// </summary>
 		void Init(
-			const RenderContext& renderContext, const Lattice2& windowSize, const std::string& imageFilePath,
-			const Lattice2& position, const Lattice2& size
+			const RenderContext& renderContext, const Lattice2& windowSize,
+			const std::string& imageFilePath,
+			const Lattice2& position, const Lattice2& size, bool initDrawEnabled = true
 		)
 		{
 			// RootSignature, PipelineState
@@ -73,7 +74,7 @@ namespace ForiverEngine
 			// b0
 			CBData0 cbData0 =
 			{
-				.IsDrawEnabled = 1u,
+				.IsDrawEnabled = (initDrawEnabled ? 1u : 0u),
 			};
 			const GraphicsBuffer cb0 = D3D12Utils::InitCB(renderContext.device, cbData0, &cb0VirtualPtr);
 

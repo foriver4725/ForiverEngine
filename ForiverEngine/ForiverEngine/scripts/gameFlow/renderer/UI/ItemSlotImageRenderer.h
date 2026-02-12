@@ -27,8 +27,7 @@ namespace ForiverEngine
 
 		explicit ItemSlotImageRenderer(
 			const RenderContext& renderContext, const Lattice2& windowSize,
-			const Lattice2& position, const Lattice2& drawSize, // 描画サイズ (ピクセル単位)
-			ImageType initType
+			const Lattice2& position, const Lattice2& size, ImageType initType
 		) :
 			imageTypeToTexture
 		{
@@ -38,8 +37,8 @@ namespace ForiverEngine
 		{
 			Base::Init(
 				renderContext, windowSize,
-				ImageTypeToFilePath.at(initType), position, Vector2::Zero(), Vector2::One(), drawSize,
-				true
+				ImageTypeToFilePath.at(initType),
+				position, size
 			);
 		}
 
@@ -49,7 +48,6 @@ namespace ForiverEngine
 		/// </summary>
 		void ChangeImageType(const RenderContext& renderContext, ImageType newType)
 		{
-			// t1
 			Base::ReUploadTexture(renderContext, imageTypeToTexture.at(newType), ShaderRegister::t1);
 		}
 

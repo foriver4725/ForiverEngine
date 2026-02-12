@@ -26,8 +26,7 @@ namespace ForiverEngine
 
 		explicit ItemImageRenderer(
 			const RenderContext& renderContext, const Lattice2& windowSize,
-			const Lattice2& position, const Lattice2& drawSize, // 描画サイズ (ピクセル単位)
-			Block initType
+			const Lattice2& position, const Lattice2& size, Block initType
 		) :
 			blockToTexture
 		{
@@ -41,8 +40,8 @@ namespace ForiverEngine
 		{
 			Base::Init(
 				renderContext, windowSize,
-				BlockToFilePath.at(initType), position, Vector2::Zero(), Vector2::One(), drawSize,
-				IsDrawableBlock(initType)
+				BlockToFilePath.at(initType),
+				position, size, IsDrawableBlock(initType)
 			);
 		}
 
@@ -52,7 +51,6 @@ namespace ForiverEngine
 		/// </summary>
 		void ChangeImageType(const RenderContext& renderContext, Block newType)
 		{
-			// t1
 			Base::ReUploadTexture(renderContext, blockToTexture.at(newType), ShaderRegister::t1);
 
 			Base::SetDrawEnabled(IsDrawableBlock(newType));

@@ -19,8 +19,7 @@ namespace ForiverEngine
 			Base::Init(
 				renderContext, windowSize,
 				"assets/textures/ui/pointer.png",
-				windowSize / 2, Vector2::Zero(), Vector2::One(), Lattice2(24, 24),
-				true
+				windowSize / 2, Lattice2(24, 24)
 			);
 		}
 	};
