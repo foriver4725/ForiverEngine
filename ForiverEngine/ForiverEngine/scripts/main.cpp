@@ -253,12 +253,13 @@ int Main(hInstance)
 
 		// メインレンダリング
 		terrainRenderer.Draw(renderContext, postProcessRenderTargetContext, terrainRenderMeshContext);
-		// オフスクリーンレンダリング
-		postProcessRenderer->Draw(renderContext, textRenderTargetContext);     // ポストプロセス
-		textRenderer->Draw(renderContext, currentRenderTargetContext);         // テキスト描画
+		// ポストプロセス
+		postProcessRenderer->Draw(renderContext, textRenderTargetContext);
 		// 画像レンダリング
-		pointerImageRenderer->Draw(renderContext, currentRenderTargetContext); // ポインター画像描画
-		itemSlotManager.Draw(renderContext, currentRenderTargetContext);       // アイテムスロット画像描画
+		pointerImageRenderer->Draw(renderContext, textRenderTargetContext); // ポインター画像描画
+		itemSlotManager.Draw(renderContext, textRenderTargetContext);       // アイテムスロット画像描画
+		// テキスト描画
+		textRenderer->Draw(renderContext, currentRenderTargetContext);
 
 		swapChainManager.Present();
 
