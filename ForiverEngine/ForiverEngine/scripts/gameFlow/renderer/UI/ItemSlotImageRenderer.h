@@ -48,7 +48,7 @@ namespace ForiverEngine
 		/// </summary>
 		void ChangeImageType(const RenderContext& renderContext, ImageType newType)
 		{
-			Base::ReUploadTexture(renderContext, imageTypeToTexture.at(newType), ShaderRegister::t1);
+			Base::ReUploadTexture(renderContext, imageTypeToTexture.at(newType));
 		}
 
 	private:

@@ -100,6 +100,18 @@ namespace ForiverEngine
 		}
 
 		/// <summary>
+		/// <para>指定したテクスチャを GPU に再アップロードする</para>
+		/// <para>表示される画像が変わる</para>
+		/// </summary>
+		void ReUploadTexture(const RenderContext& renderContext, const Texture& texture)
+		{
+			const GraphicsBuffer sr = D3D12Utils::InitSR(
+				renderContext.device, renderContext.commandList, renderContext.commandQueue, renderContext.commandAllocator, texture);
+			D3D12Helper::CreateSRVAndRegistToDescriptorHeap(renderContext.device, descriptorHeapBasic, sr,
+				static_cast<int>(ShaderRegister::t0), texture);
+		}
+
+		/// <summary>
 		/// <para>ドローコール</para>
 		/// </summary>
 		void Draw(

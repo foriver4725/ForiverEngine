@@ -51,7 +51,7 @@ namespace ForiverEngine
 		/// </summary>
 		void ChangeImageType(const RenderContext& renderContext, Block newType)
 		{
-			Base::ReUploadTexture(renderContext, blockToTexture.at(newType), ShaderRegister::t1);
+			Base::ReUploadTexture(renderContext, blockToTexture.at(newType));
 
 			Base::SetDrawEnabled(IsDrawableBlock(newType));
 		}
