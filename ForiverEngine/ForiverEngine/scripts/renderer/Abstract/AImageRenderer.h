@@ -37,7 +37,7 @@ namespace ForiverEngine
 		)
 		{
 			// RootSignature, PipelineState
-			const RootParameter rootParameter = RootParameter::CreateBasic(1, 1);
+			const RootParameter rootParameter = RootParameter::CreateBasic(CbCount, SrCount);
 			const SamplerConfig samplerConfig = SamplerConfig::CreateBasic(AddressingMode::Clamp, Filter::Point);
 			const auto [shaderVS, shaderPS] = D3D12Utils::LoadCso(D3D12Utils::GetShaderFilePath("QuadImage"));
 			std::tie(rootSignature, pipelineState) = D3D12Utils::CreateRootSignatureAndGraphicsPipelineState(
@@ -112,7 +112,7 @@ namespace ForiverEngine
 			const GraphicsBuffer sr = D3D12Utils::InitSR(
 				renderContext.device, renderContext.commandList, renderContext.commandQueue, renderContext.commandAllocator, texture);
 			D3D12Helper::CreateSRVAndRegistToDescriptorHeap(renderContext.device, descriptorHeapBasic, sr,
-				static_cast<int>(ShaderRegister::t0), texture);
+				static_cast<int>(ShaderRegister::t0) + CbCount, texture);
 		}
 
 		/// <summary>
@@ -140,6 +140,9 @@ namespace ForiverEngine
 		DescriptorHandleAtCPU dsv_Dummy;
 		DescriptorHeap descriptorHeapBasic;
 		RenderMeshContext renderMeshContext;
+
+		static constexpr int CbCount = 1;
+		static constexpr int SrCount = 1;
 
 		CBData0* cb0VirtualPtr = nullptr;
 	};
