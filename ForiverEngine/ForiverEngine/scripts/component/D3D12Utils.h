@@ -121,6 +121,7 @@ namespace ForiverEngine
 			const std::vector<VertexLayout>& vertexLayouts,
 			FillMode fillMode,
 			CullMode cullMode,
+			bool useAlphaBlend,
 			bool useDSV
 		)
 		{
@@ -131,7 +132,7 @@ namespace ForiverEngine
 				ShowError(errorMessage);
 
 			const PipelineState graphicsPipelineState = D3D12Helper::CreateGraphicsPipelineState(
-				device, rootSignature, shaderVS, shaderPS, vertexLayouts, fillMode, cullMode, useDSV);
+				device, rootSignature, shaderVS, shaderPS, vertexLayouts, fillMode, cullMode, useAlphaBlend, useDSV);
 			if (!graphicsPipelineState)
 				ShowError(L"GraphicsPipelineState の作成に失敗しました");
 

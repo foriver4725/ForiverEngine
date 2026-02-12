@@ -41,7 +41,7 @@ namespace ForiverEngine
 			const auto [shaderVS, shaderPS] = D3D12Utils::LoadCso(D3D12Utils::GetShaderFilePath("QuadImage"));
 			std::tie(rootSignature, pipelineState) = D3D12Utils::CreateRootSignatureAndGraphicsPipelineState(
 				renderContext.device,
-				rootParameter, samplerConfig, shaderVS, shaderPS, VertexLayoutsQuad, FillMode::Solid, CullMode::Back, false);
+				rootParameter, samplerConfig, shaderVS, shaderPS, VertexLayoutsQuad, FillMode::Solid, CullMode::Back, true, false);
 
 			dsv_Dummy = DescriptorHandleAtCPU{ .ptr = NULL };
 

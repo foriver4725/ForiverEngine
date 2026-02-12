@@ -63,7 +63,7 @@ namespace ForiverEngine
 			const auto [shaderVS, shaderPS] = D3D12Utils::LoadCso(D3D12Utils::GetShaderFilePath("Basic"));
 			std::tie(rootSignature, pipelineState) = D3D12Utils::CreateRootSignatureAndGraphicsPipelineState(
 				renderContext.device,
-				rootParameter, samplerConfig, shaderVS, shaderPS, VertexLayouts, FillMode::Solid, CullMode::None, true);
+				rootParameter, samplerConfig, shaderVS, shaderPS, VertexLayouts, FillMode::Solid, CullMode::None, false, true);
 
 			// RTV は作らない!
 			dsv = D3D12Utils::InitDSV(renderContext.device, windowSize);
