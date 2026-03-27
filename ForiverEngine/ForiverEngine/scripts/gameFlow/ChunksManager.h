@@ -101,9 +101,6 @@ namespace ForiverEngine
 			const auto [vbv, ibv] = meshes[chunkIndex.x][chunkIndex.y].CreateRenderViews(device);
 			vbvs[chunkIndex.x][chunkIndex.y] = vbv;
 			ibvs[chunkIndex.x][chunkIndex.y] = ibv;
-
-			// 変更されたチャンクをメモする
-			saveChunkIndices.insert(chunkIndex);
 		}
 
 		/// <summary>
@@ -151,6 +148,15 @@ namespace ForiverEngine
 		// std::string   : シリアライズされたバイナリデータ(文字列). サイズは前の項目で指定されたもの
 
 		/// <summary>
+		/// <para>指定されたチャンクをセーブするものとしてマークし、シリアライズ時にエキスポートされるようにする</para>
+		/// <para>この処理自体は非常に軽量なので、気兼ねなく呼び出して大丈夫</para>
+		/// </summary>
+		void MarkChunkForSaving(const Lattice2& chunkIndex)
+		{
+			saveChunkIndices.insert(chunkIndex);
+		}
+
+		/// <summary>
 		/// セーブする (= 変更が入った) チャンク群のデータをシリアライズして返す
 		/// </summary>
 		std::string SerializeSaveChunks() const
@@ -184,7 +190,8 @@ namespace ForiverEngine
 		}
 
 		/// <summary>
-		/// セーブされたチャンク群のデータをデシリアライズして、上書きするべきチャンクを一括更新する
+		/// <para>セーブされたチャンク群のデータをデシリアライズして、上書きするべきチャンクを一括更新する</para>
+		/// <para>セーブしていない変更は全て失われるので、注意!!</para>
 		/// </summary>
 		void DeserializeAndUpdateChunks(std::string_view buffer, const Device& device)
 		{

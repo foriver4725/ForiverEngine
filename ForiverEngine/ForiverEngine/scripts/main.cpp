@@ -104,15 +104,8 @@ int Main(hInstance)
 		{
 			const auto [playerTransformBinary, terrainBinary] = WorldSaveDataManager::SplitBinaries(worldSaveDataBinary);
 
-			chunksManager.DeserializeAndUpdateChunks(terrainBinary, device);
 			playerController.DeserializeTransformAndTeleport(playerTransformBinary);
-
-			// プレイヤーの存在チャンクが変化したなら、描画チャンクを更新する
-			playerExistingChunkIndex = Chunk::GetIndex(playerController.GetFootBlockPosition());
-			if (playerExistingChunkIndex.DropDirty())
-			{
-				chunksManager.UpdateDrawChunks(playerExistingChunkIndex.GetValue(), true, device);
-			}
+			chunksManager.DeserializeAndUpdateChunks(terrainBinary, device);
 		}
 	}
 
@@ -230,6 +223,10 @@ int Main(hInstance)
 		{
 			chunksManager.UpdateDrawChunks(playerExistingChunkIndex.GetValue(), true, device);
 		}
+
+		// プレイヤーが存在したチャンクは、セーブするものとしてマークする
+		// 処理が軽いので、毎フレームやってしまっていいと思う
+		chunksManager.MarkChunkForSaving(playerExistingChunkIndex.GetValue());
 
 		// デバッグテキスト (F1 押下で表示切替)
 		{
