@@ -243,6 +243,7 @@
     <ClInclude Include="scripts\gameFlow\SwapChainManager.h" />
     <ClInclude Include="scripts\gameFlow\Timer.h" />
     <ClInclude Include="scripts\gameFlow\TrackedValue.h" />
+    <ClInclude Include="scripts\gameFlow\WorldSaveDataManager.h" />
     <ClInclude Include="scripts\helper\headers\D3D12Defines.h" />
     <ClInclude Include="scripts\helper\headers\D3D12Helper.h" />
     <ClInclude Include="scripts\helper\headers\InputHelper.h" />

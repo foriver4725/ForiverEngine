@@ -406,6 +406,27 @@ namespace ForiverEngine
 			return true;
 		}
 
+		/// <summary>
+		/// <para>プレイヤーを指定された位置・回転に強制テレポートさせる</para>
+		/// <para>鉛直速度はリセットされる</para>
+		/// </summary>
+		void TeleportTo(const Vector3& position, const Quaternion& rotation)
+		{
+			transform.position = position;
+			transform.rotation = rotation;
+
+			// テレポートしたら鉛直速度はリセットする
+			velocityV = 0.0f;
+		}
+
+		/// <summary>
+		/// <para>現在の Transform をコピーして返す</para>
+		/// </summary>
+		CameraTransform GetCameraTransform() const noexcept
+		{
+			return transform;
+		}
+
 	private:
 		CameraTransform transform; // 一人称
 

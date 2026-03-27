@@ -102,7 +102,13 @@ int Main(hInstance)
 		}
 		else
 		{
-			chunksManager.DeserializeAndUpdateChunks(worldSaveDataBinary, device);
+			const auto [playerTransformBinary, terrainBinary] = WorldSaveDataManager::SplitBinaries(worldSaveDataBinary);
+
+			chunksManager.DeserializeAndUpdateChunks(terrainBinary, device);
+
+			CameraTransform playerTeleportTransform = CameraTransform::Deserialize(playerTransformBinary);
+			playerController.TeleportTo(playerTeleportTransform.position, playerTeleportTransform.rotation);
+			// 描画チャンクの更新は毎フレームチェックされるので、ここではやらなくて良さそう
 		}
 	}
 
@@ -292,7 +298,10 @@ int Main(hInstance)
 
 	// ワールドデータをセーブする
 	{
-		const std::string worldSaveDataBinary = chunksManager.SerializeSaveChunks();
+		const std::string playerTransformBinary = CameraTransform::Serialize(playerController.GetCameraTransform());
+		const std::string terrainBinary = chunksManager.SerializeSaveChunks();
+		const std::string worldSaveDataBinary = WorldSaveDataManager::CombineBinaries(playerTransformBinary, terrainBinary);
+
 		if (!SaveLoadManager::Save(WorldSaveDataRelativePath, worldSaveDataBinary))
 		{
 			ShowError(L"ワールドデータのセーブに失敗しました");

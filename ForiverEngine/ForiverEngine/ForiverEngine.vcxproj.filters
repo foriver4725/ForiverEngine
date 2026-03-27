@@ -386,6 +386,9 @@
     <ClInclude Include="scripts\gameFlow\SaveLoadManager.h">
       <Filter>scripts\gameFlow</Filter>
     </ClInclude>
+    <ClInclude Include="scripts\gameFlow\WorldSaveDataManager.h">
+      <Filter>scripts\gameFlow</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shaders\Basic.hlsl">

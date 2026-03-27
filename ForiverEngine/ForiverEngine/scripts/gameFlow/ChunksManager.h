@@ -182,7 +182,7 @@ namespace ForiverEngine
 		/// <summary>
 		/// セーブされたチャンク群のデータをデシリアライズして、上書きするべきチャンクを一括更新する
 		/// </summary>
-		void DeserializeAndUpdateChunks(const std::string& buffer, const Device& device)
+		void DeserializeAndUpdateChunks(std::string_view buffer, const Device& device)
 		{
 			const char* ptr = buffer.data();
 			const char* end = ptr + buffer.size();

@@ -11,6 +11,7 @@
 #include "./PlayerControl.h"
 #include "./PlayerController.h"
 #include "./ItemSlotManager.h"
+#include "./WorldSaveDataManager.h"
 #include "./DebugFrameTimeStats.h"
 #include "./DebugText.h"
 #include "./DebugTextDisplayer.h"
