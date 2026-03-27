@@ -28,6 +28,9 @@ namespace ForiverEngine
 			renderMeshContext.indexCountList.reserve(Chunk::DrawCountMax * Chunk::DrawCountMax);
 
 			drawRangeInfo = Chunk::CreateDrawChunksIndexRangeInfo(playerFirstExistingChunkIndex);
+
+			// 適当に reserve
+			dirtyChunkBinaries.reserve(1024);
 		}
 
 #pragma region Getters
@@ -96,6 +99,10 @@ namespace ForiverEngine
 			const auto [vbv, ibv] = meshes[chunkIndex.x][chunkIndex.y].CreateRenderViews(device);
 			vbvs[chunkIndex.x][chunkIndex.y] = vbv;
 			ibvs[chunkIndex.x][chunkIndex.y] = ibv;
+
+			// 変更したチャンクのデータをシリアライズして保存する
+			std::string binaryData = chunks[chunkIndex.x][chunkIndex.y].Serialize();
+			dirtyChunkBinaries[chunkIndex] = std::move(binaryData);
 		};
 
 		/// <summary>
@@ -127,6 +134,89 @@ namespace ForiverEngine
 			return renderMeshContext;
 		}
 
+		// [セーブデータの形式]
+		// 
+		// [先頭]
+		// std::uint64_t : チャンクの数
+		// 
+		// [チャンクの数だけ繰り返し]
+		// std::uint64_t : チャンクインデックス (x)
+		// std::uint64_t : チャンクインデックス (y)
+		// std::uint64_t : シリアライズされたバイナリデータ(文字列)のサイズ
+		// char[] : シリアライズされたバイナリデータ(文字列). サイズは前の項目で指定されたもの
+
+		static bool SaveChunks(std::ostream& os, const std::unordered_map<Lattice2, std::string>& serializedChunks)
+		{
+			try
+			{
+				const std::uint64_t chunkCount = static_cast<std::uint64_t>(serializedChunks.size());
+				if (!os.write(reinterpret_cast<const char*>(&chunkCount), sizeof(chunkCount))) return false;
+
+				for (const auto& [chunkIndex, binary] : serializedChunks)
+				{
+					const std::uint64_t x = static_cast<std::uint64_t>(chunkIndex.x);
+					const std::uint64_t y = static_cast<std::uint64_t>(chunkIndex.y);
+					const std::uint64_t binarySize = static_cast<std::uint64_t>(binary.size());
+
+					if (!os.write(reinterpret_cast<const char*>(&x), sizeof(x))) return false;
+					if (!os.write(reinterpret_cast<const char*>(&y), sizeof(y))) return false;
+					if (!os.write(reinterpret_cast<const char*>(&binarySize), sizeof(binarySize))) return false;
+
+					if (binarySize > 0)
+					{
+						if (!os.write(binary.data(), static_cast<std::streamsize>(binarySize))) return false;
+					}
+				}
+
+				return true;
+			}
+			catch (...)
+			{
+				return false;
+			}
+		}
+
+		static bool LoadDirtyChunks(std::istream& is, std::unordered_map<Lattice2, std::string>& serializedChunks)
+		{
+			try
+			{
+				std::uint64_t chunkCount = 0;
+				if (!is.read(reinterpret_cast<char*>(&chunkCount), sizeof(chunkCount))) return false;
+
+				std::unordered_map<Lattice2, std::string> output;
+				output.reserve(static_cast<std::size_t>(chunkCount));
+
+				for (std::uint64_t i = 0; i < chunkCount; ++i)
+				{
+					std::uint64_t x = 0;
+					std::uint64_t y = 0;
+					std::uint64_t binarySize = 0;
+
+					if (!is.read(reinterpret_cast<char*>(&x), sizeof(x))) return false;
+					if (!is.read(reinterpret_cast<char*>(&y), sizeof(y))) return false;
+					if (!is.read(reinterpret_cast<char*>(&binarySize), sizeof(binarySize))) return false;
+
+					std::string binary;
+					if (binarySize > 0)
+					{
+						binary.resize(static_cast<size_t>(binarySize));
+						if (!is.read(binary.data(), static_cast<std::streamsize>(binarySize))) return false;
+					}
+
+					const Lattice2 chunkIndex = Lattice2(static_cast<int>(x), static_cast<int>(y));
+					output[chunkIndex] = std::move(binary);
+				}
+
+				serializedChunks = std::move(output);
+
+				return true;
+			}
+			catch (...)
+			{
+				return false;
+			}
+		}
+
 	private:
 		// チャンク生成の進捗ステート
 		enum class ChunkGenerationState : std::uint8_t
@@ -156,6 +246,10 @@ namespace ForiverEngine
 
 		// 描画するチャンクの範囲を表すデータ
 		Chunk::DrawChunksIndexRangeInfo drawRangeInfo;
+
+		// 任意の手段で情報が変化したチャンクを、シリアライズして保存する (セーブデータの実現)
+		// チャンクインデックス -> シリアライズされたバイナリデータ のハッシュマップ
+		std::unordered_map<Lattice2, std::string> dirtyChunkBinaries;
 
 		// 現在いるチャンクが、描画データの配列の中でどのインデックスに対応するかを取得する
 		Lattice2 GetDrawDataIndex(const Lattice2& chunkIndex) const noexcept

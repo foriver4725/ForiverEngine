@@ -170,6 +170,46 @@ namespace ForiverEngine
 			return chunk;
 		}
 
+		std::string Serialize() const
+		{
+			std::string buffer;
+			buffer.resize(Size * Height * Size * sizeof(Block));
+
+			char* ptr = buffer.data();
+
+			for (int x = 0; x < Size; ++x)
+				for (int y = 0; y < Height; ++y)
+					for (int z = 0; z < Size; ++z)
+					{
+						const Block block = data[x][y][z];
+						std::memcpy(ptr, &block, sizeof(Block));
+						ptr += sizeof(Block);
+					}
+
+			return buffer;
+		}
+
+		static Chunk Deserialize(std::string_view buffer)
+		{
+			Chunk chunk;
+			chunk.data = HeapMultiDimAllocator::CreateArray3D<Block>(Size, Height, Size);
+
+			const char* ptr = buffer.data();
+
+			for (int x = 0; x < Size; ++x)
+				for (int y = 0; y < Height; ++y)
+					for (int z = 0; z < Size; ++z)
+					{
+						Block block;
+						std::memcpy(&block, ptr, sizeof(Block));
+						ptr += sizeof(Block);
+
+						chunk.data[x][y][z] = block;
+					}
+
+			return chunk;
+		}
+
 		/// <summary>
 		/// <para>ノイズを用いてチャンクを生成する</para>
 		/// <para>高度に応じて 砂, 草/土, 石 とブロックが変化していく</para>
