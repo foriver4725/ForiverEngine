@@ -383,6 +383,9 @@
     <ClInclude Include="scripts\common\Math\LinearAlgebra\Hash.h">
       <Filter>scripts\common\Math\LinearAlgebra</Filter>
     </ClInclude>
+    <ClInclude Include="scripts\gameFlow\SaveLoadManager.h">
+      <Filter>scripts\gameFlow</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shaders\Basic.hlsl">

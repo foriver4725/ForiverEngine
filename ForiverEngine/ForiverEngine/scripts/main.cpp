@@ -54,6 +54,9 @@ int Main(hInstance)
 
 
 
+	static const std::string WorldName = "NewWorld"; // プレイするワールドの名前
+	static const std::filesystem::path WorldSaveDataRelativePath = std::filesystem::path("world") / (WorldName + ".world"); // ワールドのセーブデータの相対パス
+
 	// プレイヤーが存在するチャンクのインデックス
 	constexpr Lattice2 playerInitChunkIndex = Lattice2(Chunk::Count / 2, Chunk::Count / 2); // 初期スポーン地点は、ワールドのど真ん中
 	TrackedValue<Lattice2> playerExistingChunkIndex = TrackedValue(playerInitChunkIndex);
@@ -87,6 +90,21 @@ int Main(hInstance)
 	DebugFrameTimeStats frameTimeStatsGPU = DebugFrameTimeStats(16);
 
 
+
+	// ワールドデータをロードする
+	{
+		std::string worldSaveDataBinary;
+		// セーブデータ未作成なら、新規ワールドとして扱うのでスキップ (何もしない)
+		if (!SaveLoadManager::Exists(WorldSaveDataRelativePath));
+		else if (!SaveLoadManager::Load(WorldSaveDataRelativePath, worldSaveDataBinary))
+		{
+			ShowError(L"ワールドデータのロードに失敗しました");
+		}
+		else
+		{
+			chunksManager.DeserializeAndUpdateChunks(worldSaveDataBinary, device);
+		}
+	}
 
 	while (true)
 	{
@@ -270,6 +288,15 @@ int Main(hInstance)
 
 		const double timeAfterFrame = WindowHelper::GetTime();
 		frameTimeStatsPostFrame.Record(timeAfterFrame - timeAfterGPU);
+	}
+
+	// ワールドデータをセーブする
+	{
+		const std::string worldSaveDataBinary = chunksManager.SerializeSaveChunks();
+		if (!SaveLoadManager::Save(WorldSaveDataRelativePath, worldSaveDataBinary))
+		{
+			ShowError(L"ワールドデータのセーブに失敗しました");
+		}
 	}
 
 	return 0;
