@@ -73,50 +73,5 @@ namespace ForiverEngine
 
 			return worldMatrixInv;
 		}
-
-		// [シリアライズのフォーマット]
-		// ※ 親子関係はシリアライズしない!!
-		// 
-		// float position.x
-		// float position.y
-		// float position.z
-		// float rotation.x
-		// float rotation.y
-		// float rotation.z
-		// float rotation.w
-		// float scale.x
-		// float scale.y
-		// float scale.z
-
-		static constexpr std::size_t SelfSerializedSize = sizeof(float) * 10;
-
-		static std::string Serialize(const Transform& transform)
-		{
-			std::string buffer;
-			buffer.resize(SelfSerializedSize);
-
-			std::memcpy(buffer.data() + 0, &transform.position.x, sizeof(float) * 3);
-			std::memcpy(buffer.data() + sizeof(float) * 3, &transform.rotation.x, sizeof(float) * 4);
-			std::memcpy(buffer.data() + sizeof(float) * 7, &transform.scale.x, sizeof(float) * 3);
-
-			return buffer;
-		}
-
-		static Transform Deserialize(std::string_view buffer)
-		{
-			if (buffer.size() < SelfSerializedSize)
-			{
-				ShowError(L"バッファのサイズが小さすぎます");
-				return {};
-			}
-
-			Transform transform;
-
-			std::memcpy(&transform.position.x, buffer.data() + 0, sizeof(float) * 3);
-			std::memcpy(&transform.rotation.x, buffer.data() + sizeof(float) * 3, sizeof(float) * 4);
-			std::memcpy(&transform.scale.x, buffer.data() + sizeof(float) * 7, sizeof(float) * 3);
-
-			return transform;
-		}
 	};
 }

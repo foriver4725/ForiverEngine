@@ -105,10 +105,14 @@ int Main(hInstance)
 			const auto [playerTransformBinary, terrainBinary] = WorldSaveDataManager::SplitBinaries(worldSaveDataBinary);
 
 			chunksManager.DeserializeAndUpdateChunks(terrainBinary, device);
+			playerController.DeserializeTransformAndTeleport(playerTransformBinary);
 
-			CameraTransform playerTeleportTransform = CameraTransform::Deserialize(playerTransformBinary);
-			playerController.TeleportTo(playerTeleportTransform.position, playerTeleportTransform.rotation);
-			// 描画チャンクの更新は毎フレームチェックされるので、ここではやらなくて良さそう
+			// プレイヤーの存在チャンクが変化したなら、描画チャンクを更新する
+			playerExistingChunkIndex = Chunk::GetIndex(playerController.GetFootBlockPosition());
+			if (playerExistingChunkIndex.DropDirty())
+			{
+				chunksManager.UpdateDrawChunks(playerExistingChunkIndex.GetValue(), true, device);
+			}
 		}
 	}
 
@@ -298,7 +302,7 @@ int Main(hInstance)
 
 	// ワールドデータをセーブする
 	{
-		const std::string playerTransformBinary = CameraTransform::Serialize(playerController.GetCameraTransform());
+		const std::string playerTransformBinary = playerController.SerializeTransform();
 		const std::string terrainBinary = chunksManager.SerializeSaveChunks();
 		const std::string worldSaveDataBinary = WorldSaveDataManager::CombineBinaries(playerTransformBinary, terrainBinary);
 

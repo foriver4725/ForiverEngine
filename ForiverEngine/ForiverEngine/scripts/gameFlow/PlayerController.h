@@ -141,19 +141,12 @@ namespace ForiverEngine
 				}
 
 				// Yaw (左右回転), Pitch (上下回転) を計算する
-				// 回転を制限したいので、それぞれの軸で別個に管理する
-				static float yaw = 0.0f; // ラジアン
-				static float pitch = 0.0f; // ラジアン
 				yaw += lookInput.x * LookSensitivityH * DegToRad * deltaSeconds;
 				pitch += lookInput.y * LookSensitivityV * DegToRad * deltaSeconds;
 				pitch = std::clamp(pitch, -LookPitchMax, LookPitchMax); // Pitch のみ、回転を制限する
 
 				// 回転値を計算
-				// Pitch は"ローカル"x軸周りに回転させたいので、回転の順番はこうでなくてはならない!
-				const Quaternion rotation =
-					Quaternion::FromAxisAngle(Vector3::Up(), yaw) *
-					Quaternion::FromAxisAngle(Vector3::Right(), pitch);
-				transform.rotation = rotation;
+				transform.rotation = CalculateRotationFromYawPitch(yaw, pitch);
 			}
 
 			// 移動
@@ -406,30 +399,65 @@ namespace ForiverEngine
 			return true;
 		}
 
-		/// <summary>
-		/// <para>プレイヤーを指定された位置・回転に強制テレポートさせる</para>
-		/// <para>鉛直速度はリセットされる</para>
-		/// </summary>
-		void TeleportTo(const Vector3& position, const Quaternion& rotation)
-		{
-			transform.position = position;
-			transform.rotation = rotation;
+		// [シリアライズのフォーマット]
+		//
+		// float*3 position-x,y,z
+		// float*2 rotation-yaw,pitch
 
-			// テレポートしたら鉛直速度はリセットする
-			velocityV = 0.0f;
+		std::string SerializeTransform() const
+		{
+			std::string buffer;
+			buffer.resize(sizeof(float) * 5);
+
+			std::memcpy(buffer.data(), &transform.position.x, sizeof(float));
+			std::memcpy(buffer.data() + sizeof(float), &transform.position.y, sizeof(float));
+			std::memcpy(buffer.data() + sizeof(float) * 2, &transform.position.z, sizeof(float));
+			std::memcpy(buffer.data() + sizeof(float) * 3, &yaw, sizeof(float));
+			std::memcpy(buffer.data() + sizeof(float) * 4, &pitch, sizeof(float));
+
+			return buffer;
 		}
 
-		/// <summary>
-		/// <para>現在の Transform をコピーして返す</para>
-		/// </summary>
-		CameraTransform GetCameraTransform() const noexcept
+		void DeserializeTransformAndTeleport(std::string_view buffer)
 		{
-			return transform;
+			if (buffer.size() != sizeof(float) * 5)
+			{
+				ShowError(L"プレイヤーの位置・回転のデシリアライズに失敗しました: バッファサイズが不正です");
+				return;
+			}
+
+			Vector3 position;
+			float yaw, pitch;
+			std::memcpy(&position.x, buffer.data(), sizeof(float));
+			std::memcpy(&position.y, buffer.data() + sizeof(float), sizeof(float));
+			std::memcpy(&position.z, buffer.data() + sizeof(float) * 2, sizeof(float));
+			std::memcpy(&yaw, buffer.data() + sizeof(float) * 3, sizeof(float));
+			std::memcpy(&pitch, buffer.data() + sizeof(float) * 4, sizeof(float));
+
+			transform.position = position;
+			transform.rotation = CalculateRotationFromYawPitch(yaw, pitch);
+
+			// パラメータをリセット
+			this->velocityV = 0.0f;
+			this->yaw = yaw;
+			this->pitch = pitch;
 		}
 
 	private:
 		CameraTransform transform; // 一人称
 
 		float velocityV; // 鉛直速度
+
+		// 回転を制限したいので、それぞれの軸で別個に管理する
+		float yaw = 0.0f;   // ラジアン
+		float pitch = 0.0f; // ラジアン
+
+		static Quaternion CalculateRotationFromYawPitch(float yaw, float pitch) noexcept
+		{
+			// Pitch は"ローカル"x軸周りに回転させたいので、回転の順番はこうでなくてはならない!
+			return
+				Quaternion::FromAxisAngle(Vector3::Up(), yaw) *
+				Quaternion::FromAxisAngle(Vector3::Right(), pitch);
+		}
 	};
 }
