@@ -117,7 +117,11 @@ namespace ForiverEngine
 			for (int xi = drawRangeInfo.rangeX.x; xi <= drawRangeInfo.rangeX.y; ++xi)
 				for (int zi = drawRangeInfo.rangeZ.x; zi <= drawRangeInfo.rangeZ.y; ++zi)
 				{
-					GenerateChunk({ xi, zi }, parallelIfGenerate, deviceIfGenerate);
+					if (!saveChunkIndices.contains(Lattice2(xi, zi)))
+					{
+						GenerateChunk({ xi, zi }, parallelIfGenerate, deviceIfGenerate);
+					}
+
 					CopyToDrawData({ xi, zi });
 				}
 		}
