@@ -12,3 +12,4 @@
 #include "./headers/Quaternion.h"
 
 #include "./ToString.h"
+#include "./Hash.h"

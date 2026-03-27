@@ -191,6 +191,7 @@
     <ClInclude Include="scripts\common\Math\headers\Color.h" />
     <ClInclude Include="scripts\common\Math\headers\Noise.h" />
     <ClInclude Include="scripts\common\Math\Include.h" />
+    <ClInclude Include="scripts\common\Math\LinearAlgebra\Hash.h" />
     <ClInclude Include="scripts\common\Math\LinearAlgebra\headers\Lattice2.h" />
     <ClInclude Include="scripts\common\Math\LinearAlgebra\headers\Lattice3.h" />
     <ClInclude Include="scripts\common\Math\LinearAlgebra\headers\Lattice4.h" />
