@@ -54,8 +54,34 @@ int Main(hInstance)
 
 
 
-	static const std::string WorldName = "NewWorld"; // プレイするワールドの名前
-	static const std::filesystem::path WorldSaveDataRelativePath = std::filesystem::path("world") / (WorldName + ".world"); // ワールドのセーブデータの相対パス
+	// ワールド名 (無ければ新規作成、あればロードする)
+	const std::string worldName = WorldDataSaveLoadManager::LoadWorldName();
+	if (worldName.empty())
+	{
+		ShowError(L"ワールド名のロードに失敗しました");
+		return 1;
+	}
+
+	// ワールドデータをロードする (新規作成ならば、バイナリは空のまま)
+	std::string playerTransformBinary;
+	std::string terrainBinary;
+	{
+		std::string worldDataBinary;
+
+		// セーブデータ未作成ならスキップ
+		if (!WorldDataSaveLoadManager::Exists(worldName));
+		else if (!WorldDataSaveLoadManager::Load(worldName, worldDataBinary))
+		{
+			ShowError(L"ワールドデータのロードに失敗しました");
+			return 1;
+		}
+		else
+		{
+			std::tie(playerTransformBinary, terrainBinary) = WorldDataSaveLoadManager::SplitWorldDataBinaries(worldDataBinary);
+		}
+	}
+
+
 
 	// プレイヤーが存在するチャンクのインデックス
 	constexpr Lattice2 playerInitChunkIndex = Lattice2(Chunk::Count / 2, Chunk::Count / 2); // 初期スポーン地点は、ワールドのど真ん中
@@ -63,10 +89,14 @@ int Main(hInstance)
 
 	// 地形データ
 	ChunksManager chunksManager = ChunksManager(playerExistingChunkIndex.GetValue());
+	if (!terrainBinary.empty())
+		chunksManager.DeserializeAndUpdateChunks(terrainBinary, device);
 	chunksManager.UpdateDrawChunks(playerExistingChunkIndex.GetValue(), false, device); // 初回作成
 
 	// プレイヤーコントローラー
 	PlayerController playerController = PlayerController(WindowSize, playerExistingChunkIndex.GetValue(), chunksManager.GetChunks());
+	if (!playerTransformBinary.empty())
+		playerController.DeserializeTransformAndTeleport(playerTransformBinary);
 
 	TerrainRenderer terrainRenderer = TerrainRenderer(renderContext, WindowSize);
 	terrainRenderer.OnPlayerCameraMatrixChanged(playerController.CalculateVPMatrix());
@@ -90,24 +120,6 @@ int Main(hInstance)
 	DebugFrameTimeStats frameTimeStatsGPU = DebugFrameTimeStats(16);
 
 
-
-	// ワールドデータをロードする
-	{
-		std::string worldSaveDataBinary;
-		// セーブデータ未作成なら、新規ワールドとして扱うのでスキップ (何もしない)
-		if (!SaveLoadManager::Exists(WorldSaveDataRelativePath));
-		else if (!SaveLoadManager::Load(WorldSaveDataRelativePath, worldSaveDataBinary))
-		{
-			ShowError(L"ワールドデータのロードに失敗しました");
-		}
-		else
-		{
-			const auto [playerTransformBinary, terrainBinary] = WorldSaveDataManager::SplitBinaries(worldSaveDataBinary);
-
-			playerController.DeserializeTransformAndTeleport(playerTransformBinary);
-			chunksManager.DeserializeAndUpdateChunks(terrainBinary, device);
-		}
-	}
 
 	while (true)
 	{
@@ -298,15 +310,13 @@ int Main(hInstance)
 	}
 
 	// ワールドデータをセーブする
+	const std::string currentPlayerTransformBinary = playerController.SerializeTransform();
+	const std::string currentTerrainBinary = chunksManager.SerializeSaveChunks();
+	const std::string currentWorldSaveDataBinary = WorldDataSaveLoadManager::CombineWorldDataBinaries(playerTransformBinary, terrainBinary);
+	if (!WorldDataSaveLoadManager::Save(worldName, currentWorldSaveDataBinary))
 	{
-		const std::string playerTransformBinary = playerController.SerializeTransform();
-		const std::string terrainBinary = chunksManager.SerializeSaveChunks();
-		const std::string worldSaveDataBinary = WorldSaveDataManager::CombineBinaries(playerTransformBinary, terrainBinary);
-
-		if (!SaveLoadManager::Save(WorldSaveDataRelativePath, worldSaveDataBinary))
-		{
-			ShowError(L"ワールドデータのセーブに失敗しました");
-		}
+		ShowError(L"ワールドデータのセーブに失敗しました");
+		return 1;
 	}
 
 	return 0;
