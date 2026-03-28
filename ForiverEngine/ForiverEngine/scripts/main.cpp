@@ -77,7 +77,8 @@ int Main(hInstance)
 		}
 		else
 		{
-			std::tie(playerTransformBinary, terrainBinary) = WorldDataSaveLoadManager::SplitWorldDataBinaries(worldDataBinary);
+			std::tie(playerTransformBinary, terrainBinary) =
+				WorldDataSaveLoadManager::SplitWorldDataBinaries(worldDataBinary);
 		}
 	}
 
@@ -312,7 +313,8 @@ int Main(hInstance)
 	// ワールドデータをセーブする
 	const std::string currentPlayerTransformBinary = playerController.SerializeTransform();
 	const std::string currentTerrainBinary = chunksManager.SerializeSaveChunks();
-	const std::string currentWorldSaveDataBinary = WorldDataSaveLoadManager::CombineWorldDataBinaries(playerTransformBinary, terrainBinary);
+	const std::string currentWorldSaveDataBinary =
+		WorldDataSaveLoadManager::CombineWorldDataBinaries(currentPlayerTransformBinary, currentTerrainBinary);
 	if (!WorldDataSaveLoadManager::Save(worldName, currentWorldSaveDataBinary))
 	{
 		ShowError(L"ワールドデータのセーブに失敗しました");
