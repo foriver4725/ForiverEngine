@@ -9,7 +9,7 @@ namespace ForiverEngine
 	public:
 		DELETE_DEFAULT_METHODS(WorldDataSaveLoadManager);
 
-		inline static const std::filesystem::path WorldSaveDataDirectory = std::filesystem::path("saves");
+		inline static const std::filesystem::path WorldSaveDataDirectory = std::filesystem::path("saves") / "world";
 		inline static const std::string WorldSaveDataExtension = ".world";
 
 		inline static const std::filesystem::path WorldNameFilePath = std::filesystem::current_path() / "WorldName.txt";
