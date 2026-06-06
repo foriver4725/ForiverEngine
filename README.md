@@ -55,6 +55,11 @@
 | [SimplexNoise](https://github.com/SRombauts/SimplexNoise) | [MIT](https://github.com/SRombauts/SimplexNoise/blob/master/LICENSE.txt) | ノイズを使った地形生成 |
 | [DirectXTex](https://github.com/microsoft/DirectXTex) | [MIT](https://github.com/microsoft/DirectXTex/blob/main/LICENSE) | 画像をテクスチャとしてロードする |
 
+## 他プラットフォームへの移植
+| プラットフォーム | グラフィックライブラリ | GitHubリンク |
+| --- | --- | --- |
+| macOS | Metal | [ForiverEngine_Metal](https://github.com/foriver4725/ForiverEngine_Metal) |
+
 <!---
 
 ## 過去の進捗
