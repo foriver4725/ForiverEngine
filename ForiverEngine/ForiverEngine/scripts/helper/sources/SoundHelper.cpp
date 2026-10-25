@@ -78,7 +78,7 @@ namespace ForiverEngine
 	{
 	public:
 
-		// 足りなくなったら増やす
+		// capacity は事前にメモリ確保する数で、使い切っても増えるので、あくまでパフォーマンス向上のためのヒント
 		XAudio2Sound(IXAudio2* xAudio2, int sourceVoiceCapacity) : xAudio2(xAudio2)
 		{
 			sourceVoices.reserve(sourceVoiceCapacity);
@@ -134,6 +134,7 @@ namespace ForiverEngine
 		IXAudio2SourceVoice* GetOrCreateSourceVoice()
 		{
 			// 使えるものがあればそれを返す
+			// TODO: 直近に取得したインデックスを保持しておけば、検索を高速化できると思う
 			for (auto& sourceVoice : sourceVoices)
 			{
 				XAUDIO2_VOICE_STATE state{};
@@ -209,7 +210,7 @@ namespace ForiverEngine
 		if (filetype != fourccWAVE)
 			return nullptr;
 
-		// 出力サウンド
+		// 作成されるサウンド
 		std::unique_ptr<XAudio2Sound> sound = std::make_unique<XAudio2Sound>(impl->xAudio2, 4);
 
 		// フォーマット : "fmt" チャンクを見つける
