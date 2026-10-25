@@ -126,6 +126,7 @@ namespace ForiverEngine
 		// 多重再生出来るようにするため、プーリングする
 		using SourceVoicePointer = std::unique_ptr<IXAudio2SourceVoice, SourceVoiceDeleter>;
 		std::vector<SourceVoicePointer> sourceVoices{};
+		int lastUsedSourceVoiceIndex = -1; // 直近に使ったソースボイスのインデックス(検索の高速化用)
 
 		IXAudio2* xAudio2 = nullptr; // ネイティブのハンドラ
 
@@ -134,14 +135,20 @@ namespace ForiverEngine
 		IXAudio2SourceVoice* GetOrCreateSourceVoice()
 		{
 			// 使えるものがあればそれを返す
-			// TODO: 直近に取得したインデックスを保持しておけば、検索を高速化できると思う
-			for (auto& sourceVoice : sourceVoices)
+			const std::size_t currentSourceVoiceCount = sourceVoices.size();
+			for (int i = 0; i < currentSourceVoiceCount; ++i)
 			{
+				const int index = (lastUsedSourceVoiceIndex + 1 + i) % currentSourceVoiceCount;
+
 				XAUDIO2_VOICE_STATE state{};
-				sourceVoice->GetState(&state);
+				// 再生済みサンプル数は不要なので、パフォーマンス向上のために取得しない
+				sourceVoices[index]->GetState(&state, XAUDIO2_VOICE_NOSAMPLESPLAYED);
 
 				if (state.BuffersQueued == 0)
-					return sourceVoice.get();
+				{
+					lastUsedSourceVoiceIndex = index;
+					return sourceVoices[index].get();
+				}
 			}
 
 			// 使えるものが無ければ、新規作成してプールに追加する
@@ -149,6 +156,7 @@ namespace ForiverEngine
 			if (newSourceVoice == nullptr)
 				return nullptr;
 
+			lastUsedSourceVoiceIndex = static_cast<int>(sourceVoices.size());
 			sourceVoices.push_back(std::move(newSourceVoice));
 			return sourceVoices.back().get();
 		}
