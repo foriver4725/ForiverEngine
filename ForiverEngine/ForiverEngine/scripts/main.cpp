@@ -44,6 +44,13 @@ int Main(hInstance)
 	WindowHelper::SetTargetFps(60);
 	WindowHelper::SetCursorEnabled(false);
 
+	std::unique_ptr<SoundHelper> soundHelper = std::make_unique<SoundHelper>();
+	std::unique_ptr<ISound> testSound = soundHelper->LoadSound("assets/sounds/sin_wave_440hz_500ms.wav");
+	if (testSound == nullptr)
+	{
+		ShowError(L"テスト用サウンドのロードに失敗しました");
+	}
+
 	Random::SetSeed(0x12345678);
 
 	const auto [factory, device, commandAllocator, commandList, commandQueue] = D3D12Utils::CreateStandardObjects();
@@ -135,6 +142,13 @@ int Main(hInstance)
 		// Escape でゲーム終了
 		if (InputHelper::GetKeyInfo(Key::Escape).pressedNow)
 			break;
+
+		// テスト用 : K キーでテスト用サウンドを再生する
+		if (InputHelper::GetKeyInfo(Key::K).pressedNow)
+		{
+			if (!testSound->Play())
+				ShowError(L"テスト用サウンドの再生に失敗しました");
+		}
 
 		// プレイヤーの挙動
 		const PlayerController::Inputs playerInputs =

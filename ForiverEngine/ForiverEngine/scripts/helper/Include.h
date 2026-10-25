@@ -7,3 +7,4 @@
 
 #include "./headers/InputHelper.h"
 #include "./headers/WindowHelper.h"
+#include "./headers/SoundHelper.h"
