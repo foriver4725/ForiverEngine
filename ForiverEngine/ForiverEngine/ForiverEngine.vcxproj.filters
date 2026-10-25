@@ -55,6 +55,9 @@
     <ClCompile Include="scripts\common\Math\sources\Noise.cpp">
       <Filter>scripts\common\Math\sources</Filter>
     </ClCompile>
+    <ClCompile Include="scripts\helper\sources\SoundHelper.cpp">
+      <Filter>scripts\helper\sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="shaders">
@@ -385,6 +388,9 @@
     </ClInclude>
     <ClInclude Include="scripts\gameFlow\WorldDataSaveLoadManager.h">
       <Filter>scripts\gameFlow</Filter>
+    </ClInclude>
+    <ClInclude Include="scripts\helper\headers\SoundHelper.h">
+      <Filter>scripts\helper\headers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

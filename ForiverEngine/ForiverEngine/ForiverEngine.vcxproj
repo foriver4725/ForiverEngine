@@ -179,6 +179,7 @@
     <ClCompile Include="scripts\helper\Loader\sources\TextureLoader.cpp" />
     <ClCompile Include="scripts\helper\sources\D3D12Helper.cpp" />
     <ClCompile Include="scripts\helper\sources\InputHelper.cpp" />
+    <ClCompile Include="scripts\helper\sources\SoundHelper.cpp" />
     <ClCompile Include="scripts\helper\sources\WindowHelper.cpp" />
     <ClCompile Include="scripts\main.cpp" />
   </ItemGroup>
@@ -246,6 +247,7 @@
     <ClInclude Include="scripts\helper\headers\D3D12Defines.h" />
     <ClInclude Include="scripts\helper\headers\D3D12Helper.h" />
     <ClInclude Include="scripts\helper\headers\InputHelper.h" />
+    <ClInclude Include="scripts\helper\headers\SoundHelper.h" />
     <ClInclude Include="scripts\helper\headers\WindowHelper.h" />
     <ClInclude Include="scripts\helper\Include.h" />
     <ClInclude Include="scripts\helper\Loader\headers\TextureLoader.h" />
