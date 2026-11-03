@@ -20,8 +20,13 @@ namespace ForiverEngine
 		SoundHelper();
 		~SoundHelper();
 
+		/// <summary>
+		/// サウンドをロードする
+		/// </summary>
+		/// <param name="path">パス</param>
+		/// <param name="maxPlayCount">同時に鳴らせる最大数。超えたら再生は常に失敗する</param>
 		/// <returns>失敗したら nullptr</returns>
-		std::unique_ptr<ISound> LoadSound(std::string_view path);
+		std::unique_ptr<ISound> LoadSound(std::string_view path, int maxPlayCount);
 
 	private:
 		struct Impl;                // 中身はここでは定義しない

@@ -45,7 +45,7 @@ int Main(hInstance)
 	WindowHelper::SetCursorEnabled(false);
 
 	std::unique_ptr<SoundHelper> soundHelper = std::make_unique<SoundHelper>();
-	std::unique_ptr<ISound> testSound = soundHelper->LoadSound("assets/sounds/sin_wave_440hz_500ms.wav");
+	std::unique_ptr<ISound> testSound = soundHelper->LoadSound("assets/sounds/sin_wave_440hz_500ms.wav", 4);
 	if (testSound == nullptr)
 	{
 		ShowError(L"テスト用サウンドのロードに失敗しました");

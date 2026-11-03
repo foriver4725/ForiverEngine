@@ -78,10 +78,10 @@ namespace ForiverEngine
 	{
 	public:
 
-		// capacity は事前にメモリ確保する数で、使い切っても増えるので、あくまでパフォーマンス向上のためのヒント
-		XAudio2Sound(IXAudio2* xAudio2, int sourceVoiceCapacity) : xAudio2(xAudio2)
+		XAudio2Sound(IXAudio2* xAudio2, int maxPlayCount) : xAudio2(xAudio2), maxPlayCount(maxPlayCount)
 		{
-			sourceVoices.reserve(sourceVoiceCapacity);
+			// メモリだけ確保しておいて、実際に多重再生する時に、インスタンスを作成する
+			sourceVoices.reserve(maxPlayCount);
 		}
 
 		~XAudio2Sound()
@@ -134,13 +134,15 @@ namespace ForiverEngine
 		int lastUsedSourceVoiceIndex = -1; // 直近に使ったソースボイスのインデックス(検索の高速化用)
 
 		IXAudio2* xAudio2 = nullptr; // ネイティブのハンドラ
+		int maxPlayCount = 0;        // 同時に鳴らせる最大数。超えたら再生は常に失敗する
 
 		// プールから使えるものを取得する
-		// 無ければ、新規作成してプールに追加し、それを返す
+		// 無ければ、新規作成してプールに追加し、それを返す。新規作成に失敗したら nullptr を返す
+		// プールが最大数に達していて、使えるものも無ければ nullptr を返す
 		IXAudio2SourceVoice* GetOrCreateSourceVoice()
 		{
 			// 使えるものがあればそれを返す
-			const std::size_t currentSourceVoiceCount = sourceVoices.size();
+			const int currentSourceVoiceCount = static_cast<int>(sourceVoices.size());
 			for (int i = 0; i < currentSourceVoiceCount; ++i)
 			{
 				const int index = (lastUsedSourceVoiceIndex + 1 + i) % currentSourceVoiceCount;
@@ -156,7 +158,14 @@ namespace ForiverEngine
 				}
 			}
 
-			// 使えるものが無ければ、新規作成してプールに追加する
+			// 使えるものが無い
+
+			// プールが最大数に達しているなら、取得も新規作成も出来ないので、nullptr を返す
+			if (currentSourceVoiceCount >= maxPlayCount)
+				return nullptr;
+
+			// まだプールが最大数に達していないので、新規作成してプールに追加し、それを返す
+			// 新規作成に失敗したら nullptr を返す
 			SourceVoicePointer newSourceVoice = CreateSourceVoice();
 			if (newSourceVoice == nullptr)
 				return nullptr;
@@ -166,7 +175,7 @@ namespace ForiverEngine
 			return sourceVoices.back().get();
 		}
 
-		// 新規作成
+		// 新規作成 (失敗したら nullptr を返す)
 		SourceVoicePointer CreateSourceVoice()
 		{
 			if (xAudio2 == nullptr)
@@ -186,7 +195,7 @@ namespace ForiverEngine
 	SoundHelper::SoundHelper() : impl(std::make_unique<Impl>()) {}
 	SoundHelper::~SoundHelper() = default;
 
-	std::unique_ptr<ISound> SoundHelper::LoadSound(std::string_view path)
+	std::unique_ptr<ISound> SoundHelper::LoadSound(std::string_view path, int maxPlayCount)
 	{
 		if (!impl->initializeSucceeded)
 			return nullptr;
@@ -224,7 +233,7 @@ namespace ForiverEngine
 			return nullptr;
 
 		// 作成されるサウンド
-		std::unique_ptr<XAudio2Sound> sound = std::make_unique<XAudio2Sound>(impl->xAudio2, 4);
+		std::unique_ptr<XAudio2Sound> sound = std::make_unique<XAudio2Sound>(impl->xAudio2, maxPlayCount);
 
 		// フォーマット : "fmt" チャンクを見つける
 		FindChunk(fileHandle, fourccFMT, chunkSize, chunkDataPosition);
