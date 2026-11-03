@@ -10,6 +10,7 @@ namespace ForiverEngine
 		virtual ~ISound() = default;
 
 		virtual bool Play() = 0;
+		virtual void StopAll() = 0;
 	};
 
 	class SoundHelper final

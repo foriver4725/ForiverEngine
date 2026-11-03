@@ -149,6 +149,11 @@ int Main(hInstance)
 			if (!testSound->Play())
 				ShowError(L"テスト用サウンドの再生に失敗しました");
 		}
+		// テスト用 : L キーでテスト用サウンドを全停止する
+		if (InputHelper::GetKeyInfo(Key::L).pressedNow)
+		{
+			testSound->StopAll();
+		}
 
 		// プレイヤーの挙動
 		const PlayerController::Inputs playerInputs =

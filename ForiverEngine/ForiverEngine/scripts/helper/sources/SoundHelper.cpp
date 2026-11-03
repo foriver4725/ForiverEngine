@@ -86,8 +86,7 @@ namespace ForiverEngine
 
 		~XAudio2Sound()
 		{
-			for (auto& sourceVoice : sourceVoices)
-				sourceVoice->Stop();
+			StopAll();
 			sourceVoices.clear();
 
 			delete[] buffer.pAudioData;
@@ -107,6 +106,12 @@ namespace ForiverEngine
 				return false;
 
 			return true;
+		}
+
+		virtual void StopAll() override
+		{
+			for (auto& sourceVoice : sourceVoices)
+				const auto result = sourceVoice->Stop();
 		}
 
 		WAVEFORMATEXTENSIBLE format{};
